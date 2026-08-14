@@ -1,0 +1,4 @@
+/* Reimagined / player profile overrides. */
+body[data-rhythiax-theme="rhythia-reimagined"][data-rhythiax-page="player"] {
+  --rhythiax-profile-surface: var(--rhythiax-surface);
+}

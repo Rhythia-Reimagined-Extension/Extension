@@ -1,0 +1,208 @@
+/* Profile layout presets. Soft Blocks is intentionally compact because these
+   cards live inside the narrow profile sidebar. */
+.rhythiax-profile-list {
+   display: grid;
+   gap: 6px;
+   margin-top: 12px;
+}
+.rhythiax-profile-list-item {
+   --profile-color: var(--grade-color, var(--speed-color, #aa92e8));
+   display: grid;
+   grid-template-columns: 42px minmax(0, 1fr) auto auto;
+   align-items: center;
+   gap: 7px;
+   min-height: 31px;
+   padding: 3px 6px;
+   border: 1px solid color-mix(in srgb, var(--profile-color) 12%, var(--rhythiax-text, transparent));
+   border-radius: 10px;
+   background: color-mix(in srgb, var(--profile-color) 5%, var(--rhythiax-inner-surface, #252239));
+   cursor: pointer;
+   opacity: 1;
+   transition: border-color .18s ease, background .18s ease, opacity .18s ease, transform .18s ease;
+}
+.rhythiax-profile-list-item:hover,
+.rhythiax-profile-list-item:focus-visible,
+.rhythiax-profile-list-item.active:hover {
+   border-color: color-mix(in srgb, var(--profile-color) 42%, transparent);
+   background: color-mix(in srgb, var(--profile-color) 9%, var(--rhythiax-inner-surface, #252239));
+   outline: none;
+   transform: translateX(1px);
+}
+.rhythiax-profile-list-item.is-dimmed,
+.rhythiax-grade-list .rhythiax-profile-list-item:not(.active) { opacity: .24; }
+.rhythiax-profile-list-label {
+   min-width: 0;
+   padding: 3px 6px;
+   border: 1px solid color-mix(in srgb, var(--profile-color) 32%, transparent);
+   border-radius: 999px;
+   color: color-mix(in srgb, var(--profile-color) 78%, white 22%);
+   font-size: 10px;
+   font-weight: 800;
+   line-height: 1.1;
+   text-align: center;
+   white-space: nowrap;
+}
+.rhythiax-profile-list-label em {
+   display: block;
+   margin-top: 2px;
+   color: color-mix(in srgb, var(--profile-color) 60%, white 40%);
+   font-size: 7px;
+   font-style: normal;
+   font-weight: 600;
+   letter-spacing: .02em;
+   text-transform: uppercase;
+}
+.rhythiax-profile-list-track {
+   display: block;
+   height: 7px;
+   overflow: hidden;
+   border-radius: 999px;
+   background: color-mix(in srgb, var(--rhythiax-text, white) 8%, transparent);
+}
+.rhythiax-profile-list-track i {
+   display: block;
+   height: 100%;
+   min-width: 2px;
+   border-radius: inherit;
+   background: var(--profile-color);
+   transition: width .4s ease, background .18s ease;
+}
+.rhythiax-profile-list-count {
+   padding: 3px 7px;
+   border: 1px solid color-mix(in srgb, var(--profile-color) 28%, transparent);
+   border-radius: 999px;
+   color: color-mix(in srgb, var(--rhythiax-text, white) 88%, var(--profile-color));
+   font-size: 10px;
+   font-weight: 700;
+   font-variant-numeric: tabular-nums;
+   white-space: nowrap;
+}
+.rhythiax-profile-list-share {
+   min-width: 27px;
+   color: color-mix(in srgb, var(--profile-color) 72%, var(--rhythiax-text, white));
+   font-size: 10px;
+   font-variant-numeric: tabular-nums;
+   text-align: right;
+}
+.rhythiax-profile-style-pill-rows .rhythiax-profile-list-item {
+   grid-template-columns: auto minmax(0, 1fr) auto;
+   min-height: 29px;
+   border-radius: 999px;
+   padding: 3px 8px 3px 5px;
+   background: color-mix(in srgb, var(--profile-color) 6%, var(--rhythiax-inner-surface, #252239));
+}
+.rhythiax-profile-style-pill-rows .rhythiax-profile-list-share { display: none; }
+.rhythiax-profile-style-pill-rows .rhythiax-profile-list-label { padding-inline: 7px; }
+.rhythiax-profile-style-pill-rows .rhythiax-profile-list-count { border: 0; padding-inline: 4px; background: transparent; }
+/* Rating rows also carry the legacy grade-item class for filtering. Keep its
+   selected-state styling from adding a stronger outline than tempo rows. */
+.rhythiax-profile-box .rhythiax-grade-item.active {
+   border-color: color-mix(in srgb, var(--profile-color) 12%, var(--rhythiax-text, transparent)) !important;
+   background: color-mix(in srgb, var(--profile-color) 5%, var(--rhythiax-inner-surface, #252239));
+   box-shadow: none;
+}
+/* Profile Surface follows the mockup: the whole card carries a quiet accent,
+   while each row keeps the same readable label / bar / value anatomy. */
+.rhythiax-profile-style-profile-surface {
+   border-color: color-mix(in srgb, var(--rhythiax-accent, #aa92e8) 28%, transparent);
+   background: color-mix(in srgb, var(--rhythiax-accent, #aa92e8) 3%, var(--rhythiax-surface, #1b1a24));
+   box-shadow: 0 8px 24px rgba(0, 0, 0, .12);
+}
+.rhythiax-profile-style-profile-surface .rhythiax-profile-list { gap: 5px; }
+.rhythiax-profile-style-profile-surface .rhythiax-profile-list-item {
+   min-height: 34px;
+   padding: 4px 7px;
+   border-radius: 9px;
+   background: color-mix(in srgb, var(--profile-color) 5%, var(--rhythiax-inner-surface, #252239));
+}
+.rhythiax-profile-style-profile-surface .rhythiax-profile-list-item:hover,
+.rhythiax-profile-style-profile-surface .rhythiax-profile-list-item:focus-visible { transform: translateX(2px); }
+.rhythiax-profile-style-profile-surface .rhythiax-profile-list-label,
+.rhythiax-profile-style-profile-surface .rhythiax-profile-list-count { padding: 3px 8px; }
+.rhythiax-profile-style-profile-surface .rhythiax-profile-list-track {
+   height: 8px;
+   background: color-mix(in srgb, var(--rhythiax-text, white) 7%, transparent);
+}
+.rhythiax-profile-style-profile-surface .rhythiax-profile-list-share { min-width: 31px; font-weight: 700; }
+body[data-rhythiax-theme="white"] .rhythiax-profile-style-profile-surface {
+   border-color: color-mix(in srgb, var(--rhythiax-accent, #5b21b6) 24%, rgba(51,65,85,.14));
+   background: color-mix(in srgb, var(--rhythiax-accent, #5b21b6) 2%, var(--rhythiax-surface, #fff));
+   box-shadow: 0 5px 16px rgba(51, 65, 85, .08);
+}
+body[data-rhythiax-theme="white"] .rhythiax-profile-style-profile-surface .rhythiax-profile-list-item {
+   background: color-mix(in srgb, var(--profile-color) 5%, var(--rhythiax-inner-surface, #f3f4f6));
+}
+body[data-rhythiax-theme="white"] .rhythiax-profile-style-profile-surface .rhythiax-profile-list-track { background: rgba(24, 24, 27, .09); }
+body[data-rhythiax-theme="white"] .rhythiax-profile-style-profile-surface .rhythiax-profile-list-count { background: rgba(255, 255, 255, .62); }
+body[data-rhythiax-theme="white"] .rhythiax-profile-list-item {
+   --rhythiax-text: #18181b;
+   border-color: color-mix(in srgb, var(--profile-color) 18%, rgba(51,65,85,.12));
+   background: color-mix(in srgb, var(--profile-color) 4%, var(--rhythiax-inner-surface, #f3f4f6));
+}
+body[data-rhythiax-theme="white"] .rhythiax-profile-list-item:hover,
+body[data-rhythiax-theme="white"] .rhythiax-profile-list-item:focus-visible {
+   background: color-mix(in srgb, var(--profile-color) 8%, var(--rhythiax-inner-surface, #f3f4f6));
+}
+body[data-rhythiax-theme="white"] .rhythiax-profile-list-track { background: rgba(24,24,27,.10); }
+body[data-rhythiax-theme="white"] .rhythiax-profile-list-label {
+   color: color-mix(in srgb, var(--profile-color) 72%, #18181b 28%) !important;
+}
+body[data-rhythiax-theme="white"] .rhythiax-profile-list-count {
+   color: #18181b !important;
+   background: rgba(255, 255, 255, .52);
+}
+body[data-rhythiax-theme="white"] .rhythiax-profile-list-share {
+   color: color-mix(in srgb, var(--profile-color) 65%, #18181b 35%) !important;
+}
+body[data-rhythiax-theme="white"] .rhythiax-profile-list-track i {
+   filter: saturate(.9) brightness(.88);
+}
+@media (max-width: 560px) {
+   .rhythiax-profile-list { gap: 5px; margin-top: 10px; }
+   .rhythiax-profile-list-item { grid-template-columns: 37px minmax(0, 1fr) auto auto; gap: 5px; min-height: 28px; padding: 2px 4px; }
+   .rhythiax-profile-list-count { padding-inline: 5px; font-size: 9px; }
+   .rhythiax-profile-list-share { min-width: 23px; font-size: 9px; }
+}
+body[data-rhythiax-theme="white"] .rhythiax-profile-box .rhythiax-grade-item {
+   border-color: color-mix(in srgb, var(--profile-color) 18%, rgba(51,65,85,.12)) !important;
+   background: color-mix(in srgb, var(--profile-color) 4%, var(--rhythiax-inner-surface, #f3f4f6)) !important;
+}
+body[data-rhythiax-theme="white"] .rhythiax-profile-box.rhythiax-profile-style-profile-surface .rhythiax-grade-item {
+   background: color-mix(in srgb, var(--profile-color) 5%, var(--rhythiax-inner-surface, #f3f4f6)) !important;
+}
+
+/* All profile presets use the same quiet outline. Accent colors stay on the
+   rows instead of turning the whole profile card into a bright frame. */
+.rhythiax-profile-box,
+.rhythiax-profile-style-profile-surface {
+   border-color: var(--rhythiax-border, rgba(255, 255, 255, .07)) !important;
+}
+
+/* Keep the page's button/card rules from turning profile rows into bright
+   white frames. The row outline should be a quiet tint of its own accent. */
+.rhythiax-profile-box .rhythiax-profile-list-item {
+   border: 1px solid color-mix(in srgb, var(--profile-color) 14%, transparent) !important;
+   background: color-mix(in srgb, var(--profile-color) 5%, var(--rhythiax-inner-surface, #252239)) !important;
+}
+.rhythiax-profile-box .rhythiax-profile-list-item.active {
+   border-color: color-mix(in srgb, var(--profile-color) 14%, transparent) !important;
+}
+.rhythiax-profile-box .rhythiax-profile-list-item:hover,
+.rhythiax-profile-box .rhythiax-profile-list-item:focus-visible,
+.rhythiax-profile-box .rhythiax-profile-list-item.active:hover {
+   border-color: color-mix(in srgb, var(--profile-color) 38%, transparent) !important;
+   background: color-mix(in srgb, var(--profile-color) 9%, var(--rhythiax-inner-surface, #252239)) !important;
+}
+body[data-rhythiax-theme="white"] .rhythiax-profile-box .rhythiax-profile-list-item {
+   border-color: color-mix(in srgb, var(--profile-color) 20%, rgba(51, 65, 85, .14)) !important;
+   background: color-mix(in srgb, var(--profile-color) 4%, var(--rhythiax-inner-surface, #f3f4f6)) !important;
+}
+body[data-rhythiax-theme="white"] .rhythiax-profile-box .rhythiax-profile-list-item:hover,
+body[data-rhythiax-theme="white"] .rhythiax-profile-box .rhythiax-profile-list-item:focus-visible {
+   border-color: color-mix(in srgb, var(--profile-color) 42%, rgba(51, 65, 85, .16)) !important;
+   background: color-mix(in srgb, var(--profile-color) 8%, var(--rhythiax-inner-surface, #f3f4f6)) !important;
+}
+body[data-rhythiax-theme="rhythia-reimagined"] .rhythiax-profile-box .rhythiax-profile-list-item {
+   border-color: color-mix(in srgb, var(--profile-color) 16%, rgba(184, 164, 235, .08)) !important;
+}
+

@@ -1,0 +1,188 @@
+/* White preset additions. Palette values come from shared/themes/white.js;
+   this file contains only behaviour that is inherently light-mode specific. */
+body[data-rhythiax-theme="white"] {
+  color-scheme: light;
+  --rhythiax-accent: #52525b;
+  --rhythiax-accent-soft: rgba(82, 82, 91, .12);
+  --rhythiax-nav-hover: rgba(82, 82, 91, .14);
+  --rhythiax-text-subtle: color-mix(in srgb, var(--rhythiax-text-muted) 78%, transparent);
+}
+
+body[data-rhythiax-theme="white"] .rhythiax-rank-history-overlay {
+  background: rgba(15, 23, 42, .16);
+}
+
+body[data-rhythiax-theme="white"] #root [class*="bg-neutral-950"],
+body[data-rhythiax-theme="white"] #root [class*="border-neutral-950"] {
+  background-color: var(--rhythiax-page-bg) !important;
+  border-color: var(--rhythiax-border) !important;
+}
+
+/* White's hero background is a paper-like neutral gradient. Do not let the
+   native image and its `to-neutral-950` overlay create a black page strip. */
+body[data-rhythiax-theme="white"] #root .top-\[60px\].left-0.overflow-hidden.h-64 {
+  background-image: linear-gradient(180deg, #ffffff 0%, #f3f5f8 34%, #dfe4eb 72%, #eef2f7 100%) !important;
+  background-color: #eef2f7 !important;
+  opacity: 1 !important;
+  filter: none !important;
+}
+body[data-rhythiax-theme="white"] #root .top-\[60px\].left-0.overflow-hidden.h-64 > img,
+body[data-rhythiax-theme="white"] #root .top-\[60px\].left-0.overflow-hidden.h-64 > div[class*="bg-gradient-to-b"] {
+  display: none !important;
+}
+
+/* Native profile artwork uses a black caption gradient. White mode does not
+   need that dark veil, so keep the avatar artwork untouched. */
+body[data-rhythiax-theme="white"] #root [class*="from-transparent"][class*="via-\[#0a0a0a73\]"][class*="to-neutral-950"] {
+  display: none !important;
+}
+
+/* White navigation uses a neutral paper gradient instead of the original
+   blue controls. Keep every label and icon dark enough to remain readable. */
+body[data-rhythiax-theme="white"] #root .fixed.top-0.left-0.w-full[class*="h-[60px]"] {
+  background: linear-gradient(180deg, #ffffff 0%, #f1f3f6 100%) !important;
+  background-image: linear-gradient(180deg, #ffffff 0%, #f1f3f6 100%) !important;
+  border-bottom-color: rgba(24, 24, 27, .16) !important;
+  color: #18181b !important;
+}
+body[data-rhythiax-theme="white"] #root .fixed.top-0.left-0.w-full[class*="h-[60px]"] a,
+body[data-rhythiax-theme="white"] #root .fixed.top-0.left-0.w-full[class*="h-[60px]"] button,
+body[data-rhythiax-theme="white"] #root .fixed.top-0.left-0.w-full[class*="h-[60px]"] [class*="text-white"] {
+  color: #18181b !important;
+}
+body[data-rhythiax-theme="white"] #root .fixed.top-0.left-0.w-full[class*="h-[60px]"] [class*="bg-[#2F4184]"],
+body[data-rhythiax-theme="white"] #root .fixed.top-0.left-0.w-full[class*="h-[60px]"] [class*="bg-[#344a9e"]] {
+  background: linear-gradient(180deg, #f8f9fa 0%, #dfe3e8 100%) !important;
+  background-color: #e7e9ed !important;
+  border-color: rgba(24, 24, 27, .14) !important;
+}
+body[data-rhythiax-theme="white"] #root .fixed.top-0.left-0.w-full[class*="h-[60px]"] a:hover,
+body[data-rhythiax-theme="white"] #root .fixed.top-0.left-0.w-full[class*="h-[60px]"] button:hover {
+  background: linear-gradient(180deg, #e5e7eb 0%, #c7cbd1 100%) !important;
+  background-color: #d1d5db !important;
+  color: #09090b !important;
+}
+body[data-rhythiax-theme="white"] #root .fixed.top-0.left-0.w-full[class*="h-[60px]"] [class*="border-white/10"] {
+  border-color: rgba(24, 24, 27, .16) !important;
+}
+
+/* White panels use dark text, but media controls and image captions retain a
+   dark backing so their white icons and labels do not disappear. */
+body[data-rhythiax-theme="white"] [role="dialog"][class*="bg-[#111214]"] {
+  background: linear-gradient(180deg, #ffffff 0%, #f1f3f6 100%) !important;
+  color: #18181b !important;
+  border-color: rgba(30, 41, 59, .16) !important;
+}
+body[data-rhythiax-theme="white"] [role="dialog"][class*="bg-[#111214]"] [class*="text-white"] {
+  color: #18181b !important;
+}
+body[data-rhythiax-theme="white"] [role="dialog"][class*="bg-[#111214]"] [class*="bg-[#1a1b1c]"],
+body[data-rhythiax-theme="white"] [role="dialog"][class*="bg-[#111214]"] [class*="bg-black/20"] {
+  background: #f5f7fa !important;
+  border-color: rgba(30, 41, 59, .14) !important;
+}
+body[data-rhythiax-theme="white"] #root [class*="bg-yellow-400/10"] {
+  background: linear-gradient(180deg, #fef3c7 0%, #fde68a 100%) !important;
+  border-color: rgba(161, 98, 7, .25) !important;
+  color: #854d0e !important;
+}
+body[data-rhythiax-theme="white"] #root [class*="bg-yellow-400/10"] [class*="text-yellow-300"] {
+  color: #a16207 !important;
+}
+
+/* Trophy totals on the native Clans page use pale yellow text on White's
+   surface. Darken the number while leaving the trophy icon unchanged. */
+body[data-rhythiax-theme="white"][data-rhythiax-page="clans"] #root .flex.items-center.justify-center.gap-1\.5.font-semibold.text-yellow-200 > span {
+  color: #854d0e !important;
+}
+
+/* The native share control uses pale blue text, which nearly disappears on
+   White's surface. Keep it neutral and give the small icon button a clear
+   boundary in both resting and hover states. */
+body[data-rhythiax-theme="white"] #root button[aria-label^="Copy share link"] {
+  background: #f1f5f9 !important;
+  border-color: #94a3b8 !important;
+  color: #3f3f46 !important;
+  box-shadow: 0 1px 2px rgba(30, 41, 59, .12) !important;
+}
+body[data-rhythiax-theme="white"] #root button[aria-label^="Copy share link"]:hover {
+  background: #e2e8f0 !important;
+  border-color: #64748b !important;
+  color: #18181b !important;
+}
+body[data-rhythiax-theme="white"] #root img[src*="beatmap-img-"] ~ div [class*="bg-blue-600/65"] {
+  background: linear-gradient(180deg, #71717a 0%, #3f3f46 100%) !important;
+  border-color: rgba(255,255,255,.32) !important;
+}
+
+/* Media-specific rules stay in the preset file so White can deliberately
+   keep artwork captions dark while the rest of the page remains light. */
+body[data-rhythiax-theme="white"] #root .top-\[60px\].left-0.overflow-hidden { opacity: .72 !important; filter: saturate(.9) !important; }
+body[data-rhythiax-theme="white"] #root img[src="/discordicon.png"],
+body[data-rhythiax-theme="white"] #root img[src="/supporticon.png"],
+body[data-rhythiax-theme="white"] #root img[src="/settingsicon.png"] { display: block !important; visibility: visible !important; opacity: 1 !important; filter: none !important; mix-blend-mode: normal !important; }
+body[data-rhythiax-theme="white"] #root [class*="bg-[#141516]"] { background-color: color-mix(in srgb, #141516 70%, var(--rhythiax-surface)) !important; opacity: 1 !important; }
+body[data-rhythiax-theme="white"] #root img[src*="beatmap-img-"] ~ [class*="bg-gradient-to-t"] { background-image: linear-gradient(to top, rgba(7,9,14,.92), rgba(7,9,14,.18) 58%, transparent) !important; background-color: transparent !important; }
+body[data-rhythiax-theme="white"] #root img[src*="beatmap-img-"] ~ [class*="bg-black/35"] { background-color: rgba(7,9,14,.82) !important; }
+body[data-rhythiax-theme="white"] #root img[src*="beatmap-img-"] ~ [class*="bg-black/0"] { background-color: transparent !important; }
+body[data-rhythiax-theme="white"] #root img[src*="beatmap-img-"] ~ div[class*="bottom-0"] > div[class*="bg-black/35"] {
+  color: #18181b !important;
+  background: rgba(255,255,255,.78) !important;
+  border-color: rgba(30,41,59,.18) !important;
+  backdrop-filter: blur(14px) saturate(115%) !important;
+}
+body[data-rhythiax-theme="white"] #root img[src*="beatmap-img-"] ~ div[class*="bottom-0"] > div[class*="bg-black/35"] [class*="text-white"],
+body[data-rhythiax-theme="white"] #root img[src*="beatmap-img-"] ~ div[class*="bottom-0"] > div[class*="bg-black/35"] [class*="text-neutral-"] { color: #18181b !important; }
+body[data-rhythiax-theme="white"] #root img[src*="beatmap-img-"] ~ div[class*="bottom-0"] > div[class*="bg-black/35"] a { color: #52525b !important; }
+body[data-rhythiax-theme="white"] #root img[src*="beatmap-img-"] ~ div[class*="bottom-0"] > div[class*="bg-black/35"] a:hover { color: #09090b !important; }
+body[data-rhythiax-theme="white"] #root img[src*="beatmap-img-"] ~ button[class*="bg-[#111214]"] { background: linear-gradient(180deg, rgba(36,39,46,.96), rgba(10,12,16,.96)) !important; color: #fff !important; border-color: rgba(255,255,255,.24) !important; }
+body[data-rhythiax-theme="white"] #root div:has(> .pointer-events-none[class*="bg-black/70"]) { color: #fff !important; }
+body[data-rhythiax-theme="white"] #root div:has(> .pointer-events-none[class*="bg-black/70"]) [class*="text-white"],
+body[data-rhythiax-theme="white"] #root div:has(> .pointer-events-none[class*="bg-black/70"]) [class*="text-neutral-300"] { color: #fff !important; }
+body[data-rhythiax-theme="white"] #root [class*="bg-[#1e1f21]"]:has(img[src="/settingsicon.png"]) {
+  background: linear-gradient(180deg, #ffffff 0%, #eef1f4 100%) !important;
+  border-color: rgba(24,24,27,.18) !important;
+  color: #18181b !important;
+}
+body[data-rhythiax-theme="white"] #root [class*="bg-[#1e1f21]"]:has(img[src="/settingsicon.png"]) img[src="/settingsicon.png"] { filter: brightness(0) !important; }
+body[data-rhythiax-theme="white"] #root [class*="rounded-xl"][class*="border-white/10"][class*="bg-[#111214]"]:has(.badge-hunt-space-cloud) { background-color: var(--rhythiax-surface) !important; }
+body[data-rhythiax-theme="white"] #root [class*="rounded-xl"][class*="border-white/10"][class*="bg-[#111214]"]:has(.badge-hunt-space-cloud) > .pointer-events-none,
+body[data-rhythiax-theme="white"] #root [class*="rounded-xl"][class*="border-white/10"][class*="bg-[#111214]"]:has(.badge-hunt-space-cloud) > .absolute.inset-0.bg-black\/25 { display: none !important; }
+
+/* Profile Settings is a native dialog with literal dark utility classes.
+   Translate the whole dialog, not just its outer shell, to the White palette. */
+body[data-rhythiax-theme="white"] [role="dialog"] {
+  background: linear-gradient(180deg, #ffffff 0%, #f1f3f6 100%) !important;
+  color: #18181b !important;
+  border-color: rgba(30,41,59,.16) !important;
+}
+body[data-rhythiax-theme="white"] [role="dialog"] [class*="bg-[#1a1b1c]"],
+body[data-rhythiax-theme="white"] [role="dialog"] [class*="bg-black/20"] {
+  background: #f5f7fa !important;
+  border-color: rgba(30,41,59,.14) !important;
+}
+body[data-rhythiax-theme="white"] [role="dialog"] [class*="bg-[#111214]"] { background: #e5e7eb !important; }
+body[data-rhythiax-theme="white"] [role="dialog"] [class*="text-white"] { color: #18181b !important; }
+body[data-rhythiax-theme="white"] [role="dialog"] [class*="text-neutral-300"],
+body[data-rhythiax-theme="white"] [role="dialog"] [class*="text-neutral-400"],
+body[data-rhythiax-theme="white"] [role="dialog"] [class*="text-neutral-500"] { color: #52525b !important; }
+body[data-rhythiax-theme="white"] [role="dialog"] input,
+body[data-rhythiax-theme="white"] [role="dialog"] [role="combobox"] {
+  background: #ffffff !important;
+  color: #18181b !important;
+  border-color: rgba(30,41,59,.22) !important;
+}
+
+/* Switches use aria-checked as their source of truth. Both positions remain
+   visible in White instead of relying on the native blue utility class. */
+body[data-rhythiax-theme="white"] #root [role="switch"][aria-checked="true"] {
+  background: linear-gradient(180deg, #52525b 0%, #27272a 100%) !important;
+  box-shadow: inset 0 0 0 1px rgba(24,24,27,.28), 0 1px 2px rgba(24,24,27,.18) !important;
+}
+body[data-rhythiax-theme="white"] #root [role="switch"][aria-checked="false"] {
+  background: linear-gradient(180deg, #e5e7eb 0%, #cbd5e1 100%) !important;
+  box-shadow: inset 0 0 0 1px rgba(30,41,59,.24) !important;
+}
+body[data-rhythiax-theme="white"] #root [role="switch"] > span { background: #ffffff !important; box-shadow: 0 1px 2px rgba(24,24,27,.28); }
+body[data-rhythiax-theme="white"] #root [role="switch"][aria-checked="false"] > span { transform: translateX(.25rem) !important; }
+body[data-rhythiax-theme="white"] #root [role="switch"][aria-checked="true"] > span { transform: translateX(1.25rem) !important; }

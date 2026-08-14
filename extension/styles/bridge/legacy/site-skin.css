@@ -1,0 +1,82 @@
+/* =============================================
+   Global site skin
+
+   The official Rhythia UI keeps body.dark and uses literal Tailwind colors.
+   These selectors intentionally target those stable utility fragments so the
+   selected preset also skins pages that do not contain an injected module.
+   ============================================= */
+body[data-rhythiax-theme] {
+   --rhythiax-site-text: var(--rhythiax-text, #f8fafc);
+   --rhythiax-site-muted: var(--rhythiax-text-muted, #9ca3af);
+   color: var(--rhythiax-site-text) !important;
+   background-color: var(--rhythiax-page-bg, #151326) !important;
+}
+body[data-rhythiax-theme] #root,
+body[data-rhythiax-theme] #root > div {
+   background-color: var(--rhythiax-page-bg, #151326) !important;
+   color: var(--rhythiax-site-text) !important;
+}
+body[data-rhythiax-theme] #root [class*="bg-[#111214]"],
+body[data-rhythiax-theme] #root [class*="bg-[#1a1b1c]"],
+body[data-rhythiax-theme] #root [class*="bg-[#1e1f21]"],
+body[data-rhythiax-theme] #root [class*="bg-[#242526]"],
+body[data-rhythiax-theme] #root [class*="bg-[#1F2021]"] {
+   background: var(--rhythiax-surface, #1b1a24) !important;
+   border-color: var(--rhythiax-border, rgba(255,255,255,.12)) !important;
+   box-shadow: var(--rhythiax-shadow, 0 18px 45px rgba(0,0,0,.18));
+}
+body[data-rhythiax-theme] #root [class*="bg-white/[0.03]"],
+body[data-rhythiax-theme] #root [class*="bg-white/[0.05]"],
+body[data-rhythiax-theme] #root [class*="bg-white/[0.035]"],
+body[data-rhythiax-theme] #root [class*="bg-white/[0.04]"],
+body[data-rhythiax-theme] #root [class*="bg-white/[0.02]"] {
+   background: var(--rhythiax-inner-surface, #252239) !important;
+   border-color: var(--rhythiax-border, rgba(255,255,255,.12)) !important;
+}
+body[data-rhythiax-theme] #root [class*="bg-[#2F4184]/50"],
+body[data-rhythiax-theme] #root [class*="bg-[#344a9e"]] {
+   background: var(--rhythiax-nav-surface, var(--rhythiax-surface, #1b1a24)) !important;
+}
+body[data-rhythiax-theme] #root [class*="bg-[#2F4184]/50"]:hover,
+body[data-rhythiax-theme] #root [class*="bg-[#344a9e"]]:hover,
+body[data-rhythiax-theme] #root [class*="hover:bg-[#4D65C0]/50"]:hover,
+body[data-rhythiax-theme] #root [class*="hover:bg-[#4D65C0]/30"]:hover {
+   background: var(--rhythiax-nav-hover, var(--rhythiax-accent-soft, rgba(170,146,232,.16))) !important;
+}
+body[data-rhythiax-theme] #root [class*="border-white/10"],
+body[data-rhythiax-theme] #root [class*="border-white/5"] {
+   border-color: var(--rhythiax-border, rgba(255,255,255,.12)) !important;
+}
+body[data-rhythiax-theme] #root [class*="text-white"] {
+   color: var(--rhythiax-text-strong, var(--rhythiax-site-text)) !important;
+}
+body[data-rhythiax-theme] #root [class*="text-neutral-300"],
+body[data-rhythiax-theme] #root [class*="text-neutral-400"],
+body[data-rhythiax-theme] #root [class*="text-neutral-500"] {
+   color: var(--rhythiax-site-muted) !important;
+}
+body[data-rhythiax-theme] #root [class*="text-blue-400"],
+body[data-rhythiax-theme] #root [class*="text-blue-500"],
+body[data-rhythiax-theme] #root [class*="text-blue-300"] {
+   color: var(--rhythiax-accent, #60a5fa) !important;
+}
+body[data-rhythiax-theme] #root [class*="border-blue-400"],
+body[data-rhythiax-theme] #root [class*="bg-blue-500/10"] {
+   border-color: color-mix(in srgb, var(--rhythiax-accent, #60a5fa) 38%, transparent) !important;
+   background-color: color-mix(in srgb, var(--rhythiax-accent, #60a5fa) 12%, transparent) !important;
+}
+body[data-rhythiax-theme] #root input,
+body[data-rhythiax-theme] #root select,
+body[data-rhythiax-theme] #root [role="combobox"],
+body[data-rhythiax-theme] #root [role="switch"] {
+   border-color: var(--rhythiax-border, rgba(255,255,255,.12)) !important;
+   background-color: var(--rhythiax-input-surface, var(--rhythiax-inner-surface, #252239)) !important;
+   color: var(--rhythiax-site-text) !important;
+}
+body[data-rhythiax-theme] #root a:hover {
+   color: var(--rhythiax-accent, #60a5fa);
+}
+body[data-rhythiax-theme] #root [class*="rounded-xl"] {
+   border-radius: var(--rhythiax-radius, 14px);
+}
+

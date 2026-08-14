@@ -1,0 +1,49 @@
+/* Reimagined preset additions. Palette values come from
+   shared/themes/reimagined.js. */
+body[data-rhythiax-theme="rhythia-reimagined"] {
+  color-scheme: dark;
+  --rhythiax-text-subtle: color-mix(in srgb, var(--rhythiax-text-muted) 72%, transparent);
+}
+
+/* Reimagined keeps the artwork slightly softer against its violet-night base. */
+body[data-rhythiax-theme="rhythia-reimagined"] #root .top-\[60px\].left-0.overflow-hidden.h-64 { opacity: .68 !important; filter: saturate(.82) brightness(.9) !important; }
+
+/* Use the Reimagined night palette instead of the native black caption veil. */
+body[data-rhythiax-theme="rhythia-reimagined"] #root [class*="from-transparent"][class*="via-\[#0a0a0a73\]"][class*="to-neutral-950"] {
+  --tw-gradient-from: transparent !important;
+  --tw-gradient-via: color-mix(in srgb, var(--rhythiax-accent) 18%, transparent) !important;
+  --tw-gradient-to: color-mix(in srgb, var(--rhythiax-page-bg) 82%, transparent) !important;
+}
+
+/* Reimagined media surfaces keep the violet preset visible without sacrificing contrast. */
+body[data-rhythiax-theme="rhythia-reimagined"] #root img[src="/discordicon.png"],
+body[data-rhythiax-theme="rhythia-reimagined"] #root img[src="/supporticon.png"],
+body[data-rhythiax-theme="rhythia-reimagined"] #root img[src="/settingsicon.png"] { display: block !important; visibility: visible !important; opacity: 1 !important; filter: none !important; mix-blend-mode: normal !important; }
+body[data-rhythiax-theme="rhythia-reimagined"] #root [class*="bg-[#141516]"] { background-color: color-mix(in srgb, #141516 70%, var(--rhythiax-surface)) !important; opacity: 1 !important; }
+body[data-rhythiax-theme="rhythia-reimagined"] #root img[src*="beatmap-img-"] ~ [class*="bg-gradient-to-t"] { background-image: linear-gradient(to top, rgba(7,9,14,.92), rgba(7,9,14,.18) 58%, transparent) !important; background-color: transparent !important; }
+body[data-rhythiax-theme="rhythia-reimagined"] #root img[src*="beatmap-img-"] ~ [class*="bg-black/35"] { background-color: rgba(7,9,14,.82) !important; }
+body[data-rhythiax-theme="rhythia-reimagined"] #root img[src*="beatmap-img-"] ~ [class*="bg-black/0"] { background-color: transparent !important; }
+body[data-rhythiax-theme="rhythia-reimagined"] #root img[src*="beatmap-img-"] ~ div[class*="bottom-0"] > div[class*="bg-black/35"] { color: #fff !important; border-color: rgba(255,255,255,.18) !important; }
+body[data-rhythiax-theme="rhythia-reimagined"] #root img[src*="beatmap-img-"] ~ div[class*="bottom-0"] > div[class*="bg-black/35"] [class*="text-white"],
+body[data-rhythiax-theme="rhythia-reimagined"] #root img[src*="beatmap-img-"] ~ div[class*="bottom-0"] > div[class*="bg-black/35"] [class*="text-neutral-"] { color: #fff !important; }
+body[data-rhythiax-theme="rhythia-reimagined"] #root img[src*="beatmap-img-"] ~ button[class*="bg-[#111214]"] { background: linear-gradient(180deg, rgba(36,39,46,.96), rgba(10,12,16,.96)) !important; color: #fff !important; border-color: rgba(255,255,255,.24) !important; }
+body[data-rhythiax-theme="rhythia-reimagined"] #root div:has(> .pointer-events-none[class*="bg-black/70"]) { color: #fff !important; }
+body[data-rhythiax-theme="rhythia-reimagined"] #root div:has(> .pointer-events-none[class*="bg-black/70"]) [class*="text-white"],
+body[data-rhythiax-theme="rhythia-reimagined"] #root div:has(> .pointer-events-none[class*="bg-black/70"]) [class*="text-neutral-300"] { color: #fff !important; }
+body[data-rhythiax-theme="rhythia-reimagined"] #root [class*="bg-[#1e1f21]"]:has(img[src="/settingsicon.png"]) { background: linear-gradient(135deg, var(--rhythiax-inner-surface) 0%, var(--rhythiax-surface) 100%) !important; border-color: var(--rhythiax-border) !important; color: var(--rhythiax-text-strong) !important; }
+body[data-rhythiax-theme="rhythia-reimagined"] #root [class*="rounded-xl"][class*="border-white/10"][class*="bg-[#111214]"]:has(.badge-hunt-space-cloud) { background-color: var(--rhythiax-surface) !important; }
+body[data-rhythiax-theme="rhythia-reimagined"] #root [class*="rounded-xl"][class*="border-white/10"][class*="bg-[#111214]"]:has(.badge-hunt-space-cloud) > .pointer-events-none,
+body[data-rhythiax-theme="rhythia-reimagined"] #root [class*="rounded-xl"][class*="border-white/10"][class*="bg-[#111214]"]:has(.badge-hunt-space-cloud) > .absolute.inset-0.bg-black\/25 { display: none !important; }
+
+/* Keep native dialogs aligned with the Reimagined violet-night surfaces. */
+body[data-rhythiax-theme="rhythia-reimagined"] [role="dialog"] { background: linear-gradient(180deg, var(--rhythiax-surface), var(--rhythiax-page-bg)) !important; }
+body[data-rhythiax-theme="rhythia-reimagined"] [role="dialog"] [class*="bg-[#1a1b1c]"],
+body[data-rhythiax-theme="rhythia-reimagined"] [role="dialog"] [class*="bg-black/20"] { background: var(--rhythiax-inner-surface) !important; border-color: var(--rhythiax-border) !important; }
+body[data-rhythiax-theme="rhythia-reimagined"] [role="dialog"] [class*="text-white"] { color: var(--rhythiax-text-strong) !important; }
+
+/* Switches use the Reimagined violet accent and a distinct muted off state. */
+body[data-rhythiax-theme="rhythia-reimagined"] #root [role="switch"][aria-checked="true"] { background: linear-gradient(180deg, #c4b5fd 0%, #7c3aed 100%) !important; box-shadow: inset 0 0 0 1px rgba(221,214,254,.45) !important; }
+body[data-rhythiax-theme="rhythia-reimagined"] #root [role="switch"][aria-checked="false"] { background: linear-gradient(180deg, #44415a 0%, #272640 100%) !important; box-shadow: inset 0 0 0 1px rgba(196,181,253,.22) !important; }
+body[data-rhythiax-theme="rhythia-reimagined"] #root [role="switch"] > span { background: #ffffff !important; box-shadow: 0 1px 2px rgba(0,0,0,.4); }
+body[data-rhythiax-theme="rhythia-reimagined"] #root [role="switch"][aria-checked="false"] > span { transform: translateX(.25rem) !important; }
+body[data-rhythiax-theme="rhythia-reimagined"] #root [role="switch"][aria-checked="true"] > span { transform: translateX(1.25rem) !important; }

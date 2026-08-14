@@ -1,0 +1,33 @@
+/* =============================================
+   Official Stats — Redesigned rows
+   ============================================= */
+.rhythiax-official-stat-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 7px 10px;
+  margin: 2px 0;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.025);
+   transition: background 360ms ease, box-shadow 360ms ease;
+}
+.rhythiax-official-stat-row:hover {
+   background: rgba(255, 255, 255, 0.055);
+   box-shadow: inset 2px 0 0 color-mix(in srgb, var(--rhythiax-accent) 70%, transparent);
+}
+
+.rhythiax-official-stat-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.5);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.rhythiax-official-stat-value {
+  font-size: 13px;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.92);
+  font-variant-numeric: tabular-nums;
+}
+

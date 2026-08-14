@@ -1,0 +1,81 @@
+/* Shared safety rules for every themed Rhythia route. Keep this file small:
+   component styling belongs in components/ and the native-site compatibility
+   rules belong in themes/official-bridge.css. */
+body[data-rhythiax-theme] {
+  overflow-x: hidden;
+}
+
+body[data-rhythiax-theme] #root,
+body[data-rhythiax-theme] #root > div {
+  min-width: 0;
+}
+
+body[data-rhythiax-theme] img {
+  max-width: 100%;
+}
+
+/* Keep the palette change synchronized across the native shell and injected
+   surfaces. Limit this to paint properties so score-card interactions keep
+   their own transform and layout animations. */
+body[data-rhythiax-theme],
+body[data-rhythiax-theme] #root,
+body[data-rhythiax-theme] #root > div,
+body[data-rhythiax-theme] #root > div > div,
+body[data-rhythiax-theme] #root footer,
+body[data-rhythiax-theme] #root [class*="rounded-xl"][class*="border"],
+body[data-rhythiax-theme] #root [class*="rounded-lg"][class*="border"],
+body[data-rhythiax-theme] .rhythiax-score-card,
+body[data-rhythiax-theme] .rhythiax-profile-box,
+body[data-rhythiax-theme] .rhythiax-stats-panel,
+body[data-rhythiax-theme] .rhythiax-accordion {
+  transition: background-color 280ms ease, color 280ms ease, border-color 280ms ease, box-shadow 280ms ease !important;
+}
+
+body[data-rhythiax-theme] #root [class*="text-white"],
+body[data-rhythiax-theme] #root [class*="text-neutral-"],
+body[data-rhythiax-theme] #root [class*="text-blue-"],
+body[data-rhythiax-theme] .rhythiax-card-title,
+body[data-rhythiax-theme] .rhythiax-card-stat-label,
+body[data-rhythiax-theme] .rhythiax-card-stat-value,
+body[data-rhythiax-theme] .rhythiax-official-stat-label,
+body[data-rhythiax-theme] .rhythiax-official-stat-value,
+body[data-rhythiax-theme] .rhythiax-profile-box-title,
+body[data-rhythiax-theme] .rhythiax-profile-list-item,
+body[data-rhythiax-theme] .rhythiax-accordion-title {
+  transition: color 280ms ease, fill 280ms ease, stroke 280ms ease !important;
+}
+
+/* Apply the new palette immediately underneath one fading snapshot. This
+   avoids repainting every dependent node on every animation frame. */
+html[data-rhythiax-theme-transitioning] body[data-rhythiax-theme],
+html[data-rhythiax-theme-transitioning] body[data-rhythiax-theme] *,
+html[data-rhythiax-theme-transitioning] body[data-rhythiax-theme] *::before,
+html[data-rhythiax-theme-transitioning] body[data-rhythiax-theme] *::after {
+  transition: none !important;
+}
+
+.rhythiax-theme-snapshot {
+  position: fixed !important;
+  z-index: 2147483647 !important;
+  inset: 0 !important;
+  display: block !important;
+  overflow: hidden !important;
+  pointer-events: none !important;
+  isolation: isolate;
+  opacity: 1;
+}
+
+.rhythiax-theme-snapshot > body {
+  position: absolute !important;
+  inset: 0 !important;
+  width: 100% !important;
+  min-width: 0 !important;
+  min-height: 100% !important;
+  margin: 0 !important;
+  overflow: hidden !important;
+  pointer-events: none !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html[data-rhythiax-theme-transitioning] body[data-rhythiax-theme] * { transition: none !important; }
+}

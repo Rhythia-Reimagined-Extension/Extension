@@ -1,0 +1,142 @@
+/* /score/:id replay page */
+body[data-rhythiax-page="score-replay"] #root {
+  min-width: 0;
+}
+
+.rhythiax-score-replay-fullscreen-button {
+  display: inline-flex;
+  width: 40px;
+  height: 40px;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  margin-left: auto;
+  border: 1px solid var(--rhythiax-border, rgb(255 255 255 / 10%)) !important;
+  border-radius: 0.375rem;
+  background: var(--rhythiax-inner-surface, rgb(0 0 0 / 25%)) !important;
+  color: var(--rhythiax-text-muted, rgb(163 163 163)) !important;
+  cursor: pointer;
+  transition: color 150ms ease, border-color 150ms ease, background-color 150ms ease;
+}
+
+.rhythiax-score-replay-fullscreen-button:hover {
+  border-color: var(--rhythiax-border-strong, rgb(255 255 255 / 20%)) !important;
+  background: var(--rhythiax-nav-hover, rgb(0 0 0 / 40%)) !important;
+  color: var(--rhythiax-text-strong, white) !important;
+}
+
+.rhythiax-score-replay-fullscreen-button:focus-visible {
+  outline: 2px solid var(--rhythiax-accent, rgb(96 165 250 / 80%));
+  outline-offset: 2px;
+}
+
+/* The page's native player keeps literal utility colors active. Keep this
+   control explicit per preset so switching themes also updates the injected
+   button inside the content-script stylesheet. */
+body[data-rhythiax-theme="rhythia-reimagined"] .rhythiax-score-replay-fullscreen-button {
+  border-color: rgba(216, 180, 254, .18) !important;
+  background: #2b1d40 !important;
+  color: #c4b5d8 !important;
+}
+
+body[data-rhythiax-theme="rhythia-reimagined"] .rhythiax-score-replay-fullscreen-button:hover {
+  border-color: rgba(216, 180, 254, .30) !important;
+  background: rgba(192, 132, 252, .20) !important;
+  color: #faf5ff !important;
+}
+
+body[data-rhythiax-theme="dark"] .rhythiax-score-replay-fullscreen-button {
+  border-color: rgba(255, 255, 255, .12) !important;
+  background: #1d1f22 !important;
+  color: #9ca3af !important;
+}
+
+body[data-rhythiax-theme="dark"] .rhythiax-score-replay-fullscreen-button:hover {
+  border-color: rgba(255, 255, 255, .24) !important;
+  background: rgba(96, 165, 250, .16) !important;
+  color: #f8fafc !important;
+}
+
+body[data-rhythiax-theme="white"] .rhythiax-score-replay-fullscreen-button {
+  border-color: rgba(30, 41, 59, .14) !important;
+  background: #f5f7fa !important;
+  color: #52525b !important;
+}
+
+body[data-rhythiax-theme="white"] .rhythiax-score-replay-fullscreen-button:hover {
+  border-color: rgba(30, 41, 59, .24) !important;
+  background: rgba(82, 82, 91, .14) !important;
+  color: #18181b !important;
+}
+
+.rhythiax-score-replay-fullscreen {
+  display: flex !important;
+  width: 100vw !important;
+  height: 100vh !important;
+  height: 100dvh !important;
+  max-width: none !important;
+  max-height: none !important;
+  flex-direction: column;
+  background: var(--rhythiax-surface, #000) !important;
+}
+
+.rhythiax-score-replay-fullscreen::backdrop {
+  background: var(--rhythiax-page-bg, #000);
+}
+
+body[data-rhythiax-theme="rhythia-reimagined"] .rhythiax-score-replay-fullscreen {
+  background: #1e142d !important;
+}
+
+body[data-rhythiax-theme="rhythia-reimagined"] .rhythiax-score-replay-fullscreen::backdrop {
+  background: #140d1f;
+}
+
+body[data-rhythiax-theme="dark"] .rhythiax-score-replay-fullscreen {
+  background: #151619 !important;
+}
+
+body[data-rhythiax-theme="dark"] .rhythiax-score-replay-fullscreen::backdrop {
+  background: #0d0e10;
+}
+
+body[data-rhythiax-theme="white"] .rhythiax-score-replay-fullscreen {
+  background: #ffffff !important;
+}
+
+body[data-rhythiax-theme="white"] .rhythiax-score-replay-fullscreen::backdrop {
+  background: #eef2f7;
+}
+
+.rhythiax-score-replay-fullscreen > .relative {
+  display: flex;
+  width: 100%;
+  min-height: 0;
+  flex: 1 1 auto;
+  align-items: center;
+  justify-content: center;
+}
+
+.rhythiax-score-replay-fullscreen > .relative > [class*="aspect-video"] {
+  width: 100% !important;
+  height: 100% !important;
+  max-height: none !important;
+  aspect-ratio: auto !important;
+}
+
+.rhythiax-score-replay-fullscreen canvas {
+  width: 100% !important;
+  height: 100% !important;
+}
+
+.rhythiax-score-replay-fullscreen > [class*="border-t"][class*="p-3"] {
+  width: 100%;
+  flex: 0 0 auto;
+}
+
+@media (max-width: 640px) {
+  .rhythiax-score-replay-fullscreen-button {
+    width: 36px;
+    height: 36px;
+  }
+}

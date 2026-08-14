@@ -1,0 +1,4 @@
+/* / */
+body[data-rhythiax-page="home"] #root {
+  min-width: 0;
+}

@@ -1,0 +1,4 @@
+/* White / player profile overrides. */
+body[data-rhythiax-theme="white"][data-rhythiax-page="player"] {
+  --rhythiax-profile-surface: var(--rhythiax-surface);
+}

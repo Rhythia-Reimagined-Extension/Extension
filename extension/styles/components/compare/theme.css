@@ -1,0 +1,247 @@
+/* These elements are shared by /scores and /player. Keep their foreground and
+   surface tied to the selected preset instead of the site's dark utilities. */
+.rhythiax-score-card,
+.rhythiax-profile-box,
+.rhythiax-stats-panel,
+.rhythiax-accordion {
+   color: var(--rhythiax-text, var(--rhythiax-text-strong)) !important;
+   background: var(--rhythiax-surface) !important;
+   border-color: var(--rhythiax-border-strong) !important;
+}
+.rhythiax-card-title,
+.rhythiax-card-stat-value,
+.rhythiax-official-stat-value,
+.rhythiax-stat-value,
+.rhythiax-grade-count,
+.rhythiax-speed-bar-count,
+.rhythiax-profile-box-title,
+.rhythiax-accordion-title {
+   color: var(--rhythiax-text-strong) !important;
+}
+.rhythiax-card-stat-item,
+.rhythiax-official-stat-row,
+.rhythiax-profile-list-item,
+.rhythiax-grade-item,
+.rhythiax-compare-metric {
+   background: var(--rhythiax-inner-surface) !important;
+   border-color: var(--rhythiax-border) !important;
+}
+.rhythiax-card-stat-label,
+.rhythiax-card-date,
+.rhythiax-card-date-row,
+.rhythiax-official-stat-label,
+.rhythiax-stat-label,
+.rhythiax-profile-box-meta,
+.rhythiax-rankpath-label,
+.rhythiax-rankpath-target-label,
+.rhythiax-rankpath-status,
+.rhythiax-speed-bar-label {
+   color: var(--rhythiax-text-muted) !important;
+}
+.rhythiax-card-btn,
+.rhythiax-scores-action,
+.rhythiax-rank-history-trigger {
+   color: var(--rhythiax-text-muted) !important;
+   background: var(--rhythiax-inner-surface) !important;
+   border-color: var(--rhythiax-border-strong) !important;
+}
+.rhythiax-card-btn:hover,
+.rhythiax-scores-action:hover,
+.rhythiax-scores-action.is-active,
+.rhythiax-rank-history-trigger:hover,
+.rhythiax-rank-history-trigger:focus-visible {
+   color: var(--rhythiax-text-strong) !important;
+   border-color: var(--rhythiax-accent) !important;
+}
+.rhythiax-card-title:hover { color: var(--rhythiax-accent) !important; }
+.rhythiax-speed-chart { border-bottom-color: var(--rhythiax-chart-track) !important; }
+.rhythiax-rankpath-track,
+.rhythiax-profile-list-track { background: var(--rhythiax-chart-track) !important; }
+.rhythiax-rankpath-target-line { background: var(--rhythiax-border-strong) !important; }
+.rhythiax-accordion-header,
+.rhythiax-accordion-body,
+.rhythiax-accordion-body-inner {
+   background: var(--rhythiax-surface) !important;
+}
+.rhythiax-accordion-header:hover {
+   background: color-mix(in srgb, var(--rhythiax-accent) 10%, var(--rhythiax-surface)) !important;
+}
+body[data-rhythiax-theme] #root .rhythiax-accordion-body-inner > :not([data-rhythiax-original-header]) {
+   background: transparent !important;
+   border-color: transparent !important;
+   box-shadow: none !important;
+}
+.rhythiax-accordion-header:focus-visible {
+   outline-color: var(--rhythiax-accent) !important;
+}
+.rhythiax-accordion-arrow { color: var(--rhythiax-text-muted) !important; }
+.rhythiax-grade-item:focus-visible,
+.rhythiax-speed-bar-col:focus-visible,
+.rhythiax-card-btn:focus-visible,
+.rhythiax-card-title:focus-visible,
+.rhythiax-profile-list-item:focus-visible { outline-color: var(--rhythiax-accent) !important; }
+
+/* Score outcomes keep their semantic meaning in every preset. */
+.rhythiax-stat-fullcombo { color: var(--rhythiax-success) !important; }
+.rhythiax-stat-miss { color: var(--rhythiax-danger) !important; }
+
+/* White needs dark text not only on injected cards, but also on the original
+   player markup which stays under body.dark on the live site. */
+body[data-rhythiax-theme="white"] #root {
+   color: var(--rhythiax-text-strong) !important;
+}
+body[data-rhythiax-theme="white"] #root [class*="text-white"],
+body[data-rhythiax-theme="white"] #root [class*="text-neutral-100"],
+body[data-rhythiax-theme="white"] #root [class*="text-neutral-200"] {
+   color: #18181b !important;
+}
+body[data-rhythiax-theme="white"] #root [class*="text-neutral-300"],
+body[data-rhythiax-theme="white"] #root [class*="text-neutral-400"],
+body[data-rhythiax-theme="white"] #root [class*="text-neutral-500"] {
+   color: #3f3f46 !important;
+}
+body[data-rhythiax-theme="white"] .rhythiax-score-card,
+body[data-rhythiax-theme="white"] .rhythiax-profile-box,
+body[data-rhythiax-theme="white"] .rhythiax-stats-panel,
+body[data-rhythiax-theme="white"] .rhythiax-accordion {
+   box-shadow: 0 3px 12px rgba(51,65,85,.08) !important;
+}
+body[data-rhythiax-theme="white"] .rhythiax-card-acc-label,
+body[data-rhythiax-theme="white"] .rhythiax-stat-fullcombo { color: #166534 !important; }
+body[data-rhythiax-theme="white"] .rhythiax-stat-miss { color: #b91c1c !important; }
+body[data-rhythiax-theme="white"] .rhythiax-profile-list-label,
+body[data-rhythiax-theme="white"] .rhythiax-profile-list-share { filter: saturate(.85) brightness(.72); }
+
+/* Dark and Reimagined retain their distinct accents while using the same
+   readable neutral text hierarchy. */
+body[data-rhythiax-theme="dark"],
+body[data-rhythiax-theme="rhythia-reimagined"] {
+   --rhythiax-text-strong: #f8fafc;
+   color-scheme: dark;
+}
+body[data-rhythiax-theme="white"] {
+   color-scheme: light;
+}
+
+/* Player Compare follows the same palette as the profile rather than
+   introducing a separate purple/black mini-theme. */
+body[data-rhythiax-theme="rhythia-reimagined"] {
+   --rhythiax-compare-surface: var(--rhythiax-surface, #1b1a24);
+   --rhythiax-compare-text: #f8fafc;
+   --rhythiax-compare-active-text: #eee9ff;
+   --rhythiax-compare-heading: #e4b7ff;
+   --rhythiax-compare-label: #c084fc;
+}
+body[data-rhythiax-theme="dark"] {
+   --rhythiax-compare-surface: var(--rhythiax-surface, #151619);
+   --rhythiax-compare-text: #f8fafc;
+   --rhythiax-compare-active-text: #dbeafe;
+   --rhythiax-compare-heading: #8abff2;
+   --rhythiax-compare-label: #60a5fa;
+}
+body[data-rhythiax-theme="white"] {
+   --rhythiax-compare-surface: var(--rhythiax-surface, #fff);
+   --rhythiax-compare-text: #18181b;
+   --rhythiax-compare-active-text: #4c1d95;
+   --rhythiax-compare-heading: #27272a;
+   --rhythiax-compare-label: #27272a;
+}
+body[data-rhythiax-theme="white"] .rhythiax-compare-dialog {
+   border-color: rgba(24, 24, 27, .14);
+   box-shadow: 0 14px 36px rgba(24, 24, 27, .12);
+}
+body[data-rhythiax-theme="white"] .rhythiax-compare-title,
+body[data-rhythiax-theme="white"] .rhythiax-compare-maps h3 {
+   color: #18181b;
+}
+body[data-rhythiax-theme="white"] .rhythiax-compare-title small,
+body[data-rhythiax-theme="white"] .rhythiax-compare-maps p,
+body[data-rhythiax-theme="white"] .rhythiax-compare-map-row span {
+   color: #52525b;
+}
+body[data-rhythiax-theme="white"] .rhythiax-compare-metric {
+   color: #27272a;
+   border-color: rgba(24, 24, 27, .10);
+   background: var(--rhythiax-inner-surface, #f3f4f6);
+}
+body[data-rhythiax-theme="white"] .rhythiax-compare-metric strong { color: #6f6285; }
+body[data-rhythiax-theme="white"] .rhythiax-compare-metric span,
+body[data-rhythiax-theme="white"] .rhythiax-compare-map-row strong,
+body[data-rhythiax-theme="white"] .rhythiax-compare-map-row b { color: #27272a; }
+body[data-rhythiax-theme="white"] .rhythiax-compare-map-row { border-top-color: rgba(24, 24, 27, .10); }
+body[data-rhythiax-theme="white"] .rhythiax-compare-close { background: #f3f4f6; }
+body[data-rhythiax-theme="white"] .rhythiax-compare-summary-card { border-color: rgba(24,24,27,.10); background: rgba(24,24,27,.035); }
+body[data-rhythiax-theme="white"] .rhythiax-compare-summary-card strong { color: #27272a; border-color: rgba(76, 29, 149, .16); border-left-color: rgba(76, 29, 149, .52); background: rgba(24, 24, 27, .035); }
+
+/* The comparison dialog is based on the approved standalone mockup. Keep its
+   visual language independent from the profile surfaces around it. */
+body[data-rhythiax-theme="dark"] .rhythiax-compare-modal {
+   --rhythiax-compare-bg: #0d0c12;
+   --rhythiax-compare-surface: #17151f;
+   --rhythiax-compare-surface-raised: #1c1a25;
+   --rhythiax-compare-surface-soft: rgba(255,255,255,.035);
+   --rhythiax-compare-border: rgba(255,255,255,.12);
+   --rhythiax-compare-border-soft: rgba(255,255,255,.08);
+   --rhythiax-compare-text: #f8fafc;
+   --rhythiax-compare-muted: #a8a2b3;
+   --rhythiax-compare-quiet: #767181;
+   --rhythiax-compare-accent: #ad96eb;
+   --rhythiax-compare-better: #79c895;
+   --rhythiax-compare-better-bg: rgba(70,150,94,.13);
+   --rhythiax-compare-similar: #aaa4b5;
+   --rhythiax-compare-similar-bg: rgba(160,160,170,.10);
+   --rhythiax-compare-behind: #e08c8c;
+   --rhythiax-compare-behind-bg: rgba(165,68,68,.13);
+   --rhythiax-compare-glow: #29233c;
+    --rhythiax-compare-shadow: rgba(0,0,0,.34);
+     --rhythiax-compare-heading: #8abff2;
+     --rhythiax-compare-label: #60a5fa;
+    --rhythiax-compare-control-border: rgba(255,255,255,.16);
+}
+body[data-rhythiax-theme="rhythia-reimagined"] .rhythiax-compare-modal {
+   --rhythiax-compare-bg: #110d18;
+   --rhythiax-compare-surface: #21172b;
+   --rhythiax-compare-surface-raised: #2b1e38;
+   --rhythiax-compare-surface-soft: rgba(221,190,255,.045);
+   --rhythiax-compare-border: rgba(221,190,255,.18);
+   --rhythiax-compare-border-soft: rgba(221,190,255,.10);
+   --rhythiax-compare-text: #fffaff;
+   --rhythiax-compare-muted: #c2b4ca;
+   --rhythiax-compare-quiet: #8f7c99;
+   --rhythiax-compare-accent: #d19cff;
+   --rhythiax-compare-better: #82d59d;
+   --rhythiax-compare-better-bg: rgba(70,160,98,.16);
+   --rhythiax-compare-similar: #b9a9c1;
+   --rhythiax-compare-similar-bg: rgba(190,170,200,.11);
+   --rhythiax-compare-behind: #ed9797;
+   --rhythiax-compare-behind-bg: rgba(180,68,92,.16);
+   --rhythiax-compare-glow: #44235e;
+    --rhythiax-compare-shadow: rgba(25,5,35,.45);
+     --rhythiax-compare-heading: #e4b7ff;
+     --rhythiax-compare-label: #c084fc;
+    --rhythiax-compare-control-border: rgba(255,255,255,.18);
+}
+body[data-rhythiax-theme="white"] .rhythiax-compare-modal {
+   --rhythiax-compare-bg: #f1f2f5;
+   --rhythiax-compare-surface: #fff;
+   --rhythiax-compare-surface-raised: #f3f4f6;
+   --rhythiax-compare-surface-soft: rgba(24,24,27,.025);
+   --rhythiax-compare-border: rgba(24,24,27,.13);
+   --rhythiax-compare-border-soft: rgba(24,24,27,.08);
+   --rhythiax-compare-text: #202024;
+   --rhythiax-compare-muted: #62616b;
+   --rhythiax-compare-quiet: #85838d;
+   --rhythiax-compare-accent: #7254a5;
+   --rhythiax-compare-better: #267344;
+   --rhythiax-compare-better-bg: rgba(46,125,70,.10);
+   --rhythiax-compare-similar: #77747d;
+   --rhythiax-compare-similar-bg: rgba(24,24,27,.06);
+   --rhythiax-compare-behind: #b43c3c;
+   --rhythiax-compare-behind-bg: rgba(180,60,60,.09);
+   --rhythiax-compare-glow: #ded5ef;
+    --rhythiax-compare-shadow: rgba(50,50,70,.14);
+     --rhythiax-compare-heading: #27272a;
+     --rhythiax-compare-label: #27272a;
+    --rhythiax-compare-control-border: rgba(24,24,27,.16);
+}
+

@@ -1,0 +1,110 @@
+/* Title Progression has its own white-on-dark defaults. Keep the white preset
+   readable without flattening the tier colors in the progress path. */
+body[data-rhythiax-theme="white"] .rhythiax-accordion-title {
+   color: #27272a !important;
+}
+body[data-rhythiax-theme="white"] .rhythiax-accordion-arrow {
+   color: #52525b !important;
+}
+body[data-rhythiax-theme="white"] .rhythiax-title-progression-icon {
+   border-color: #52525b;
+   color: #52525b;
+   background: radial-gradient(circle at 35% 25%, rgba(255, 255, 255, 0.75), rgba(82, 82, 91, 0.10) 58%, transparent);
+   box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.8), 0 0 0 2px rgba(82, 82, 91, 0.08), 0 0 8px rgba(82, 82, 91, 0.16);
+}
+body[data-rhythiax-theme="white"] .rhythiax-title-progression-icon[data-crown-mode="2d"] {
+   background: transparent;
+   box-shadow: none;
+}
+body[data-rhythiax-theme="white"] .rhythiax-accordion-header {
+   background: var(--rhythiax-surface) !important;
+}
+body[data-rhythiax-theme="white"] .rhythiax-accordion-header:hover {
+   background: color-mix(in srgb, var(--rhythiax-accent) 10%, var(--rhythiax-surface)) !important;
+}
+body[data-rhythiax-theme="white"] .rhythiax-rankpath-track {
+   background: #d4d4d8 !important;
+}
+body[data-rhythiax-theme="white"] .rhythiax-rankpath-track-row-achieved .rhythiax-rankpath-segment {
+   filter: none;
+   background: rgba(39, 39, 42, 0.08) !important;
+}
+body[data-rhythiax-theme="white"] .rhythiax-rankpath-track-row-achieved .rhythiax-rankpath-segment:nth-child(1) .rhythiax-rankpath-segment-fill { background: #ababb3 !important; }
+body[data-rhythiax-theme="white"] .rhythiax-rankpath-track-row-achieved .rhythiax-rankpath-segment:nth-child(2) .rhythiax-rankpath-segment-fill { background: #9d9da6 !important; }
+body[data-rhythiax-theme="white"] .rhythiax-rankpath-track-row-achieved .rhythiax-rankpath-segment:nth-child(3) .rhythiax-rankpath-segment-fill { background: #8f8f99 !important; }
+body[data-rhythiax-theme="white"] .rhythiax-rankpath-track-row-achieved .rhythiax-rankpath-segment:nth-child(4) .rhythiax-rankpath-segment-fill { background: #80808a !important; }
+body[data-rhythiax-theme="white"] .rhythiax-rankpath-track-row-achieved .rhythiax-rankpath-segment:nth-child(5) .rhythiax-rankpath-segment-fill { background: #71717a !important; }
+body[data-rhythiax-theme="white"] .rhythiax-rankpath-label {
+   color: #3f3f46 !important;
+}
+body[data-rhythiax-theme="white"] .rhythiax-rankpath-target-label {
+   color: #52525b !important;
+}
+body[data-rhythiax-theme="white"] .rhythiax-rankpath-target-line {
+   background: rgba(39, 39, 42, 0.20) !important;
+}
+body[data-rhythiax-theme="white"] .rhythiax-rankpath-crown {
+   border-color: #a1a1aa;
+   color: #a1a1aa;
+   filter: none;
+   box-shadow: none;
+}
+body[data-rhythiax-theme="white"] .rhythiax-rankpath-target-achieved .rhythiax-rankpath-crown {
+   border-color: #52525b;
+   color: #52525b;
+   background: rgba(82, 82, 91, 0.08);
+   filter: drop-shadow(0 0 7px rgba(82, 82, 91, 0.35));
+   box-shadow: 0 0 0 2px rgba(82, 82, 91, 0.12), 0 0 10px rgba(82, 82, 91, 0.20);
+}
+body[data-rhythiax-theme="white"] .rhythiax-rankpath-target-achieved .rhythiax-rankpath-crown svg {
+    fill: rgba(82, 82, 91, 0.20);
+}
+body[data-rhythiax-theme="white"] .rhythiax-rankpath-target[data-crown-mode="3d"] .rhythiax-rankpath-crown {
+    border-color: #52525b;
+    color: #52525b;
+    background: radial-gradient(circle at 35% 25%, rgba(255, 255, 255, 0.74), rgba(82, 82, 91, 0.10) 54%, rgba(82, 82, 91, 0.04));
+    filter: drop-shadow(0 0 6px rgba(82, 82, 91, 0.28));
+    box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.78), 0 0 0 2px rgba(82, 82, 91, 0.10), 0 0 10px rgba(82, 82, 91, 0.16);
+}
+body[data-rhythiax-theme="white"] .rhythiax-rankpath-target[data-crown-mode="3d"] .rhythiax-rankpath-crown::before {
+    opacity: 0.20;
+}
+body[data-rhythiax-theme="white"] .rhythiax-rankpath-target[data-crown-mode="3d"] .rhythiax-rankpath-crown::after {
+    opacity: 0;
+}
+body[data-rhythiax-theme="white"] .rhythiax-rankpath-target[data-crown-mode="2d"] .rhythiax-rankpath-crown {
+    border-color: #71717a;
+    color: #52525b;
+    background: transparent;
+    box-shadow: none;
+    filter: none;
+}
+body[data-rhythiax-theme="white"] .rhythiax-rankpath-label-past {
+   color: #3f3f46 !important;
+}
+body[data-rhythiax-theme="white"] .rhythiax-rankpath-status {
+   color: #3f3f46 !important;
+}
+body[data-rhythiax-theme="white"] .rhythiax-rankpath-bar.is-grandmaster .rhythiax-rankpath-segment {
+   background: rgba(39, 39, 42, 0.08) !important;
+}
+body[data-rhythiax-theme="white"] .rhythiax-rankpath-bar.is-grandmaster .rhythiax-rankpath-segment-fill {
+   background: #71717a !important;
+   filter: none;
+}
+body[data-rhythiax-theme="white"] .rhythiax-rankpath-bar.is-grandmaster .rhythiax-rankpath-label,
+body[data-rhythiax-theme="white"] .rhythiax-rankpath-bar.is-grandmaster .rhythiax-rankpath-target-label,
+body[data-rhythiax-theme="white"] .rhythiax-rankpath-bar.is-grandmaster .rhythiax-rankpath-status {
+   color: #27272a !important;
+}
+/* Utility text colors used by the official cards need the same treatment. */
+body[data-rhythiax-theme="white"] #root [class*="text-neutral-400"],
+body[data-rhythiax-theme="white"] #root [class*="text-neutral-500"],
+body[data-rhythiax-theme="white"] #root [class*="text-neutral-300"] {
+   color: #3f3f46 !important;
+}
+body[data-rhythiax-theme="white"] #root [class*="text-neutral-200"],
+body[data-rhythiax-theme="white"] #root [class*="text-neutral-100"] {
+   color: #27272a !important;
+}
+

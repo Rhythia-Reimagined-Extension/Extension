@@ -1,0 +1,148 @@
+/* =============================================
+   Official-page theme bridge
+
+   The Rhythia app keeps body.dark enabled for every preset and uses literal
+   Tailwind colors in its markup. These rules translate the shared shell and
+   content surfaces to the selected Rhythia X palette without changing the
+   page's layout or interactions.
+   ============================================= */
+body[data-rhythiax-theme] {
+  background-color: var(--rhythiax-page-bg) !important;
+  color: var(--rhythiax-text) !important;
+}
+body[data-rhythiax-theme] #root,
+body[data-rhythiax-theme] #root > div,
+body[data-rhythiax-theme] #root > div > div.mx-auto {
+  background-color: var(--rhythiax-page-bg) !important;
+  color: var(--rhythiax-text) !important;
+}
+
+/* Navigation and the top hero are shared across all routes. */
+body[data-rhythiax-theme] #root .fixed.top-0.left-0.w-full[class*="h-[60px]"] {
+  background: var(--rhythiax-nav-surface) !important;
+  background-image: none !important;
+  border-bottom: 1px solid var(--rhythiax-border-strong) !important;
+  box-shadow: 0 8px 28px color-mix(in srgb, var(--rhythiax-page-bg) 42%, transparent) !important;
+}
+body[data-rhythiax-theme] #root .fixed.top-0.left-0.w-full[class*="h-[60px]"] a,
+body[data-rhythiax-theme] #root .fixed.top-0.left-0.w-full[class*="h-[60px]"] button {
+  color: var(--rhythiax-text) !important;
+}
+body[data-rhythiax-theme] #root .fixed.top-0.left-0.w-full[class*="h-[60px]"] a:hover,
+body[data-rhythiax-theme] #root .fixed.top-0.left-0.w-full[class*="h-[60px]"] button:hover,
+body[data-rhythiax-theme] #root .fixed.top-0.left-0.w-full[class*="h-[60px]"] [class*="bg-[#2F4184"]] {
+  background: var(--rhythiax-nav-hover) !important;
+}
+body[data-rhythiax-theme] #root .top-\[60px\].left-0.overflow-hidden {
+  opacity: .22 !important;
+  filter: saturate(.7) !important;
+}
+
+/* Shared content panels, including maps, collections and wiki cards. */
+body[data-rhythiax-theme] #root [class*="rounded-xl"][class*="border-white/10"][class*="bg-[#111214]"],
+body[data-rhythiax-theme] #root [class*="rounded-xl"][class*="border-white/10"][class*="bg-[#1a1b1c]"],
+body[data-rhythiax-theme] #root [class*="rounded-xl"][class*="border-white/10"][class*="bg-[#0e0e10]"] {
+  background-color: var(--rhythiax-surface) !important;
+  border-color: var(--rhythiax-border) !important;
+  color: var(--rhythiax-text) !important;
+  box-shadow: 0 8px 24px color-mix(in srgb, var(--rhythiax-page-bg) 30%, transparent) !important;
+}
+body[data-rhythiax-theme] #root [class*="border-white/10"][class*="bg-black/15"],
+body[data-rhythiax-theme] #root [class*="border-white/10"][class*="bg-black/20"] {
+  background-color: var(--rhythiax-input-surface) !important;
+  border-color: var(--rhythiax-border) !important;
+}
+body[data-rhythiax-theme] #root input,
+body[data-rhythiax-theme] #root select,
+body[data-rhythiax-theme] #root textarea {
+  color: var(--rhythiax-text) !important;
+  background-color: var(--rhythiax-input-surface) !important;
+  border-color: var(--rhythiax-border-strong) !important;
+}
+body[data-rhythiax-theme] #root input::placeholder,
+body[data-rhythiax-theme] #root textarea::placeholder {
+  color: var(--rhythiax-text-muted) !important;
+  opacity: .72 !important;
+}
+body[data-rhythiax-theme] #root [class*="hover:bg-[#1d1e20]"]:hover,
+body[data-rhythiax-theme] #root [class*="hover:bg-[#17181A]"]:hover,
+body[data-rhythiax-theme] #root [class*="hover:bg-[#2D2F33]"]:hover {
+  background-color: var(--rhythiax-accent-soft) !important;
+}
+
+/* Text hierarchy for literal utility classes. Image tiles get their own
+   exception below so their white overlay text remains readable in White. */
+body[data-rhythiax-theme] #root [class*="text-white/65"],
+body[data-rhythiax-theme] #root [class*="text-white/60"],
+body[data-rhythiax-theme] #root [class*="text-white/55"],
+body[data-rhythiax-theme] #root [class*="text-white/50"] {
+  color: var(--rhythiax-text-muted) !important;
+}
+body[data-rhythiax-theme="white"] #root [class*="text-white"],
+body[data-rhythiax-theme="white"] #root [class*="text-neutral-100"],
+body[data-rhythiax-theme="white"] #root [class*="text-neutral-200"] {
+  color: var(--rhythiax-text-strong) !important;
+}
+body[data-rhythiax-theme="white"] #root [class*="text-neutral-300"],
+body[data-rhythiax-theme="white"] #root [class*="text-neutral-400"],
+body[data-rhythiax-theme="white"] #root [class*="text-neutral-500"] {
+  color: var(--rhythiax-text-muted) !important;
+}
+
+/* Map/detail tiles retain a cinematic overlay in all themes. */
+body[data-rhythiax-theme] #root [class*="aspect-square"][class*="overflow-hidden"] {
+  background-color: var(--rhythiax-surface) !important;
+  border-color: color-mix(in srgb, var(--rhythiax-accent) 55%, var(--rhythiax-border)) !important;
+}
+body[data-rhythiax-theme] #root [class*="aspect-square"][class*="overflow-hidden"] [class*="from-[#111214]"] {
+  --tw-gradient-from: var(--rhythiax-image-overlay) !important;
+}
+body[data-rhythiax-theme] #root [class*="aspect-square"][class*="overflow-hidden"] [class*="bg-black/35"] {
+  background-color: color-mix(in srgb, var(--rhythiax-page-bg) 45%, transparent) !important;
+  border-color: rgba(255,255,255,.16) !important;
+}
+body[data-rhythiax-theme="white"] #root [class*="aspect-square"][class*="overflow-hidden"] [class*="text-white"],
+body[data-rhythiax-theme="white"] #root [class*="aspect-square"][class*="overflow-hidden"] [class*="text-white/"] {
+  color: #ffffff !important;
+}
+
+/* Footer and pagination should feel like part of the same surface system. */
+body[data-rhythiax-theme] #root nav[role="navigation"],
+body[data-rhythiax-theme] #root nav[aria-label="pagination"] {
+  background-color: var(--rhythiax-surface) !important;
+  border-color: var(--rhythiax-border) !important;
+  color: var(--rhythiax-text) !important;
+}
+body[data-rhythiax-theme] #root nav a:hover,
+body[data-rhythiax-theme] #root nav button:hover {
+  background-color: var(--rhythiax-accent-soft) !important;
+  color: var(--rhythiax-text-strong) !important;
+}
+body[data-rhythiax-theme="white"] #root > div > div:last-child {
+  color: var(--rhythiax-text-muted) !important;
+}
+
+/* Preserve the intended visual identity of each preset. */
+body[data-rhythiax-theme="dark"] #root [class*="bg-blue-500/10"],
+body[data-rhythiax-theme="dark"] #root [class*="bg-blue-500/20"] {
+  background-color: var(--rhythiax-accent-soft) !important;
+}
+body[data-rhythiax-theme="rhythia-reimagined"] #root [class*="bg-blue-500/10"],
+body[data-rhythiax-theme="rhythia-reimagined"] #root [class*="bg-blue-500/20"] {
+  background-color: var(--rhythiax-accent-soft) !important;
+}
+body[data-rhythiax-theme="white"] #root [class*="bg-blue-500/10"],
+body[data-rhythiax-theme="white"] #root [class*="bg-blue-500/20"] {
+  background-color: var(--rhythiax-accent-soft) !important;
+  color: #4c1d95 !important;
+}
+
+@media (max-width: 767px) {
+  body[data-rhythiax-theme] #root [class*="aspect-square"][class*="overflow-hidden"] [class*="text-sm"] {
+    font-size: 11px !important;
+  }
+  body[data-rhythiax-theme] #root [class*="aspect-square"][class*="overflow-hidden"] [class*="text-xs"] {
+     font-size: 10px !important;
+   }
+ }
+

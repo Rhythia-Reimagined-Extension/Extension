@@ -1,0 +1,5 @@
+/* Dark / player profile overrides. Shared profile layout lives in
+   styles/components/profile-box.css. */
+body[data-rhythiax-theme="dark"][data-rhythiax-page="player"] {
+  --rhythiax-profile-surface: var(--rhythiax-surface);
+}

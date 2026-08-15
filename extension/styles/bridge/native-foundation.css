@@ -1,0 +1,154 @@
+/* =============================================
+   Official pages — shared home visual system
+   The live site uses Tailwind utility classes and keeps `body.dark` enabled
+   even in light mode, so these selectors intentionally sit at the end of the
+   stylesheet and normalize the original page as one coherent surface.
+   ============================================= */
+body[data-rhythiax-theme] {
+   --rhythiax-home-page: var(--rhythiax-page-bg);
+   --rhythiax-home-surface: var(--rhythiax-surface);
+   --rhythiax-home-inner: var(--rhythiax-inner-surface);
+   --rhythiax-home-line: var(--rhythiax-border);
+   background: var(--rhythiax-home-page) !important;
+   color: var(--rhythiax-text) !important;
+}
+body[data-rhythiax-theme] #root,
+body[data-rhythiax-theme] #root > div {
+   min-height: 100vh;
+   background: var(--rhythiax-home-page) !important;
+   color: var(--rhythiax-text) !important;
+}
+body[data-rhythiax-theme] #root > div > div.mx-auto {
+   position: relative;
+   z-index: 0;
+   color: var(--rhythiax-text) !important;
+}
+body[data-rhythiax-theme] #root [class*="border-white/10"] {
+   border-color: var(--rhythiax-home-line) !important;
+}
+body[data-rhythiax-theme] #root [class*="bg-[#111214]"],
+body[data-rhythiax-theme] #root [class*="bg-[#1a1b1c"],
+body[data-rhythiax-theme] #root [class*="bg-[#141516"] {
+   background: var(--rhythiax-home-surface) !important;
+}
+body[data-rhythiax-theme] #root [class*="bg-black/45"] {
+   background: color-mix(in srgb, var(--rhythiax-home-page) 72%, transparent) !important;
+}
+body[data-rhythiax-theme] #root [class*="text-neutral-200"],
+body[data-rhythiax-theme] #root [class*="text-neutral-300"],
+body[data-rhythiax-theme] #root [class*="text-white"] {
+   color: var(--rhythiax-text) !important;
+}
+body[data-rhythiax-theme] #root [class*="text-neutral-400"],
+body[data-rhythiax-theme] #root [class*="text-white/60"],
+body[data-rhythiax-theme] #root [class*="text-white/65"] {
+   color: var(--rhythiax-text-muted) !important;
+}
+body[data-rhythiax-theme] #root a[class*="text-blue-500"],
+body[data-rhythiax-theme] #root a[class*="text-blue-400"] {
+   color: var(--rhythiax-accent) !important;
+}
+body[data-rhythiax-theme] #root .fixed.top-0.left-0.w-full[class*="h-[60px]"] {
+   background-image: none !important;
+   background-color: color-mix(in srgb, var(--rhythiax-home-surface) 94%, transparent) !important;
+   border-bottom: 1px solid var(--rhythiax-home-line) !important;
+   box-shadow: 0 10px 30px color-mix(in srgb, var(--rhythiax-home-page) 30%, transparent) !important;
+   backdrop-filter: blur(18px);
+}
+body[data-rhythiax-theme] #root .fixed.top-0.left-0.w-full[class*="h-[60px]"] [class*="bg-[#2F4184"] {
+   background: color-mix(in srgb, var(--rhythiax-accent) 14%, var(--rhythiax-home-inner)) !important;
+}
+body[data-rhythiax-theme] #root .fixed.top-0.left-0.w-full[class*="h-[60px]"] a:hover,
+body[data-rhythiax-theme] #root .fixed.top-0.left-0.w-full[class*="h-[60px]"] button:hover {
+   background: color-mix(in srgb, var(--rhythiax-accent) 22%, transparent) !important;
+}
+body[data-rhythiax-theme] #root [class*="rounded-xl"][class*="bg-[#111214"] {
+   overflow: hidden;
+   box-shadow: 0 12px 30px color-mix(in srgb, var(--rhythiax-home-page) 22%, transparent) !important;
+}
+body[data-rhythiax-theme] #root [class*="rounded-xl"][class*="bg-[#111214"]:hover {
+   border-color: color-mix(in srgb, var(--rhythiax-accent) 38%, var(--rhythiax-home-line)) !important;
+}
+body[data-rhythiax-theme] #root [class*="border-dashed"] {
+   border-color: var(--rhythiax-home-line) !important;
+}
+
+/* Light mode is deliberately calm: white cards on a cool paper background,
+   with violet reserved for links and actions. */
+body[data-rhythiax-theme="white"] {
+   --rhythiax-home-page: #eef2f7;
+   --rhythiax-home-surface: #ffffff;
+   --rhythiax-home-inner: #f5f7fa;
+   --rhythiax-home-line: rgba(30, 41, 59, .13);
+}
+body[data-rhythiax-theme="white"] #root [class*="bg-neutral-950"],
+body[data-rhythiax-theme="white"] #root [class*="bg-[#0a0a0a"] {
+   background: var(--rhythiax-home-page) !important;
+}
+body[data-rhythiax-theme="white"] #root [class*="border-neutral-950"] {
+   border-color: var(--rhythiax-home-line) !important;
+}
+body[data-rhythiax-theme="white"] #root [class*="bg-white/15"] {
+   background: rgba(30, 41, 59, .07) !important;
+}
+body[data-rhythiax-theme="white"] #root [class*="bg-blue-500/20"] {
+   background: color-mix(in srgb, var(--rhythiax-accent) 10%, white) !important;
+   color: #4c1d95 !important;
+}
+body[data-rhythiax-theme="white"] #root [class*="from-[#0a0a0a"] {
+   --tw-gradient-from: #eef2f7 !important;
+}
+
+/* Reimagined adds depth through a restrained violet glow, not gradients on
+   every card. This keeps dense map and player sections easy to scan. */
+body[data-rhythiax-theme="rhythia-reimagined"] {
+   --rhythiax-home-page: var(--rhythiax-page-bg);
+   --rhythiax-home-surface: var(--rhythiax-surface);
+   --rhythiax-home-inner: var(--rhythiax-inner-surface);
+   --rhythiax-home-line: var(--rhythiax-border);
+   background-image: radial-gradient(circle at 50% -12rem, color-mix(in srgb, var(--rhythiax-accent) 24%, transparent), transparent 34rem) !important;
+}
+body[data-rhythiax-theme="rhythia-reimagined"] #root,
+body[data-rhythiax-theme="rhythia-reimagined"] #root > div {
+   background: transparent !important;
+}
+body[data-rhythiax-theme="rhythia-reimagined"] #root [class*="bg-gradient-to-b"] {
+   --tw-gradient-from: color-mix(in srgb, var(--rhythiax-page-bg) 88%, transparent) !important;
+   --tw-gradient-to: color-mix(in srgb, var(--rhythiax-page-bg) 8%, transparent) !important;
+}
+body[data-rhythiax-theme="rhythia-reimagined"] #root [class*="bg-blue-500/20"] {
+   background: color-mix(in srgb, var(--rhythiax-accent) 20%, var(--rhythiax-surface)) !important;
+   color: #f3e8ff !important;
+}
+
+@media (max-width: 767px) {
+   body[data-rhythiax-theme] #root > div > div.mx-auto {
+      padding-inline: 14px !important;
+   }
+   body[data-rhythiax-theme] #root .fixed.top-0.left-0.w-full[class*="h-[60px]"] {
+      padding-inline: 4px;
+   }
+}
+
+/* =============================================
+   Official site theme bridge
+
+   Rhythia's pages are rendered with utility classes rather than semantic
+   components. Keep this bridge at the end of the sheet so every route gets
+   the same canvas, navigation, surfaces, controls and typography hierarchy.
+   ============================================= */
+body[data-rhythiax-theme] {
+   color-scheme: dark;
+   overflow-x: hidden;
+   background-color: var(--rhythiax-page-bg) !important;
+}
+body[data-rhythiax-theme] #root,
+body[data-rhythiax-theme] #root > div {
+   min-height: 100vh;
+   background-color: var(--rhythiax-page-bg) !important;
+   color: var(--rhythiax-text) !important;
+}
+body[data-rhythiax-theme] #root > div > div.mx-auto {
+   isolation: isolate;
+}
+

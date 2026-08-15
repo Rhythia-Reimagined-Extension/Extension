@@ -1,0 +1,341 @@
+/* Deliberately scoped to the number Easter egg module. */
+.rhythiax-profile-crown {
+  position: absolute;
+  z-index: 3;
+  top: 0.45rem;
+  left: 50%;
+  width: 4.6rem;
+  height: 3.45rem;
+  color: #f6c453;
+  pointer-events: none;
+  transform: translate(-50%, -100%);
+  filter: drop-shadow(0 0 0.35rem rgba(246, 196, 83, 0.7))
+    drop-shadow(0 0 1rem rgba(246, 170, 45, 0.38));
+  animation: rhythiax-profile-crown-float 12s ease-in-out infinite;
+}
+
+.rhythiax-profile-crown svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  fill: currentColor;
+}
+
+.rhythiax-profile-crown__base {
+  fill: #d99d2b;
+}
+
+@keyframes rhythiax-profile-crown-float {
+  0%, 100% { transform: translate(-50%, -100%); }
+  50% { transform: translate(-50%, calc(-100% - 0.65rem)); }
+}
+
+/* Player-specific avatar easter eggs. The host is the native avatar wrapper,
+   so the effects follow the site's mobile and desktop avatar sizes. */
+.rhythiax-profile-avatar-effect-host {
+  position: relative;
+  overflow: visible !important;
+}
+
+.rhythiax-profile-avatar-effect {
+  position: absolute;
+  z-index: 4;
+  left: 50%;
+  pointer-events: none;
+  transform: translateX(-50%);
+}
+
+/* 5602 / Brecken: readable face, offset extrusion, and a clipped background
+   reflection. The reflection cannot paint outside the single label border. */
+.rhythiax-profile-avatar-effect--uwu {
+  bottom: calc(100% - 0.5rem);
+  width: min(15rem, 78vw);
+  height: 6.5rem;
+}
+
+.rhythiax-profile-uwu-label {
+  position: absolute;
+  top: 0.4rem;
+  left: 50%;
+  width: max-content;
+  color: #fff4ff;
+  font-size: clamp(1.9rem, 4.2vw, 3rem);
+  font-weight: 950;
+  letter-spacing: -0.08em;
+  line-height: 1;
+  text-rendering: geometricPrecision;
+  -webkit-font-smoothing: antialiased;
+  filter: drop-shadow(0 0.6rem 0.45rem rgba(0, 0, 0, 0.32));
+  transform: translateX(-50%) rotate(-7deg) skewX(-8deg) perspective(500px) rotateY(-10deg);
+  transform-style: preserve-3d;
+  transform-origin: 50% 70%;
+  animation: rhythiax-profile-uwu-tilt 5.8s ease-in-out infinite;
+}
+
+.rhythiax-profile-uwu-label::before {
+  position: absolute;
+  z-index: -1;
+  inset: 0;
+  color: #7641ab;
+  content: 'UwU...';
+  text-shadow: 1px 1px 0 #6c3b9c, 2px 2px 0 #65368f, 3px 3px 0 #5c3184,
+    4px 4px 0 #4e2a72, 5px 5px 0 #3d205a, 7px 8px 9px rgba(25, 9, 40, 0.65);
+  transform: translate3d(10px, 12px, -8px);
+}
+
+.rhythiax-profile-uwu-face {
+  position: relative;
+  z-index: 1;
+  display: block;
+  overflow: hidden;
+  padding: 0.44rem 0.88rem 0.56rem;
+  border: 0;
+  border-radius: 17px 13px 19px 10px;
+  background: transparent;
+  isolation: isolate;
+}
+
+.rhythiax-profile-uwu-face::after {
+  position: absolute;
+  z-index: 0;
+  top: -30%;
+  bottom: -30%;
+  left: -42%;
+  width: 30%;
+  background: linear-gradient(110deg, transparent 12%, rgba(255, 255, 255, 0.58) 47%, rgba(255, 178, 238, 0.2) 54%, transparent 86%);
+  content: '';
+  opacity: 0.72;
+  transform: translateX(-220%) skewX(-18deg);
+  animation: rhythiax-profile-uwu-glint 4.8s ease-in-out infinite;
+}
+
+.rhythiax-profile-uwu-text {
+  position: relative;
+  z-index: 1;
+  display: block;
+  background: linear-gradient(135deg, #ffb5e4 0%, #e890ef 46%, #a778ff 100%);
+  background-clip: text;
+  -webkit-background-clip: text;
+  color: transparent;
+  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.18), 0 0 14px rgba(255, 130, 224, 0.58);
+}
+
+.rhythiax-profile-uwu-spark {
+  position: absolute;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: #ffd9fb;
+  box-shadow: 0 0 12px #ff9de5;
+  animation: rhythiax-profile-uwu-spark-float 2.9s ease-in-out infinite;
+}
+
+.rhythiax-profile-uwu-spark--a { top: 0.7rem; left: 1.75rem; }
+.rhythiax-profile-uwu-spark--b { top: 4rem; right: 1.45rem; width: 4px; height: 4px; animation-delay: -1s; }
+.rhythiax-profile-uwu-spark--c { bottom: 0.95rem; left: 3.35rem; width: 3px; height: 3px; animation-delay: -1.7s; }
+
+@keyframes rhythiax-profile-uwu-glint {
+  0%, 42% { transform: translateX(-220%) skewX(-18deg); }
+  68%, 100% { transform: translateX(520%) skewX(-18deg); }
+}
+
+@keyframes rhythiax-profile-uwu-tilt {
+  0%, 100% { transform: translateX(-50%) rotate(-7deg) skewX(-8deg) perspective(500px) rotateY(-10deg) rotateZ(-1.3deg); }
+  50% { transform: translateX(-50%) rotate(-7deg) skewX(-8deg) perspective(500px) rotateY(-10deg) rotateZ(1.3deg); }
+}
+
+@keyframes rhythiax-profile-uwu-spark-float {
+  0%, 100% { opacity: 0.24; transform: translateY(4px) scale(0.65); }
+  45% { opacity: 1; transform: translateY(-8px) scale(1.15); }
+}
+
+/* 147 / G1ngyyy: a compact SVG wig with independently moving locks. */
+.rhythiax-profile-avatar-effect--hair {
+  bottom: calc(100% - 5rem);
+  width: min(12rem, 45vw);
+  height: 7.7rem;
+  transform: translateX(-50%) scale(0.85);
+  transform-origin: 50% 100%;
+}
+
+.rhythiax-profile-hair {
+  position: absolute;
+  inset: -0.5rem -1.1rem auto;
+  width: calc(100% + 2.2rem);
+  height: 8.5rem;
+  overflow: visible;
+  filter: drop-shadow(0 8px 7px rgba(20, 2, 3, 0.57));
+  transform: translateZ(18px);
+}
+
+.rhythiax-profile-hair-lock {
+  transform-box: fill-box;
+  transform-origin: 50% 8%;
+  animation: rhythiax-profile-hair-wave 2.7s ease-in-out infinite;
+}
+
+.rhythiax-profile-hair-lock--two { animation-delay: -0.55s; }
+.rhythiax-profile-hair-lock--three { animation-delay: -1.15s; }
+.rhythiax-profile-hair-lock--four { animation-delay: -1.8s; }
+.rhythiax-profile-hair-lock--five { animation-delay: -2.2s; }
+.rhythiax-profile-hair-shine { opacity: 0.72; animation: rhythiax-profile-hair-shine 3.2s ease-in-out infinite; }
+
+.rhythiax-profile-wind-line {
+  position: absolute;
+  z-index: 1;
+  height: 1px;
+  border-radius: 99px;
+  background: linear-gradient(90deg, transparent, rgba(255, 184, 194, 0.74), transparent);
+  opacity: 0.65;
+  transform-origin: left center;
+  animation: rhythiax-profile-wind-sweep 3.4s ease-in-out infinite;
+}
+
+.rhythiax-profile-wind-line--one { --wind-angle: -13deg; top: 1.9rem; left: 0.25rem; width: 3.55rem; }
+.rhythiax-profile-wind-line--two { --wind-angle: 12deg; top: 3.7rem; right: -0.6rem; width: 4.25rem; animation-delay: -1.5s; }
+.rhythiax-profile-wind-line--three { --wind-angle: -18deg; top: 0.8rem; right: 1.5rem; width: 2.05rem; animation-delay: -2.3s; }
+
+@keyframes rhythiax-profile-hair-wave {
+  0%, 100% { transform: rotate(-2deg) translate3d(0, 0, 0); }
+  50% { transform: rotate(5deg) translate3d(5px, -3px, 2px); }
+}
+
+@keyframes rhythiax-profile-hair-shine {
+  0%, 100% { opacity: 0.45; transform: translateX(-3px); }
+  50% { opacity: 0.92; transform: translateX(5px); }
+}
+
+@keyframes rhythiax-profile-wind-sweep {
+  0%, 100% { opacity: 0.12; transform: scaleX(0.45) rotate(var(--wind-angle, 0deg)); }
+  50% { opacity: 0.8; transform: scaleX(1) rotate(var(--wind-angle, 0deg)); }
+}
+
+.rhythiax-number-egg {
+  display: inline-block;
+  position: relative;
+  white-space: nowrap;
+}
+
+.rhythiax-search-egg {
+  position: fixed;
+  z-index: 2147483647;
+  pointer-events: none;
+  font-size: clamp(2.25rem, 7vw, 4rem);
+  font-weight: 950;
+  line-height: 1;
+  transform: translate(-50%, -115%);
+}
+
+.rhythiax-number-egg--sixty-seven .rhythiax-number-egg__digit {
+  display: inline-block;
+  animation: none;
+}
+
+.rhythiax-number-egg--sixty-seven.rhythiax-number-egg--active .rhythiax-number-egg__digit,
+.rhythiax-number-egg--sixty-seven.rhythiax-number-egg--forced .rhythiax-number-egg__digit {
+  animation: rhythiax-sixty-seven-forced 2s linear infinite;
+}
+
+.rhythiax-number-egg--sixty-seven.rhythiax-number-egg--active .rhythiax-number-egg__digit:nth-child(2),
+.rhythiax-number-egg--sixty-seven.rhythiax-number-egg--forced .rhythiax-number-egg__digit:nth-child(2) {
+  animation-delay: -1s;
+}
+
+.rhythiax-number-egg--sixty-nine {
+  transform-origin: 50% 70%;
+  transition: transform 0.5s ease-out, color 0.5s ease-out, text-shadow 0.5s ease-out;
+}
+
+.rhythiax-number-egg--sixty-nine.rhythiax-number-egg--active {
+  z-index: 1;
+  color: #ef477f;
+  animation: rhythiax-sixty-nine 4s ease-in-out;
+  text-shadow: 0 0 0.35em rgba(239, 71, 127, 0.55), 0 0 0.8em rgba(255, 74, 111, 0.3);
+}
+
+.rhythiax-number-egg--sixty-nine.rhythiax-number-egg--active::before,
+.rhythiax-number-egg--sixty-nine.rhythiax-number-egg--active::after {
+  content: '\2665';
+  position: absolute;
+  top: -0.95em;
+  left: 50%;
+  color: #ef477f;
+  font-size: 0.7em;
+  line-height: 1;
+  pointer-events: none;
+  animation: rhythiax-heart-float 4s ease-out;
+}
+
+.rhythiax-number-egg--sixty-nine.rhythiax-number-egg--active::before {
+  color: #e8395f;
+  font-size: 0.52em;
+  margin-left: -0.85em;
+  margin-top: 0.3em;
+  animation-delay: 0.18s;
+}
+
+.rhythiax-number-egg--four-twenty {
+  animation: none;
+}
+
+.rhythiax-number-egg--four-twenty.rhythiax-number-egg--active,
+.rhythiax-number-egg--four-twenty.rhythiax-number-egg--forced {
+  animation: rhythiax-four-twenty-forced 2s ease-in-out;
+}
+
+@keyframes rhythiax-sixty-seven-forced {
+  0%, 50%, 100% { transform: translateY(0); }
+  25% { transform: translateY(-0.2em); }
+  75% { transform: translateY(0.2em); }
+}
+
+@keyframes rhythiax-sixty-nine {
+  0%, 100% { transform: rotate(0deg) translateY(0) scale(1); }
+  18% { transform: rotate(-7deg) translateY(-0.08em) scale(1.04); }
+  38% { transform: rotate(5deg) translateY(0.02em) scale(1.02); }
+  62% { transform: rotate(-5deg) translateY(-0.06em) scale(1.04); }
+  82% { transform: rotate(4deg) translateY(0) scale(1.01); }
+}
+
+@keyframes rhythiax-heart-float {
+  0% { opacity: 0; transform: translate(-50%, 0.15em) scale(0.55) rotate(-8deg); }
+  18% { opacity: 1; }
+  100% { opacity: 0; transform: translate(-50%, -1em) scale(1.08) rotate(8deg); }
+}
+
+@keyframes rhythiax-four-twenty-forced {
+  0%, 100% { color: inherit; text-shadow: none; }
+  20%, 70% {
+    color: #63e878;
+    text-shadow: 0 0 0.35em rgba(61, 214, 91, 0.95), 0 0 1em rgba(61, 214, 91, 0.55);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rhythiax-profile-crown,
+  .rhythiax-profile-uwu-label,
+  .rhythiax-profile-uwu-face::after,
+  .rhythiax-profile-uwu-spark,
+  .rhythiax-profile-hair-lock,
+  .rhythiax-profile-hair-shine,
+  .rhythiax-profile-wind-line {
+    animation: none;
+  }
+
+  .rhythiax-number-egg--sixty-seven .rhythiax-number-egg__digit,
+  .rhythiax-number-egg--sixty-nine,
+  .rhythiax-number-egg--sixty-nine::before,
+  .rhythiax-number-egg--sixty-nine::after,
+  .rhythiax-number-egg--four-twenty {
+    animation: none;
+  }
+
+  .rhythiax-number-egg--sixty-nine.rhythiax-number-egg--active::after {
+    display: none;
+  }
+
+  .rhythiax-number-egg--sixty-nine.rhythiax-number-egg--active::before {
+    display: none;
+  }
+}

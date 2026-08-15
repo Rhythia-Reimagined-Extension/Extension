@@ -1,0 +1,211 @@
+/* ── Redesign wrapper (flex container) ── */
+.rhythiax-redesign-wrapper {
+  display: flex;
+  flex-direction: row;
+  min-height: 90px;
+  width: 100%;
+}
+
+/* ── Left colored strip (~18% width) ── */
+.rhythiax-card-strip {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 110px;
+  min-width: 110px;
+   padding: 12px 8px;
+  /* border-right is set dynamically by JS as the grade accent bar */
+}
+
+.rhythiax-card-strip .rhythiax-card-grade {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+}
+
+.rhythiax-card-grade-label {
+   font-size: 32px;
+  font-weight: 900;
+  letter-spacing: 1px;
+  line-height: 1;
+   text-shadow: none;
+}
+
+.rhythiax-card-acc-label {
+  font-size: 16px;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.8);
+  letter-spacing: 0.3px;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ── Right content area ── */
+.rhythiax-card-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+   padding: 12px 14px;
+   gap: 8px;
+  min-width: 0;
+  position: relative;
+}
+
+/* ── Top row: title only (no date) ── */
+.rhythiax-card-top {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+   padding-right: 108px; /* reserve a stable action area for replay/copy buttons */
+}
+
+.rhythiax-card-title {
+   font-size: 15px;
+  font-weight: 600;
+   color: rgba(255, 255, 255, 0.92);
+  text-decoration: none;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+  flex: 1;
+  min-width: 0;
+}
+.rhythiax-card-title:hover {
+  color: #60a5fa;
+  text-decoration: underline;
+}
+.rhythiax-score-rank {
+   flex: 0 0 auto;
+   min-width: 22px;
+   color: color-mix(in srgb, var(--rhythiax-text-muted, #9ca3af) 72%, transparent);
+   font-size: 10px;
+   font-weight: 600;
+   font-variant-numeric: tabular-nums;
+   letter-spacing: .01em;
+   opacity: .72;
+}
+.rhythiax-reigning .rhythiax-card-content::before {
+  content: none;
+  position: absolute;
+  top: 5px;
+  right: 10px;
+  color: var(--rhythiax-text-muted, #9ca3af);
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: .08em;
+}
+
+.rhythiax-card-date {
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.65);
+  white-space: nowrap;
+  flex-shrink: 0;
+  max-width: min(42%, 260px);
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ── Date row (separate line below title) ── */
+.rhythiax-card-date-row {
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.55);
+  white-space: nowrap;
+  letter-spacing: 0.2px;
+}
+
+/* ── Stats grid: 3 columns x 2 rows ── */
+.rhythiax-card-stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+   gap: 5px 14px;
+}
+
+.rhythiax-card-stat-item {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+   padding: 4px 7px;
+   border-radius: 6px;
+   background: rgba(255, 255, 255, 0.035);
+   border: 1px solid rgba(255, 255, 255, 0.045);
+  min-width: 0;
+}
+
+.rhythiax-card-stat-label {
+  font-size: 11px;
+  font-weight: 600;
+   color: rgba(255, 255, 255, 0.48);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  white-space: nowrap;
+}
+
+.rhythiax-card-stat-value {
+  font-size: 12px;
+  font-weight: 700;
+   color: rgba(255, 255, 255, 0.94);
+  font-variant-numeric: tabular-nums;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ── Full Combo / Misses special styling ── */
+.rhythiax-stat-fullcombo {
+  color: #6b8f5e !important; /* soft fern green — paprotkowy */
+  font-weight: 800 !important;
+  letter-spacing: 0.3px;
+}
+
+.rhythiax-stat-miss {
+  color: #c97a7a !important; /* faded muted red */
+  font-weight: 700 !important;
+}
+
+/* ── Action buttons in the content area (top-right) ── */
+.rhythiax-card-buttons {
+  position: absolute;
+  top: 8px;
+  right: 10px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  z-index: 2;
+  background: var(--rhythiax-surface, #1b1a24);
+  padding-left: 4px;
+}
+
+.rhythiax-card-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  color: rgba(255, 255, 255, 0.45);
+  transition: all 0.15s ease;
+  cursor: pointer;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  text-decoration: none;
+}
+.rhythiax-card-btn:hover {
+  color: #60a5fa;
+  background: rgba(96, 165, 250, 0.12);
+  border-color: rgba(96, 165, 250, 0.25);
+}
+
+.rhythiax-card-btn svg {
+  width: 16px;
+  height: 16px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+

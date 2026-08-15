@@ -1,0 +1,32 @@
+/* Rhythia X design tokens.
+   Runtime theme values are written by shared/theme.js. These fallbacks keep
+   the stylesheet safe before the extension finishes loading the preset. */
+:root {
+  --rhythiax-page-bg: #151326;
+  --rhythiax-surface: #1b1a24;
+  --rhythiax-surface-raised: var(--rhythiax-surface);
+  --rhythiax-inner-surface: #252239;
+  --rhythiax-input-surface: var(--rhythiax-inner-surface);
+  --rhythiax-nav-surface: var(--rhythiax-surface);
+  --rhythiax-nav-hover: var(--rhythiax-accent-soft);
+  --rhythiax-accent: #c084fc;
+  --rhythiax-accent-soft: rgba(192, 132, 252, .18);
+  --rhythiax-text: #f8fafc;
+  --rhythiax-text-strong: var(--rhythiax-text);
+  --rhythiax-text-muted: #9ca3af;
+  --rhythiax-text-subtle: color-mix(in srgb, var(--rhythiax-text-muted) 72%, transparent);
+  --rhythiax-border: rgba(255, 255, 255, .12);
+  --rhythiax-border-strong: rgba(255, 255, 255, .24);
+  --rhythiax-chart-track: rgba(255, 255, 255, .14);
+  --rhythiax-shadow: 0 18px 45px rgba(0, 0, 0, .18);
+  --rhythiax-radius: 14px;
+   --rhythiax-success: #43d69a;
+   --rhythiax-warning: #eab308;
+   --rhythiax-danger: #ef4444;
+   --rhythiax-info: var(--rhythiax-accent);
+   --rhythiax-rank-value: var(--rhythiax-text-strong);
+}
+
+body[data-rhythiax-theme] {
+  --rhythiax-surface-raised: var(--rhythiax-surface);
+}

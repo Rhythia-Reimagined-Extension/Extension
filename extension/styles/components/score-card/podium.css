@@ -1,0 +1,25 @@
+/* ── Top 3 Podium — Gold / Silver / Bronze ── */
+.rhythiax-podium-gold {
+   border-color: rgba(234, 179, 8, 0.45) !important;
+   border-width: 1px !important;
+}
+.rhythiax-podium-gold:hover {
+  border-color: rgba(234, 179, 8, 0.7) !important;
+}
+
+.rhythiax-podium-silver {
+   border-color: rgba(156, 163, 175, 0.38) !important;
+   border-width: 1px !important;
+}
+.rhythiax-podium-silver:hover {
+  border-color: rgba(156, 163, 175, 0.6) !important;
+}
+
+.rhythiax-podium-bronze {
+   border-color: rgba(205, 127, 50, 0.38) !important;
+   border-width: 1px !important;
+}
+.rhythiax-podium-bronze:hover {
+  border-color: rgba(205, 127, 50, 0.6) !important;
+}
+

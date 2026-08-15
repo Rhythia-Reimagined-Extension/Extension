@@ -1,0 +1,7 @@
+/* Native catalogue routes: leaderboards, skins, clans and collections. */
+body[data-rhythiax-page="leaderboards"],
+body[data-rhythiax-page="skins"],
+body[data-rhythiax-page="clans"],
+body[data-rhythiax-page="collections"] {
+  min-width: 0;
+}

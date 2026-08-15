@@ -1,0 +1,157 @@
+/* /player/:id */
+body[data-rhythiax-page="player"] .rhythiax-profile-box,
+body[data-rhythiax-page="player"] .rhythiax-stats-panel {
+  min-width: 0;
+}
+
+/* The native counter becomes a compact entry point, while the site keeps
+   rendering the authenticated /friends page inside this lightweight panel. */
+.rhythiax-friends-quick-trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: .35rem;
+  min-height: 38px;
+  padding: .45rem .6rem;
+  border: 1px solid var(--rhythiax-border-strong);
+  border-radius: .375rem;
+  color: var(--rhythiax-text-strong);
+  background: var(--rhythiax-inner-surface);
+  font: inherit;
+  font-size: .875rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 160ms ease, border-color 160ms ease, transform 160ms ease;
+}
+.rhythiax-friends-quick-trigger svg { width: 19px; height: 19px; color: var(--rhythiax-text-muted); }
+.rhythiax-friends-quick-trigger:hover { background: color-mix(in srgb, var(--rhythiax-accent) 13%, var(--rhythiax-inner-surface)); border-color: var(--rhythiax-accent); }
+.rhythiax-friends-quick-trigger:active { transform: translateY(1px); }
+.rhythiax-friends-quick-trigger:focus-visible,
+.rhythiax-friends-quick-close:focus-visible { outline: 2px solid var(--rhythiax-accent); outline-offset: 2px; }
+
+.rhythiax-friends-quick-panel[role="dialog"] { position: fixed; inset: 0; z-index: 2147483646; display: grid; place-items: center; padding: 1rem; opacity: 0; background: transparent !important; transition: opacity 180ms ease; }
+.rhythiax-friends-quick-panel.is-open { opacity: 1; }
+.rhythiax-friends-quick-backdrop { position: absolute; inset: 0; background: rgba(0, 0, 0, .38); }
+.rhythiax-friends-quick-window { position: relative; display: flex; flex-direction: column; width: min(760px, 100%); max-height: min(680px, calc(100vh - 2rem)); max-height: min(680px, calc(100dvh - 2rem)); overflow: hidden; border: 1px solid var(--rhythiax-border-strong); border-radius: var(--rhythiax-radius); background: var(--rhythiax-surface); box-shadow: var(--rhythiax-shadow); transform: translateY(12px) scale(.985); transition: transform 220ms cubic-bezier(.16, 1, .3, 1); }
+.rhythiax-friends-quick-panel.is-open .rhythiax-friends-quick-window { transform: translateY(0) scale(1); }
+.rhythiax-friends-quick-header { display: flex; align-items: center; justify-content: space-between; padding: .8rem 1rem; border-bottom: 1px solid var(--rhythiax-border); color: var(--rhythiax-text-strong); }
+.rhythiax-friends-quick-header p { margin: 0 0 .1rem; color: var(--rhythiax-text-muted); font-size: .72rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; }
+.rhythiax-friends-quick-header strong { font-size: 1rem; }
+.rhythiax-friends-quick-close { width: 32px; height: 32px; border: 1px solid var(--rhythiax-border); border-radius: 7px; color: var(--rhythiax-text-strong); background: var(--rhythiax-inner-surface); font-size: 1.45rem; line-height: 1; cursor: pointer; }
+.rhythiax-friends-quick-close:hover { background: var(--rhythiax-accent-soft); border-color: var(--rhythiax-accent); }
+.rhythiax-friends-quick-content { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .75rem; min-height: 150px; overflow: auto; padding: 1rem; }
+.rhythiax-friends-quick-loading,
+.rhythiax-friends-quick-empty { grid-column: 1 / -1; margin: auto; color: var(--rhythiax-text-muted); font-size: .9rem; text-align: center; }
+.rhythiax-friends-quick-card { display: flex; align-items: center; gap: .75rem; min-width: 0; padding: .7rem; border: 1px solid var(--rhythiax-border); border-radius: 10px; color: var(--rhythiax-text-strong); background: var(--rhythiax-inner-surface); text-decoration: none; transition: background-color 160ms ease, border-color 160ms ease, transform 160ms ease; }
+.rhythiax-friends-quick-card:hover { border-color: var(--rhythiax-accent); background: color-mix(in srgb, var(--rhythiax-accent) 12%, var(--rhythiax-inner-surface)); transform: translateY(-1px); }
+.rhythiax-friends-quick-avatar { width: 42px; height: 42px; flex: 0 0 auto; border: 1px solid var(--rhythiax-border-strong); border-radius: 50%; object-fit: cover; background: var(--rhythiax-surface); }
+.rhythiax-friends-quick-player { display: grid; min-width: 0; gap: .25rem; }
+.rhythiax-friends-quick-player strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: .9rem; }
+.rhythiax-friends-quick-player small { display: flex; align-items: center; gap: .3rem; color: var(--rhythiax-text-muted); font-size: .72rem; }
+.rhythiax-friends-quick-player small img { width: 18px; height: 12px; border-radius: 2px; object-fit: cover; }
+.rhythiax-friends-quick-status { margin-left: auto; color: var(--rhythiax-text-muted); font-size: .7rem; font-weight: 700; }
+.rhythiax-friends-quick-status.is-online { color: var(--rhythiax-success); }
+@media (max-width: 640px) { .rhythiax-friends-quick-panel { padding: .5rem; } .rhythiax-friends-quick-window { height: calc(100vh - 1rem); height: calc(100dvh - 1rem); border-radius: 10px; } }
+@media (max-width: 560px) { .rhythiax-friends-quick-content { grid-template-columns: 1fr; } }
+
+/* Official /player now keeps the three score collections in one native tab
+   strip. Keep its active state readable in every Rhythia X palette without
+   replacing the site's React-managed buttons. */
+body[data-rhythiax-page="player"] .rhythiax-profile-score-tabs [data-rhythiax-profile-score-tab] {
+  color: var(--rhythiax-text-muted) !important;
+}
+body[data-rhythiax-page="player"] .rhythiax-profile-score-tabs [data-rhythiax-profile-score-tab]:hover,
+body[data-rhythiax-page="player"] .rhythiax-profile-score-tabs [data-rhythiax-profile-score-tab]:focus-visible {
+  color: var(--rhythiax-text-strong) !important;
+}
+body[data-rhythiax-page="player"] .rhythiax-profile-score-tabs [data-rhythiax-profile-score-tab][class*="border-b-2"],
+body[data-rhythiax-page="player"] .rhythiax-profile-score-tabs [data-rhythiax-profile-score-tab][aria-pressed="true"] {
+  border-color: var(--rhythiax-accent) !important;
+  color: var(--rhythiax-text-strong) !important;
+}
+body[data-rhythiax-page="player"] .rhythiax-profile-score-tabs [data-rhythiax-profile-score-tab]:focus-visible {
+  outline: 2px solid var(--rhythiax-accent) !important;
+  outline-offset: 2px;
+}
+
+/* React replaces the active score collection asynchronously. Animate the old
+   cards out and let the new collection enter from the selected direction. */
+body[data-rhythiax-page="player"] .rhythiax-profile-score-tabs {
+  position: relative;
+}
+body[data-rhythiax-page="player"] .rhythiax-profile-score-tabs.rhythiax-profile-score-tabs-switching div.relative.py-2:not(.rhythiax-score-tab-leaving),
+body[data-rhythiax-page="player"] .rhythiax-profile-score-tabs.rhythiax-profile-score-tabs-switching .rhythiax-score-card:not(.rhythiax-score-tab-leaving) {
+  visibility: hidden !important;
+}
+body[data-rhythiax-page="player"] .rhythiax-profile-score-tabs.rhythiax-profile-score-tabs-switching .rhythiax-score-tab-leaving {
+  visibility: visible !important;
+  animation: rhythiax-score-tab-leave 360ms cubic-bezier(.22, .8, .32, 1) both;
+}
+body[data-rhythiax-page="player"] .rhythiax-profile-score-tabs .rhythiax-score-tab-entering {
+  visibility: visible !important;
+  animation: rhythiax-score-tab-enter 560ms cubic-bezier(.16, 1, .3, 1) var(--rhythiax-score-tab-delay, 0ms) both;
+  will-change: opacity, transform, filter;
+}
+@keyframes rhythiax-score-tab-leave {
+  from {
+    opacity: 1;
+    transform: translate3d(0, 0, 0) scale(1);
+    filter: blur(0);
+  }
+  to {
+    opacity: 0;
+    transform: translate3d(calc(var(--rhythiax-score-tab-direction, 1) * -42px), 0, 0) scale(.985);
+    filter: blur(2px);
+  }
+}
+@keyframes rhythiax-score-tab-enter {
+  from {
+    opacity: 0;
+    transform: translate3d(calc(var(--rhythiax-score-tab-direction, 1) * 42px), 0, 0) scale(.985);
+    filter: blur(2px);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0) scale(1);
+    filter: blur(0);
+  }
+}
+
+/* A single indicator glides between the native buttons instead of letting
+   React repaint three independent bottom borders. */
+body[data-rhythiax-page="player"] .rhythiax-profile-score-tab-strip {
+  position: relative;
+}
+body[data-rhythiax-page="player"] .rhythiax-profile-score-tab-strip [data-rhythiax-profile-score-tab] {
+  border-bottom-color: transparent !important;
+  transition: color 260ms ease !important;
+}
+body[data-rhythiax-page="player"] .rhythiax-profile-score-tab-strip [data-rhythiax-profile-score-tab][class*="border-b-2"],
+body[data-rhythiax-page="player"] .rhythiax-profile-score-tab-strip [data-rhythiax-profile-score-tab][aria-pressed="true"] {
+  border-color: transparent !important;
+}
+body[data-rhythiax-page="player"] .rhythiax-profile-score-tab-indicator {
+  position: absolute;
+  z-index: 2;
+  bottom: 0;
+  left: 0;
+  display: block;
+  height: 2px;
+  border-radius: 999px;
+  background: var(--rhythiax-accent);
+  box-shadow: 0 0 14px var(--rhythiax-accent-soft);
+  pointer-events: none;
+  transition: width 360ms cubic-bezier(.16, 1, .3, 1), transform 560ms cubic-bezier(.16, 1, .3, 1);
+  will-change: width, transform;
+}
+@media (prefers-reduced-motion: reduce) {
+  body[data-rhythiax-page="player"] .rhythiax-profile-score-tab-indicator,
+  body[data-rhythiax-page="player"] .rhythiax-profile-score-tab-strip [data-rhythiax-profile-score-tab],
+  body[data-rhythiax-page="player"] .rhythiax-profile-score-tabs .rhythiax-score-tab-leaving,
+  body[data-rhythiax-page="player"] .rhythiax-profile-score-tabs .rhythiax-score-tab-entering {
+    animation: none !important;
+    transition: none !important;
+  }
+  .rhythiax-friends-quick-panel,
+  .rhythiax-friends-quick-window,
+  .rhythiax-friends-quick-trigger { transition: none; }
+}

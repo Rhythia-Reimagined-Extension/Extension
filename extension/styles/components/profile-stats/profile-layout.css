@@ -1,0 +1,404 @@
+/* =============================================
+   Rhythia X — Rank Path mini-bar in collapsed accordion
+   ============================================= */
+.rhythiax-title-progression-icon {
+   position: relative;
+   isolation: isolate;
+   display: inline-grid;
+   width: 18px;
+   height: 18px;
+   place-items: center;
+   border: 1px solid rgba(238, 243, 250, 0.62);
+   border-radius: 6px;
+   color: #f1f5fb;
+   background: radial-gradient(circle at 35% 25%, rgba(255, 255, 255, 0.22), rgba(255, 255, 255, 0.05) 58%, transparent);
+   box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.18), 0 0 0 2px rgba(220, 227, 238, 0.08), 0 0 8px rgba(220, 227, 238, 0.18);
+}
+.rhythiax-title-progression-icon::before,
+.rhythiax-title-progression-icon::after {
+   position: absolute;
+   pointer-events: none;
+   content: '';
+}
+.rhythiax-title-progression-icon::before {
+   inset: 2px;
+   z-index: -1;
+   border: 1px solid currentColor;
+   border-radius: 5px;
+   opacity: 0.26;
+   transform: translate(2px, 2px);
+}
+.rhythiax-title-progression-icon::after {
+   inset: -4px;
+   border: 1px solid currentColor;
+   border-radius: 8px;
+   opacity: 0;
+   transform: scale(0.78);
+   animation: rhythiax-crown-ring-pulse 3.3s ease-out infinite;
+}
+.rhythiax-title-progression-icon svg {
+   position: relative;
+   z-index: 1;
+   width: 13px;
+   height: 13px;
+   fill: rgba(255, 255, 255, 0.18);
+   stroke: currentColor;
+   stroke-width: 1.35;
+   stroke-linecap: round;
+   stroke-linejoin: round;
+   filter: drop-shadow(0 0 4px currentColor);
+   animation: rhythiax-crown-soft-pulse 3.3s ease-in-out infinite;
+}
+.rhythiax-title-progression-icon[data-crown-mode="2d"] {
+   border-width: 1.5px;
+   background: transparent;
+   box-shadow: none;
+}
+.rhythiax-title-progression-icon[data-crown-mode="2d"]::before,
+.rhythiax-title-progression-icon[data-crown-mode="2d"]::after {
+   display: none;
+}
+.rhythiax-title-progression-icon[data-crown-mode="2d"] svg {
+   fill: none;
+   filter: none;
+   animation: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+   .rhythiax-title-progression-icon::after,
+   .rhythiax-title-progression-icon svg {
+      animation: none;
+   }
+}
+
+.rhythiax-rankpath-bar {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-top: 8px;
+  width: 100%;
+}
+
+.rhythiax-rankpath-track {
+   position: relative;
+   display: flex;
+   gap: 3px;
+   height: 6px;
+  border-radius: 3px;
+  overflow: visible;
+   background: rgba(255, 255, 255, 0.06);
+}
+
+.rhythiax-rankpath-track-row,
+.rhythiax-rankpath-labels {
+   display: flex;
+   align-items: center;
+   gap: 13px;
+   width: 100%;
+}
+.rhythiax-rankpath-track-row > .rhythiax-rankpath-track,
+.rhythiax-rankpath-progress-labels {
+   flex: 1;
+   min-width: 0;
+}
+.rhythiax-rankpath-target {
+   position: relative;
+   display: flex;
+   align-items: center;
+   justify-content: center;
+   flex: 0 0 82px;
+   width: 82px;
+   height: 28px;
+}
+.rhythiax-rankpath-target-line {
+   position: absolute;
+   left: 4px;
+   width: 1px;
+   height: 12px;
+   background: rgba(255, 255, 255, 0.2);
+}
+.rhythiax-rankpath-crown {
+   position: relative;
+   isolation: isolate;
+   display: block;
+   width: 28px;
+   height: 28px;
+   padding: 4px;
+   border: 1px solid #8d8999;
+   border-radius: 50%;
+   color: #8d8999;
+   background: rgba(255, 255, 255, 0.035);
+   box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.13), 0 2px 8px rgba(0, 0, 0, 0.18);
+}
+.rhythiax-rankpath-crown::before,
+.rhythiax-rankpath-crown::after {
+   position: absolute;
+   pointer-events: none;
+   content: '';
+}
+.rhythiax-rankpath-crown::before {
+   inset: 2px;
+   z-index: -1;
+   border: 1px solid currentColor;
+   border-radius: 50%;
+   opacity: 0.26;
+   transform: translate(2px, 2px);
+}
+.rhythiax-rankpath-crown::after {
+   inset: -4px;
+   border: 1px solid currentColor;
+   border-radius: 50%;
+   opacity: 0;
+   transform: scale(0.78);
+   animation: rhythiax-crown-ring-pulse 3.3s ease-out infinite;
+}
+.rhythiax-rankpath-crown svg {
+   position: relative;
+   z-index: 1;
+   display: block;
+   width: 110%;
+   height: 100%;
+   margin-left: -5%;
+   fill: none;
+   stroke: currentColor;
+   stroke-width: 1.7;
+   stroke-linecap: round;
+   stroke-linejoin: round;
+   filter: drop-shadow(0 0 5px currentColor);
+   transform: translateZ(4px);
+   animation: rhythiax-crown-soft-pulse 3.3s ease-in-out infinite;
+}
+.rhythiax-rankpath-target-achieved .rhythiax-rankpath-crown {
+   border-color: #fff;
+   color: #fff;
+   background: radial-gradient(circle at 35% 25%, rgba(255, 255, 255, 0.26), rgba(255, 255, 255, 0.07) 54%, rgba(255, 255, 255, 0.02));
+   filter: drop-shadow(0 0 7px rgba(255, 255, 255, 0.42));
+   box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.22), 0 0 0 2px rgba(255, 255, 255, 0.11), 0 0 12px rgba(255, 255, 255, 0.22);
+}
+.rhythiax-rankpath-target-achieved .rhythiax-rankpath-crown svg {
+   fill: rgba(255, 255, 255, 0.22);
+}
+.rhythiax-rankpath-target[data-crown-mode="2d"] .rhythiax-rankpath-crown {
+   border-width: 1.5px;
+   background: transparent;
+   box-shadow: none;
+   filter: none;
+}
+.rhythiax-rankpath-target[data-crown-mode="2d"] .rhythiax-rankpath-crown::before,
+.rhythiax-rankpath-target[data-crown-mode="2d"] .rhythiax-rankpath-crown::after {
+   display: none;
+}
+.rhythiax-rankpath-target[data-crown-mode="2d"] .rhythiax-rankpath-crown svg {
+   filter: none;
+   transform: none;
+}
+
+@keyframes rhythiax-crown-soft-pulse {
+   0%, 100% { opacity: 0.88; filter: drop-shadow(0 0 4px currentColor); }
+   50% { opacity: 1; filter: drop-shadow(0 0 8px currentColor); }
+}
+@keyframes rhythiax-crown-ring-pulse {
+   0%, 40% { opacity: 0.22; transform: scale(0.78); }
+   70%, 100% { opacity: 0; transform: scale(1.2); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+   .rhythiax-rankpath-crown::after,
+   .rhythiax-rankpath-crown svg {
+      animation: none;
+   }
+}
+
+.rhythiax-rankpath-segment {
+   position: relative;
+   flex: 1;
+   height: 100%;
+   min-width: 0;
+   overflow: hidden;
+   border-radius: 3px;
+   background: rgba(255, 255, 255, 0.06);
+}
+.rhythiax-rankpath-segment:first-child {
+   border-radius: 3px;
+}
+.rhythiax-rankpath-segment:last-child {
+   border-radius: 3px;
+}
+.rhythiax-rankpath-segment-active {
+   background: rgba(255, 255, 255, 0.06);
+}
+.rhythiax-rankpath-segment-fill {
+   display: block;
+   width: 0;
+   height: 100%;
+   border-radius: inherit;
+   opacity: 0.25;
+   transition: width 80ms linear, opacity 200ms ease, filter 200ms ease;
+}
+.rhythiax-rankpath-segment-active .rhythiax-rankpath-segment-fill {
+   opacity: 0.9;
+}
+.rhythiax-rankpath-bar.is-animating .rhythiax-rankpath-segment-fill {
+   transition: none;
+}
+.rhythiax-rankpath-track-row-achieved .rhythiax-rankpath-segment {
+   filter: none;
+   background: rgba(255, 255, 255, 0.08);
+}
+.rhythiax-rankpath-track-row-achieved .rhythiax-rankpath-segment-fill { width: 100% !important; opacity: 0.9; filter: none; }
+
+.rhythiax-rankpath-bar.is-grandmaster .rhythiax-rankpath-segment {
+   background: rgba(255, 255, 255, 0.13);
+}
+.rhythiax-rankpath-bar.is-grandmaster .rhythiax-rankpath-segment-fill {
+   background: #f5f5f5 !important;
+   opacity: 0.96;
+   filter: drop-shadow(0 0 3px rgba(255, 255, 255, 0.45));
+}
+.rhythiax-rankpath-bar.is-grandmaster .rhythiax-rankpath-label,
+.rhythiax-rankpath-bar.is-grandmaster .rhythiax-rankpath-target-label,
+.rhythiax-rankpath-bar.is-grandmaster .rhythiax-rankpath-status {
+   color: #f5f5f5;
+}
+.rhythiax-rankpath-bar.is-grandmaster .rhythiax-rankpath-target-line {
+   background: rgba(255, 255, 255, 0.7);
+}
+
+.rhythiax-rankpath-marker {
+  position: absolute;
+  top: 50%;
+  transform: translate(-50%, -50%);
+   width: 8px;
+   height: 8px;
+  border-radius: 50%;
+  background: #fff;
+  border: 2px solid #60a5fa;
+   box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.18), 0 1px 5px rgba(0, 0, 0, 0.4);
+  pointer-events: none;
+  z-index: 2;
+}
+
+.rhythiax-rankpath-bar.gm-reveal-charging .rhythiax-rankpath-marker {
+   animation: rhythiax-gm-marker-charge 340ms ease-out infinite alternate;
+}
+.rhythiax-rankpath-bar.gm-reveal-charging .rhythiax-rankpath-crown {
+   color: #e8e8e8;
+   border-color: #e8e8e8;
+   animation: rhythiax-gm-crown-charge 340ms ease-in-out infinite alternate;
+   box-shadow: 0 0 0 rgba(255, 255, 255, 0);
+}
+.rhythiax-rankpath-bar.gm-reveal-flash .rhythiax-rankpath-crown {
+   animation: rhythiax-gm-crown-light 800ms cubic-bezier(.2, 1.45, .35, 1);
+}
+.rhythiax-rankpath-threshold-pulse {
+   animation: rhythiax-rankpath-threshold-pulse 520ms ease-out;
+}
+
+@keyframes rhythiax-gm-marker-charge {
+   from { box-shadow: 0 0 0 2px rgba(255, 255, 255, .18), 0 0 5px #fff; }
+   to { box-shadow: 0 0 0 3px rgba(255, 255, 255, .3), 0 0 18px #fff; }
+}
+@keyframes rhythiax-gm-crown-charge {
+   from { filter: drop-shadow(0 0 1px currentColor); box-shadow: 0 0 0 rgba(255, 255, 255, 0); }
+   to { filter: drop-shadow(0 0 9px currentColor); box-shadow: 0 0 0 3px rgba(255, 255, 255, .16), 0 0 15px rgba(255, 255, 255, .4); }
+}
+@keyframes rhythiax-gm-crown-light {
+   0% { opacity: .25; transform: scale(.55) rotate(-12deg); filter: drop-shadow(0 0 0 transparent); }
+   45% { opacity: 1; transform: scale(1.18) rotate(4deg); filter: drop-shadow(0 0 17px #fff); }
+   100% { opacity: 1; transform: scale(1) rotate(0); filter: drop-shadow(0 0 8px currentColor); }
+}
+@keyframes rhythiax-rankpath-threshold-pulse {
+   0% { filter: brightness(1); }
+   45% { filter: brightness(1.6); }
+   100% { filter: brightness(1); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+   .rhythiax-rankpath-threshold-pulse,
+   .rhythiax-rankpath-bar.gm-reveal-charging .rhythiax-rankpath-marker,
+   .rhythiax-rankpath-bar.gm-reveal-charging .rhythiax-rankpath-crown,
+   .rhythiax-rankpath-bar.gm-reveal-flash .rhythiax-rankpath-crown {
+      animation: none;
+   }
+}
+
+.rhythiax-rankpath-labels {
+   padding: 0;
+}
+.rhythiax-rankpath-progress-labels {
+   display: flex;
+   gap: 3px;
+}
+.rhythiax-rankpath-target-label {
+   flex: 0 0 82px;
+   width: 82px;
+   color: rgba(255, 255, 255, 0.45);
+   font-size: 9px;
+   font-weight: 600;
+   text-align: center;
+   white-space: nowrap;
+}
+
+.rhythiax-rankpath-label {
+   flex: 1;
+   min-width: 0;
+  font-size: 9px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.35);
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+   white-space: nowrap;
+   text-align: center;
+  transition: color 0.3s ease;
+}
+.rhythiax-rankpath-label-past {
+  color: rgba(255, 255, 255, 0.55);
+}
+.rhythiax-rankpath-label-current {
+  color: #60a5fa;
+  font-size: 10px;
+}
+.rhythiax-rankpath-status {
+   align-self: flex-start;
+   width: calc(100% - 95px);
+   min-height: 12px;
+  color: rgba(255, 255, 255, 0.45);
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.2px;
+   text-align: center;
+}
+
+@media (max-width: 560px) {
+   .rhythiax-rankpath-status {
+      width: calc(100% - 76px);
+   }
+}
+
+.rhythiax-rankpath-bar {
+   display: flex;
+   max-height: 130px;
+   opacity: 1;
+   transform: translateY(0);
+   overflow: visible;
+   transition: max-height 360ms ease, opacity 220ms ease, transform 360ms ease;
+}
+.rhythiax-accordion-expanded .rhythiax-rankpath-bar {
+   max-height: 0;
+   opacity: 0;
+   transform: translateY(-5px);
+   overflow: hidden;
+}
+
+.rhythiax-absolute-date {
+  display: inline-block;
+  font-size: 11px;
+  color: #737373;
+  margin-left: 6px;
+  padding: 1px 6px;
+  background: rgba(255, 255, 255, 0.04);
+  border-radius: 4px;
+  white-space: nowrap;
+  letter-spacing: 0.3px;
+}
+

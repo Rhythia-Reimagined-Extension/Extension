@@ -1,0 +1,106 @@
+/* Allow chart tooltips to overflow when expanded */
+ .rhythiax-accordion-expanded { overflow: visible; }
+
+/* =============================================
+   Speed Breakdown — Bar Chart
+   ============================================= */
+.rhythiax-speed-chart {
+  display: grid;
+  grid-template-columns: repeat(8, minmax(0, 1fr));
+  align-items: flex-end;
+   gap: 6px;
+   height: 150px;
+   padding: 0 2px 7px;
+   border-bottom: 1px solid rgba(255, 255, 255, 0.10);
+   overflow: hidden;
+}
+
+.rhythiax-speed-bar-col {
+   min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  height: 100%;
+   border-radius: 7px;
+   transition: background .18s ease;
+}
+.rhythiax-speed-bar-col:hover,
+.rhythiax-speed-bar-col[aria-pressed="true"] {
+   background: rgba(255, 255, 255, .045);
+}
+
+.rhythiax-speed-bar-count {
+   font-size: 12px;
+  font-weight: 700;
+   color: rgba(255, 255, 255, 0.88);
+  font-variant-numeric: tabular-nums;
+    margin-bottom: 8px;
+  line-height: 1;
+}
+
+.rhythiax-speed-bar-wrapper {
+  flex: 1;
+  width: 100%;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  min-height: 0;
+}
+
+.rhythiax-speed-bar {
+  width: 70%;
+  max-width: 44px;
+  min-height: 4px;
+   border-radius: 5px 5px 0 0;
+   transition: filter 0.18s ease, opacity 0.18s ease, width 0.18s ease;
+  cursor: pointer;
+  position: relative;
+}
+.rhythiax-speed-bar:hover {
+   filter: brightness(1.12) saturate(1.1);
+   box-shadow: 0 3px 10px rgba(0, 0, 0, 0.18) !important;
+}
+
+.rhythiax-speed-bar-nominal {
+  width: 85%;
+  max-width: 52px;
+  border-radius: 5px 5px 0 0;
+   box-shadow: 0 -2px 0 rgba(132, 204, 22, 0.9) !important;
+}
+
+.rhythiax-speed-bar-label {
+   font-size: 10px;
+  font-weight: 700;
+   color: #e4e0eb;
+   letter-spacing: -0.15px;
+   margin-top: 7px;
+   line-height: 1;
+   white-space: nowrap;
+   width: 100%;
+   overflow: hidden;
+   text-align: center;
+   transform: none;
+   transform-origin: center;
+}
+
+.rhythiax-speed-bar-label-nominal {
+   color: rgba(132, 204, 22, 0.95);
+  font-weight: 700;
+}
+
+/* =============================================
+   Loading shimmer
+   ============================================= */
+@keyframes rhythiax-shimmer {
+  0% { opacity: 0.6; }
+  50% { opacity: 1; }
+  100% { opacity: 0.6; }
+}
+.rhythiax-loading {
+  animation: rhythiax-shimmer 1.5s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rhythiax-loading { animation: none; }
+}
+

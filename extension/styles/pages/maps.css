@@ -1,0 +1,5 @@
+/* /maps and /maps/:id */
+body[data-rhythiax-page="maps"] #root,
+body[data-rhythiax-page="map-detail"] #root {
+  min-width: 0;
+}

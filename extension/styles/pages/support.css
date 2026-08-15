@@ -1,0 +1,81 @@
+/* Native informational routes: changelog, support and hunt. */
+body[data-rhythiax-page="changelog"],
+body[data-rhythiax-page="support"],
+body[data-rhythiax-page="hunt"] {
+  min-width: 0;
+}
+
+/* The supporter hero uses a native black gradient overlay. Replace the
+   overlay itself, rather than only its Tailwind gradient variables, because
+   the native bridge also targets `to-neutral-950` utilities. */
+body[data-rhythiax-theme="white"][data-rhythiax-page="support"] #root [class*="bg-gradient-to-b"][class*="to-neutral-950"] {
+  background-image: none !important;
+  background-color: transparent !important;
+}
+
+body[data-rhythiax-theme="rhythia-reimagined"][data-rhythiax-page="support"] #root [class*="bg-gradient-to-b"][class*="to-neutral-950"] {
+  background-image: linear-gradient(
+    to bottom,
+    transparent,
+    color-mix(in srgb, var(--rhythiax-accent) 18%, transparent),
+    color-mix(in srgb, var(--rhythiax-page-bg) 82%, transparent)
+  ) !important;
+  background-color: transparent !important;
+}
+
+/* The supporter route uses a literal #141116 surface which is not part of
+   the native bridge palette. Translate it in White so its text does not
+   inherit the dark card foreground. */
+body[data-rhythiax-theme="white"][data-rhythiax-page="support"] #root [class*="bg-[#141116]"] {
+  background: linear-gradient(180deg, #ffffff 0%, #f1f3f6 100%) !important;
+  border-color: rgba(30, 41, 59, .16) !important;
+  color: #18181b !important;
+}
+
+body[data-rhythiax-theme="white"][data-rhythiax-page="support"] #root [class*="bg-[#141116]"] [class*="text-white"],
+body[data-rhythiax-theme="white"][data-rhythiax-page="support"] #root [class*="bg-[#141116]"] [class*="text-neutral-"] {
+  color: #18181b !important;
+}
+
+/* Keep the call-to-action distinct from the light supporter cards. */
+body[data-rhythiax-theme="white"][data-rhythiax-page="support"] #root button:has(> svg.lucide-heart) {
+  background: linear-gradient(180deg, #ffffff 0%, #e9dff0 100%) !important;
+  border-color: rgba(217, 89, 204, .5) !important;
+  color: #3f1749 !important;
+}
+
+body[data-rhythiax-page="support"] #root button:has(> svg.lucide-heart) > svg.lucide-heart {
+  transform-origin: 50% 55%;
+  animation: rhythiax-support-heartbeat 1.6s ease-in-out infinite;
+  color: #f386ff !important;
+  filter: drop-shadow(0 0 5px rgba(243, 134, 255, .6)) drop-shadow(0 0 11px rgba(255, 79, 216, .35));
+}
+
+@keyframes rhythiax-support-heartbeat {
+  0%, 45%, 100% {
+    stroke: #f386ff;
+    transform: scale(1);
+  }
+  10% {
+    stroke: #ff4fd8;
+    transform: scale(1.12);
+  }
+  18% {
+    stroke: #f386ff;
+    transform: scale(1);
+  }
+  28% {
+    stroke: #ff4fd8;
+    transform: scale(1.08);
+  }
+  36% {
+    stroke: #f386ff;
+    transform: scale(1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  body[data-rhythiax-page="support"] #root button:has(> svg.lucide-heart) > svg.lucide-heart {
+    animation: none;
+  }
+}

@@ -1,4 +1,0 @@
-/* Reimagined / player scores overrides. */
-body[data-rhythiax-theme="rhythia-reimagined"][data-rhythiax-page="scores"] {
-  --rhythiax-scores-surface: var(--rhythiax-surface);
-}

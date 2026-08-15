@@ -24,6 +24,5 @@ RhythiaX.cleanupOfficialStats = function () {
 RhythiaX.buildOfficialStatRow = function (label, value, historyKey) { return RhythiaX.StatisticsView.row(label, value, historyKey); };
 RhythiaX.enableHistoryRow = function (row, historyKey) { return RhythiaX.StatisticsView.history(row, historyKey); };
 RhythiaX.injectIntoOfficialStats = function (scores, player, ratingScores) { snapshotOfficialStats(); return RhythiaX.StatisticsView.injectOfficial(scores, player, ratingScores); };
-RhythiaX.buildSharedScoresStatsPanel = function (player, scores, playerRp, ratingScores) { return RhythiaX.StatisticsView.sharedPanel(player, scores, playerRp, ratingScores); };
-RhythiaX.buildStatsPanel = function (player, scores, playerRp, pageType, ratingScores, options) { if (pageType === 'profile') snapshotOfficialStats(); return RhythiaX.StatisticsView.buildPanel(player, scores, playerRp, pageType, ratingScores, options); };
+RhythiaX.buildStatsPanel = function (player, scores, playerRp, pageType, ratingScores, options) { snapshotOfficialStats(); return RhythiaX.StatisticsView.buildPanel(player, scores, playerRp, pageType, ratingScores, options); };
 RhythiaX.injectDeferredStatsProfiles = function (scores, ratingScores, pageType) { return RhythiaX.StatisticsView.deferredProfiles(scores, ratingScores, pageType); };

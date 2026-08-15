@@ -4,17 +4,17 @@ const nav = document.querySelector('#v3-nav');
 if (!screen || !nav) throw new Error('Popup V3 surface is missing.');
 
 const MODULES = {
-  advancedStats: { label: 'Advanced Stats', description: 'Rating, tempo and score statistics', category: 'profile', icon: 'stats' },
+  advancedStats: { label: 'Advanced Stats', description: 'Rating and tempo breakdown profiles', category: 'profile', icon: 'stats' },
   playerCompare: { label: 'Player Compare', description: 'Compare maps and Rhythm Points side by side', category: 'profile', icon: 'compare' },
   titleProgression: { label: 'Title Progression', description: 'Animated RP and rank progress', category: 'profile', icon: 'progress' },
-  scoreCards: { label: 'Score Display', description: 'Score Cards on profiles and /scores', category: 'scores', icon: 'scores' },
-  statHistory: { label: 'Stat History', description: 'Daily stat history on profile stats', category: 'history', icon: 'history' },
+  scoreCards: { label: 'Score Display', description: 'Score Cards on player profiles', category: 'scores', icon: 'scores' },
+  statHistory: { label: 'Stat History', description: 'Daily stat history and progress delta badges', category: 'history', icon: 'history' },
   rankingHistory: { label: 'Ranking History', description: 'Global, country and RP history', category: 'history', icon: 'rank' },
 };
 const CATEGORIES = {
-  profile: { label: 'Profile', description: 'Profile stats, comparisons and progression.' },
+  profile: { label: 'Profile', description: 'Profile breakdowns, comparisons and progression.' },
   scores: { label: 'Scores', description: 'Score presentation and replay controls.' },
-  history: { label: 'History', description: 'Daily records, ranking history and their display.' },
+  history: { label: 'History', description: 'Daily stat history, ranking history and delta indicators.' },
 };
 const DEFAULT_MODULES = {
   advancedStats: true, scoreCards: true, titleProgression: true,

@@ -1,23 +1,343 @@
-/* ── Redesign wrapper (flex container) ── */
+/* ═════════════════════════════════════════════════════════════
+   Rhythia Reimagined — Score Card Layout
+   ═════════════════════════════════════════════════════════════ */
+
+/* ── Generic wrapper ── */
 .rhythiax-redesign-wrapper {
   display: flex;
   flex-direction: row;
-  min-height: 90px;
+  min-height: 80px;
   width: 100%;
 }
 
-/* ── Left colored strip (~18% width) ── */
-.rhythiax-card-strip {
+/* ═════════════════════════════════════════════════════════════
+   MODERN SCORE CARD LAYOUT (Default)
+   ═════════════════════════════════════════════════════════════ */
+
+.rhythiax-modern-card .rhythiax-card-strip {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 92px;
+  min-width: 92px;
+  padding: 8px 6px;
+  user-select: none;
+}
+
+.rhythiax-modern-card .rhythiax-card-grade-label {
+  font-size: 28px;
+  font-weight: 900;
+  line-height: 1;
+  letter-spacing: 0.5px;
+}
+
+.rhythiax-modern-card .rhythiax-card-acc-label {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--rhythiax-text, #faf5ff);
+  opacity: 0.95;
+  font-variant-numeric: tabular-nums;
+  margin-top: 3px;
+}
+
+/* Scaled accuracy bar (80%–100%) */
+.rhythiax-modern-card .rhythiax-card-acc-bar-wrap {
+  width: 52px;
+  height: 4px;
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 999px;
+  margin-top: 5px;
+  overflow: hidden;
+}
+
+body[data-rhythiax-theme="white"] .rhythiax-modern-card .rhythiax-card-acc-bar-wrap {
+  background: rgba(0, 0, 0, 0.12);
+}
+
+.rhythiax-modern-card .rhythiax-card-acc-bar-fill {
+  height: 100%;
+  border-radius: 999px;
+  transition: width 0.3s ease;
+}
+
+/* ── Content area ── */
+.rhythiax-modern-card .rhythiax-card-content {
+  flex: 1;
+  min-width: 0;
+  padding: 8px 10px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 6px;
+  position: relative;
+}
+
+.rhythiax-modern-card .rhythiax-card-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.rhythiax-modern-card .rhythiax-card-title-group {
+  flex: 1;
+  min-width: 0;
+}
+
+.rhythiax-modern-card .rhythiax-card-title-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+
+.rhythiax-modern-card .rhythiax-score-rank {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--rhythiax-text-muted, #9ca3af);
+  opacity: 0.8;
+  font-variant-numeric: tabular-nums;
+  flex-shrink: 0;
+}
+
+.rhythiax-modern-card .rhythiax-card-title {
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--rhythiax-text, #faf5ff);
+  text-decoration: none;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  flex: 1;
+  min-width: 0;
+}
+
+.rhythiax-modern-card .rhythiax-card-title:hover {
+  color: var(--rhythiax-accent, #c084fc);
+  text-decoration: underline;
+}
+
+/* Mod Pills */
+.rhythiax-modern-card .rhythiax-card-mods {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.rhythiax-mod-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 1px 5px;
+  border-radius: 4px;
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.2px;
+  flex-shrink: 0;
+  background: var(--rhythiax-inner-surface, rgba(255, 255, 255, 0.05));
+  border: 1px solid var(--rhythiax-border, rgba(255, 255, 255, 0.12));
+  color: var(--rhythiax-text-muted, #9ca3af);
+}
+
+.rhythiax-mod-speed-145 { background: rgba(137, 96, 232, 0.18); color: #c084fc; border-color: rgba(137, 96, 232, 0.35); }
+.rhythiax-mod-speed-135 { background: rgba(78, 134, 223, 0.18);  color: #60a5fa; border-color: rgba(78, 134, 223, 0.35); }
+.rhythiax-mod-speed-125 { background: rgba(55, 199, 239, 0.18);  color: #38bdf8; border-color: rgba(55, 199, 239, 0.35); }
+.rhythiax-mod-speed-115 { background: rgba(116, 183, 243, 0.18); color: #93c5fd; border-color: rgba(116, 183, 243, 0.35); }
+.rhythiax-mod-mirror    { background: rgba(234, 179, 8, 0.18);   color: #facc15; border-color: rgba(234, 179, 8, 0.35); }
+.rhythiax-mod-ghost     { background: rgba(236, 72, 153, 0.18);  color: #f472b6; border-color: rgba(236, 72, 153, 0.35); }
+.rhythiax-mod-hidden    { background: rgba(168, 85, 247, 0.18);  color: #c084fc; border-color: rgba(168, 85, 247, 0.35); }
+.rhythiax-mod-flashlight{ background: rgba(249, 115, 22, 0.18);  color: #fb923c; border-color: rgba(249, 115, 22, 0.35); }
+
+/* White theme mod pills */
+body[data-rhythiax-theme="white"] .rhythiax-mod-speed-145 { background: rgba(137, 96, 232, 0.12); color: #7c3aed; border-color: rgba(137, 96, 232, 0.25); }
+body[data-rhythiax-theme="white"] .rhythiax-mod-speed-135 { background: rgba(78, 134, 223, 0.12);  color: #2563eb; border-color: rgba(78, 134, 223, 0.25); }
+body[data-rhythiax-theme="white"] .rhythiax-mod-speed-125 { background: rgba(55, 199, 239, 0.12);  color: #0284c7; border-color: rgba(55, 199, 239, 0.25); }
+body[data-rhythiax-theme="white"] .rhythiax-mod-speed-115 { background: rgba(116, 183, 243, 0.12); color: #1d4ed8; border-color: rgba(116, 183, 243, 0.25); }
+body[data-rhythiax-theme="white"] .rhythiax-mod-mirror    { background: rgba(234, 179, 8, 0.12);   color: #b45309; border-color: rgba(234, 179, 8, 0.25); }
+body[data-rhythiax-theme="white"] .rhythiax-mod-ghost     { background: rgba(236, 72, 153, 0.12);  color: #db2777; border-color: rgba(236, 72, 153, 0.25); }
+body[data-rhythiax-theme="white"] .rhythiax-mod-hidden    { background: rgba(168, 85, 247, 0.12);  color: #7c3aed; border-color: rgba(168, 85, 247, 0.25); }
+body[data-rhythiax-theme="white"] .rhythiax-mod-flashlight{ background: rgba(249, 115, 22, 0.12);  color: #c2410c; border-color: rgba(249, 115, 22, 0.25); }
+
+.rhythiax-modern-card .rhythiax-card-date {
+  font-size: 10.5px;
+  color: var(--rhythiax-text-subtle, rgba(156, 163, 175, 0.65));
+  margin-top: 1px;
+}
+
+/* Action buttons */
+.rhythiax-modern-card .rhythiax-card-buttons {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+  position: static;
+  background: transparent;
+  padding: 0;
+}
+
+.rhythiax-modern-card .rhythiax-card-btn {
+  width: 24px;
+  height: 24px;
+  border-radius: 5px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--rhythiax-inner-surface, rgba(255, 255, 255, 0.04));
+  border: 1px solid var(--rhythiax-border, rgba(255, 255, 255, 0.08));
+  color: var(--rhythiax-text-muted, #9ca3af);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  text-decoration: none;
+}
+
+.rhythiax-modern-card .rhythiax-card-btn:hover {
+  background: var(--rhythiax-accent-soft, rgba(192, 132, 252, 0.18));
+  border-color: var(--rhythiax-accent, #c084fc);
+  color: var(--rhythiax-accent, #c084fc);
+}
+
+.rhythiax-modern-card .rhythiax-card-btn svg {
+  width: 12px;
+  height: 12px;
+}
+
+/* Modern stats row */
+.rhythiax-modern-card .rhythiax-card-stats-row {
+  display: grid;
+  grid-template-columns: 0.9fr 0.9fr 1.4fr;
+  gap: 6px;
+}
+
+.rhythiax-modern-card .rhythiax-card-stat-box {
+  background: var(--rhythiax-inner-surface, rgba(255, 255, 255, 0.035));
+  border: 1px solid var(--rhythiax-border, rgba(255, 255, 255, 0.08));
+  border-radius: 5px;
+  padding: 4px 7px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 4px;
+  min-width: 0;
+}
+
+.rhythiax-modern-card .rhythiax-card-stat-label {
+  font-size: 9.5px;
+  font-weight: 600;
+  color: var(--rhythiax-text-subtle, rgba(156, 163, 175, 0.65));
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  white-space: nowrap;
+}
+
+.rhythiax-modern-card .rhythiax-card-stat-value {
+  font-size: 11.5px;
+  font-weight: 700;
+  color: var(--rhythiax-text, #f8fafc);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Compact RP block */
+.rhythiax-modern-card .rhythiax-card-rp-box {
+  background: var(--rhythiax-inner-surface, rgba(255, 255, 255, 0.035));
+  border: 1px solid var(--rhythiax-border, rgba(255, 255, 255, 0.08));
+  border-radius: 5px;
+  padding: 4px 8px;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 8px;
+  min-width: 0;
+}
+
+.rhythiax-modern-card .rhythiax-card-rp-main {
+  display: flex;
+  align-items: baseline;
+  gap: 3px;
+  white-space: nowrap;
+}
+
+.rhythiax-modern-card .rhythiax-card-rp-val {
+  font-size: 12.5px;
+  font-weight: 800;
+  color: var(--rhythiax-text, #f8fafc);
+  font-variant-numeric: tabular-nums;
+}
+
+.rhythiax-modern-card .rhythiax-card-rp-lbl {
+  font-size: 9.5px;
+  font-weight: 700;
+  color: var(--rhythiax-accent, #c084fc);
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.rhythiax-modern-card .rhythiax-card-rp-divider {
+  width: 1px;
+  height: 12px;
+  background: var(--rhythiax-border, rgba(255, 255, 255, 0.12));
+  flex-shrink: 0;
+}
+
+.rhythiax-modern-card .rhythiax-card-rp-sub {
+  display: flex;
+  align-items: baseline;
+  gap: 3px;
+  font-size: 10.5px;
+  color: var(--rhythiax-text-subtle, rgba(156, 163, 175, 0.65));
+  white-space: nowrap;
+}
+
+.rhythiax-modern-card .rhythiax-card-rp-sub-lbl {
+  font-size: 9px;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.rhythiax-modern-card .rhythiax-card-rp-sub-val {
+  font-weight: 700;
+  color: var(--rhythiax-text-muted, #9ca3af);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Full combo / miss status */
+.rhythiax-stat-fullcombo {
+  color: #22c55e !important;
+  font-weight: 800 !important;
+}
+
+body[data-rhythiax-theme="white"] .rhythiax-stat-fullcombo {
+  color: #16a34a !important;
+}
+
+.rhythiax-stat-miss {
+  color: #f87171 !important;
+  font-weight: 700 !important;
+}
+
+body[data-rhythiax-theme="white"] .rhythiax-stat-miss {
+  color: #dc2626 !important;
+}
+
+
+/* ═════════════════════════════════════════════════════════════
+   LEGACY SCORE CARD LAYOUT (Option)
+   ═════════════════════════════════════════════════════════════ */
+
+.rhythiax-legacy-card .rhythiax-card-strip {
   display: flex;
   align-items: center;
   justify-content: center;
   flex: 0 0 110px;
   min-width: 110px;
-   padding: 12px 8px;
-  /* border-right is set dynamically by JS as the grade accent bar */
+  padding: 12px 8px;
 }
 
-.rhythiax-card-strip .rhythiax-card-grade {
+.rhythiax-legacy-card .rhythiax-card-grade {
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -25,15 +345,14 @@
   gap: 4px;
 }
 
-.rhythiax-card-grade-label {
-   font-size: 32px;
+.rhythiax-legacy-card .rhythiax-card-grade-label {
+  font-size: 32px;
   font-weight: 900;
   letter-spacing: 1px;
   line-height: 1;
-   text-shadow: none;
 }
 
-.rhythiax-card-acc-label {
+.rhythiax-legacy-card .rhythiax-card-acc-label {
   font-size: 16px;
   font-weight: 700;
   color: rgba(255, 255, 255, 0.8);
@@ -41,29 +360,27 @@
   font-variant-numeric: tabular-nums;
 }
 
-/* ── Right content area ── */
-.rhythiax-card-content {
+.rhythiax-legacy-card .rhythiax-card-content {
   flex: 1;
   display: flex;
   flex-direction: column;
-   padding: 12px 14px;
-   gap: 8px;
+  padding: 12px 14px;
+  gap: 8px;
   min-width: 0;
   position: relative;
 }
 
-/* ── Top row: title only (no date) ── */
-.rhythiax-card-top {
+.rhythiax-legacy-card .rhythiax-card-top {
   display: flex;
   align-items: baseline;
   gap: 8px;
-   padding-right: 108px; /* reserve a stable action area for replay/copy buttons */
+  padding-right: 108px;
 }
 
-.rhythiax-card-title {
-   font-size: 15px;
+.rhythiax-legacy-card .rhythiax-card-title {
+  font-size: 15px;
   font-weight: 600;
-   color: rgba(255, 255, 255, 0.92);
+  color: var(--rhythiax-text, rgba(255, 255, 255, 0.92));
   text-decoration: none;
   white-space: nowrap;
   overflow: hidden;
@@ -72,34 +389,15 @@
   flex: 1;
   min-width: 0;
 }
-.rhythiax-card-title:hover {
-  color: #60a5fa;
+
+.rhythiax-legacy-card .rhythiax-card-title:hover {
+  color: var(--rhythiax-accent, #60a5fa);
   text-decoration: underline;
 }
-.rhythiax-score-rank {
-   flex: 0 0 auto;
-   min-width: 22px;
-   color: color-mix(in srgb, var(--rhythiax-text-muted, #9ca3af) 72%, transparent);
-   font-size: 10px;
-   font-weight: 600;
-   font-variant-numeric: tabular-nums;
-   letter-spacing: .01em;
-   opacity: .72;
-}
-.rhythiax-reigning .rhythiax-card-content::before {
-  content: none;
-  position: absolute;
-  top: 5px;
-  right: 10px;
-  color: var(--rhythiax-text-muted, #9ca3af);
-  font-size: 9px;
-  font-weight: 800;
-  letter-spacing: .08em;
-}
 
-.rhythiax-card-date {
+.rhythiax-legacy-card .rhythiax-card-date {
   font-size: 11px;
-  color: rgba(255, 255, 255, 0.65);
+  color: var(--rhythiax-text-subtle, rgba(255, 255, 255, 0.65));
   white-space: nowrap;
   flex-shrink: 0;
   max-width: min(42%, 260px);
@@ -107,45 +405,36 @@
   text-overflow: ellipsis;
 }
 
-/* ── Date row (separate line below title) ── */
-.rhythiax-card-date-row {
-  font-size: 11px;
-  color: rgba(255, 255, 255, 0.55);
-  white-space: nowrap;
-  letter-spacing: 0.2px;
-}
-
-/* ── Stats grid: 3 columns x 2 rows ── */
-.rhythiax-card-stats {
+.rhythiax-legacy-card .rhythiax-card-stats {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-   gap: 5px 14px;
+  gap: 5px 14px;
 }
 
-.rhythiax-card-stat-item {
+.rhythiax-legacy-card .rhythiax-card-stat-item {
   display: flex;
   align-items: center;
   gap: 5px;
-   padding: 4px 7px;
-   border-radius: 6px;
-   background: rgba(255, 255, 255, 0.035);
-   border: 1px solid rgba(255, 255, 255, 0.045);
+  padding: 4px 7px;
+  border-radius: 6px;
+  background: var(--rhythiax-inner-surface, rgba(255, 255, 255, 0.035));
+  border: 1px solid var(--rhythiax-border, rgba(255, 255, 255, 0.045));
   min-width: 0;
 }
 
-.rhythiax-card-stat-label {
+.rhythiax-legacy-card .rhythiax-card-stat-label {
   font-size: 11px;
   font-weight: 600;
-   color: rgba(255, 255, 255, 0.48);
+  color: var(--rhythiax-text-subtle, rgba(255, 255, 255, 0.48));
   text-transform: uppercase;
   letter-spacing: 0.5px;
   white-space: nowrap;
 }
 
-.rhythiax-card-stat-value {
+.rhythiax-legacy-card .rhythiax-card-stat-value {
   font-size: 12px;
   font-weight: 700;
-   color: rgba(255, 255, 255, 0.94);
+  color: var(--rhythiax-text, rgba(255, 255, 255, 0.94));
   font-variant-numeric: tabular-nums;
   min-width: 0;
   overflow: hidden;
@@ -153,20 +442,7 @@
   white-space: nowrap;
 }
 
-/* ── Full Combo / Misses special styling ── */
-.rhythiax-stat-fullcombo {
-  color: #6b8f5e !important; /* soft fern green — paprotkowy */
-  font-weight: 800 !important;
-  letter-spacing: 0.3px;
-}
-
-.rhythiax-stat-miss {
-  color: #c97a7a !important; /* faded muted red */
-  font-weight: 700 !important;
-}
-
-/* ── Action buttons in the content area (top-right) ── */
-.rhythiax-card-buttons {
+.rhythiax-legacy-card .rhythiax-card-buttons {
   position: absolute;
   top: 8px;
   right: 10px;
@@ -178,34 +454,28 @@
   padding-left: 4px;
 }
 
-.rhythiax-card-btn {
+.rhythiax-legacy-card .rhythiax-card-btn {
   display: flex;
   align-items: center;
   justify-content: center;
   width: 28px;
   height: 28px;
   border-radius: 6px;
-  color: rgba(255, 255, 255, 0.45);
+  color: var(--rhythiax-text-muted, rgba(255, 255, 255, 0.45));
   transition: all 0.15s ease;
   cursor: pointer;
-  background: rgba(255, 255, 255, 0.04);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: var(--rhythiax-inner-surface, rgba(255, 255, 255, 0.04));
+  border: 1px solid var(--rhythiax-border, rgba(255, 255, 255, 0.08));
   text-decoration: none;
 }
-.rhythiax-card-btn:hover {
-  color: #60a5fa;
-  background: rgba(96, 165, 250, 0.12);
-  border-color: rgba(96, 165, 250, 0.25);
+
+.rhythiax-legacy-card .rhythiax-card-btn:hover {
+  color: var(--rhythiax-accent, #60a5fa);
+  background: var(--rhythiax-accent-soft, rgba(96, 165, 250, 0.12));
+  border-color: var(--rhythiax-accent, rgba(96, 165, 250, 0.25));
 }
 
-.rhythiax-card-btn svg {
-  width: 16px;
-  height: 16px;
-  fill: none;
-  stroke: currentColor;
-  stroke-width: 2;
-  stroke-linecap: round;
-  stroke-linejoin: round;
+.rhythiax-legacy-card .rhythiax-card-btn svg {
+  width: 14px;
+  height: 14px;
 }
-
-

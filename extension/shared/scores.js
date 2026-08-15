@@ -56,7 +56,10 @@ RhythiaX.parseScoreCard = function (card) {
 
     const link = RhythiaX.qs('a[href*="/score/"]', card);
     const scoreId = link?.href?.match(/\/score\/(\d+)/)?.[1] || '';
-    const songTitle = link?.textContent?.trim() || '';
+    const titleEl = card.querySelector('.truncate span, .whitespace-nowrap span, span.font-medium, .truncate');
+    const songTitle = titleEl?.textContent?.trim()
+      || (link && !/^\d+(\.\d+)?%$/.test(link.textContent.trim()) ? link.textContent.trim() : '')
+      || 'Unknown';
 
     let timeAgo = '';
     const timeMatch = text.match(/(\d+\s+(second|minute|hour|day|week|month|year)s?\s+ago)/i);
@@ -109,21 +112,18 @@ RhythiaX.parseScoreCard = function (card) {
 
     // Helper: parse pills from an element
     function parsePills(parent) {
-      const pills = [];
-      for (const child of parent.children) {
-        if (child.querySelector('.text-neutral-300') && child.querySelector('.text-neutral-100')) {
-          pills.push(child);
-        }
-      }
-      pills.forEach(pill => {
-        const labelEl = pill.querySelector('.text-neutral-300');
-        const valueEl = pill.querySelector('.text-neutral-100');
-        if (!labelEl || !valueEl) return;
+      const labelEls = parent.querySelectorAll ? parent.querySelectorAll('.text-neutral-300, [class*="text-neutral-300"]') : [];
+      labelEls.forEach(labelEl => {
+        const pill = labelEl.closest ? (labelEl.closest('.bg-\\[\\#1F2021\\], [class*="rounded-lg"]') || labelEl.parentElement) : labelEl.parentElement;
+        const valueEl = pill ? pill.querySelector('.text-neutral-100, [class*="text-neutral-100"]') : labelEl.nextElementSibling;
+        if (!valueEl) return;
         const label = labelEl.textContent.trim();
         const value = valueEl.textContent.trim();
         if (label === 'Mods') mods = value;
         else if (label === 'Notes') notes = value;
         else if (label === 'Weighted RP') weightedRp = value;
+        else if (label === 'RP Earned' && (!rpEarned || rpEarned === '0')) rpEarned = value;
+        else if (label === 'Misses' && (!misses || misses === '0')) misses = value;
       });
     }
 

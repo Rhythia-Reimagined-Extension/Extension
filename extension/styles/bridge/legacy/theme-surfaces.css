@@ -44,6 +44,8 @@ body[data-rhythiax-theme="rhythia-reimagined"] .rhythiax-accordion {
    border-color: rgba(184, 164, 235, 0.16) !important;
 }
 body[data-rhythiax-theme="rhythia-reimagined"] .rhythiax-score-card .rhythiax-card-stat-item,
+body[data-rhythiax-theme="rhythia-reimagined"] .rhythiax-score-card .rhythiax-card-stat-box,
+body[data-rhythiax-theme="rhythia-reimagined"] .rhythiax-score-card .rhythiax-card-rp-box,
 body[data-rhythiax-theme="rhythia-reimagined"] .rhythiax-official-stat-row {
    background: var(--rhythiax-inner-surface, #252239) !important;
    border-color: rgba(184, 164, 235, 0.10) !important;
@@ -54,22 +56,42 @@ body[data-rhythiax-theme="white"] .rhythiax-score-card {
    border-color: rgba(51, 65, 85, 0.24) !important;
    box-shadow: 0 3px 12px rgba(51, 65, 85, 0.08) !important;
 }
+body[data-rhythiax-theme="white"] .rhythiax-score-card .rhythiax-card-stat-item,
+body[data-rhythiax-theme="white"] .rhythiax-score-card .rhythiax-card-stat-box,
+body[data-rhythiax-theme="white"] .rhythiax-score-card .rhythiax-card-rp-box {
+   background: var(--rhythiax-inner-surface, #f5f7fa) !important;
+   border-color: rgba(30, 41, 59, 0.08) !important;
+}
+body[data-rhythiax-theme="white"] .rhythiax-card-buttons {
+   background: transparent !important;
+}
+body[data-rhythiax-theme="white"] .rhythiax-card-btn {
+   background: #f1f5f9 !important;
+   border-color: #cbd5e1 !important;
+   color: #52525b !important;
+}
+body[data-rhythiax-theme="white"] .rhythiax-card-btn:hover {
+   background: #e2e8f0 !important;
+   color: #18181b !important;
+   border-color: #94a3b8 !important;
+}
 body[data-rhythiax-theme="white"] .rhythiax-card-title,
 body[data-rhythiax-theme="white"] .rhythiax-card-stat-value,
-body[data-rhythiax-theme="white"] .rhythiax-card-btn,
-body[data-rhythiax-theme="white"] .rhythiax-profile-box-title,
+body[data-rhythiax-theme="white"] .rhythiax-card-rp-val,
+body[data-rhythiax-theme="white"] .rhythiax-card-rp-sub-val,
 body[data-rhythiax-theme="white"] .rhythiax-official-stat-value {
    color: #18181b !important;
 }
-body[data-rhythiax-theme="white"] .rhythiax-profile-box-meta {
-   color: rgba(24, 24, 27, .52) !important;
+body[data-rhythiax-theme="white"] .rhythiax-card-acc-label {
+   color: #27272a !important;
 }
 body[data-rhythiax-theme="white"] .rhythiax-stat-fullcombo {
-   color: #6b8f5e !important;
+   color: #16a34a !important;
 }
 body[data-rhythiax-theme="white"] .rhythiax-card-date,
 body[data-rhythiax-theme="white"] .rhythiax-card-date-row,
 body[data-rhythiax-theme="white"] .rhythiax-card-stat-label,
+body[data-rhythiax-theme="white"] .rhythiax-card-rp-sub-lbl,
 body[data-rhythiax-theme="white"] .rhythiax-official-stat-label,
 body[data-rhythiax-theme="white"] .rhythiax-speed-bar-count,
 body[data-rhythiax-theme="white"] .rhythiax-speed-bar-label,

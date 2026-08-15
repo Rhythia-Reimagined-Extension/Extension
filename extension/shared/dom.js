@@ -17,7 +17,6 @@ RhythiaX.developerMode = false;
   const SENSITIVE_TEXT = /(bearer\s+)[^\s]+|rhythia_auth_session_v1\s*[=:]\s*[^\s,;]+/ig;
   const areaFromUrl = () => {
     const path = String(window.location?.pathname || '');
-    if (/\/scores/.test(path)) return 'scores';
     if (/\/player\//.test(path)) return 'profile';
     if (/\/maps/.test(path)) return 'maps';
     return 'app';
@@ -153,10 +152,10 @@ RhythiaX.findReplayLink = function (card) {
 };
 
 RhythiaX.findExpandedPanel = function (card) {
-  const grid = card.querySelector('.grid.grid-cols-3, [class*="grid-cols-3"]');
+  const grid = card.querySelector('.grid.grid-cols-3, [class*="grid-cols-3"], [class*="grid-cols-6"]');
   if (grid) {
     const text = grid.textContent;
-    if (text.includes('Mods') && text.includes('Misses') && text.includes('Accuracy')) {
+    if (text.includes('Mods') && (text.includes('Misses') || text.includes('Notes')) && text.includes('Accuracy')) {
       return grid.parentElement;
     }
   }

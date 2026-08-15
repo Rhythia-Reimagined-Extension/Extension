@@ -2,7 +2,7 @@
 
 ## Before reporting an issue
 
-Confirm that you are using Rhythia Reimagined 1.0.1 or later and an officially
+Confirm that you are using Rhythia Reimagined 1.1.0 or later and an officially
 supported browser: Google Chrome 116 or later, or the current version of Opera.
 Describe the page or feature affected and include clear reproduction steps.
 

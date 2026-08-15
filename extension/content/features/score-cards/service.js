@@ -3,7 +3,7 @@ var RhythiaX = RhythiaX || {};
 
 (function () {
   const tabPattern = /^(reigning|top|recent) scores$/i;
-  const tabTransitionDelay = 140;
+  const tabTransitionDelay = 150;
   const tabStates = new WeakMap();
 
   function nextFrame(callback) {
@@ -12,7 +12,8 @@ var RhythiaX = RhythiaX || {};
   }
 
   function activeButton(buttons) {
-    return buttons.find(button => button.getAttribute('aria-pressed') === 'true'
+    return buttons.find(button => button.getAttribute('data-rhythiax-active') === 'true'
+      || button.getAttribute('aria-pressed') === 'true'
       || button.getAttribute('aria-selected') === 'true'
       || (button.classList.contains('border-b-2') && button.classList.contains('border-white')))
       || buttons[0];
@@ -37,7 +38,20 @@ var RhythiaX = RhythiaX || {};
       indicator.style.transform = `translateX(${button.offsetLeft}px)`;
       if (immediate) requestAnimationFrame(() => { indicator.style.transition = ''; });
     };
-    update(activeButton(buttons), true);
+
+    const active = activeButton(buttons);
+    buttons.forEach(btn => btn.setAttribute('data-rhythiax-active', btn === active ? 'true' : 'false'));
+    update(active, true);
+
+    if (window.ResizeObserver && !strip.__rhythiaxResizeObserved) {
+      strip.__rhythiaxResizeObserved = true;
+      const ro = new ResizeObserver(() => {
+        const cur = activeButton(buttons);
+        if (cur) update(cur, true);
+      });
+      ro.observe(strip);
+    }
+
     return { strip, update };
   }
 
@@ -46,18 +60,17 @@ var RhythiaX = RhythiaX || {};
     cards.forEach((card, index) => {
       card.classList.remove('rhythiax-score-tab-leaving');
       card.classList.add('rhythiax-score-tab-entering');
-      card.style.setProperty('--rhythiax-score-tab-delay', `${Math.min(index * 35, 280)}ms`);
+      card.style.setProperty('--rhythiax-score-tab-delay', `${Math.min(index * 22, 160)}ms`);
     });
     window.setTimeout(() => cards.forEach(card => {
       card.classList.remove('rhythiax-score-tab-entering');
       card.style.removeProperty('--rhythiax-score-tab-delay');
-    }), 950);
+    }), 450);
   }
 
   function profileType(card) {
-    if (RhythiaX.isScoresPage?.()) return '';
     const host = RhythiaX.qsa('.rhythiax-profile-score-tabs, .overflow-hidden.rounded-xl.border').find(section => section.contains(card) && RhythiaX.qsa('button', section).some(button => tabPattern.test(button.textContent.trim())));
-    const active = host && RhythiaX.qsa('button', host).find(button => tabPattern.test(button.textContent.trim()) && (button.getAttribute('aria-pressed') === 'true' || (button.classList.contains('border-b-2') && button.classList.contains('border-white'))));
+    const active = host && RhythiaX.qsa('button', host).find(button => tabPattern.test(button.textContent.trim()) && (button.getAttribute('data-rhythiax-active') === 'true' || button.getAttribute('aria-pressed') === 'true' || (button.classList.contains('border-b-2') && button.classList.contains('border-white'))));
     return ({ 'reigning scores': 'reigning', 'top scores': 'top', 'recent scores': 'recent' })[active?.textContent.trim().toLowerCase()] || '';
   }
   function installTabs() {
@@ -79,6 +92,7 @@ var RhythiaX = RhythiaX || {};
       if (button === current) return;
       const direction = buttons.indexOf(button) >= buttons.indexOf(current) ? 1 : -1;
       const state = tabStates.get(host) || {};
+      buttons.forEach(b => b.setAttribute('data-rhythiax-active', b === button ? 'true' : 'false'));
       host.style.setProperty('--rhythiax-score-tab-direction', direction);
       host.classList.add('rhythiax-profile-score-tabs-switching');
       host.setAttribute('aria-busy', 'true');
@@ -104,12 +118,30 @@ var RhythiaX = RhythiaX || {};
         if (state.generation !== generation) return;
         const cards = RhythiaX.findScoreCards().filter(card => host.contains(card));
         const collectionChanged = cards.length !== oldCards.length || cards.some(card => !oldCards.includes(card));
-        if (collectionChanged || frameCount++ >= 9) finish();
+        if (collectionChanged || frameCount++ >= 10) finish();
         else nextFrame(waitForCollection);
       };
       state.timer = window.setTimeout(finish, tabTransitionDelay);
       nextFrame(waitForCollection);
       tabStates.set(host, state);
+    }, true);
+    document.addEventListener('click', event => {
+      const showMoreBtn = event.target.closest?.('button');
+      if (showMoreBtn && /show\s+more|load\s+more/i.test(showMoreBtn.textContent || '')) {
+        let attempts = 0;
+        const checkNewCards = () => {
+          const unenhanced = (RhythiaX.SiteDomBridge?.findScoreCards() || RhythiaX.findScoreCards?.() || []).filter(
+            card => !card.classList.contains('rhythiax-redesigned')
+          );
+          if (unenhanced.length > 0) {
+            RhythiaX.enhanceScoreCards?.();
+            RhythiaX.injectAbsoluteDates?.();
+          } else if (++attempts < 25) {
+            window.setTimeout(checkNewCards, 80);
+          }
+        };
+        window.setTimeout(checkNewCards, 50);
+      }
     }, true);
   }
   RhythiaX.ScoreCardService = { profileType, installTabs };

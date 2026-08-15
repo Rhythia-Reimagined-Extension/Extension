@@ -1,4 +1,4 @@
-/* These elements are shared by /scores and /player. Keep their foreground and
+/* Keep element foreground and
    surface tied to the selected preset instead of the site's dark utilities. */
 .rhythiax-score-card,
 .rhythiax-profile-box,
@@ -20,8 +20,7 @@
 }
 .rhythiax-card-stat-item,
 .rhythiax-official-stat-row,
-.rhythiax-profile-list-item,
-.rhythiax-grade-item,
+.rhythiax-grade-breakdown .rhythiax-grade-item,
 .rhythiax-compare-metric {
    background: var(--rhythiax-inner-surface) !important;
    border-color: var(--rhythiax-border) !important;
@@ -39,15 +38,12 @@
    color: var(--rhythiax-text-muted) !important;
 }
 .rhythiax-card-btn,
-.rhythiax-scores-action,
 .rhythiax-rank-history-trigger {
    color: var(--rhythiax-text-muted) !important;
    background: var(--rhythiax-inner-surface) !important;
    border-color: var(--rhythiax-border-strong) !important;
 }
 .rhythiax-card-btn:hover,
-.rhythiax-scores-action:hover,
-.rhythiax-scores-action.is-active,
 .rhythiax-rank-history-trigger:hover,
 .rhythiax-rank-history-trigger:focus-visible {
    color: var(--rhythiax-text-strong) !important;
@@ -55,8 +51,7 @@
 }
 .rhythiax-card-title:hover { color: var(--rhythiax-accent) !important; }
 .rhythiax-speed-chart { border-bottom-color: var(--rhythiax-chart-track) !important; }
-.rhythiax-rankpath-track,
-.rhythiax-profile-list-track { background: var(--rhythiax-chart-track) !important; }
+.rhythiax-rankpath-track { background: var(--rhythiax-chart-track) !important; }
 .rhythiax-rankpath-target-line { background: var(--rhythiax-border-strong) !important; }
 .rhythiax-accordion-header,
 .rhythiax-accordion-body,
@@ -109,8 +104,6 @@ body[data-rhythiax-theme="white"] .rhythiax-accordion {
 body[data-rhythiax-theme="white"] .rhythiax-card-acc-label,
 body[data-rhythiax-theme="white"] .rhythiax-stat-fullcombo { color: #166534 !important; }
 body[data-rhythiax-theme="white"] .rhythiax-stat-miss { color: #b91c1c !important; }
-body[data-rhythiax-theme="white"] .rhythiax-profile-list-label,
-body[data-rhythiax-theme="white"] .rhythiax-profile-list-share { filter: saturate(.85) brightness(.72); }
 
 /* Dark and Reimagined retain their distinct accents while using the same
    readable neutral text hierarchy. */

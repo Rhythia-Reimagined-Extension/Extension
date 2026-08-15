@@ -23,7 +23,11 @@ body[data-rhythiax-theme="white"] .rhythiax-accordion-header:hover {
    background: color-mix(in srgb, var(--rhythiax-accent) 10%, var(--rhythiax-surface)) !important;
 }
 body[data-rhythiax-theme="white"] .rhythiax-rankpath-track {
-   background: #d4d4d8 !important;
+   background: #e2e8f0 !important;
+   border-color: rgba(0, 0, 0, 0.08) !important;
+}
+body[data-rhythiax-theme="white"] .rhythiax-rankpath-segment {
+   background: rgba(0, 0, 0, 0.05) !important;
 }
 body[data-rhythiax-theme="white"] .rhythiax-rankpath-track-row-achieved .rhythiax-rankpath-segment {
    filter: none;
@@ -34,8 +38,12 @@ body[data-rhythiax-theme="white"] .rhythiax-rankpath-track-row-achieved .rhythia
 body[data-rhythiax-theme="white"] .rhythiax-rankpath-track-row-achieved .rhythiax-rankpath-segment:nth-child(3) .rhythiax-rankpath-segment-fill { background: #8f8f99 !important; }
 body[data-rhythiax-theme="white"] .rhythiax-rankpath-track-row-achieved .rhythiax-rankpath-segment:nth-child(4) .rhythiax-rankpath-segment-fill { background: #80808a !important; }
 body[data-rhythiax-theme="white"] .rhythiax-rankpath-track-row-achieved .rhythiax-rankpath-segment:nth-child(5) .rhythiax-rankpath-segment-fill { background: #71717a !important; }
-body[data-rhythiax-theme="white"] .rhythiax-rankpath-label {
+body[data-rhythiax-theme="white"] .rhythiax-rankpath-label,
+body[data-rhythiax-theme="white"] .r-tier-name {
    color: #3f3f46 !important;
+}
+body[data-rhythiax-theme="white"] .r-tier-rp {
+   color: #71717a !important;
 }
 body[data-rhythiax-theme="white"] .rhythiax-rankpath-target-label {
    color: #52525b !important;
@@ -44,27 +52,29 @@ body[data-rhythiax-theme="white"] .rhythiax-rankpath-target-line {
    background: rgba(39, 39, 42, 0.20) !important;
 }
 body[data-rhythiax-theme="white"] .rhythiax-rankpath-crown {
-   border-color: #a1a1aa;
-   color: #a1a1aa;
-   filter: none;
-   box-shadow: none;
+   border-color: #94a3b8;
+   color: #64748b;
+   background: rgba(0, 0, 0, 0.04);
+   box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.08), 0 2px 6px rgba(0, 0, 0, 0.06);
 }
-body[data-rhythiax-theme="white"] .rhythiax-rankpath-target-achieved .rhythiax-rankpath-crown {
-   border-color: #52525b;
-   color: #52525b;
-   background: rgba(82, 82, 91, 0.08);
-   filter: drop-shadow(0 0 7px rgba(82, 82, 91, 0.35));
-   box-shadow: 0 0 0 2px rgba(82, 82, 91, 0.12), 0 0 10px rgba(82, 82, 91, 0.20);
+body[data-rhythiax-theme="white"] .rhythiax-rankpath-target-achieved .rhythiax-rankpath-crown,
+body[data-rhythiax-theme="white"] .rhythiax-rankpath-target.achieved .rhythiax-rankpath-crown {
+   border-color: #1e293b;
+   color: #1e293b;
+   background: radial-gradient(circle at 35% 25%, rgba(30, 41, 59, 0.18), rgba(30, 41, 59, 0.05) 54%, transparent);
+   filter: drop-shadow(0 0 6px rgba(30, 41, 59, 0.25));
+   box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.1), 0 0 0 2px rgba(30, 41, 59, 0.1);
 }
-body[data-rhythiax-theme="white"] .rhythiax-rankpath-target-achieved .rhythiax-rankpath-crown svg {
-    fill: rgba(82, 82, 91, 0.20);
+body[data-rhythiax-theme="white"] .rhythiax-rankpath-target-achieved .rhythiax-rankpath-crown svg,
+body[data-rhythiax-theme="white"] .rhythiax-rankpath-target.achieved .rhythiax-rankpath-crown svg {
+    fill: rgba(30, 41, 59, 0.15);
 }
 body[data-rhythiax-theme="white"] .rhythiax-rankpath-target[data-crown-mode="3d"] .rhythiax-rankpath-crown {
-    border-color: #52525b;
-    color: #52525b;
+    border-color: #94a3b8;
+    color: #64748b;
     background: radial-gradient(circle at 35% 25%, rgba(255, 255, 255, 0.74), rgba(82, 82, 91, 0.10) 54%, rgba(82, 82, 91, 0.04));
-    filter: drop-shadow(0 0 6px rgba(82, 82, 91, 0.28));
-    box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.78), 0 0 0 2px rgba(82, 82, 91, 0.10), 0 0 10px rgba(82, 82, 91, 0.16);
+    filter: drop-shadow(0 0 6px rgba(82, 82, 91, 0.18));
+    box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.78), 0 0 0 2px rgba(82, 82, 91, 0.10), 0 0 10px rgba(82, 82, 91, 0.12);
 }
 body[data-rhythiax-theme="white"] .rhythiax-rankpath-target[data-crown-mode="3d"] .rhythiax-rankpath-crown::before {
     opacity: 0.20;
@@ -80,22 +90,41 @@ body[data-rhythiax-theme="white"] .rhythiax-rankpath-target[data-crown-mode="2d"
     filter: none;
 }
 body[data-rhythiax-theme="white"] .rhythiax-rankpath-label-past {
-   color: #3f3f46 !important;
+   color: #52525b !important;
 }
-body[data-rhythiax-theme="white"] .rhythiax-rankpath-status {
-   color: #3f3f46 !important;
+body[data-rhythiax-theme="white"] .rhythiax-rankpath-status-capsule {
+   background: #f1f5f9 !important;
+   border-color: rgba(30, 41, 59, 0.15) !important;
 }
-body[data-rhythiax-theme="white"] .rhythiax-rankpath-bar.is-grandmaster .rhythiax-rankpath-segment {
+body[data-rhythiax-theme="white"] .rhythiax-rankpath-status-rp {
+   color: #0f172a !important;
+}
+body[data-rhythiax-theme="white"] .rhythiax-rankpath-status-goal {
+   color: #475569 !important;
+}
+body[data-rhythiax-theme="white"] .rhythiax-rankpath-status-capsule.is-gm {
+   border-color: rgba(30, 41, 59, 0.3) !important;
+   background: #e2e8f0 !important;
+   box-shadow: 0 0 6px rgba(30, 41, 59, 0.1) !important;
+}
+body[data-rhythiax-theme="white"] .rhythiax-rankpath-marker {
+   background: #ffffff !important;
+   box-shadow: 0 0 4px var(--active-tier-color, #000), 0 1px 3px rgba(0, 0, 0, 0.3) !important;
+}
+body[data-rhythiax-theme="white"] .rhythiax-rankpath-bar.is-grandmaster .rhythiax-rankpath-segment,
+body[data-rhythiax-theme="white"] .rhythiax-rankpath-bar.is-gm .rhythiax-rankpath-segment {
    background: rgba(39, 39, 42, 0.08) !important;
 }
-body[data-rhythiax-theme="white"] .rhythiax-rankpath-bar.is-grandmaster .rhythiax-rankpath-segment-fill {
-   background: #71717a !important;
-   filter: none;
+body[data-rhythiax-theme="white"] .rhythiax-rankpath-bar.is-grandmaster .rhythiax-rankpath-segment-fill,
+body[data-rhythiax-theme="white"] .rhythiax-rankpath-bar.is-gm .rhythiax-rankpath-segment-fill {
+   background: #334155 !important;
+   box-shadow: 0 0 5px rgba(51, 65, 85, 0.4) !important;
+   filter: none !important;
 }
 body[data-rhythiax-theme="white"] .rhythiax-rankpath-bar.is-grandmaster .rhythiax-rankpath-label,
 body[data-rhythiax-theme="white"] .rhythiax-rankpath-bar.is-grandmaster .rhythiax-rankpath-target-label,
-body[data-rhythiax-theme="white"] .rhythiax-rankpath-bar.is-grandmaster .rhythiax-rankpath-status {
-   color: #27272a !important;
+body[data-rhythiax-theme="white"] .rhythiax-rankpath-bar.is-gm .rhythiax-rankpath-target-label {
+   color: #1e293b !important;
 }
 /* Utility text colors used by the official cards need the same treatment. */
 body[data-rhythiax-theme="white"] #root [class*="text-neutral-400"],

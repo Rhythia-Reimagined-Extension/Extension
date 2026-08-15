@@ -17,7 +17,7 @@ reporter when possible.
 
 ## Supported release
 
-Security reports for the current production release, 1.0.1, are accepted.
+Security reports for the current production release, 1.1.0, are accepted.
 Officially supported browsers are Google Chrome 116 or later and the current
 version of Opera.
 

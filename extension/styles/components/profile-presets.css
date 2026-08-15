@@ -1,208 +1,437 @@
-/* Profile layout presets. Soft Blocks is intentionally compact because these
-   cards live inside the narrow profile sidebar. */
+/* =============================================
+   Profile Layout Presets & Modern Profile List
+   ============================================= */
 .rhythiax-profile-list {
-   display: grid;
-   gap: 6px;
-   margin-top: 12px;
+   display: flex;
+   flex-direction: column;
+   gap: 4px;
+   margin-top: 2px;
+   -webkit-font-smoothing: antialiased;
+   -moz-osx-font-smoothing: grayscale;
+   text-rendering: geometricPrecision;
 }
+
+/* Base item structure (Default / Soft Blocks) */
 .rhythiax-profile-list-item {
-   --profile-color: var(--grade-color, var(--speed-color, #aa92e8));
+   --profile-color: var(--grade-color, var(--speed-color, var(--rhythiax-accent, #aa92e8)));
    display: grid;
-   grid-template-columns: 42px minmax(0, 1fr) auto auto;
+   grid-template-columns: 46px minmax(0, 1fr) 38px;
    align-items: center;
-   gap: 7px;
-   min-height: 31px;
-   padding: 3px 6px;
-   border: 1px solid color-mix(in srgb, var(--profile-color) 12%, var(--rhythiax-text, transparent));
-   border-radius: 10px;
-   background: color-mix(in srgb, var(--profile-color) 5%, var(--rhythiax-inner-surface, #252239));
+   gap: 8px;
+   min-height: 34px;
+   padding: 4px 8px;
+   border-radius: 6px;
+   border: 1px solid color-mix(in srgb, var(--profile-color) 16%, rgba(255, 255, 255, 0.06));
+   background: color-mix(in srgb, var(--profile-color) 6%, rgba(255, 255, 255, 0.025));
    cursor: pointer;
+   user-select: none;
    opacity: 1;
-   transition: border-color .18s ease, background .18s ease, opacity .18s ease, transform .18s ease;
+   transition: background-color 160ms ease,
+               border-color 160ms ease,
+               box-shadow 160ms ease,
+               transform 160ms ease,
+               opacity 160ms ease,
+               filter 160ms ease;
+   animation: rhythiax-profile-item-in 200ms ease-out both;
+   animation-delay: calc(var(--item-idx, 0) * 15ms);
 }
-.rhythiax-profile-list-item:hover,
-.rhythiax-profile-list-item:focus-visible,
-.rhythiax-profile-list-item.active:hover {
-   border-color: color-mix(in srgb, var(--profile-color) 42%, transparent);
-   background: color-mix(in srgb, var(--profile-color) 9%, var(--rhythiax-inner-surface, #252239));
-   outline: none;
-   transform: translateX(1px);
+
+@keyframes rhythiax-profile-item-in {
+   from {
+      opacity: 0;
+   }
+   to {
+      opacity: 1;
+   }
 }
+
+.rhythiax-profile-list-item:hover {
+   background: color-mix(in srgb, var(--profile-color) 12%, rgba(255, 255, 255, 0.055));
+   border-color: color-mix(in srgb, var(--profile-color) 45%, transparent);
+   box-shadow: inset 3px 0 0 var(--profile-color);
+   transform: translateX(2px);
+}
+
+.rhythiax-profile-list-item:focus-visible {
+   outline: 2px solid var(--profile-color);
+   outline-offset: 1px;
+}
+
+/* Empty item (0 plays) resting state */
+.rhythiax-profile-item-empty:not(.is-dimmed):not(:hover) {
+   opacity: 0.45;
+}
+
+/* Dimmed state during active filter */
 .rhythiax-profile-list-item.is-dimmed,
-.rhythiax-grade-list .rhythiax-profile-list-item:not(.active) { opacity: .24; }
+.rhythiax-grade-list .rhythiax-profile-list-item:not(.active),
+.rhythiax-speed-list .rhythiax-profile-list-item.is-dimmed {
+   opacity: 0.28 !important;
+   filter: grayscale(35%);
+   transform: none !important;
+   box-shadow: none !important;
+}
+
+/* Active filtered state */
+.rhythiax-profile-list-item[aria-pressed="true"],
+.rhythiax-profile-box .rhythiax-grade-item.active[aria-pressed="true"],
+.rhythiax-profile-box .rhythiax-speed-item.active[aria-pressed="true"] {
+   border-color: var(--profile-color) !important;
+   background: color-mix(in srgb, var(--profile-color) 18%, rgba(255, 255, 255, 0.07)) !important;
+   box-shadow: inset 3px 0 0 var(--profile-color) !important;
+   transform: translateX(2px);
+   opacity: 1 !important;
+   filter: none !important;
+}
+
+/* Label Badge */
 .rhythiax-profile-list-label {
-   min-width: 0;
-   padding: 3px 6px;
-   border: 1px solid color-mix(in srgb, var(--profile-color) 32%, transparent);
-   border-radius: 999px;
-   color: color-mix(in srgb, var(--profile-color) 78%, white 22%);
-   font-size: 10px;
-   font-weight: 800;
-   line-height: 1.1;
+   display: inline-flex;
+   align-items: center;
+   justify-content: center;
+   min-width: 44px;
+   height: 22px;
+   padding: 0 5px;
+   border-radius: 4px;
+   font-size: 11px;
+   font-weight: 700;
+   line-height: 1;
+   letter-spacing: 0.3px;
    text-align: center;
    white-space: nowrap;
+   color: color-mix(in srgb, var(--profile-color) 88%, white 12%);
+   background: color-mix(in srgb, var(--profile-color) 14%, rgba(255, 255, 255, 0.02));
+   border: 1px solid color-mix(in srgb, var(--profile-color) 35%, transparent);
+   transition: background-color 160ms ease, border-color 160ms ease;
 }
-.rhythiax-profile-list-label em {
-   display: block;
-   margin-top: 2px;
-   color: color-mix(in srgb, var(--profile-color) 60%, white 40%);
-   font-size: 7px;
-   font-style: normal;
-   font-weight: 600;
-   letter-spacing: .02em;
-   text-transform: uppercase;
+
+.rhythiax-profile-list-item:hover .rhythiax-profile-list-label {
+   background: color-mix(in srgb, var(--profile-color) 22%, transparent);
+   border-color: color-mix(in srgb, var(--profile-color) 55%, transparent);
 }
+
+/* Track & Bar */
 .rhythiax-profile-list-track {
    display: block;
+   position: relative;
    height: 7px;
-   overflow: hidden;
    border-radius: 999px;
-   background: color-mix(in srgb, var(--rhythiax-text, white) 8%, transparent);
+   overflow: hidden;
+   background: rgba(255, 255, 255, 0.07);
 }
+
 .rhythiax-profile-list-track i {
    display: block;
    height: 100%;
-   min-width: 2px;
+   min-width: 0;
    border-radius: inherit;
    background: var(--profile-color);
-   transition: width .4s ease, background .18s ease;
+   transition: width 380ms cubic-bezier(.16, 1, .3, 1), filter 160ms ease;
 }
+
+.rhythiax-profile-list-item:hover .rhythiax-profile-list-track i {
+   filter: brightness(1.15) saturate(1.1);
+}
+
+/* Count (Plays) */
 .rhythiax-profile-list-count {
-   padding: 3px 7px;
-   border: 1px solid color-mix(in srgb, var(--profile-color) 28%, transparent);
-   border-radius: 999px;
-   color: color-mix(in srgb, var(--rhythiax-text, white) 88%, var(--profile-color));
-   font-size: 10px;
-   font-weight: 700;
+   display: inline-flex;
+   align-items: center;
+   justify-content: flex-end;
+   padding: 2px 6px;
+   border-radius: 4px;
+   font-size: 11px;
+   font-weight: 600;
    font-variant-numeric: tabular-nums;
    white-space: nowrap;
+   color: var(--rhythiax-text-strong, #f4f4f5);
+   background: rgba(255, 255, 255, 0.04);
+   border: 1px solid color-mix(in srgb, var(--rhythiax-border, rgba(255, 255, 255, 0.08)) 80%, transparent);
 }
+
+/* Share Percentage */
 .rhythiax-profile-list-share {
-   min-width: 27px;
-   color: color-mix(in srgb, var(--profile-color) 72%, var(--rhythiax-text, white));
-   font-size: 10px;
+   display: inline-flex;
+   align-items: center;
+   justify-content: flex-end;
+   font-size: 11px;
+   font-weight: 700;
    font-variant-numeric: tabular-nums;
+   color: color-mix(in srgb, var(--profile-color) 82%, var(--rhythiax-text-strong, #fff) 18%);
    text-align: right;
+   min-width: 32px;
+   white-space: nowrap;
 }
-.rhythiax-profile-style-pill-rows .rhythiax-profile-list-item {
-   grid-template-columns: auto minmax(0, 1fr) auto;
-   min-height: 29px;
-   border-radius: 999px;
-   padding: 3px 8px 3px 5px;
-   background: color-mix(in srgb, var(--profile-color) 6%, var(--rhythiax-inner-surface, #252239));
+
+/* =============================================
+   Metric Display Modes: Percentage / Count / Both
+   ============================================= */
+
+/* Default: Percentage only */
+.rhythiax-profile-metric-percentage .rhythiax-profile-list-item {
+   grid-template-columns: 46px minmax(0, 1fr) 38px;
 }
-.rhythiax-profile-style-pill-rows .rhythiax-profile-list-share { display: none; }
-.rhythiax-profile-style-pill-rows .rhythiax-profile-list-label { padding-inline: 7px; }
-.rhythiax-profile-style-pill-rows .rhythiax-profile-list-count { border: 0; padding-inline: 4px; background: transparent; }
-/* Rating rows also carry the legacy grade-item class for filtering. Keep its
-   selected-state styling from adding a stronger outline than tempo rows. */
-.rhythiax-profile-box .rhythiax-grade-item.active {
-   border-color: color-mix(in srgb, var(--profile-color) 12%, var(--rhythiax-text, transparent)) !important;
-   background: color-mix(in srgb, var(--profile-color) 5%, var(--rhythiax-inner-surface, #252239));
+.rhythiax-profile-metric-percentage .rhythiax-profile-list-count {
+   display: none !important;
+}
+.rhythiax-profile-metric-percentage .rhythiax-profile-list-share {
+   display: inline-flex !important;
+}
+
+/* Count (Plays) only */
+.rhythiax-profile-metric-count .rhythiax-profile-list-item {
+   grid-template-columns: 46px minmax(0, 1fr) auto;
+}
+.rhythiax-profile-metric-count .rhythiax-profile-list-count {
+   display: inline-flex !important;
+}
+.rhythiax-profile-metric-count .rhythiax-profile-list-share {
+   display: none !important;
+}
+
+/* Both (Plays + Percentage) */
+.rhythiax-profile-metric-both .rhythiax-profile-list-item {
+   grid-template-columns: 46px minmax(0, 1fr) auto 36px;
+}
+.rhythiax-profile-metric-both .rhythiax-profile-list-count {
+   display: inline-flex !important;
+}
+.rhythiax-profile-metric-both .rhythiax-profile-list-share {
+   display: inline-flex !important;
+}
+
+/* =============================================
+   Preset Style 1: Soft Blocks (Default)
+   ============================================= */
+.rhythiax-profile-style-soft-blocks .rhythiax-profile-list-item {
+   border-radius: 6px;
+}
+
+/* =============================================
+   Preset Style 2: Profile Surface (Minimalist Flush / Glass)
+   ============================================= */
+.rhythiax-profile-style-profile-surface {
+   border-color: color-mix(in srgb, var(--rhythiax-accent, #aa92e8) 22%, transparent);
+   background: color-mix(in srgb, var(--rhythiax-accent, #aa92e8) 2%, var(--rhythiax-surface, #141518));
+}
+
+.rhythiax-profile-style-profile-surface .rhythiax-profile-list-item {
+   border-radius: 4px;
+   border: 1px solid transparent;
+   border-left: 3px solid var(--profile-color);
+   border-bottom: 1px solid color-mix(in srgb, var(--rhythiax-border, rgba(255, 255, 255, 0.08)) 65%, transparent);
+   background: transparent;
+}
+
+.rhythiax-profile-style-profile-surface .rhythiax-profile-list-item:hover {
+   background: rgba(255, 255, 255, 0.04);
+   border-color: color-mix(in srgb, var(--profile-color) 35%, transparent);
+   border-left: 3px solid var(--profile-color);
    box-shadow: none;
 }
-/* Profile Surface follows the mockup: the whole card carries a quiet accent,
-   while each row keeps the same readable label / bar / value anatomy. */
-.rhythiax-profile-style-profile-surface {
-   border-color: color-mix(in srgb, var(--rhythiax-accent, #aa92e8) 28%, transparent);
-   background: color-mix(in srgb, var(--rhythiax-accent, #aa92e8) 3%, var(--rhythiax-surface, #1b1a24));
-   box-shadow: 0 8px 24px rgba(0, 0, 0, .12);
+
+.rhythiax-profile-style-profile-surface .rhythiax-profile-list-item[aria-pressed="true"] {
+   background: color-mix(in srgb, var(--profile-color) 12%, rgba(255, 255, 255, 0.04)) !important;
+   border-color: color-mix(in srgb, var(--profile-color) 50%, transparent) !important;
+   border-left: 3px solid var(--profile-color) !important;
+   box-shadow: none !important;
 }
-.rhythiax-profile-style-profile-surface .rhythiax-profile-list { gap: 5px; }
-.rhythiax-profile-style-profile-surface .rhythiax-profile-list-item {
-   min-height: 34px;
-   padding: 4px 7px;
-   border-radius: 9px;
-   background: color-mix(in srgb, var(--profile-color) 5%, var(--rhythiax-inner-surface, #252239));
+
+.rhythiax-profile-style-profile-surface .rhythiax-profile-list-label {
+   background: color-mix(in srgb, var(--profile-color) 12%, transparent);
+   border-color: color-mix(in srgb, var(--profile-color) 25%, transparent);
 }
-.rhythiax-profile-style-profile-surface .rhythiax-profile-list-item:hover,
-.rhythiax-profile-style-profile-surface .rhythiax-profile-list-item:focus-visible { transform: translateX(2px); }
-.rhythiax-profile-style-profile-surface .rhythiax-profile-list-label,
-.rhythiax-profile-style-profile-surface .rhythiax-profile-list-count { padding: 3px 8px; }
-.rhythiax-profile-style-profile-surface .rhythiax-profile-list-track {
-   height: 8px;
-   background: color-mix(in srgb, var(--rhythiax-text, white) 7%, transparent);
+
+/* =============================================
+   Preset Style 3: Pill Rows (Rounded Capsules)
+   ============================================= */
+.rhythiax-profile-style-pill-rows .rhythiax-profile-list-item {
+   border-radius: 999px;
+   padding: 4px 10px 4px 6px;
 }
-.rhythiax-profile-style-profile-surface .rhythiax-profile-list-share { min-width: 31px; font-weight: 700; }
-body[data-rhythiax-theme="white"] .rhythiax-profile-style-profile-surface {
-   border-color: color-mix(in srgb, var(--rhythiax-accent, #5b21b6) 24%, rgba(51,65,85,.14));
-   background: color-mix(in srgb, var(--rhythiax-accent, #5b21b6) 2%, var(--rhythiax-surface, #fff));
-   box-shadow: 0 5px 16px rgba(51, 65, 85, .08);
+
+.rhythiax-profile-style-pill-rows .rhythiax-profile-list-label {
+   border-radius: 999px;
+   padding-inline: 8px;
 }
-body[data-rhythiax-theme="white"] .rhythiax-profile-style-profile-surface .rhythiax-profile-list-item {
-   background: color-mix(in srgb, var(--profile-color) 5%, var(--rhythiax-inner-surface, #f3f4f6));
+
+.rhythiax-profile-style-pill-rows .rhythiax-profile-list-count {
+   border-radius: 999px;
+   padding-inline: 8px;
 }
-body[data-rhythiax-theme="white"] .rhythiax-profile-style-profile-surface .rhythiax-profile-list-track { background: rgba(24, 24, 27, .09); }
-body[data-rhythiax-theme="white"] .rhythiax-profile-style-profile-surface .rhythiax-profile-list-count { background: rgba(255, 255, 255, .62); }
+
+/* =============================================
+   Theme Specific Overrides
+   ============================================= */
+
+/* --- White / Light Theme --- */
+body[data-rhythiax-theme="white"] .rhythiax-profile-box {
+   background: var(--rhythiax-surface, #ffffff) !important;
+   border-color: rgba(24, 24, 27, 0.10) !important;
+   box-shadow: 0 2px 8px rgba(30, 41, 59, 0.05) !important;
+}
+
+body[data-rhythiax-theme="white"] .rhythiax-profile-box-title {
+   color: var(--rhythiax-accent, #52525b) !important;
+   border-bottom-color: rgba(24, 24, 27, 0.08) !important;
+}
+
+body[data-rhythiax-theme="white"] .rhythiax-profile-box-heading,
+body[data-rhythiax-theme="white"] .rhythiax-profile-box-icon {
+   color: var(--rhythiax-accent, #52525b) !important;
+}
+
+body[data-rhythiax-theme="white"] .rhythiax-profile-box-meta {
+   color: #52525b !important;
+   background: rgba(24, 24, 27, 0.04) !important;
+   border-color: rgba(24, 24, 27, 0.08) !important;
+}
+
 body[data-rhythiax-theme="white"] .rhythiax-profile-list-item {
-   --rhythiax-text: #18181b;
-   border-color: color-mix(in srgb, var(--profile-color) 18%, rgba(51,65,85,.12));
-   background: color-mix(in srgb, var(--profile-color) 4%, var(--rhythiax-inner-surface, #f3f4f6));
+   background: color-mix(in srgb, var(--profile-color) 4%, #f4f5f7);
+   border-color: color-mix(in srgb, var(--profile-color) 18%, rgba(24, 24, 27, 0.09));
 }
-body[data-rhythiax-theme="white"] .rhythiax-profile-list-item:hover,
-body[data-rhythiax-theme="white"] .rhythiax-profile-list-item:focus-visible {
-   background: color-mix(in srgb, var(--profile-color) 8%, var(--rhythiax-inner-surface, #f3f4f6));
+
+body[data-rhythiax-theme="white"] .rhythiax-profile-list-item:hover {
+   background: color-mix(in srgb, var(--profile-color) 9%, #eceef2);
+   border-color: color-mix(in srgb, var(--profile-color) 45%, rgba(24, 24, 27, 0.16));
+   box-shadow: inset 3px 0 0 var(--profile-color);
 }
-body[data-rhythiax-theme="white"] .rhythiax-profile-list-track { background: rgba(24,24,27,.10); }
-body[data-rhythiax-theme="white"] .rhythiax-profile-list-label {
-   color: color-mix(in srgb, var(--profile-color) 72%, #18181b 28%) !important;
+
+body[data-rhythiax-theme="white"] .rhythiax-profile-list-item[aria-pressed="true"] {
+   background: color-mix(in srgb, var(--profile-color) 14%, #eceef2) !important;
+   border-color: var(--profile-color) !important;
+   box-shadow: inset 3px 0 0 var(--profile-color) !important;
 }
-body[data-rhythiax-theme="white"] .rhythiax-profile-list-count {
-   color: #18181b !important;
-   background: rgba(255, 255, 255, .52);
+
+body[data-rhythiax-theme="white"] .rhythiax-profile-list-track {
+   background: rgba(24, 24, 27, 0.08);
 }
-body[data-rhythiax-theme="white"] .rhythiax-profile-list-share {
-   color: color-mix(in srgb, var(--profile-color) 65%, #18181b 35%) !important;
-}
+
 body[data-rhythiax-theme="white"] .rhythiax-profile-list-track i {
-   filter: saturate(.9) brightness(.88);
+   filter: saturate(1.15) brightness(0.92);
 }
+
+body[data-rhythiax-theme="white"] .rhythiax-profile-list-label {
+   color: color-mix(in srgb, var(--profile-color) 78%, #18181b 22%);
+   background: color-mix(in srgb, var(--profile-color) 12%, #ffffff);
+   border-color: color-mix(in srgb, var(--profile-color) 30%, rgba(24, 24, 27, 0.12));
+}
+
+body[data-rhythiax-theme="white"] .rhythiax-profile-list-count {
+   color: #18181b;
+   background: rgba(255, 255, 255, 0.75);
+   border-color: rgba(24, 24, 27, 0.09);
+}
+
+body[data-rhythiax-theme="white"] .rhythiax-profile-list-share {
+   color: color-mix(in srgb, var(--profile-color) 78%, #18181b 22%);
+}
+
+/* White theme: Profile Surface */
+body[data-rhythiax-theme="white"] .rhythiax-profile-style-profile-surface {
+   border-color: color-mix(in srgb, var(--rhythiax-accent, #52525b) 20%, rgba(24, 24, 27, 0.10)) !important;
+   background: color-mix(in srgb, var(--rhythiax-accent, #52525b) 2%, #ffffff) !important;
+}
+
+body[data-rhythiax-theme="white"] .rhythiax-profile-style-profile-surface .rhythiax-profile-list-item {
+   background: transparent !important;
+   border-color: transparent !important;
+   border-left: 3px solid var(--profile-color) !important;
+   border-bottom: 1px solid rgba(24, 24, 27, 0.07) !important;
+}
+
+body[data-rhythiax-theme="white"] .rhythiax-profile-style-profile-surface .rhythiax-profile-list-item:hover {
+   background: rgba(0, 0, 0, 0.03) !important;
+   border-color: color-mix(in srgb, var(--profile-color) 35%, transparent) !important;
+   border-left: 3px solid var(--profile-color) !important;
+   box-shadow: none !important;
+}
+
+body[data-rhythiax-theme="white"] .rhythiax-profile-style-profile-surface .rhythiax-profile-list-item[aria-pressed="true"] {
+   background: color-mix(in srgb, var(--profile-color) 10%, #f4f5f7) !important;
+   border-color: color-mix(in srgb, var(--profile-color) 45%, transparent) !important;
+   border-left: 3px solid var(--profile-color) !important;
+   box-shadow: none !important;
+}
+
+/* --- Reimagined Theme --- */
+body[data-rhythiax-theme="rhythia-reimagined"] .rhythiax-profile-box {
+   border-color: color-mix(in srgb, var(--rhythiax-accent, #aa92e8) 22%, rgba(255, 255, 255, 0.08));
+}
+
+body[data-rhythiax-theme="rhythia-reimagined"] .rhythiax-profile-style-soft-blocks .rhythiax-profile-list-item,
+body[data-rhythiax-theme="rhythia-reimagined"] .rhythiax-profile-style-pill-rows .rhythiax-profile-list-item {
+   border-color: color-mix(in srgb, var(--profile-color) 18%, rgba(184, 164, 235, 0.08));
+   background: color-mix(in srgb, var(--profile-color) 6%, var(--rhythiax-inner-surface, #252239));
+}
+
+body[data-rhythiax-theme="rhythia-reimagined"] .rhythiax-profile-style-soft-blocks .rhythiax-profile-list-item:hover,
+body[data-rhythiax-theme="rhythia-reimagined"] .rhythiax-profile-style-pill-rows .rhythiax-profile-list-item:hover {
+   background: color-mix(in srgb, var(--profile-color) 12%, var(--rhythiax-inner-surface, #252239));
+}
+
+/* --- Dark Theme --- */
+body[data-rhythiax-theme="dark"] .rhythiax-profile-box {
+   border-color: var(--rhythiax-border-strong, rgba(255, 255, 255, 0.09));
+}
+
+body[data-rhythiax-theme="dark"] .rhythiax-profile-style-soft-blocks .rhythiax-profile-list-item,
+body[data-rhythiax-theme="dark"] .rhythiax-profile-style-pill-rows .rhythiax-profile-list-item {
+   border-color: color-mix(in srgb, var(--profile-color) 18%, rgba(255, 255, 255, 0.06));
+   background: color-mix(in srgb, var(--profile-color) 6%, var(--rhythiax-inner-surface, #1e2023));
+}
+
+body[data-rhythiax-theme="dark"] .rhythiax-profile-style-soft-blocks .rhythiax-profile-list-item:hover,
+body[data-rhythiax-theme="dark"] .rhythiax-profile-style-pill-rows .rhythiax-profile-list-item:hover {
+   background: color-mix(in srgb, var(--profile-color) 12%, var(--rhythiax-inner-surface, #1e2023));
+}
+
+/* =============================================
+   Responsive & Accessibility
+   ============================================= */
 @media (max-width: 560px) {
-   .rhythiax-profile-list { gap: 5px; margin-top: 10px; }
-   .rhythiax-profile-list-item { grid-template-columns: 37px minmax(0, 1fr) auto auto; gap: 5px; min-height: 28px; padding: 2px 4px; }
-   .rhythiax-profile-list-count { padding-inline: 5px; font-size: 9px; }
-   .rhythiax-profile-list-share { min-width: 23px; font-size: 9px; }
-}
-body[data-rhythiax-theme="white"] .rhythiax-profile-box .rhythiax-grade-item {
-   border-color: color-mix(in srgb, var(--profile-color) 18%, rgba(51,65,85,.12)) !important;
-   background: color-mix(in srgb, var(--profile-color) 4%, var(--rhythiax-inner-surface, #f3f4f6)) !important;
-}
-body[data-rhythiax-theme="white"] .rhythiax-profile-box.rhythiax-profile-style-profile-surface .rhythiax-grade-item {
-   background: color-mix(in srgb, var(--profile-color) 5%, var(--rhythiax-inner-surface, #f3f4f6)) !important;
-}
-
-/* All profile presets use the same quiet outline. Accent colors stay on the
-   rows instead of turning the whole profile card into a bright frame. */
-.rhythiax-profile-box,
-.rhythiax-profile-style-profile-surface {
-   border-color: var(--rhythiax-border, rgba(255, 255, 255, .07)) !important;
-}
-
-/* Keep the page's button/card rules from turning profile rows into bright
-   white frames. The row outline should be a quiet tint of its own accent. */
-.rhythiax-profile-box .rhythiax-profile-list-item {
-   border: 1px solid color-mix(in srgb, var(--profile-color) 14%, transparent) !important;
-   background: color-mix(in srgb, var(--profile-color) 5%, var(--rhythiax-inner-surface, #252239)) !important;
-}
-.rhythiax-profile-box .rhythiax-profile-list-item.active {
-   border-color: color-mix(in srgb, var(--profile-color) 14%, transparent) !important;
-}
-.rhythiax-profile-box .rhythiax-profile-list-item:hover,
-.rhythiax-profile-box .rhythiax-profile-list-item:focus-visible,
-.rhythiax-profile-box .rhythiax-profile-list-item.active:hover {
-   border-color: color-mix(in srgb, var(--profile-color) 38%, transparent) !important;
-   background: color-mix(in srgb, var(--profile-color) 9%, var(--rhythiax-inner-surface, #252239)) !important;
-}
-body[data-rhythiax-theme="white"] .rhythiax-profile-box .rhythiax-profile-list-item {
-   border-color: color-mix(in srgb, var(--profile-color) 20%, rgba(51, 65, 85, .14)) !important;
-   background: color-mix(in srgb, var(--profile-color) 4%, var(--rhythiax-inner-surface, #f3f4f6)) !important;
-}
-body[data-rhythiax-theme="white"] .rhythiax-profile-box .rhythiax-profile-list-item:hover,
-body[data-rhythiax-theme="white"] .rhythiax-profile-box .rhythiax-profile-list-item:focus-visible {
-   border-color: color-mix(in srgb, var(--profile-color) 42%, rgba(51, 65, 85, .16)) !important;
-   background: color-mix(in srgb, var(--profile-color) 8%, var(--rhythiax-inner-surface, #f3f4f6)) !important;
-}
-body[data-rhythiax-theme="rhythia-reimagined"] .rhythiax-profile-box .rhythiax-profile-list-item {
-   border-color: color-mix(in srgb, var(--profile-color) 16%, rgba(184, 164, 235, .08)) !important;
+   .rhythiax-profile-metric-percentage .rhythiax-profile-list-item {
+      grid-template-columns: 42px minmax(0, 1fr) 30px;
+      gap: 6px;
+      min-height: 32px;
+      padding: 3px 6px;
+   }
+   .rhythiax-profile-metric-count .rhythiax-profile-list-item {
+      grid-template-columns: 42px minmax(0, 1fr) auto;
+      gap: 6px;
+      min-height: 32px;
+      padding: 3px 6px;
+   }
+   .rhythiax-profile-metric-both .rhythiax-profile-list-item {
+      grid-template-columns: 42px minmax(0, 1fr) auto 30px;
+      gap: 6px;
+      min-height: 32px;
+      padding: 3px 6px;
+   }
+   .rhythiax-profile-list-label {
+      min-width: 40px;
+      height: 20px;
+      font-size: 10px;
+      padding: 0 4px;
+   }
+   .rhythiax-profile-list-count {
+      padding: 2px 4px;
+      font-size: 10px;
+   }
+   .rhythiax-profile-list-share {
+      font-size: 10px;
+      min-width: 28px;
+   }
 }
 
+@media (prefers-reduced-motion: reduce) {
+   .rhythiax-profile-box,
+   .rhythiax-profile-list-item,
+   .rhythiax-profile-list-label,
+   .rhythiax-profile-list-track i {
+      animation: none !important;
+      transition: none !important;
+      transform: none !important;
+   }
+}

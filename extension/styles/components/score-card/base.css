@@ -6,10 +6,13 @@
 }
 .rhythiax-scores-grid .rhythiax-score-card { margin: 0 !important; }
 .rhythiax-scores-grid .rhythiax-redesign-wrapper { min-height: 0; flex-direction: column; }
-.rhythiax-scores-grid .rhythiax-card-strip { flex: none; min-width: 0; width: 100%; padding: 10px; border-right: 0 !important; border-bottom: 3px solid var(--difficulty-color, #888); }
+.rhythiax-scores-grid .rhythiax-card-strip { flex: none; min-width: 0; width: 100%; padding: 8px 10px; border-right: 0 !important; border-bottom: 3px solid var(--difficulty-color, #888); }
 .rhythiax-scores-grid .rhythiax-card-grade { flex-direction: row !important; gap: 12px !important; }
-.rhythiax-scores-grid .rhythiax-card-grade-label { font-size: 26px; }
+.rhythiax-scores-grid .rhythiax-modern-card .rhythiax-card-strip { flex-direction: row !important; gap: 12px !important; }
+.rhythiax-scores-grid .rhythiax-card-grade-label { font-size: 24px; }
 .rhythiax-scores-grid .rhythiax-card-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.rhythiax-scores-grid .rhythiax-modern-card .rhythiax-card-stats-row { grid-template-columns: 1fr 1fr; gap: 6px; }
+.rhythiax-scores-grid .rhythiax-modern-card .rhythiax-card-rp-box { grid-column: 1 / -1; }
 
 /* In grid view the title gets its own full-width line. Actions and date then
    sit below it instead of competing with a truncated map name. */
@@ -21,13 +24,11 @@
   padding-right: 0;
 }
 .rhythiax-scores-grid .rhythiax-card-content {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr);
+  display: flex;
+  flex-direction: column;
 }
 .rhythiax-scores-grid .rhythiax-card-top { order: 1; }
-.rhythiax-scores-grid .rhythiax-card-top .rhythiax-score-rank { grid-column: 1; }
-.rhythiax-scores-grid .rhythiax-card-top .rhythiax-card-title { grid-column: 2; }
-.rhythiax-scores-grid .rhythiax-card-top:not(:has(.rhythiax-score-rank)) .rhythiax-card-title { grid-column: 1 / -1; }
+.rhythiax-scores-grid .rhythiax-card-top .rhythiax-card-title { grid-column: 1 / -1; }
 .rhythiax-scores-grid .rhythiax-card-top .rhythiax-card-date { grid-column: 1 / -1; }
 .rhythiax-scores-grid .rhythiax-card-buttons { order: 2; }
 .rhythiax-scores-grid .rhythiax-card-stats { order: 3; }
@@ -42,70 +43,46 @@
   max-width: none;
   white-space: normal;
 }
-.rhythiax-scores-grid .rhythiax-card-buttons {
-  position: static;
-  order: 3;
-  justify-content: flex-start;
-  width: max-content;
-  margin-top: 2px;
-  padding-left: 0;
-  background: transparent;
-}
 
 @media (max-width: 720px) {
-  .rhythiax-scores-toolbar { grid-template-columns: 1fr; gap: 16px; }
-  .rhythiax-scores-actions {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    padding: 14px 0 0;
-    border-top: 1px solid var(--rhythiax-border, rgba(255,255,255,.12));
-    border-left: 0;
-  }
-  .rhythiax-scores-actions-title { grid-column: 1 / -1; }
-  .rhythiax-scores-actions .rhythiax-scores-status { grid-column: 1 / -1; }
-  .rhythiax-scores-actions .rhythiax-scores-action { width: auto; }
-  .rhythiax-scores-controls { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .rhythiax-scores-controls > .rhythiax-scores-control { grid-column: span 1 !important; }
-  .rhythiax-scores-control:first-child { grid-column: 1 / -1; }
   .rhythiax-scores-grid { grid-template-columns: 1fr; }
 }
+
 @media (max-width: 560px) {
-  .rhythiax-scores-toolbar { padding: 15px; }
-  .rhythiax-scores-toolbar-heading { align-items: flex-start; gap: 12px; }
-  .rhythiax-scores-toolbar-heading { flex-wrap: wrap; }
-  .rhythiax-scores-controls { grid-template-columns: 1fr; }
-  .rhythiax-scores-control:first-child { grid-column: 1 / -1 !important; }
-  .rhythiax-scores-actions { grid-template-columns: 1fr; }
-  .rhythiax-scores-actions-title,
-  .rhythiax-scores-actions .rhythiax-scores-status { grid-column: auto; }
   .rhythiax-redesign-wrapper { flex-direction: column; }
-  .rhythiax-card-strip { flex: none; min-width: 0; width: 100%; padding: 9px; border-right: 0 !important; border-bottom: 3px solid var(--difficulty-color, #888); }
+  .rhythiax-card-strip { flex: none; min-width: 0; width: 100%; padding: 8px 10px; border-right: 0 !important; border-bottom: 3px solid var(--difficulty-color, #888); }
   .rhythiax-card-strip .rhythiax-card-grade { flex-direction: row; gap: 12px; }
-  .rhythiax-card-grade-label { font-size: 26px; }
+  .rhythiax-modern-card .rhythiax-card-strip { flex-direction: row; gap: 10px; }
+  .rhythiax-card-grade-label { font-size: 24px; }
   .rhythiax-card-content { padding: 10px; }
-   .rhythiax-card-top { padding-right: 100px; flex-wrap: wrap; }
-  .rhythiax-card-title { flex-basis: 100%; }
-  .rhythiax-card-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 5px; }
-  .rhythiax-card-stat-item { padding-inline: 5px; }
-  .rhythiax-card-stat-label { font-size: 9px; }
-  .rhythiax-card-stat-value { font-size: 11px; }
+  
+  .rhythiax-legacy-card .rhythiax-card-top { padding-right: 100px; flex-wrap: wrap; }
+  .rhythiax-legacy-card .rhythiax-card-title { flex-basis: 100%; }
+  .rhythiax-legacy-card .rhythiax-card-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 5px; }
+  .rhythiax-legacy-card .rhythiax-card-stat-item { padding-inline: 5px; }
+  .rhythiax-legacy-card .rhythiax-card-stat-label { font-size: 9px; }
+  .rhythiax-legacy-card .rhythiax-card-stat-value { font-size: 11px; }
+
+  .rhythiax-modern-card .rhythiax-card-stats-row { grid-template-columns: 1fr 1fr; gap: 5px; }
+  .rhythiax-modern-card .rhythiax-card-rp-box { grid-column: 1 / -1; }
+  
   .rhythiax-reigning .rhythiax-card-content::before { position: static; align-self: flex-end; margin-bottom: -5px; }
 }
+
 .rhythiax-score-card {
   position: relative;
   overflow: hidden !important;
   border-radius: 12px !important;
   margin-bottom: 6px !important;
-   background: #18191a !important;
-   border: 1px solid rgba(255, 255, 255, 0.10) !important;
+  background: var(--rhythiax-surface, #18191a) !important;
+  border: 1px solid var(--rhythiax-border, rgba(255, 255, 255, 0.10)) !important;
   padding: 0 !important;
   min-height: 0 !important;
   transform: scale(1);
-   transition: border-color 0.18s ease, background 0.18s ease, box-shadow 0.18s ease;
-}
-.rhythiax-score-card:hover {
-   border-color: rgba(148, 163, 184, 0.38) !important;
-   background: #1b1c1e !important;
-   box-shadow: 0 5px 16px rgba(0, 0, 0, 0.16);
+  transition: border-color 0.18s ease, background 0.18s ease, box-shadow 0.18s ease;
 }
 
+.rhythiax-score-card:hover {
+  border-color: var(--rhythiax-accent, rgba(148, 163, 184, 0.38)) !important;
+  box-shadow: 0 5px 16px rgba(0, 0, 0, 0.16);
+}

@@ -18,6 +18,32 @@ body[data-rhythiax-theme="white"] #root [class*="border-neutral-950"] {
   border-color: var(--rhythiax-border) !important;
 }
 
+body[data-rhythiax-theme="white"] #root [class*="bg-[#242526]"],
+body[data-rhythiax-theme="white"] #root [class*="bg-[#1F2021]"] {
+  background-color: var(--rhythiax-inner-surface, #f5f7fa) !important;
+  border-color: var(--rhythiax-border) !important;
+}
+
+/* White fade overlay above Show more button. Replace dark #111214 gradient with light surface. */
+body[data-rhythiax-theme="white"] #root [class*="bg-gradient-to-t"][class*="from-[#111214]"],
+body[data-rhythiax-theme="white"] #root .pointer-events-none[class*="bg-gradient-to-t"] {
+  background-image: linear-gradient(to top, var(--rhythiax-surface, #ffffff) 15%, transparent 100%) !important;
+}
+
+body[data-rhythiax-theme="white"] #root button[class*="rounded-full"] {
+  background: linear-gradient(180deg, #ffffff 0%, #f1f3f6 100%) !important;
+  background-color: #f1f3f6 !important;
+  border-color: rgba(24, 24, 27, .16) !important;
+  color: #18181b !important;
+  box-shadow: 0 1px 3px rgba(30, 41, 59, .08);
+}
+body[data-rhythiax-theme="white"] #root button[class*="rounded-full"]:hover {
+  background: linear-gradient(180deg, #f8f9fa 0%, #e2e8f0 100%) !important;
+  background-color: #e2e8f0 !important;
+  border-color: rgba(24, 24, 27, .24) !important;
+  color: #09090b !important;
+}
+
 /* White's hero background is a paper-like neutral gradient. Do not let the
    native image and its `to-neutral-950` overlay create a black page strip. */
 body[data-rhythiax-theme="white"] #root .top-\[60px\].left-0.overflow-hidden.h-64 {

@@ -4,7 +4,7 @@ window.RhythiaX.PopupV3 = window.RhythiaX.PopupV3 || {};
 const version = document.getElementById("version");
 const manifest = globalThis.chrome?.runtime?.getManifest?.();
 if (version && manifest?.version) {
-  version.textContent = `v${manifest.version} - Release Fixes`;
+  version.textContent = `v${manifest.version} - UI Modernization`;
 }
 
 if (!window.RhythiaX.PopupV3.started) {

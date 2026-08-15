@@ -14,8 +14,8 @@ RhythiaX.MODULE_DEFAULTS = {
 };
 
 RhythiaX.MODULE_SETTING_DEFAULTS = {
-  advancedStats: { ratingProfile: true, tempoProfile: true, profileStyle: 'soft-blocks' },
-  scoreCards: { customCards: true, playerView: 'list', scoresView: 'grid', userScoresWeight: false, spinScores: false, watchReplay: true },
+  advancedStats: { ratingProfile: true, tempoProfile: true, profileStyle: 'profile-surface', profileMetric: 'percentage' },
+  scoreCards: { customCards: true, cardLayout: 'modern', playerView: 'list', watchReplay: true },
   titleProgression: { crownMode: '3d' },
   playerCompare: {},
 };
@@ -50,12 +50,22 @@ RhythiaX.isModuleOptionEnabled = function (moduleName, optionName) {
 
 RhythiaX.getProfileStyle = function () {
   const style = RhythiaX.moduleOptionSettings.advancedStats?.profileStyle;
-  return ['soft-blocks', 'profile-surface', 'pill-rows'].includes(style) ? style : 'soft-blocks';
+  return ['soft-blocks', 'profile-surface', 'pill-rows'].includes(style) ? style : 'profile-surface';
+};
+
+RhythiaX.getProfileMetric = function () {
+  const metric = RhythiaX.moduleOptionSettings.advancedStats?.profileMetric;
+  return ['percentage', 'count', 'both'].includes(metric) ? metric : 'percentage';
 };
 
 RhythiaX.getTitleProgressionCrownMode = function () {
   const mode = RhythiaX.moduleOptionSettings.titleProgression?.crownMode;
   return mode === '2d' ? '2d' : '3d';
+};
+
+RhythiaX.getScoreCardLayout = function () {
+  const layout = RhythiaX.moduleOptionSettings.scoreCards?.cardLayout;
+  return layout === 'legacy' ? 'legacy' : 'modern';
 };
 
 RhythiaX.applyModuleSettings = function (settings) {

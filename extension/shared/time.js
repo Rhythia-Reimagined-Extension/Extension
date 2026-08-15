@@ -57,17 +57,36 @@ RhythiaX.formatRelativeDate = function (date) {
 
 RhythiaX.formatNumber = function (n) {
   const value = Number(n);
-  return Number.isFinite(value) ? value.toLocaleString() : '0';
+  return Number.isFinite(value) ? value.toLocaleString('en-US') : '0';
 };
 
-// Parse numbers formatted by the site as "1 032", "1 032" or "1,032".
+function cleanStatValueString(value) {
+  if (value === null || value === undefined) return '';
+  if (typeof value === 'object' && value.nodeType) {
+    if (value.querySelector && value.cloneNode && value.querySelector('.rhythiax-profile-history-delta, .rhythiax-history-kind, .rhythiax-history-delta, .rhythiax-history-edited-delta-marker')) {
+      const clone = value.cloneNode(true);
+      clone.querySelectorAll('.rhythiax-profile-history-delta, .rhythiax-history-kind, .rhythiax-history-delta, .rhythiax-history-edited-delta-marker').forEach(item => item.remove());
+      return clone.textContent?.trim() || '';
+    }
+    return value.textContent?.trim() || '';
+  }
+  let str = String(value).trim();
+  str = str.replace(/\s*[\+\-\=]\s*[\d,\.]+%?$/, '').trim();
+  return str;
+}
+
+RhythiaX.cleanStatValueString = cleanStatValueString;
+
+// Parse numbers formatted by the site as "1 032", "1 032" or "1,032".
 RhythiaX.parseStatNumber = function (value) {
-  const digits = String(value ?? '').replace(/[^0-9]/g, '');
+  const cleaned = cleanStatValueString(value);
+  const digits = cleaned.replace(/[^0-9]/g, '');
   return digits ? Number(digits) : 0;
 };
 
 RhythiaX.parseLocalizedNumber = function (value) {
-  const text = String(value ?? '').replace(/[\s\u00a0]/g, '');
+  const cleaned = cleanStatValueString(value);
+  const text = cleaned.replace(/[\s\u00a0]/g, '');
   if (!text) return 0;
   const commaCount = (text.match(/,/g) || []).length;
   const dotCount = (text.match(/\./g) || []).length;

@@ -8,14 +8,12 @@ var RhythiaX = RhythiaX || {};
 RhythiaX.cleanupStaleElements = function (preserveCards) {
   RhythiaX.activeGrades = null;
   RhythiaX.activeSpeed = null;
-  RhythiaX.ScoresToolsService?.restoreNativeCollapses?.();
   RhythiaX.cleanupOfficialStats?.();
   // API refreshes retain the Title Progression card, so its in-flight RP
   // animation must continue rather than being cancelled mid-transition.
   if (!preserveCards) RhythiaX.cleanupRankProgressAnimations?.();
   RhythiaX.qsa('.rhythiax-absolute-date').forEach(el => el.remove());
   RhythiaX.qsa('.rhythiax-stats-panel').forEach(el => el.remove());
-  RhythiaX.qsa('.rhythiax-scores-toolbar').forEach(el => el.remove());
   // Also remove our injected sections from the official stats container
   RhythiaX.qsa('.rhythiax-injected-stats-section').forEach(el => el.remove());
    RhythiaX.qsa('.rhythiax-injected-grade-row').forEach(el => el.remove());

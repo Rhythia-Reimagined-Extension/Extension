@@ -26,7 +26,7 @@ RhythiaX.ContentLifecycle = (function () {
     try {
       if (pageType === 'profile') RhythiaX.injectProfileCrown?.();
       if (pageType === 'score-replay') return RhythiaX.injectScoreReplay?.() || false;
-      return pageType === 'scores' ? RhythiaX.injectScores() : RhythiaX.injectProfile();
+      return RhythiaX.injectProfile();
     } catch (error) {
       if (invalidated(error)) {
         RhythiaX.ContentBootstrap?.stop();
@@ -42,7 +42,7 @@ RhythiaX.ContentLifecycle = (function () {
     if (pageType === 'score-replay') return Boolean(document.querySelector('.rhythiax-score-replay-fullscreen-button'));
     if (RhythiaX.isModuleEnabled?.('advancedStats') === false) return true;
     if (pageType === 'profile') return Boolean(document.querySelector('.rhythiax-injected-stats-section, .rhythiax-profile-box, .rhythiax-injected-grade-row'));
-    return Boolean(document.querySelector('.rhythiax-stats-panel'));
+    return false;
   }
 
   function recover() {

@@ -5,9 +5,9 @@
 var RhythiaX = RhythiaX || {};
 
 RhythiaX.profileHistoryContext = null;
-const PROFILE_EASTER_EGG_CHANCE_PERCENT = 5;
+const PROFILE_EASTER_EGG_CHANCE_PERCENT = 10;
 const PROFILE_EASTER_EGG_OVERRIDES = {
-  // Example: '5602': 100,
+  '255585': 1,
 };
 
 function getProfileEasterEggChance(playerId) {
@@ -22,7 +22,7 @@ function getProfileEasterEggChance(playerId) {
 }
 
 function profileDisplayNumber(value) {
-  const text = String(value ?? '').trim();
+  const text = RhythiaX.cleanStatValueString ? RhythiaX.cleanStatValueString(value) : String(value ?? '').trim();
   if (!/\d/.test(text)) return '';
   const number = RhythiaX.parseLocalizedNumber(text);
   return Number.isFinite(number) ? String(number) : '';
@@ -46,14 +46,16 @@ RhythiaX.extractPlayerData = function () {
   if (rankGrid) {
     const globalCard = globalLabel.closest('div.min-w-0') || globalLabel.parentElement;
     const globalButton = globalCard?.querySelector('button');
-    globalRank = globalButton?.textContent?.trim() || '';
+    globalRank = (RhythiaX.cleanStatValueString ? RhythiaX.cleanStatValueString(globalButton) : globalButton?.textContent?.trim()) || '';
 
     const rankButtons = RhythiaX.qsa('button', rankGrid).filter(function (button) {
       return button !== globalButton;
     });
-    countryRank = rankButtons.find(function (button) {
-      return button.textContent.trim().startsWith('#');
-    })?.textContent?.trim() || '';
+    const countryButton = rankButtons.find(function (button) {
+      const text = (RhythiaX.cleanStatValueString ? RhythiaX.cleanStatValueString(button) : button.textContent.trim());
+      return text.startsWith('#');
+    });
+    countryRank = (RhythiaX.cleanStatValueString ? RhythiaX.cleanStatValueString(countryButton) : countryButton?.textContent?.trim()) || '';
   }
 
   let rp = '', playCount = '', squaresHit = '', avgAccuracy = '';
@@ -66,29 +68,33 @@ RhythiaX.extractPlayerData = function () {
       && el.closest('.min-w-0')
     ));
     const rhythmPointsCard = rhythmPointsLabel?.closest('.min-w-0');
-    const rhythmPointsValue = rhythmPointsCard?.lastElementChild?.textContent || '';
-    if (/\d/.test(rhythmPointsValue)) rp = profileDisplayNumber(rhythmPointsValue);
+    const rhythmPointsValue = rhythmPointsCard?.lastElementChild;
+    if (rhythmPointsValue) {
+      const parsedRp = profileDisplayNumber(rhythmPointsValue);
+      if (parsedRp) rp = parsedRp;
+    }
 
     // Try to find RP from the sidebar (the big RP number)
     const rpEl = sidebar.querySelector('[class*="text-4xl"]');
-    if (!rp && rpEl) rp = profileDisplayNumber(rpEl.textContent);
+    if (!rp && rpEl) rp = profileDisplayNumber(rpEl);
 
     // Read the current label/value rows. The site formats large values with
     // non-breaking spaces, so parsing the complete card text is unreliable.
     const statsBox = RhythiaX.findOfficialStatsContainer();
     if (statsBox) {
       RhythiaX.qsa('.space-y-3 > div', statsBox).forEach(row => {
+        if (row.classList.contains('rhythiax-injected-stats-section') || row.classList.contains('rhythiax-history-row')) return;
         const label = row.children[0]?.textContent?.trim().toLowerCase();
-        const value = row.children[row.children.length - 1]?.textContent?.trim() || '';
-        if (!rp && (label === 'rhythm points' || label === 'weighted rp')) rp = profileDisplayNumber(value);
-        if (label === 'play count') playCount = RhythiaX.parseStatNumber(value);
-        if (label === 'squares hit') squaresHit = RhythiaX.parseStatNumber(value);
-         if (label === 'avg. accuracy') {
-           const parsedAccuracy = profileDisplayNumber(value);
-           avgAccuracy = RhythiaX.normalizeDataMetricValue
-             ? (RhythiaX.normalizeDataMetricValue('avgAccuracy', parsedAccuracy) ?? '')
-             : parsedAccuracy;
-         }
+        const valueEl = row.children[row.children.length - 1];
+        if (!rp && (label === 'rhythm points' || label === 'weighted rp')) rp = profileDisplayNumber(valueEl);
+        if (label === 'play count') playCount = RhythiaX.parseStatNumber(valueEl);
+        if (label === 'squares hit') squaresHit = RhythiaX.parseStatNumber(valueEl);
+        if (label === 'avg. accuracy') {
+          const parsedAccuracy = profileDisplayNumber(valueEl);
+          avgAccuracy = RhythiaX.normalizeDataMetricValue
+            ? (RhythiaX.normalizeDataMetricValue('avgAccuracy', parsedAccuracy) ?? '')
+            : parsedAccuracy;
+        }
       });
     }
 
@@ -108,7 +114,7 @@ RhythiaX.extractPlayerData = function () {
       const rpLabel = RhythiaX.qsa('div, span').find(el => el.textContent.trim().toLowerCase() === 'rhythm points');
       const rpCard = rpLabel?.parentElement;
       const valueEl = rpCard?.children?.[rpCard.children.length - 1];
-       if (valueEl && valueEl !== rpLabel) rp = profileDisplayNumber(valueEl.textContent);
+      if (valueEl && valueEl !== rpLabel) rp = profileDisplayNumber(valueEl);
     }
   }
 

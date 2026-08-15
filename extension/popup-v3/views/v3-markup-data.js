@@ -45,14 +45,14 @@ function metricValue(key, value) {
   if (!Number.isFinite(number)) return String(value);
   if (key === 'avgAccuracy') return `${number.toFixed(2)}%`;
   if (key === 'mapsPerWeek') return number.toFixed(1);
-  if (key === 'globalRank' || key === 'countryRank') return `#${number.toLocaleString()}`;
-  return number.toLocaleString();
+  if (key === 'globalRank' || key === 'countryRank') return `#${number.toLocaleString('en-US')}`;
+  return number.toLocaleString('en-US');
 }
 function metricDelta(key, current, previous) {
   if (current === null || current === undefined || previous === null || previous === undefined) return '';
   const delta = Number(current) - Number(previous);
   if (!Number.isFinite(delta) || delta === 0) return delta === 0 ? '=' : '';
-  return `${delta > 0 ? '+' : ''}${key === 'avgAccuracy' ? delta.toFixed(2) + '%' : key === 'mapsPerWeek' ? delta.toFixed(1) : delta.toLocaleString()}`;
+  return `${delta > 0 ? '+' : ''}${key === 'avgAccuracy' ? delta.toFixed(2) + '%' : key === 'mapsPerWeek' ? delta.toFixed(1) : delta.toLocaleString('en-US')}`;
 }
 function recordPoints(record) {
   const open = record?.history?.openDay?.captures?.slice(-1).map(point => ({ ...point, kind: 'open' })) || [];

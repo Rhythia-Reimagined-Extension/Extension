@@ -140,34 +140,65 @@ RhythiaX.showStatHistory = async function (row, historyKey) {
   if (!playerId || !row || !historyKey) return;
   const existing = row.nextElementSibling;
   if (existing?.classList.contains('rhythiax-history-row')) {
+    row.classList.remove('rhythiax-stat-row-open');
+    row.setAttribute('aria-expanded', 'false');
     existing.classList.remove('rhythiax-history-row-open');
     existing.classList.add('rhythiax-history-row-closing');
-    const removeAfterCollapse = event => {
-      if (event.target !== existing || event.propertyName !== 'max-height') return;
-      existing.removeEventListener('transitionend', removeAfterCollapse);
+    let cleaned = false;
+    const cleanup = () => {
+      if (cleaned) return;
+      cleaned = true;
+      existing.removeEventListener('transitionend', onTransitionEnd);
       existing.remove();
     };
-    existing.addEventListener('transitionend', removeAfterCollapse);
+    const onTransitionEnd = event => {
+      if (event.target !== existing) return;
+      cleanup();
+    };
+    existing.addEventListener('transitionend', onTransitionEnd);
+    setTimeout(cleanup, 360);
     return;
+  }
+  if (row.nextElementSibling?.classList.contains('rhythiax-history-row-closing')) {
+    row.nextElementSibling.remove();
   }
   const [record, settings] = await Promise.all([
     RhythiaX.getDataRecord(playerId),
     RhythiaX.getDataSettings(),
   ]);
+  if (!row.isConnected) return;
   const key = dataUiMetricKey(historyKey);
   const points = dataUiGroupHistory(dataUiHistoryPoints(record, settings.historyDisplayMode), settings.historyGrouping);
   const historyRow = document.createElement('div');
   historyRow.className = 'rhythiax-history-row';
-  const title = document.createElement('div');
-  title.className = 'rhythiax-history-title';
-  title.textContent = `History · ${settings.historyGrouping}`;
-  historyRow.appendChild(title);
+
+  const historyInner = document.createElement('div');
+  historyInner.className = 'rhythiax-history-row-inner';
+
+  const header = document.createElement('div');
+  header.className = 'rhythiax-history-header';
+
+  const headerLeft = document.createElement('div');
+  headerLeft.className = 'rhythiax-history-header-left';
+  headerLeft.innerHTML = '<svg class="rhythiax-history-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"></circle><polyline points="12 7 12 12 15 15"></polyline></svg><span class="rhythiax-history-title">History</span>';
+
+  const badge = document.createElement('span');
+  badge.className = 'rhythiax-history-badge';
+  badge.textContent = settings.historyGrouping || 'daily';
+
+  header.append(headerLeft, badge);
+  historyInner.appendChild(header);
+
+  const list = document.createElement('div');
+  list.className = 'rhythiax-history-list';
+
   points.forEach((point, index) => {
     const item = document.createElement('div');
     item.className = 'rhythiax-history-item';
+    item.style.setProperty('--item-idx', String(index));
     const date = document.createElement('span');
     date.className = 'rhythiax-history-date';
-    date.textContent = `${point.date || '—'} · ${point.kind === 'open' ? 'open' : 'closed'}`;
+    date.innerHTML = `${point.date || '—'} · <span class="rhythiax-history-kind">${point.kind === 'open' ? 'live' : 'saved'}</span>`;
     const value = document.createElement('span');
     value.className = 'rhythiax-history-value';
     value.textContent = dataUiFormatValue(key, point.metrics?.[key]);
@@ -178,16 +209,20 @@ RhythiaX.showStatHistory = async function (row, historyKey) {
     delta.textContent = change || '—';
     delta.classList.add(change === null ? 'rhythiax-history-delta-neutral' : dataUiDeltaClass(change, false));
     item.append(date, value, delta);
-    historyRow.appendChild(item);
+    list.appendChild(item);
   });
   if (!points.length) {
     const empty = document.createElement('div');
-    empty.className = 'rhythiax-history-item';
+    empty.className = 'rhythiax-history-item rhythiax-history-empty';
     empty.textContent = 'History starts after the first saved profile state.';
-    historyRow.appendChild(empty);
+    list.appendChild(empty);
   }
+  historyInner.appendChild(list);
+  historyRow.appendChild(historyInner);
+
   row.after(historyRow);
-  historyRow.style.setProperty('--rhythiax-history-height', `${historyRow.scrollHeight + 16}px`);
+  row.classList.add('rhythiax-stat-row-open');
+  row.setAttribute('aria-expanded', 'true');
   requestAnimationFrame(() => historyRow.classList.add('rhythiax-history-row-open'));
 };
 

@@ -47,25 +47,21 @@ RhythiaX.ContentBootstrap = (function () {
         RhythiaX.injectProfileCrown?.();
         RhythiaX.injectProfileAvatarEffects?.();
       }
+      if (RhythiaX.PageRouteContext.type() === 'profile' || RhythiaX.PageRouteContext.type() === 'scores') {
+        if (document.querySelector('div.relative.py-2:not(.rhythiax-redesigned)')) {
+          RhythiaX.enhanceScoreCards?.();
+          RhythiaX.injectAbsoluteDates?.();
+        }
+      }
       if (!RhythiaX.injected) RhythiaX.ContentLifecycle.queueInject(100);
     });
     observer.observe(document.getElementById('root') || document.body, { childList: true, subtree: true });
-  }
-
-  function showBadge() {
-    if (document.querySelector('.rhythiax-badge')) return;
-    const badge = document.createElement('div');
-    badge.className = 'rhythiax-badge';
-    badge.style.cssText = 'position:fixed;bottom:8px;right:8px;z-index:99999;background:var(--rhythiax-accent-soft);color:var(--rhythiax-accent);font-size:10px;padding:2px 8px;border-radius:4px;font-family:monospace;pointer-events:none;border:1px solid color-mix(in srgb, var(--rhythiax-accent) 20%, transparent);';
-    badge.textContent = chrome.runtime?.getManifest?.().name || 'Rhythia Reimagined';
-    document.body.appendChild(badge);
   }
 
   function start() {
     if (started) return;
     started = true;
     RhythiaX.onExtensionContextInvalidated = stop;
-    showBadge();
     window.addEventListener('popstate', handleNavigation);
     ['pushState', 'replaceState'].forEach(method => {
       const original = history[method];

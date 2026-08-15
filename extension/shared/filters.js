@@ -22,5 +22,4 @@ RhythiaX.applyScoreFilter = function () {
       card.style.display = 'none';
     }
   });
-  if (typeof RhythiaX.applyScoresToolbar === 'function') RhythiaX.applyScoresToolbar();
 };

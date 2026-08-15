@@ -28,8 +28,8 @@ const V3_MODULE_DEFAULTS = {
   playerCompare: true,
 };
 const V3_MODULE_OPTION_DEFAULTS = {
-  advancedStats: { ratingProfile: true, tempoProfile: true, profileStyle: 'soft-blocks' },
-  scoreCards: { customCards: true, playerView: 'list', scoresView: 'grid', userScoresWeight: false, spinScores: false, watchReplay: true },
+  advancedStats: { ratingProfile: true, tempoProfile: true, profileStyle: 'profile-surface', profileMetric: 'percentage' },
+  scoreCards: { customCards: true, cardLayout: 'modern', playerView: 'list', watchReplay: true },
   titleProgression: { crownMode: '3d' },
   playerCompare: {},
 };
@@ -39,8 +39,8 @@ const V3_MINIMAL_MODULES = {
   rankingHistory: false,
 };
 const V3_MINIMAL_MODULE_OPTIONS = {
-  advancedStats: { ratingProfile: false, tempoProfile: false, profileStyle: 'soft-blocks' },
-  scoreCards: { customCards: true, playerView: 'list', scoresView: 'list', userScoresWeight: false, spinScores: false, watchReplay: false },
+  advancedStats: { ratingProfile: false, tempoProfile: false, profileStyle: 'profile-surface', profileMetric: 'percentage' },
+  scoreCards: { customCards: true, cardLayout: 'modern', playerView: 'list', watchReplay: false },
   titleProgression: { crownMode: '3d' },
   playerCompare: {},
 };
@@ -191,8 +191,8 @@ function setV3ModuleOption(moduleId, optionId, value) {
   if (!defaults || !(optionId in defaults)) return;
   state.moduleOptions[moduleId] = { ...(state.moduleOptions[moduleId] || {}), [optionId]: value };
   v3PendingModuleOptions[moduleId] = { ...(v3PendingModuleOptions[moduleId] || {}), [optionId]: value };
-  v3OptionStatusMessage = moduleId === 'scoreCards' && optionId === 'scoresView'
-    ? `${value === 'grid' ? 'Grid' : 'List'} layout saved`
+  v3OptionStatusMessage = moduleId === 'scoreCards' && optionId === 'cardLayout'
+    ? `${value === 'legacy' ? 'Legacy' : 'Modern'} card design saved`
     : 'Module settings updated';
   v3FlushModuleOptions();
 }

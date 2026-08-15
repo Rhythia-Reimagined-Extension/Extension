@@ -356,6 +356,14 @@ RhythiaX.ChangelogPageComposition?.stop?.();
 
       const verHeader = extractVersionHeader(line);
       if (verHeader) {
+        const hasContent = currentContent.some(l => l.trim().length > 0);
+        if (current && (!hasContent || current.version === verHeader.version)) {
+          if (!current.version) current.version = verHeader.version;
+          if (!current.title && verHeader.title) current.title = verHeader.title;
+          if (!current.date && verHeader.date) current.date = verHeader.date;
+          continue;
+        }
+
         flush();
         current = {
           version: verHeader.version,
@@ -375,7 +383,16 @@ RhythiaX.ChangelogPageComposition?.stop?.();
       }
     }
     flush();
-    return entries.filter(isEntryListed).sort(compareEntries);
+
+    const uniqueEntries = [];
+    const seenVersions = new Set();
+    for (const entry of entries) {
+      if (!entry.version || seenVersions.has(entry.version)) continue;
+      seenVersions.add(entry.version);
+      uniqueEntries.push(entry);
+    }
+
+    return uniqueEntries.filter(isEntryListed).sort(compareEntries);
   }
 
   function isEntryListed(entry) {
@@ -584,7 +601,6 @@ RhythiaX.ChangelogPageComposition?.stop?.();
     const index = entries.indexOf(entry);
     const newer = entries[index - 1];
     const older = entries[index + 1];
-    const timeline = entries.map(item => `<button type="button" class="rhythiax-changelog-timeline-item${item.version === entry.version ? ' is-selected' : ''}" data-rhythiax-entry="${escapeHtml(item.version)}"><span>${escapeHtml(item.version)}</span><small>${escapeHtml(formatDate(item.date, true))}</small></button>`).join('');
     return `<section class="${PANEL_CLASS}" data-rhythiax-render-key="${escapeHtml(`${entry.version}:${entries.length}`)}">
       ${introMarkup()}
       <div class="rhythiax-changelog-release-nav">
@@ -593,7 +609,6 @@ RhythiaX.ChangelogPageComposition?.stop?.();
         ${older ? `<button type="button" class="rhythiax-changelog-arrow" data-rhythiax-entry="${escapeHtml(older.version)}" aria-label="Older: ${escapeHtml(formatDate(older.date))}" title="Older: ${escapeHtml(formatDate(older.date))}">&#x203A;</button>` : '<span class="rhythiax-changelog-arrow is-disabled" aria-hidden="true">&#x203A;</span>'}
       </div>
       <article class="rhythiax-changelog-entry">${markdownToHtml(entry.content)}</article>
-      <nav class="rhythiax-changelog-timeline" aria-label="Reimagined changelog releases">${timeline}</nav>
     </section>`;
   }
 
@@ -730,5 +745,7 @@ RhythiaX.ChangelogPageComposition?.stop?.();
         if (window.history[method] === historyWrappers[method]) window.history[method] = historyOriginals[method];
       });
     },
+    parseChangelogEntries,
+    markdownToHtml,
   };
 })();

@@ -132,14 +132,25 @@
 .rhythiax-rank-history-delta-negative { color: #ff777d !important; }
 .rhythiax-rank-history-delta-neutral { color: #918da3 !important; }
 .rhythiax-history-edited-delta-marker { margin-left: 1px; color: currentColor; font-size: .72em; font-weight: 800; vertical-align: super; }
-.rhythiax-profile-history-delta { display: inline-block; margin-left: 5px; font-size: 10px; font-weight: 700; vertical-align: middle; }
-.rhythiax-profile-history-delta.positive { color: #43d69a; }
-.rhythiax-profile-history-delta.negative { color: #ff777d; }
-.rhythiax-profile-history-delta.neutral { color: #918da3; }
+.rhythiax-profile-history-delta {
+   display: inline-flex;
+   align-items: center;
+   justify-content: center;
+   margin-left: 6px;
+   padding: 1px 5px;
+   border-radius: 4px;
+   font-size: 10px;
+   font-weight: 700;
+   vertical-align: middle;
+   transition: background-color 180ms ease, color 180ms ease, border-color 180ms ease;
+}
+.rhythiax-profile-history-delta.positive { color: #4ade80; background: rgba(74, 222, 128, 0.12); }
+.rhythiax-profile-history-delta.negative { color: #f87171; background: rgba(248, 113, 113, 0.12); }
+.rhythiax-profile-history-delta.neutral { color: #a1a1aa; background: rgba(255, 255, 255, 0.05); }
 .rhythiax-stat-history-delta { font-size: 9px; font-weight: 650; }
 .rhythiax-rank-grid-with-history .text-base,
-.rhythiax-rank-grid-with-history .text-xl { overflow: visible !important; display: flex; align-items: center; justify-content: center; gap: 4px; }
-.rhythiax-rank-grid-with-history .rhythiax-profile-history-delta { margin-left: 0; font-size: 8px; }
+.rhythiax-rank-grid-with-history .text-xl { overflow: visible !important; display: flex; align-items: center; justify-content: center; }
+.rhythiax-rank-grid-with-history .rhythiax-profile-history-delta { margin-left: 5px; font-size: 8px; }
 @media (min-width: 1024px) {
    .rhythiax-rank-grid-with-history { position: relative; left: -18px; }
 }
@@ -151,6 +162,25 @@
 .rhythiax-rank-history-pager span,
 .rhythiax-rank-history-note { color: #918da3; font-size: 11px; }
 .rhythiax-rank-history-note { margin: 12px 0 0; }
+
+body[data-rhythiax-theme="white"] .rhythiax-profile-history-delta {
+   border: 1px solid transparent;
+}
+body[data-rhythiax-theme="white"] .rhythiax-profile-history-delta.neutral {
+   color: #475569;
+   background: #e2e8f0;
+   border-color: rgba(51, 65, 85, 0.16);
+}
+body[data-rhythiax-theme="white"] .rhythiax-profile-history-delta.positive {
+   color: #15803d;
+   background: #dcfce7;
+   border-color: rgba(34, 197, 94, 0.28);
+}
+body[data-rhythiax-theme="white"] .rhythiax-profile-history-delta.negative {
+   color: #b91c1c;
+   background: #fee2e2;
+   border-color: rgba(239, 68, 68, 0.28);
+}
 
 body[data-rhythiax-theme="white"] .rhythiax-rank-history-dialog { color: #18181b; box-shadow: 0 18px 55px rgba(24, 24, 27, .18); }
 body[data-rhythiax-theme="white"] .rhythiax-rank-history-heading p,
@@ -172,7 +202,7 @@ body[data-rhythiax-theme="white"] .rhythiax-rank-history-table .rhythiax-rank-hi
 }
 body[data-rhythiax-theme="white"] .rhythiax-card-stat-item,
 body[data-rhythiax-theme="white"] .rhythiax-official-stat-row,
-body[data-rhythiax-theme="white"] .rhythiax-grade-item {
+body[data-rhythiax-theme="white"] .rhythiax-grade-breakdown .rhythiax-grade-item {
    background: var(--rhythiax-inner-surface, #f3f4f6) !important;
    border-color: rgba(51, 65, 85, 0.16) !important;
 }

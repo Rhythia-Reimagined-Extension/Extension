@@ -1,4 +1,0 @@
-/* Dark / player scores overrides. */
-body[data-rhythiax-theme="dark"][data-rhythiax-page="scores"] {
-  --rhythiax-scores-surface: var(--rhythiax-surface);
-}

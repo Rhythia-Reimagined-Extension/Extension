@@ -46,6 +46,13 @@ RhythiaX.ChangelogPageComposition?.stop?.();
 
   function inlineMarkdown(value) {
     let html = escapeHtml(value);
+    html = html.replace(/^(?:<strong>\[([a-zA-Z0-9\s_-]+)\]<\/strong>|\[([a-zA-Z0-9\s_-]+)\])\s*/i, (match, tag1, tag2) => {
+      const rawTag = tag1 || tag2;
+      const cat = normalizeCategory(rawTag);
+      if (!cat) return match;
+      const icon = CHANGELOG_CATEGORY_ICONS[cat];
+      return `<span class="rhythiax-changelog-inline-badge" data-rhythiax-category="${cat}">${icon ? `<span class="rhythiax-changelog-inline-icon" aria-hidden="true">${icon}</span>` : ''}<span>${escapeHtml(rawTag)}</span></span> `;
+    });
     html = html.replace(/`([^`]+)`/g, '<code>$1</code>');
     html = html.replace(/!\[([^\]]*)\]\(([^)\s]+)(?:\s+"[^"]*")?\)/g, (_, alt, url) => {
       const imageUrl = safeUrl(url);
@@ -61,25 +68,64 @@ RhythiaX.ChangelogPageComposition?.stop?.();
   }
 
   const CHANGELOG_CATEGORY_ICONS = {
-    added: '<svg viewBox="0 0 24 24" focusable="false"><circle cx="12" cy="12" r="8.25"></circle><path d="M12 8v8M8 12h8"></path><path d="m18.5 3.5.55 1.45 1.45.55-1.45.55-.55 1.45-.55-1.45-1.45-.55 1.45-.55.55-1.45Z"></path></svg>',
-    changed: '<svg viewBox="0 0 24 24" focusable="false"><path d="M7 7h9.5l-2.6-2.6M17 17H7.5l2.6 2.6"></path><path d="m16.5 4.4 2.2 2.2-2.2 2.2M7.5 14.8l-2.2 2.2 2.2 2.2"></path></svg>',
-    fixed: '<svg viewBox="0 0 24 24" focusable="false"><path d="M12 3.25 19 6v5.1c0 4.15-2.7 7.75-7 9.65-4.3-1.9-7-5.5-7-9.65V6l7-2.75Z"></path><path d="m8.7 12 2.15 2.15 4.5-4.5"></path></svg>',
-    notes: '<svg viewBox="0 0 24 24" focusable="false"><path d="M6.5 3.75h8l3 3v13.5h-11V3.75Z"></path><path d="M14.5 3.75v3h3M9 11h6M9 14.5h4"></path></svg>',
-    removed: '<svg viewBox="0 0 24 24" focusable="false"><circle cx="12" cy="12" r="8.25"></circle><path d="M8 12h8"></path><path d="m16.5 4.4 2.2 2.2-2.2 2.2"></path></svg>',
-    improved: '<svg viewBox="0 0 24 24" focusable="false"><path d="M5 17 10 12l3 3 6-7"></path><path d="M15 8h4v4"></path><path d="m18.5 3.5.55 1.45 1.45.55-1.45.55-.55 1.45-.55-1.45-1.45-.55 1.45-.55.55-1.45Z"></path></svg>',
-    security: '<svg viewBox="0 0 24 24" focusable="false"><rect x="5.25" y="10" width="13.5" height="10" rx="2"></rect><path d="M8.25 10V7.5a3.75 3.75 0 0 1 7.5 0V10M12 14v2.5"></path></svg>',
-    deprecated: '<svg viewBox="0 0 24 24" focusable="false"><path d="m12 3.75 8.25 15H3.75l8.25-15Z"></path><path d="M12 9v4.25M12 16.5v.1"></path></svg>',
+    featured: '<svg viewBox="0 0 24 24" focusable="false"><path d="m12 2.5 2.2 5.5 5.8 1.8-4.4 4.1 1.2 5.8-4.8-3.1-4.8 3.1 1.2-5.8-4.4-4.1 5.8-1.8L12 2.5Z"></path><path d="M19.5 3.5v3M21 5h-3M4 17v2M5 18H3"></path></svg>',
+    added: '<svg viewBox="0 0 24 24" focusable="false"><circle cx="12" cy="12" r="8.5"></circle><path d="M12 7.75v8.5M7.75 12h8.5"></path><path d="m18.5 3.5.4 1 .1.1 1 .4-1 .4-.1.1-.4 1-.4-1-.1-.1-1-.4 1-.4.1-.1.4-1Z"></path></svg>',
+    changed: '<svg viewBox="0 0 24 24" focusable="false"><path d="M21 8H7.5a4.5 4.5 0 0 0 0 9H10"></path><path d="m17.5 4.5 3.5 3.5-3.5 3.5"></path><path d="M3 16h13.5a4.5 4.5 0 0 0 0-9H14"></path><path d="m6.5 19.5-3.5-3.5 3.5-3.5"></path></svg>',
+    fixed: '<svg viewBox="0 0 24 24" focusable="false"><path d="M12 2.75 19.25 5.5v5.75c0 4.5-3.1 8.4-7.25 10.25-4.15-1.85-7.25-5.75-7.25-10.25V5.5L12 2.75Z"></path><path d="m8.75 11.75 2.25 2.25 4.5-4.5"></path></svg>',
+    notes: '<svg viewBox="0 0 24 24" focusable="false"><path d="M6 3.5h9l4 4V20.5a1.5 1.5 0 0 1-1.5 1.5H6a1.5 1.5 0 0 1-1.5-1.5V5A1.5 1.5 0 0 1 6 3.5Z"></path><path d="M15 3.5v4h4M8.5 11.5h7M8.5 15h5M8.5 8h3"></path></svg>',
+    removed: '<svg viewBox="0 0 24 24" focusable="false"><circle cx="12" cy="12" r="8.5"></circle><path d="M7.75 12h8.5"></path><path d="m16 8-8 8"></path></svg>',
+    experimental: '<svg viewBox="0 0 24 24" focusable="false"><path d="M9 3.5h6M10 3.5v4.5l-5.3 9.2A2 2 0 0 0 6.44 20.2h11.12a2 2 0 0 0 1.74-3l-5.3-9.2V3.5"></path><path d="M7.5 15.5h9M11 11.5a1 1 0 1 0 2 0 1 1 0 0 0-2 0ZM8.5 17.5a.75.75 0 1 0 1.5 0 .75.75 0 0 0-1.5 0Z"></path></svg>',
+    improved: '<svg viewBox="0 0 24 24" focusable="false"><path d="M4 18 10.5 11.5 14 15l6-7"></path><path d="M15.5 8H20v4.5"></path><path d="m19 2.5.3.7.7.3-.7.3-.3.7-.3-.7-.7-.3.7-.3.3-.7Z"></path></svg>',
+    security: '<svg viewBox="0 0 24 24" focusable="false"><rect x="4.75" y="10" width="14.5" height="10.5" rx="2.5"></rect><path d="M8 10V6.5a4 4 0 0 1 8 0V10M12 13.75v3"></path></svg>',
+    deprecated: '<svg viewBox="0 0 24 24" focusable="false"><path d="m12 3 9 16.5H3L12 3Z"></path><path d="M12 9v4.5M12 16.5v.1"></path></svg>',
   };
 
-  function changelogCategoryHeading(label, level) {
-    const category = String(label || '').trim().replace(/:$/, '').toLowerCase();
-    const icon = CHANGELOG_CATEGORY_ICONS[category];
-    if (!icon) return `<h${level}>${inlineMarkdown(label)}</h${level}>`;
-    return `<h${level} class="rhythiax-changelog-category-heading" data-rhythiax-category="${escapeHtml(category)}"><span class="rhythiax-changelog-category-icon" aria-hidden="true">${icon}</span><span>${inlineMarkdown(label)}</span></h${level}>`;
+  const CATEGORY_ALIASES = {
+    featured: 'featured',
+    highlights: 'featured',
+    highlight: 'featured',
+    added: 'added',
+    new: 'added',
+    changed: 'changed',
+    change: 'changed',
+    changes: 'changed',
+    fixed: 'fixed',
+    fix: 'fixed',
+    fixes: 'fixed',
+    notes: 'notes',
+    note: 'notes',
+    info: 'notes',
+    removed: 'removed',
+    experimental: 'experimental',
+    experiment: 'experimental',
+    experiments: 'experimental',
+    lab: 'experimental',
+    beta: 'experimental',
+    improved: 'improved',
+    improvements: 'improved',
+    performance: 'improved',
+    security: 'security',
+    deprecated: 'deprecated',
+  };
+
+  function normalizeCategory(label) {
+    const clean = String(label || '')
+      .trim()
+      .toLowerCase()
+      .replace(/^#+\s*/, '')
+      .replace(/[:\-–—]$/, '')
+      .trim();
+    return CATEGORY_ALIASES[clean] || (CHANGELOG_CATEGORY_ICONS[clean] ? clean : null);
   }
 
-  function markdownToHtml(markdown) {
-    const lines = String(markdown || '').replace(/\r/g, '').split('\n');
+  function renderCategoryHeading(label, category, level = 2) {
+    const icon = CHANGELOG_CATEGORY_ICONS[category] || '';
+    const displayLevel = Math.min(Math.max(level, 2), 4);
+    const iconHtml = icon ? `<span class="rhythiax-changelog-category-icon" aria-hidden="true">${icon}</span>` : '';
+    return `<h${displayLevel} class="rhythiax-changelog-category-heading" data-rhythiax-category="${escapeHtml(category)}">${iconHtml}<span class="rhythiax-changelog-category-title">${inlineMarkdown(label)}</span></h${displayLevel}>`;
+  }
+
+  function renderSectionContent(lines) {
     const output = [];
     let paragraph = [];
     let listType = '';
@@ -105,19 +151,12 @@ RhythiaX.ChangelogPageComposition?.stop?.();
 
     lines.forEach(line => {
       const trimmed = line.trim();
-      const heading = trimmed.match(/^(#{1,3})\s+(.+)$/);
       const unordered = trimmed.match(/^[-+*]\s+(.+)$/);
       const ordered = trimmed.match(/^\d+\.\s+(.+)$/);
       const quote = trimmed.match(/^>\s?(.*)$/);
 
       if (!trimmed) {
         flushBlocks();
-        return;
-      }
-      if (heading) {
-        flushBlocks();
-        const level = Math.min(heading[1].length + 1, 4);
-        output.push(changelogCategoryHeading(heading[2], level));
         return;
       }
       if (/^(?:---+|___+|\*\s*\*\s*\*)$/.test(trimmed)) {
@@ -146,6 +185,141 @@ RhythiaX.ChangelogPageComposition?.stop?.();
     return output.join('');
   }
 
+  function markdownToHtml(markdown) {
+    const lines = String(markdown || '').replace(/\r/g, '').split('\n');
+    const sections = [];
+    let currentSection = {
+      heading: null,
+      lines: [],
+    };
+
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i];
+      const trimmed = line.trim();
+      const headingMatch = trimmed.match(/^(#{1,4})\s+(.+)$/);
+
+      if (headingMatch) {
+        const level = Math.min(headingMatch[1].length + 1, 4);
+        const text = headingMatch[2].trim();
+        const category = normalizeCategory(text);
+
+        if (currentSection.heading || currentSection.lines.length > 0) {
+          sections.push(currentSection);
+        }
+
+        currentSection = {
+          heading: { level, text, category },
+          lines: [],
+        };
+      } else {
+        currentSection.lines.push(line);
+      }
+    }
+
+    if (currentSection.heading || currentSection.lines.length > 0) {
+      sections.push(currentSection);
+    }
+
+    const output = [];
+
+    for (const section of sections) {
+      const isMeaningful = section.lines.some(l => {
+        const t = l.trim();
+        return t && !/^(?:---+|___+|\*\s*\*\s*\*)$/.test(t);
+      });
+
+      // If a category section has no meaningful items/text, skip it completely
+      if (section.heading?.category && !isMeaningful) {
+        continue;
+      }
+
+      if (section.heading) {
+        if (section.heading.category) {
+          output.push(renderCategoryHeading(section.heading.text, section.heading.category, section.heading.level));
+        } else {
+          output.push(`<h${section.heading.level}>${inlineMarkdown(section.heading.text)}</h${section.heading.level}>`);
+        }
+      }
+
+      const contentHtml = renderSectionContent(section.lines);
+      if (contentHtml) {
+        output.push(contentHtml);
+      }
+    }
+
+    return output.join('');
+  }
+
+  function parseFrontmatterBlock(lines, startIndex) {
+    if (lines[startIndex].trim() !== '---') return null;
+    let endIndex = -1;
+    for (let j = startIndex + 1; j < lines.length; j++) {
+      if (lines[j].trim() === '---') {
+        endIndex = j;
+        break;
+      }
+    }
+    if (endIndex === -1) return null;
+
+    const metadata = {};
+    for (let k = startIndex + 1; k < endIndex; k++) {
+      const fmatch = lines[k].match(/^([a-zA-Z0-9_-]+)\s*:\s*(.*)$/);
+      if (fmatch) {
+        const key = fmatch[1].toLowerCase().trim();
+        let val = fmatch[2].trim().replace(/^["'](.*)["']$/, '$1');
+        metadata[key] = val;
+      }
+    }
+
+    if (metadata.version || metadata.date || metadata.title) {
+      return {
+        metadata,
+        nextIndex: endIndex,
+      };
+    }
+    return null;
+  }
+
+  function extractVersionHeader(line) {
+    const headingMatch = line.match(/^#{1,3}\s+(.+)$/);
+    if (!headingMatch) return null;
+    const text = headingMatch[1].trim();
+
+    if (normalizeCategory(text)) return null;
+    if (/^changelog$/i.test(text)) return null;
+
+    const versionMatch = text.match(/(?:^|[\s[])v?(\d+\.\d+(?:\.\d+)?(?:-[a-zA-Z0-9.-]+)?)[\])]?/i);
+    if (!versionMatch) return null;
+
+    const version = versionMatch[1];
+    let title = '';
+    let date = '';
+
+    const dateMatch = text.match(/\b(\d{4}[-.]\d{2}[-.]\d{2})\b/);
+    if (dateMatch) {
+      date = dateMatch[1].replace(/\./g, '-');
+    }
+
+    const parts = text.split(/\s+-\s+/);
+    if (parts.length === 2) {
+      if (/^\d{4}[-.]\d{2}[-.]\d{2}$/.test(parts[1].trim())) {
+        date = parts[1].trim().replace(/\./g, '-');
+      } else {
+        title = parts[1].trim();
+      }
+    } else if (parts.length >= 3) {
+      const last = parts[parts.length - 1].trim();
+      if (/^\d{4}[-.]\d{2}[-.]\d{2}$/.test(last)) {
+        date = last.replace(/\./g, '-');
+        title = parts.slice(1, -1).join(' - ').trim();
+      } else {
+        title = parts.slice(1).join(' - ').trim();
+      }
+    }
+
+    return { version, title, date };
+  }
+
   function parseChangelogEntries(markdown) {
     const normalized = String(markdown || '').replace(/\r/g, '');
     const lines = normalized.split('\n');
@@ -164,38 +338,39 @@ RhythiaX.ChangelogPageComposition?.stop?.();
 
     for (let i = 0; i < lines.length; i++) {
       const line = lines[i];
-      const match = line.match(/^##\s+(.+)$/);
-      if (match) {
+      const trimmed = line.trim();
+
+      const fm = trimmed === '---' ? parseFrontmatterBlock(lines, i) : null;
+      if (fm) {
         flush();
-        const header = match[1].trim();
-        const parts = header.split(/\s+-\s+/);
-        const version = parts[0]?.trim() || '';
-        let title = '';
-        let date = '';
-
-        if (parts.length === 2) {
-          if (/^\d{4}-\d{2}-\d{2}$/.test(parts[1].trim())) {
-            date = parts[1].trim();
-          } else {
-            title = parts[1].trim();
-          }
-        } else if (parts.length >= 3) {
-          const last = parts[parts.length - 1].trim();
-          if (/^\d{4}-\d{2}-\d{2}$/.test(last)) {
-            date = last;
-            title = parts.slice(1, -1).join(' - ').trim();
-          } else {
-            title = parts.slice(1).join(' - ').trim();
-          }
-        }
-
+        const meta = fm.metadata;
         current = {
-          version,
-          title,
-          date,
+          version: meta.version ? meta.version.replace(/^v/i, '') : '',
+          title: meta.title || '',
+          date: meta.date ? meta.date.replace(/\./g, '-') : '',
+          listed: isEntryListed(meta),
+        };
+        i = fm.nextIndex;
+        continue;
+      }
+
+      const verHeader = extractVersionHeader(line);
+      if (verHeader) {
+        flush();
+        current = {
+          version: verHeader.version,
+          title: verHeader.title,
+          date: verHeader.date,
           listed: true,
         };
-      } else if (current) {
+        continue;
+      }
+
+      if (current) {
+        // Skip duplicate top-level title header within entry (e.g. "# Rhythia Reimagined v1.1.0")
+        if (/^#\s+Rhythia Reimagined(?:\s+v?\d+.*)?$/i.test(trimmed)) {
+          continue;
+        }
         currentContent.push(line);
       }
     }

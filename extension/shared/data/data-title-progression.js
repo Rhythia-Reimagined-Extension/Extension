@@ -7,14 +7,16 @@ var RhythiaX = RhythiaX || {};
 function titleDataNumber(value) {
   if (value === undefined || value === null || String(value).trim() === '' || String(value).trim() === '—') return null;
   const number = RhythiaX.parseLocalizedNumber
-    ? RhythiaX.parseLocalizedNumber(String(value).replace('%', ''))
-    : Number.parseFloat(String(value).replace(',', '.'));
+    ? RhythiaX.parseLocalizedNumber(value)
+    : Number.parseFloat(String(value).replace(/,/g, '.').replace('%', ''));
   return Number.isFinite(number) ? number : null;
 }
 
 function titleDataRank(value) {
   if (value === undefined || value === null || String(value).trim() === '' || String(value).trim() === '—') return null;
-  const number = Number.parseInt(String(value).replace(/[^0-9]/g, ''), 10);
+  const number = RhythiaX.parseStatNumber
+    ? RhythiaX.parseStatNumber(value)
+    : Number.parseInt(String(value).replace(/[^0-9]/g, ''), 10);
   return Number.isFinite(number) ? number : null;
 }
 

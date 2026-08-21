@@ -1,7 +1,15 @@
 // Backup workflows compose policy, payload, handle, and file providers.
 async function backupServiceRecordsAndSettings() {
   await RhythiaX.dataRepositoryReady;
-  const [records, settings, appSettings] = await Promise.all([RhythiaX.listDataRecords(), RhythiaX.getDataSettings(), backupPolicyAppSettings()]);
+  const [rawRecords, settings, appSettings] = await Promise.all([RhythiaX.listDataRecords(), RhythiaX.getDataSettings(), backupPolicyAppSettings()]);
+  const now = Date.now();
+  const records = [];
+  for (const record of rawRecords) {
+    if (RhythiaX.rollRecordOpenDay && RhythiaX.rollRecordOpenDay(record, now)) {
+      try { await RhythiaX.saveDataRecord(record); } catch (_) { /* best effort persistence */ }
+    }
+    records.push(record);
+  }
   return { records, settings, appSettings };
 }
 
@@ -86,7 +94,8 @@ async function backupServiceCreateManual(options = {}) {
   await backupServiceValidateWrittenPayload(JSON.parse((await backupFileRead(directories.manual, fileName)).raw));
   const state = await backupPolicyGetState();
   const files = [...(state.manualFiles || []), { fileName, createdAt: now, bytes: written.bytes }];
-  const next = await backupPolicySaveState({ status: 'up-to-date', folderName: directories.folderName, manualFiles: files, manualBytes: files.reduce((sum, item) => sum + Number(item.bytes || 0), 0), lastError: '' });
+  const activeManual = await backupFileCleanupManual(directories, files, RhythiaX.DATA_BACKUP_MAX_MANUAL_FILES);
+  const next = await backupPolicySaveState({ status: 'up-to-date', folderName: directories.folderName, manualFiles: activeManual, manualBytes: activeManual.reduce((sum, item) => sum + Number(item.bytes || 0), 0), lastError: '' });
   return { ok: true, fileName, bytes: written.bytes, state: next, payload };
 }
 
@@ -123,9 +132,10 @@ async function backupServiceStatus() {
       } else if (directories) {
         const [automaticDisk, manualDisk, recoveryDisk] = await Promise.all([backupFileList(directories.automatic), backupFileList(directories.manual), backupFileList(directories.recovery)]);
         const activeRecovery = await backupFileCleanupRecovery(directories, state);
+        const activeManual = await backupFileCleanupManual(directories, state, RhythiaX.DATA_BACKUP_MAX_MANUAL_FILES);
         const automaticFiles = automaticDisk.filter(file => backupPolicyIsAutomaticFile(file.name)).map(file => file.name);
-        const manualFiles = manualDisk.map(file => ({ fileName: file.name, createdAt: file.modifiedAt, bytes: file.bytes }));
-        const recoveryFiles = activeRecovery.length ? activeRecovery : recoveryDisk.filter(file => file.modifiedAt > Date.now() - RhythiaX.DATA_BACKUP_RECOVERY_TTL_MS).map(file => ({ fileName: file.name, createdAt: file.modifiedAt, bytes: file.bytes }));
+        const manualFiles = activeManual;
+        const recoveryFiles = activeRecovery.length ? activeRecovery : recoveryDisk.filter(file => backupPolicyIsRecoveryFile(file.name) && file.modifiedAt > Date.now() - RhythiaX.DATA_BACKUP_RECOVERY_TTL_MS).map(file => ({ fileName: file.name, createdAt: file.modifiedAt, bytes: file.bytes }));
         state = await backupPolicySaveState({ automaticFiles, manualFiles, recoveryFiles, automaticBytes: automaticDisk.reduce((sum, file) => sum + Number(file.bytes || 0), 0), manualBytes: manualFiles.reduce((sum, item) => sum + Number(item.bytes || 0), 0), recoveryBytes: recoveryFiles.reduce((sum, item) => sum + Number(item.bytes || 0), 0) });
       }
     }

@@ -3,7 +3,6 @@
 // =============================================
 
 var RhythiaX = RhythiaX || {};
-RhythiaX.ChangelogPageComposition?.stop?.();
 
 ;(function () {
   'use strict';
@@ -12,18 +11,14 @@ RhythiaX.ChangelogPageComposition?.stop?.();
   const VIEW_KEY = 'reimagined';
   const TAB_MARKER = 'data-rhythiax-changelog-tab';
   const PANEL_CLASS = 'rhythiax-changelog-panel';
-  let observer = null;
+
   let renderFrame = null;
   let entriesPromise = null;
   let changelogEntries = null;
   let loadState = 'idle'; // 'idle' | 'loading' | 'loaded' | 'error'
   let loadError = null;
   let entryLoadAttached = false;
-  let started = false;
-  let initialized = false;
-  let domReadyListener = null;
-  const historyOriginals = {};
-  const historyWrappers = {};
+  let clickListenerAttached = false;
 
   function isChangelogRoute() {
     return /^\/changelog(?:\/|$)/.test(window.location.pathname);
@@ -42,29 +37,6 @@ RhythiaX.ChangelogPageComposition?.stop?.();
   function safeUrl(value) {
     const url = String(value || '').trim();
     return /^https?:\/\//i.test(url) ? url : '#';
-  }
-
-  function inlineMarkdown(value) {
-    let html = escapeHtml(value);
-    html = html.replace(/^(?:<strong>\[([a-zA-Z0-9\s_-]+)\]<\/strong>|\[([a-zA-Z0-9\s_-]+)\])\s*/i, (match, tag1, tag2) => {
-      const rawTag = tag1 || tag2;
-      const cat = normalizeCategory(rawTag);
-      if (!cat) return match;
-      const icon = CHANGELOG_CATEGORY_ICONS[cat];
-      return `<span class="rhythiax-changelog-inline-badge" data-rhythiax-category="${cat}">${icon ? `<span class="rhythiax-changelog-inline-icon" aria-hidden="true">${icon}</span>` : ''}<span>${escapeHtml(rawTag)}</span></span> `;
-    });
-    html = html.replace(/`([^`]+)`/g, '<code>$1</code>');
-    html = html.replace(/!\[([^\]]*)\]\(([^)\s]+)(?:\s+"[^"]*")?\)/g, (_, alt, url) => {
-      const imageUrl = safeUrl(url);
-      return imageUrl === '#' ? '' : `<img src="${escapeHtml(imageUrl)}" alt="${alt}" loading="lazy" decoding="async">`;
-    });
-    html = html.replace(/\[([^\]]+)\]\(([^)\s]+)(?:\s+"[^"]*")?\)/g, (_, label, url) => {
-      const linkUrl = safeUrl(url);
-      return linkUrl === '#' ? label : `<a href="${escapeHtml(linkUrl)}" target="_blank" rel="noopener noreferrer">${label}</a>`;
-    });
-    html = html.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
-    html = html.replace(/\*([^*]+)\*/g, '<em>$1</em>');
-    return html;
   }
 
   const CHANGELOG_CATEGORY_ICONS = {
@@ -116,6 +88,29 @@ RhythiaX.ChangelogPageComposition?.stop?.();
       .replace(/[:\-–—]$/, '')
       .trim();
     return CATEGORY_ALIASES[clean] || (CHANGELOG_CATEGORY_ICONS[clean] ? clean : null);
+  }
+
+  function inlineMarkdown(value) {
+    let html = escapeHtml(value);
+    html = html.replace(/^(?:<strong>\[([a-zA-Z0-9\s_-]+)\]<\/strong>|\[([a-zA-Z0-9\s_-]+)\])\s*/i, (match, tag1, tag2) => {
+      const rawTag = tag1 || tag2;
+      const cat = normalizeCategory(rawTag);
+      if (!cat) return match;
+      const icon = CHANGELOG_CATEGORY_ICONS[cat];
+      return `<span class="rhythiax-changelog-inline-badge" data-rhythiax-category="${cat}">${icon ? `<span class="rhythiax-changelog-inline-icon" aria-hidden="true">${icon}</span>` : ''}<span>${escapeHtml(rawTag)}</span></span> `;
+    });
+    html = html.replace(/`([^`]+)`/g, '<code>$1</code>');
+    html = html.replace(/!\[([^\]]*)\]\(([^)\s]+)(?:\s+"[^"]*")?\)/g, (_, alt, url) => {
+      const imageUrl = safeUrl(url);
+      return imageUrl === '#' ? '' : `<img src="${escapeHtml(imageUrl)}" alt="${alt}" loading="lazy" decoding="async">`;
+    });
+    html = html.replace(/\[([^\]]+)\]\(([^)\s]+)(?:\s+"[^"]*")?\)/g, (_, label, url) => {
+      const linkUrl = safeUrl(url);
+      return linkUrl === '#' ? label : `<a href="${escapeHtml(linkUrl)}" target="_blank" rel="noopener noreferrer">${label}</a>`;
+    });
+    html = html.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+    html = html.replace(/\*([^*]+)\*/g, '<em>$1</em>');
+    return html;
   }
 
   function renderCategoryHeading(label, category, level = 2) {
@@ -228,7 +223,6 @@ RhythiaX.ChangelogPageComposition?.stop?.();
         return t && !/^(?:---+|___+|\*\s*\*\s*\*)$/.test(t);
       });
 
-      // If a category section has no meaningful items/text, skip it completely
       if (section.heading?.category && !isMeaningful) {
         continue;
       }
@@ -356,6 +350,14 @@ RhythiaX.ChangelogPageComposition?.stop?.();
 
       const verHeader = extractVersionHeader(line);
       if (verHeader) {
+        const hasContent = currentContent.some(l => l.trim().length > 0);
+        if (current && (!hasContent || current.version === verHeader.version)) {
+          if (!current.version) current.version = verHeader.version;
+          if (!current.title && verHeader.title) current.title = verHeader.title;
+          if (!current.date && verHeader.date) current.date = verHeader.date;
+          continue;
+        }
+
         flush();
         current = {
           version: verHeader.version,
@@ -367,7 +369,6 @@ RhythiaX.ChangelogPageComposition?.stop?.();
       }
 
       if (current) {
-        // Skip duplicate top-level title header within entry (e.g. "# Rhythia Reimagined v1.1.0")
         if (/^#\s+Rhythia Reimagined(?:\s+v?\d+.*)?$/i.test(trimmed)) {
           continue;
         }
@@ -375,7 +376,16 @@ RhythiaX.ChangelogPageComposition?.stop?.();
       }
     }
     flush();
-    return entries.filter(isEntryListed).sort(compareEntries);
+
+    const uniqueEntries = [];
+    const seenVersions = new Set();
+    for (const entry of entries) {
+      if (!entry.version || seenVersions.has(entry.version)) continue;
+      seenVersions.add(entry.version);
+      uniqueEntries.push(entry);
+    }
+
+    return uniqueEntries.filter(isEntryListed).sort(compareEntries);
   }
 
   function isEntryListed(entry) {
@@ -469,7 +479,7 @@ RhythiaX.ChangelogPageComposition?.stop?.();
 
   function ensureReimaginedTab(entries) {
     const container = tabsContainer();
-    if (!container) return;
+    if (!container) return false;
     container.dataset.rhythiaxChangelogTabs = 'true';
     container.style.setProperty('grid-template-columns', 'repeat(3, minmax(0, 1fr))', 'important');
     const active = isReimaginedView();
@@ -495,14 +505,20 @@ RhythiaX.ChangelogPageComposition?.stop?.();
     let tab = container.querySelector(`[${TAB_MARKER}]`);
     if (!tab) {
       const source = container.querySelector('a[href*="/changelog/public"]') || container.querySelector('a');
-      if (!source) return;
+      if (!source) return false;
       tab = source.cloneNode(true);
       Array.from(tab.classList)
         .filter(token => token.startsWith('ring-') || token.startsWith('bg-blue-500/'))
         .forEach(token => tab.classList.remove(token));
       tab.setAttribute(TAB_MARKER, 'true');
       tab.href = '/changelog?view=reimagined';
-      const labelNode = Array.from(tab.querySelectorAll('div')).find(node => node.textContent.trim() === 'Public');
+      const barNode = tab.querySelector('div.rounded-full');
+      if (barNode) {
+        barNode.className = 'mb-2 h-1 w-full rounded-full';
+        barNode.style.background = 'var(--rhythiax-accent, #ec4899)';
+      }
+      const labelNode = Array.from(tab.querySelectorAll('div')).find(node => node.textContent.trim() === 'Public' || node.textContent.trim() === 'Web')
+        || tab.querySelector('.text-base, .font-semibold, .font-bold');
       if (labelNode) labelNode.textContent = 'Reimagined';
       container.appendChild(tab);
     }
@@ -511,6 +527,7 @@ RhythiaX.ChangelogPageComposition?.stop?.();
     tab.setAttribute('aria-label', 'Reimagined changelog');
     if (active) tab.setAttribute('aria-current', 'page');
     else tab.removeAttribute('aria-current');
+    return true;
   }
 
   function officialArticles() {
@@ -584,7 +601,6 @@ RhythiaX.ChangelogPageComposition?.stop?.();
     const index = entries.indexOf(entry);
     const newer = entries[index - 1];
     const older = entries[index + 1];
-    const timeline = entries.map(item => `<button type="button" class="rhythiax-changelog-timeline-item${item.version === entry.version ? ' is-selected' : ''}" data-rhythiax-entry="${escapeHtml(item.version)}"><span>${escapeHtml(item.version)}</span><small>${escapeHtml(formatDate(item.date, true))}</small></button>`).join('');
     return `<section class="${PANEL_CLASS}" data-rhythiax-render-key="${escapeHtml(`${entry.version}:${entries.length}`)}">
       ${introMarkup()}
       <div class="rhythiax-changelog-release-nav">
@@ -593,7 +609,6 @@ RhythiaX.ChangelogPageComposition?.stop?.();
         ${older ? `<button type="button" class="rhythiax-changelog-arrow" data-rhythiax-entry="${escapeHtml(older.version)}" aria-label="Older: ${escapeHtml(formatDate(older.date))}" title="Older: ${escapeHtml(formatDate(older.date))}">&#x203A;</button>` : '<span class="rhythiax-changelog-arrow is-disabled" aria-hidden="true">&#x203A;</span>'}
       </div>
       <article class="rhythiax-changelog-entry">${markdownToHtml(entry.content)}</article>
-      <nav class="rhythiax-changelog-timeline" aria-label="Reimagined changelog releases">${timeline}</nav>
     </section>`;
   }
 
@@ -622,7 +637,6 @@ RhythiaX.ChangelogPageComposition?.stop?.();
     }
     if (panel.dataset.rhythiaxRenderKey !== key) {
       panel.outerHTML = markup;
-      panel = document.querySelector(`.${PANEL_CLASS}`);
     }
     articles.forEach(article => {
       if (article.dataset.rhythiaxChangelogHidden !== 'true') {
@@ -634,7 +648,6 @@ RhythiaX.ChangelogPageComposition?.stop?.();
   }
 
   function scheduleRender() {
-    if (!started) return;
     if (renderFrame) return;
     renderFrame = window.requestAnimationFrame(() => {
       renderFrame = null;
@@ -670,65 +683,57 @@ RhythiaX.ChangelogPageComposition?.stop?.();
     }
   }
 
-  function patchHistory() {
-    ['pushState', 'replaceState'].forEach(method => {
-      const original = window.history[method];
-      const wrapped = function () {
-        const result = original.apply(this, arguments);
-        scheduleRender();
-        return result;
-      };
-      historyOriginals[method] = original;
-      historyWrappers[method] = wrapped;
-      window.history[method] = wrapped;
-    });
-    window.addEventListener('popstate', scheduleRender);
-    window.addEventListener('hashchange', scheduleRender);
+  function attachClickListener() {
+    if (clickListenerAttached) return;
+    clickListenerAttached = true;
+    document.addEventListener('click', handleClick);
   }
 
-  function init() {
-    if (!started || initialized) return;
-    initialized = true;
-    document.addEventListener('click', handleClick);
-    patchHistory();
-    observer = new MutationObserver(scheduleRender);
-    observer.observe(document.body || document.documentElement, { childList: true, subtree: true });
-    scheduleRender();
-  }
+  RhythiaX.injectChangelog = function () {
+    if (!isChangelogRoute()) return false;
+    attachClickListener();
+    if (loadState === 'idle' && !entryLoadAttached) {
+      entryLoadAttached = true;
+      loadEntries();
+    }
+    const injected = ensureReimaginedTab(changelogEntries || []);
+    if (isReimaginedView()) {
+      render(changelogEntries || []);
+    } else {
+      removePanel();
+    }
+    if (injected) {
+      RhythiaX.injected = true;
+    }
+    return injected;
+  };
+
+  RhythiaX.cleanupChangelog = function () {
+    if (renderFrame) window.cancelAnimationFrame(renderFrame);
+    renderFrame = null;
+    removePanel();
+  };
 
   RhythiaX.ChangelogPageComposition = {
     start() {
-      if (started) return;
-      started = true;
-      if (document.readyState === 'loading') {
-        domReadyListener = () => {
-          domReadyListener = null;
-          init();
-        };
-        document.addEventListener('DOMContentLoaded', domReadyListener, { once: true });
-      }
-      else init();
+      attachClickListener();
+      scheduleRender();
     },
     stop() {
-      started = false;
-      initialized = false;
       entryLoadAttached = false;
       loadState = 'idle';
       loadError = null;
       entriesPromise = null;
       changelogEntries = null;
-      if (renderFrame) window.cancelAnimationFrame(renderFrame);
-      renderFrame = null;
-      observer?.disconnect();
-      observer = null;
-      if (domReadyListener) document.removeEventListener('DOMContentLoaded', domReadyListener);
-      domReadyListener = null;
-      document.removeEventListener('click', handleClick);
-      window.removeEventListener('popstate', scheduleRender);
-      window.removeEventListener('hashchange', scheduleRender);
-      ['pushState', 'replaceState'].forEach(method => {
-        if (window.history[method] === historyWrappers[method]) window.history[method] = historyOriginals[method];
-      });
+      RhythiaX.cleanupChangelog();
+      if (clickListenerAttached) {
+        document.removeEventListener('click', handleClick);
+        clickListenerAttached = false;
+      }
     },
+    inject: RhythiaX.injectChangelog,
+    cleanup: RhythiaX.cleanupChangelog,
+    parseChangelogEntries,
+    markdownToHtml,
   };
 })();

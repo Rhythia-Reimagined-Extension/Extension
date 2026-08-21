@@ -18,6 +18,20 @@ body[data-rhythiax-theme] #root > div > div.mx-auto {
 }
 
 /* Navigation and the top hero are shared across all routes. */
+/* Give the profile sidebar a little more room without changing the main score column. */
+@media (min-width: 1024px) {
+  #root .mx-auto.max-w-\[1100px\] .grid:has(> [class~="lg:col-span-3"]):has(> [class~="lg:col-span-9"]) {
+    grid-template-columns: repeat(3, minmax(0, 1.35fr)) repeat(9, minmax(0, 1fr)) !important;
+  }
+}
+
+/* Map thumbnails remain fully visible across theme shifts */
+body[data-rhythiax-page="maps"] #root img[src*="static.rhythia.com/beatmap-img-"] {
+  display: block;
+  visibility: visible;
+  opacity: 1;
+}
+
 body[data-rhythiax-theme] #root .fixed.top-0.left-0.w-full[class*="h-[60px]"] {
   background: var(--rhythiax-nav-surface) !important;
   background-image: none !important;

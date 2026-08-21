@@ -161,7 +161,8 @@ RhythiaX.crossVerifyCardsWithApi = function (playerId, scoreSets) {
            var labelEl = pill.querySelector('.text-neutral-300');
            var valueEl = pill.querySelector('.text-neutral-100');
            if (labelEl && valueEl && labelEl.textContent.trim() === 'Weighted RP') {
-             valueEl.textContent = RhythiaX.formatNumber(Math.round(parseFloat(correctRp)));
+             var parsedCorrect = RhythiaX.parseLocalizedNumber ? RhythiaX.parseLocalizedNumber(correctRp) : (Number.parseFloat(String(correctRp || '').replace(/,/g, '')) || 0);
+             valueEl.textContent = RhythiaX.formatNumber(Math.round(parsedCorrect));
            }
           });
         });

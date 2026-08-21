@@ -17,7 +17,10 @@
       };
     },
     safeRecord(record, options = {}) {
-      const normalized = RhythiaX.normalizeDataRecord(record, record?.profileId);
+      const cloned = this.clone(record);
+      const referenceNow = Number(options.now) || Date.now();
+      if (RhythiaX.rollRecordOpenDay) RhythiaX.rollRecordOpenDay(cloned, referenceNow);
+      const normalized = RhythiaX.normalizeDataRecord(cloned, cloned?.profileId);
       if (!normalized.profileId) return null;
       if (!options.includeOpenDay) normalized.history.openDay = null;
       if (!options.includeTitleState) normalized.titleProgression.last = null;
@@ -31,13 +34,18 @@
       const includeOpenDay = options.includeOpenDay === true || scope === 'open-day';
       const includeTitleState = options.includeTitleState !== false && scope !== 'daily';
       const includeDiagnostics = options.includeDiagnostics === true;
+      const exportTime = Number(options.now) || Date.now();
       const sourceRecords = (Array.isArray(records) ? records : [])
         .filter(record => scope !== 'profile' || selectedIds.has(String(record.profileId)))
-        .map(record => this.safeRecord(record, { includeOpenDay, includeTitleState, includeDiagnostics })).filter(Boolean);
-      if (scope === 'daily') sourceRecords.forEach(record => { record.history.openDay = null; record.titleProgression.last = null; });
+        .map(record => this.safeRecord(record, { includeOpenDay, includeTitleState, includeDiagnostics, now: exportTime })).filter(Boolean);
+      if (scope === 'daily') sourceRecords.forEach(record => {
+        if (RhythiaX.rollRecordOpenDay) RhythiaX.rollRecordOpenDay(record, exportTime);
+        record.history.openDay = null;
+        record.titleProgression.last = null;
+      });
       const payload = {
         type: RhythiaX.DATA_EXPORT_TYPE, exportVersion: RhythiaX.DATA_EXPORT_VERSION, schemaVersion: RhythiaX.DATA_SCHEMA_VERSION,
-        exportedAt: Date.now(), source: 'local',
+        exportedAt: exportTime, source: 'local',
         scope: { type: scope, profileIds: sourceRecords.map(record => record.profileId), includeOpenDay, includeTitleState, includeDiagnostics, includeSettings: options.includeSettings === true },
         records: sourceRecords,
       };

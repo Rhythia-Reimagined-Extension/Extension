@@ -90,3 +90,35 @@ async function backupFileCleanupRecovery(directories, state, now = Date.now()) {
   }
   return active;
 }
+
+async function backupFileCleanupManual(directories, stateOrFiles, maxLimit = RhythiaX.DATA_BACKUP_MAX_MANUAL_FILES || 30) {
+  const limit = Math.max(1, Number(maxLimit) || 30);
+  const rawList = Array.isArray(stateOrFiles) ? stateOrFiles : (stateOrFiles?.manualFiles || []);
+  const diskFiles = (await backupFileList(directories.manual)).filter(file => backupPolicyIsManualFile(file.name));
+  const fileMap = new Map();
+  rawList.forEach(item => {
+    if (item && item.fileName && backupPolicyIsManualFile(item.fileName)) {
+      fileMap.set(item.fileName, {
+        fileName: item.fileName,
+        createdAt: Number(item.createdAt) || 0,
+        bytes: Number(item.bytes) || 0,
+      });
+    }
+  });
+  diskFiles.forEach(file => {
+    const existing = fileMap.get(file.name);
+    fileMap.set(file.name, {
+      fileName: file.name,
+      createdAt: existing?.createdAt || file.modifiedAt || 0,
+      bytes: file.bytes || existing?.bytes || 0,
+    });
+  });
+  const allFiles = Array.from(fileMap.values());
+  allFiles.sort((left, right) => (left.createdAt - right.createdAt) || String(left.fileName).localeCompare(String(right.fileName)));
+  const keep = allFiles.slice(-limit);
+  const remove = allFiles.slice(0, Math.max(0, allFiles.length - limit));
+  for (const item of remove) {
+    await backupFileDelete(directories.manual, item.fileName);
+  }
+  return keep;
+}

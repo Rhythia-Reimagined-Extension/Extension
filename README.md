@@ -5,7 +5,7 @@ way to explore Rhythia profiles, scores, progression, and performance data.
 
 ## Release Status
 
-Rhythia Reimagined 1.0.1 is the current public release (with 1.1.0 in preparation).
+Rhythia Reimagined 1.1.0 is the current public release.
 
 Officially supported browsers are Google Chrome 116 or later and the current
 version of Opera. Other browsers may work, but are not officially supported.

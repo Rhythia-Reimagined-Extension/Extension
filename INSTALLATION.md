@@ -2,7 +2,7 @@
 
 ## Supported browsers
 
-Rhythia Reimagined 1.0.1 officially supports:
+Rhythia Reimagined 1.1.0 officially supports:
 
 - Google Chrome 116 or later
 - The current version of Opera

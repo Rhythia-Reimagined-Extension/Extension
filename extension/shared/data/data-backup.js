@@ -5,8 +5,6 @@ RhythiaX.BackupBridge = {
   getLocalBackupState: (...args) => RhythiaX.BackupApi.getState(...args),
   saveLocalBackupState: (...args) => RhythiaX.BackupApi.saveState(...args),
   createStableDataBackup: (...args) => RhythiaX.BackupApi.createStablePayload(...args),
-  createManualDataBackup: (...args) => RhythiaX.BackupApi.createManualPayload(...args),
-  createRecoveryDataBackup: (...args) => RhythiaX.BackupApi.createRecoveryPayload(...args),
   getStableDataBackupFingerprint: (...args) => RhythiaX.BackupApi.getStableFingerprint(...args),
   writeLocalBackupPayload: (...args) => RhythiaX.BackupApi.writeAutomaticPayload(...args),
   runAutomaticLocalBackup: (...args) => RhythiaX.BackupApi.runAutomatic(...args),
@@ -20,7 +18,4 @@ RhythiaX.BackupBridge = {
   deleteLocalBackup: (...args) => RhythiaX.BackupApi.deleteAll(...args),
 };
 
-Object.assign(RhythiaX, RhythiaX.BackupBridge, {
-  runLocalBackup: (...args) => RhythiaX.BackupBridge.runAutomaticLocalBackup(...args),
-  readLocalBackup: () => RhythiaX.BackupBridge.readAutomaticBackup(0),
-});
+Object.assign(RhythiaX, RhythiaX.BackupBridge);

@@ -56,7 +56,7 @@ var RhythiaX = RhythiaX || {};
 
   function positionPopover() {
     if (!active) return;
-    if (!active.trigger.isConnected || !active.popover.isConnected) {
+    if (!active.trigger?.isConnected || !active.popover?.isConnected) {
       closePopover();
       return;
     }
@@ -80,10 +80,12 @@ var RhythiaX = RhythiaX || {};
     if (!active) return;
     const previous = active;
     active = null;
-    setTriggerState(previous.trigger, false);
-    previous.popover.classList.remove('is-open');
-    previous.popover.classList.add('is-closing');
-    window.setTimeout(() => previous.popover.remove(), CLOSE_DURATION);
+    if (previous.trigger) {
+      setTriggerState(previous.trigger, false);
+    }
+    previous.popover?.classList.remove('is-open');
+    previous.popover?.classList.add('is-closing');
+    window.setTimeout(() => previous.popover?.remove(), CLOSE_DURATION);
   }
 
   function createPopover(trigger, code) {
@@ -146,7 +148,7 @@ var RhythiaX = RhythiaX || {};
       closePopover();
       return;
     }
-    if (active?.popover.contains(target)) return;
+    if (active?.popover?.contains(target)) return;
 
     const trigger = target.closest(TRIGGER_SELECTOR);
     const code = countryFromLink(trigger);
@@ -161,11 +163,17 @@ var RhythiaX = RhythiaX || {};
   }, true);
 
   document.addEventListener('keydown', event => {
-    if (event.key !== 'Escape' || !active) return;
-    event.preventDefault();
-    const trigger = active.trigger;
-    closePopover();
-    trigger.focus();
+    if (!active) return;
+    if (event.key === 'Escape') {
+      event.preventDefault();
+      const trigger = active.trigger;
+      closePopover();
+      trigger?.focus?.();
+      return;
+    }
+    if (event.key === 'Tab' && active.popover) {
+      RhythiaX.trapFocus?.(active.popover, event);
+    }
   }, true);
 
   window.addEventListener('resize', positionPopover);

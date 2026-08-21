@@ -32,23 +32,23 @@ function dataHistoryLatest(openDay) {
 }
 
 function dataHistoryPreviousDate(dateText) {
-  const match = String(dateText || '').match(/^(\d{4})-(\d{2})-(\d{2})$/);
-  if (!match) return '';
-  const date = new Date(Number(match[1]), Number(match[2]) - 1, Number(match[3]));
-  date.setDate(date.getDate() - 1);
-  return RhythiaX.localDateKey(date);
+  return RhythiaX.previousDate ? RhythiaX.previousDate(dateText) : '';
 }
 
 function dataHistoryCloseOpenDay(record) {
   const openDay = record?.history?.openDay;
   const latest = dataHistoryLatest(openDay);
-  if (!openDay || !latest) return false;
+  if (!openDay || !latest) {
+    if (record?.history) record.history.openDay = null;
+    return false;
+  }
   const daily = {
     ...dataHistoryClone(latest),
     id: `${openDay.date}:daily`,
     kind: 'daily',
     date: openDay.date,
   };
+  record.history.daily = record.history.daily || {};
   record.history.daily[openDay.date] = daily;
   record.history.openDay = null;
   return true;
@@ -340,6 +340,9 @@ RhythiaX.getDataDailyHistory = function (record) {
   return Object.values(record?.history?.daily || {})
     .sort((left, right) => String(left.date).localeCompare(String(right.date)));
 };
+
+RhythiaX.closeDataRecordOpenDay = dataHistoryCloseOpenDay;
+RhythiaX.closeOpenDay = dataHistoryCloseOpenDay;
 
 RhythiaX.getDataHistorySummary = async function () {
   const settings = await RhythiaX.getDataSettings();

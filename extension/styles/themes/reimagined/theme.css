@@ -47,3 +47,37 @@ body[data-rhythiax-theme="rhythia-reimagined"] #root [role="switch"][aria-checke
 body[data-rhythiax-theme="rhythia-reimagined"] #root [role="switch"] > span { background: #ffffff !important; box-shadow: 0 1px 2px rgba(0,0,0,.4); }
 body[data-rhythiax-theme="rhythia-reimagined"] #root [role="switch"][aria-checked="false"] > span { transform: translateX(.25rem) !important; }
 body[data-rhythiax-theme="rhythia-reimagined"] #root [role="switch"][aria-checked="true"] > span { transform: translateX(1.25rem) !important; }
+
+/* Open stat accordion and history container in Reimagined preset */
+body[data-rhythiax-theme="rhythia-reimagined"] .rhythiax-official-stat-row.rhythiax-stat-row-open {
+  background: color-mix(in srgb, var(--rhythiax-inner-surface, #252239) 88%, var(--rhythiax-accent, #aa92e8) 12%) !important;
+  border-left: 3px solid var(--rhythiax-accent, #aa92e8) !important;
+  border-top: 1px solid color-mix(in srgb, var(--rhythiax-accent, #aa92e8) 45%, transparent) !important;
+  border-right: 1px solid color-mix(in srgb, var(--rhythiax-accent, #aa92e8) 45%, transparent) !important;
+  border-bottom: 1px solid color-mix(in srgb, var(--rhythiax-accent, #aa92e8) 25%, rgba(255, 255, 255, 0.06)) !important;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.16) !important;
+}
+body[data-rhythiax-theme="rhythia-reimagined"] .rhythiax-history-row {
+  background: color-mix(in srgb, var(--rhythiax-inner-surface, #252239) 90%, var(--rhythiax-accent, #aa92e8) 10%) !important;
+  border-left: 3px solid var(--rhythiax-accent, #aa92e8) !important;
+  border-right: 1px solid color-mix(in srgb, var(--rhythiax-accent, #aa92e8) 45%, transparent) !important;
+  border-bottom: 1px solid color-mix(in srgb, var(--rhythiax-accent, #aa92e8) 45%, transparent) !important;
+}
+
+/* Reimagined theme component surfaces */
+body[data-rhythiax-theme="rhythia-reimagined"] .rhythiax-score-card,
+body[data-rhythiax-theme="rhythia-reimagined"] .rhythiax-profile-box,
+body[data-rhythiax-theme="rhythia-reimagined"] .rhythiax-stats-panel,
+body[data-rhythiax-theme="rhythia-reimagined"] .rhythiax-accordion {
+  background: var(--rhythiax-surface, #1b1a24) !important;
+  border-color: rgba(184, 164, 235, 0.16) !important;
+}
+body[data-rhythiax-theme="rhythia-reimagined"] .rhythiax-score-card .rhythiax-card-stat-item,
+body[data-rhythiax-theme="rhythia-reimagined"] .rhythiax-score-card .rhythiax-card-stat-box,
+body[data-rhythiax-theme="rhythia-reimagined"] .rhythiax-score-card .rhythiax-card-rp-box,
+body[data-rhythiax-theme="rhythia-reimagined"] .rhythiax-official-stat-row:not(.rhythiax-stat-row-open) {
+  background: var(--rhythiax-inner-surface, #252239) !important;
+  border-color: rgba(184, 164, 235, 0.10) !important;
+}
+
+

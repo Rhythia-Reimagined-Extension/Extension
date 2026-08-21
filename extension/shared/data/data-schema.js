@@ -60,6 +60,8 @@ function dataClone(value) {
   }
 }
 
+RhythiaX.cloneDataValue = dataClone;
+
 function dataFiniteNumber(value) {
   if (value === undefined || value === null || String(value).trim() === '' || String(value).trim() === '—') return null;
   const number = Number(value);
@@ -235,6 +237,35 @@ function normalizeDailyHistory(daily) {
     return result;
   }, {});
 }
+
+function rollRecordOpenDay(record, referenceDateOrNow = Date.now()) {
+  if (!record || typeof record !== 'object' || !record.history || !record.history.openDay) return false;
+  const today = typeof referenceDateOrNow === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(referenceDateOrNow)
+    ? referenceDateOrNow
+    : dataDateKey(referenceDateOrNow);
+  const openDay = record.history.openDay;
+  if (!openDay || !openDay.date) return false;
+  if (today && openDay.date >= today) return false;
+  const captures = Array.isArray(openDay.captures) ? openDay.captures : [];
+  const latest = captures.length > 0 ? captures[captures.length - 1] : null;
+  if (latest) {
+    const dailySnapshot = normalizeSnapshot({
+      ...dataClone(latest),
+      id: `${openDay.date}:daily`,
+      kind: 'daily',
+      date: openDay.date,
+    }, openDay.date);
+    if (dailySnapshot) {
+      dailySnapshot.kind = 'daily';
+      record.history.daily = record.history.daily || {};
+      record.history.daily[openDay.date] = dailySnapshot;
+    }
+  }
+  record.history.openDay = null;
+  return true;
+}
+
+RhythiaX.rollRecordOpenDay = rollRecordOpenDay;
 
 function normalizeCollection(collection) {
   const source = collection && typeof collection === 'object' ? collection : {};

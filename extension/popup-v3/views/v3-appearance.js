@@ -45,8 +45,9 @@ function v3ApplyPopupSizeVars(name) {
 // `.popup[data-theme]` with the matching palette.
 function setV3Theme(themeKey) {
   const presetKey = themeKey === 'reimagined' ? 'rhythia-reimagined' : themeKey;
-  const preset = RhythiaX.themePresets[presetKey] ? presetKey : 'rhythia-reimagined';
-  const theme = { ...RhythiaX.themePresets[preset] };
+  const presets = window.RhythiaX?.themePresets || {};
+  const preset = presets[presetKey] ? presetKey : 'rhythia-reimagined';
+  const theme = { ...(presets[preset] || {}) };
   state.theme = preset === 'rhythia-reimagined' ? 'reimagined' : preset;
   chrome.storage.local.set({ [V3_THEME_KEY]: theme });
   v3SendThemeToActiveTab(theme);

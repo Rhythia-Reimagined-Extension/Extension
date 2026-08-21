@@ -12,10 +12,12 @@ function backupPayloadStableSettings(settings) {
 }
 
 function backupPayloadCreate(records, settings, options = {}) {
+  const now = Number(options.now) || Date.now();
   const payload = RhythiaX.createDataExport(records, {
     scope: options.scope || 'all', includeOpenDay: options.includeOpenDay === true,
     includeTitleState: options.includeTitleState !== false, includeDiagnostics: false, includeSettings: true,
     settings: backupPayloadStableSettings(settings), appSettings: options.appSettings || null,
+    now,
   });
   if (payload.settings) {
     delete payload.settings.localBackupEnabled;
@@ -28,12 +30,17 @@ function backupPayloadCreate(records, settings, options = {}) {
   payload.backupPolicy = options.backupPolicy || 'stable-only';
   payload.backupKind = options.backupKind || 'automatic';
   payload.createdByAppVersion = backupPolicyAppVersion();
-  payload.exportedAt = Number(options.now) || Date.now();
+  payload.exportedAt = now;
   return payload;
 }
 
 function backupPayloadCreateStable(records, settings, now = Date.now()) {
-  const payload = backupPayloadCreate(records, settings, { now, includeOpenDay: false, backupPolicy: 'stable-only', backupKind: 'automatic' });
+  const preparedRecords = (Array.isArray(records) ? records : []).map(record => {
+    const cloned = RhythiaX.cloneDataValue ? RhythiaX.cloneDataValue(record) : JSON.parse(JSON.stringify(record));
+    if (RhythiaX.rollRecordOpenDay) RhythiaX.rollRecordOpenDay(cloned, now);
+    return cloned;
+  });
+  const payload = backupPayloadCreate(preparedRecords, settings, { now, includeOpenDay: false, backupPolicy: 'stable-only', backupKind: 'automatic' });
   payload.scope.includeOpenDay = false;
   payload.scope.includeSettings = true;
   payload.records = payload.records.map(record => ({
@@ -45,13 +52,24 @@ function backupPayloadCreateStable(records, settings, now = Date.now()) {
 }
 
 function backupPayloadCreateManual(records, settings, options = {}) {
-  const payload = backupPayloadCreate(records, settings, { ...options, backupPolicy: 'manual', backupKind: 'manual' });
+  const now = Number(options.now) || Date.now();
+  const preparedRecords = (Array.isArray(records) ? records : []).map(record => {
+    const cloned = RhythiaX.cloneDataValue ? RhythiaX.cloneDataValue(record) : JSON.parse(JSON.stringify(record));
+    if (RhythiaX.rollRecordOpenDay) RhythiaX.rollRecordOpenDay(cloned, now);
+    return cloned;
+  });
+  const payload = backupPayloadCreate(preparedRecords, settings, { ...options, now, backupPolicy: 'manual', backupKind: 'manual' });
   if (!options.includeAppSettings) delete payload.appSettings;
   return payload;
 }
 
 function backupPayloadCreateRecovery(records, settings, appSettings, now = Date.now()) {
-  return backupPayloadCreate(records, settings, { now, includeOpenDay: true, includeAppSettings: true, appSettings, backupPolicy: 'recovery', backupKind: 'recovery' });
+  const preparedRecords = (Array.isArray(records) ? records : []).map(record => {
+    const cloned = RhythiaX.cloneDataValue ? RhythiaX.cloneDataValue(record) : JSON.parse(JSON.stringify(record));
+    if (RhythiaX.rollRecordOpenDay) RhythiaX.rollRecordOpenDay(cloned, now);
+    return cloned;
+  });
+  return backupPayloadCreate(preparedRecords, settings, { now, includeOpenDay: true, includeAppSettings: true, appSettings, backupPolicy: 'recovery', backupKind: 'recovery' });
 }
 
 function backupPayloadFingerprint(payload) {

@@ -16,13 +16,26 @@ body[data-rhythiax-theme] #root [class*="bg-white/10"],
 body[data-rhythiax-theme] #root [class*="bg-white/[0.02]"],
 body[data-rhythiax-theme] #root [class*="bg-white/[0.03]"],
 body[data-rhythiax-theme] #root [class*="bg-white/[0.035]"],
-body[data-rhythiax-theme] #root [class*="bg-white/[0.04]"] {
+body[data-rhythiax-theme] #root [class*="bg-white/[0.04]"],
+body[data-rhythiax-theme] #root [class*="bg-white/[0.055]"],
+body[data-rhythiax-theme] #root [class*="bg-white/[0.08]"] {
    background-color: var(--rhythiax-inner-surface) !important;
    border-color: var(--rhythiax-border) !important;
 }
 body[data-rhythiax-theme] #root [class*="border-white/"],
 body[data-rhythiax-theme] #root [class*="border-neutral-"] {
    border-color: var(--rhythiax-border) !important;
+}
+body[data-rhythiax-theme] #root [class*="bg-gradient-to-t"][class*="from-[#111214]"],
+body[data-rhythiax-theme] #root .pointer-events-none[class*="bg-gradient-to-t"] {
+   background-image: linear-gradient(to top, var(--rhythiax-surface), transparent) !important;
+}
+body[data-rhythiax-theme] #root button[class*="rounded-full"] {
+   border-color: var(--rhythiax-border) !important;
+   color: var(--rhythiax-text-strong) !important;
+}
+body[data-rhythiax-theme] #root button[class*="rounded-full"]:hover {
+   background-color: color-mix(in srgb, var(--rhythiax-accent) 15%, var(--rhythiax-surface)) !important;
 }
 
 /* Header controls are deliberately a little denser than content cards. */
@@ -99,10 +112,4 @@ body[data-rhythiax-theme="rhythia-reimagined"] {
 }
 body[data-rhythiax-theme="rhythia-reimagined"] #root,
 body[data-rhythiax-theme="rhythia-reimagined"] #root > div { background-color: transparent !important; }
-
-body[data-rhythiax-theme] .rhythiax-badge {
-   color: var(--rhythiax-accent) !important;
-   background: color-mix(in srgb, var(--rhythiax-accent) 14%, transparent) !important;
-   border-color: color-mix(in srgb, var(--rhythiax-accent) 24%, transparent) !important;
-}
 

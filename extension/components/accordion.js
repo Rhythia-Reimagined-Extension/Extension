@@ -104,11 +104,19 @@ RhythiaX.wrapTitleProgression = function (rp, globalRank) {
         row.children[0]?.textContent?.trim().toLowerCase() === 'rhythm points'
         || row.children[0]?.textContent?.trim().toLowerCase() === 'weighted rp'
       ));
-      const value = rpRow?.children?.[rpRow.children.length - 1]?.textContent;
-      if (value) currentRp = RhythiaX.parseLocalizedNumber(value);
+      const valueEl = rpRow?.children?.[rpRow.children.length - 1];
+      if (valueEl) currentRp = RhythiaX.parseLocalizedNumber(valueEl);
     }
   }
-  RhythiaX.log('wrapTitleProgression: currentRp =', currentRp);
+
+  // Fallback for global rank if not passed
+  let resolvedRank = globalRank;
+  if (resolvedRank === undefined || resolvedRank === null || String(resolvedRank).trim() === '') {
+    const player = RhythiaX.extractPlayerData?.();
+    if (player?.globalRank) resolvedRank = player.globalRank;
+  }
+
+  RhythiaX.log('wrapTitleProgression: currentRp =', currentRp, 'globalRank =', resolvedRank);
 
   // Create clickable accordion header
   const accordionHeader = document.createElement('div');
@@ -143,7 +151,7 @@ RhythiaX.wrapTitleProgression = function (rp, globalRank) {
   accordionHeader.appendChild(headerTopRow);
 
   // ── Rank path mini-bar (visible only when collapsed) ──
-  const rankPathBar = RhythiaX.buildRankProgressBar(currentRp, globalRank);
+  const rankPathBar = RhythiaX.buildRankProgressBar(currentRp, resolvedRank);
   if (rankPathBar) accordionHeader.appendChild(rankPathBar);
 
   // ── Assemble ──

@@ -72,8 +72,7 @@ body[data-rhythiax-theme] #root [data-rhythiax-changelog-tabs][data-rhythiax-cha
 
 .rhythiax-changelog-intro,
 .rhythiax-changelog-release-nav,
-.rhythiax-changelog-entry,
-.rhythiax-changelog-timeline {
+.rhythiax-changelog-entry {
   border: 1px solid var(--rhythiax-border);
   background: linear-gradient(145deg, color-mix(in srgb, var(--rhythiax-surface) 96%, white), var(--rhythiax-surface));
   box-shadow: var(--rhythiax-shadow);
@@ -411,42 +410,6 @@ body[data-rhythiax-theme] #root [data-rhythiax-changelog-tabs][data-rhythiax-cha
   box-shadow: 0 10px 25px color-mix(in srgb, var(--rhythiax-page-bg) 40%, transparent);
 }
 
-.rhythiax-changelog-timeline {
-  display: flex;
-  gap: 6px;
-  overflow-x: auto;
-  padding: 7px;
-  border-radius: 12px;
-  scrollbar-width: thin;
-}
-
-.rhythiax-changelog-timeline-item {
-  display: flex;
-  min-width: 100px;
-  flex: 1 0 100px;
-  flex-direction: column;
-  gap: 3px;
-  padding: 9px 10px;
-  border: 1px solid transparent;
-  border-radius: 8px;
-  color: var(--rhythiax-text-muted);
-  background: transparent;
-  cursor: pointer;
-  text-align: left;
-  transition: color 180ms ease, background-color 180ms ease, border-color 180ms ease, transform 180ms ease;
-}
-
-.rhythiax-changelog-timeline-item:hover,
-.rhythiax-changelog-timeline-item.is-selected {
-  border-color: var(--rhythiax-border-strong);
-  color: var(--rhythiax-text-strong);
-  background: var(--rhythiax-accent-soft);
-  transform: translateY(-1px);
-}
-
-.rhythiax-changelog-timeline-item span { font-size: 12px; font-weight: 750; }
-.rhythiax-changelog-timeline-item small { color: var(--rhythiax-text-muted); font-size: 10px; }
-
 .rhythiax-changelog-empty {
   display: flex;
   min-height: 180px;
@@ -580,6 +543,5 @@ body[data-rhythiax-theme] #root [data-rhythiax-changelog-tabs][data-rhythiax-cha
   .rhythiax-changelog-spinner { animation-duration: 2.5s !important; }
   body[data-rhythiax-theme] #root [data-rhythiax-changelog-tab],
   .rhythiax-changelog-arrow,
-  .rhythiax-changelog-timeline-item,
   .rhythiax-changelog-retry-btn { transition: none !important; }
 }

@@ -14,7 +14,7 @@ var RhythiaX = RhythiaX || {};
     if (!score || score[key] === undefined || score[key] === null || score[key] === '') return null;
     const raw = String(score[key]).trim();
     if (!/[0-9]/.test(raw)) return null;
-    const value = RhythiaX.parseLocalizedNumber ? RhythiaX.parseLocalizedNumber(raw.replace('%', '')) : Number.parseFloat(raw.replace(/,/g, '').replace('%', ''));
+    const value = RhythiaX.parseLocalizedNumber ? RhythiaX.parseLocalizedNumber(raw) : Number.parseFloat(raw.replace(/,/g, '').replace('%', ''));
     return Number.isFinite(value) ? value : null;
   }
 

@@ -26,7 +26,6 @@ var RhythiaX = RhythiaX || {};
     support: '/support',
     hunt: '/hunt/:year',
     player: '/player/:id',
-    scores: '/player/:id/scores',
     'score-replay': '/score/:id',
   };
   const THEME_NAMES = Object.keys(THEMES);
@@ -35,13 +34,12 @@ var RhythiaX = RhythiaX || {};
     const path = pathname || window.location.pathname;
     if (path === '/' || path === '') return 'home';
     if (/^\/score\/[^/]+(?:\/|$)/.test(path)) return 'score-replay';
-    if (/^\/player\/[^/]+\/scores(?:\/|$)/.test(path)) return 'scores';
     if (/^\/player(?:\/|$)/.test(path)) return 'player';
     if (/^\/maps\/[^/]+(?:\/|$)/.test(path)) return 'map-detail';
     if (/^\/maps(?:\/|$)/.test(path)) return 'maps';
     if (/^\/hunt\/[^/]+(?:\/|$)/.test(path)) return 'hunt';
     const key = Object.keys(PAGE_KEYS).find(page => {
-      if (page === 'home' || page === 'map-detail' || page === 'hunt' || page === 'player' || page === 'scores') return false;
+      if (page === 'home' || page === 'map-detail' || page === 'hunt' || page === 'player') return false;
       return path.startsWith(PAGE_KEYS[page]);
     });
     return key || 'home';
@@ -88,7 +86,7 @@ var RhythiaX = RhythiaX || {};
 
   function storage() {
     try {
-      return chrome?.storage?.local || null;
+      return typeof chrome !== 'undefined' ? (chrome?.storage?.local || null) : null;
     } catch (error) {
       // A content script can outlive an extension reload. Storage calls then
       // throw "Extension context invalidated" instead of returning an error.
@@ -221,23 +219,27 @@ var RhythiaX = RhythiaX || {};
   };
 
   try {
-    chrome.runtime?.onMessage?.addListener(message => {
-      if (message && message.type === 'rhythiax-theme') {
-        themeLoaded = true;
-        RhythiaX.applyTheme(message.theme);
-      }
-    });
+    if (typeof chrome !== 'undefined') {
+      chrome.runtime?.onMessage?.addListener(message => {
+        if (message && message.type === 'rhythiax-theme') {
+          themeLoaded = true;
+          RhythiaX.applyTheme(message.theme);
+        }
+      });
+    }
   } catch (error) {
     if (!/Extension context invalidated/i.test(String(error?.message || error))) throw error;
   }
 
   try {
-    chrome.storage?.onChanged?.addListener((changes, areaName) => {
-      if (areaName === 'local' && changes.rhythiaxTheme?.newValue) {
-        themeLoaded = true;
-        RhythiaX.applyTheme(changes.rhythiaxTheme.newValue);
-      }
-    });
+    if (typeof chrome !== 'undefined') {
+      chrome.storage?.onChanged?.addListener((changes, areaName) => {
+        if (areaName === 'local' && changes.rhythiaxTheme?.newValue) {
+          themeLoaded = true;
+          RhythiaX.applyTheme(changes.rhythiaxTheme.newValue);
+        }
+      });
+    }
   } catch (error) {
     if (!/Extension context invalidated/i.test(String(error?.message || error))) throw error;
   }

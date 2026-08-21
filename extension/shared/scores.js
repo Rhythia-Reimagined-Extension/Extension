@@ -56,7 +56,10 @@ RhythiaX.parseScoreCard = function (card) {
 
     const link = RhythiaX.qs('a[href*="/score/"]', card);
     const scoreId = link?.href?.match(/\/score\/(\d+)/)?.[1] || '';
-    const songTitle = link?.textContent?.trim() || '';
+    const titleEl = card.querySelector('.truncate span, .whitespace-nowrap span, span.font-medium, .truncate');
+    const songTitle = titleEl?.textContent?.trim()
+      || (link && !/^\d+(\.\d+)?%$/.test(link.textContent.trim()) ? link.textContent.trim() : '')
+      || 'Unknown';
 
     let timeAgo = '';
     const timeMatch = text.match(/(\d+\s+(second|minute|hour|day|week|month|year)s?\s+ago)/i);
@@ -109,21 +112,18 @@ RhythiaX.parseScoreCard = function (card) {
 
     // Helper: parse pills from an element
     function parsePills(parent) {
-      const pills = [];
-      for (const child of parent.children) {
-        if (child.querySelector('.text-neutral-300') && child.querySelector('.text-neutral-100')) {
-          pills.push(child);
-        }
-      }
-      pills.forEach(pill => {
-        const labelEl = pill.querySelector('.text-neutral-300');
-        const valueEl = pill.querySelector('.text-neutral-100');
-        if (!labelEl || !valueEl) return;
+      const labelEls = parent.querySelectorAll ? parent.querySelectorAll('.text-neutral-300, [class*="text-neutral-300"]') : [];
+      labelEls.forEach(labelEl => {
+        const pill = labelEl.closest ? (labelEl.closest('.bg-\\[\\#1F2021\\], [class*="rounded-lg"]') || labelEl.parentElement) : labelEl.parentElement;
+        const valueEl = pill ? pill.querySelector('.text-neutral-100, [class*="text-neutral-100"]') : labelEl.nextElementSibling;
+        if (!valueEl) return;
         const label = labelEl.textContent.trim();
         const value = valueEl.textContent.trim();
         if (label === 'Mods') mods = value;
         else if (label === 'Notes') notes = value;
         else if (label === 'Weighted RP') weightedRp = value;
+        else if (label === 'RP Earned' && (!rpEarned || rpEarned === '0')) rpEarned = value;
+        else if (label === 'Misses' && (!misses || misses === '0')) misses = value;
       });
     }
 
@@ -159,11 +159,12 @@ RhythiaX.parseScoreCard = function (card) {
 RhythiaX.dedupeScores = function (scores) {
   if (!scores || !scores.length) return [];
   const bestPerMap = new Map();
+  const parseNum = value => (RhythiaX.parseLocalizedNumber ? RhythiaX.parseLocalizedNumber(value) : (Number.parseFloat(String(value ?? '').replace(/,/g, '')) || 0));
   scores.forEach(s => {
     const key = s.scoreId || [s.songTitle, s.mods, s.speed, s.difficultyColor].join('|') || 'unknown-score';
-    const rp = parseFloat(s.rpEarned) || 0;
+    const rp = parseNum(s.rpEarned);
     const existing = bestPerMap.get(key);
-    if (!existing || rp > (parseFloat(existing.rpEarned) || 0)) {
+    if (!existing || rp > parseNum(existing.rpEarned)) {
       bestPerMap.set(key, s);
     }
   });
@@ -180,7 +181,9 @@ RhythiaX.mapApiScores = function (rawScores) {
       ?? (typeof s.difficulty === 'number' ? s.difficulty : undefined);
     const missCount = s.misses ?? s.missCount ?? s.numMisses ?? 0;
     if (s.accuracy !== undefined && s.accuracy !== null) {
-      accNum = Number.parseFloat(String(s.accuracy).replace('%', ''));
+      accNum = RhythiaX.parseLocalizedNumber
+        ? RhythiaX.parseLocalizedNumber(s.accuracy)
+        : Number.parseFloat(String(s.accuracy).replace('%', ''));
       if (Number.isFinite(accNum)) accuracy = accNum.toFixed(2) + '%';
     } else if (noteCount > 0) {
       accNum = noteCount > 0 ? (1 - missCount / noteCount) * 100 : null;
@@ -205,7 +208,12 @@ RhythiaX.mapApiScores = function (rawScores) {
     const misses = String(s.misses ?? s.missCount ?? s.numMisses ?? 0);
     const pickValue = (...values) => {
       const usable = values.filter(value => value !== undefined && value !== null && value !== '');
-      return usable.find(value => Number.isFinite(Number.parseFloat(String(value).replace(',', '.'))) && Number.parseFloat(String(value).replace(',', '.')) !== 0) ?? usable[0] ?? 0;
+      return usable.find(value => {
+        const num = RhythiaX.parseLocalizedNumber
+          ? RhythiaX.parseLocalizedNumber(value)
+          : Number.parseFloat(String(value).replace(',', '.'));
+        return Number.isFinite(num) && num !== 0;
+      }) ?? usable[0] ?? 0;
     };
     // Raw RP is the unweighted value earned by the play. `awarded_sp` is only
     // a final fallback because some API responses expose weighted gain there.

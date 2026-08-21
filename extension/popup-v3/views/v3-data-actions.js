@@ -211,7 +211,7 @@ const V3_HISTORY_SETTINGS_HANDLERS = {
     const maxSnapshotsPerDay = Number.isFinite(parsed) && parsed > 0 ? parsed : (state.dataSettings || {}).maxSnapshotsPerDay;
     return { patch: { maxSnapshotsPerDay }, message: 'Daily snapshot limit updated' };
   },
-  'history-inline-stats': value => ({ patch: { inlineStatsReference: value }, message: 'Stats card progress updated' }),
+  'history-inline-stats': value => ({ patch: { inlineStatsReference: value }, message: 'Stat progress indicators updated' }),
   'history-inline-ranking': value => ({ patch: { inlineRankingReference: value }, message: 'Ranking card progress updated' }),
   'history-display-mode': value => ({ patch: { historyDisplayMode: value }, message: 'History display updated' }),
   'history-grouping': value => ({ patch: { historyGrouping: value }, message: 'Expanded history grouping updated' }),

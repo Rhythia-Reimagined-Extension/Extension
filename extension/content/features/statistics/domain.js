@@ -2,11 +2,17 @@
 var RhythiaX = RhythiaX || {};
 
 (function () {
-  function number(value) { const parsed = Number.parseFloat(String(value ?? '').replace(/,/g, '').replace('%', '')); return Number.isFinite(parsed) ? parsed : 0; }
+  function number(value) {
+    const parsed = RhythiaX.parseLocalizedNumber
+      ? RhythiaX.parseLocalizedNumber(value)
+      : Number.parseFloat(String(value ?? '').replace(/,/g, '').replace('%', ''));
+    return Number.isFinite(parsed) ? parsed : 0;
+  }
   function averageAccuracy(scores, player) {
     const raw = String(player?.avgAccuracy ?? '').trim();
     if (raw) {
-      const value = RhythiaX.normalizeDataMetricValue ? RhythiaX.normalizeDataMetricValue('avgAccuracy', RhythiaX.parseLocalizedNumber(raw)) : RhythiaX.parseLocalizedNumber(raw);
+      const parsed = number(raw);
+      const value = RhythiaX.normalizeDataMetricValue ? RhythiaX.normalizeDataMetricValue('avgAccuracy', parsed) : parsed;
       if (value !== null && value !== undefined) return value.toFixed(2);
     }
     const values = scores.map(score => number(score.accuracy)).filter(value => value > 0);

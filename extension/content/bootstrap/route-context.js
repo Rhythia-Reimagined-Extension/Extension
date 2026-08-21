@@ -6,6 +6,7 @@ RhythiaX.PageRouteContext = {
     if (/^\/score\/[^/]+\/?$/.test(path)) return 'score-replay';
     if (/^\/player\/[^/]+\/?$/.test(path)) return 'profile';
     if (/^\/maps(?:\/|$)/.test(path)) return 'maps';
+    if (/^\/changelog(?:\/|$)/.test(path)) return 'changelog';
     return 'unknown';
   },
 

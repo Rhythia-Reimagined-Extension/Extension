@@ -4,7 +4,7 @@ var RhythiaX = RhythiaX || {};
 const officialStatsSnapshots = new Map();
 
 function snapshotOfficialStats() {
-  const container = RhythiaX.SiteDomBridge?.findOfficialStatsContainer() || RhythiaX.findOfficialStatsContainer?.();
+  const container = RhythiaX.findOfficialStatsContainer();
   const space = container?.querySelector('.space-y-3');
   if (space && !officialStatsSnapshots.has(space)) {
     officialStatsSnapshots.set(space, Array.from(space.children, child => child.cloneNode(true)));
@@ -21,8 +21,5 @@ RhythiaX.cleanupOfficialStats = function () {
   officialStatsSnapshots.clear();
 };
 
-RhythiaX.buildOfficialStatRow = function (label, value, historyKey) { return RhythiaX.StatisticsView.row(label, value, historyKey); };
-RhythiaX.enableHistoryRow = function (row, historyKey) { return RhythiaX.StatisticsView.history(row, historyKey); };
-RhythiaX.injectIntoOfficialStats = function (scores, player, ratingScores) { snapshotOfficialStats(); return RhythiaX.StatisticsView.injectOfficial(scores, player, ratingScores); };
 RhythiaX.buildStatsPanel = function (player, scores, playerRp, pageType, ratingScores, options) { snapshotOfficialStats(); return RhythiaX.StatisticsView.buildPanel(player, scores, playerRp, pageType, ratingScores, options); };
 RhythiaX.injectDeferredStatsProfiles = function (scores, ratingScores, pageType) { return RhythiaX.StatisticsView.deferredProfiles(scores, ratingScores, pageType); };

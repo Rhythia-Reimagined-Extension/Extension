@@ -26,23 +26,27 @@ const V3_MODULE_DEFAULTS = {
   statHistory: true,
   rankingHistory: true,
   playerCompare: true,
+  easterEggs: true,
 };
 const V3_MODULE_OPTION_DEFAULTS = {
   advancedStats: { ratingProfile: true, tempoProfile: true, profileStyle: 'profile-surface', profileMetric: 'percentage' },
   scoreCards: { customCards: true, cardLayout: 'modern', playerView: 'list', watchReplay: true },
   titleProgression: { crownMode: '3d' },
   playerCompare: {},
+  easterEggs: {},
 };
 const V3_MINIMAL_MODULES = {
   ...V3_MODULE_DEFAULTS,
   statHistory: false,
   rankingHistory: false,
+  easterEggs: false,
 };
 const V3_MINIMAL_MODULE_OPTIONS = {
   advancedStats: { ratingProfile: false, tempoProfile: false, profileStyle: 'profile-surface', profileMetric: 'percentage' },
   scoreCards: { customCards: true, cardLayout: 'modern', playerView: 'list', watchReplay: false },
   titleProgression: { crownMode: '3d' },
   playerCompare: {},
+  easterEggs: {},
 };
 function v3NotifyActiveTab(message) {
   chrome.tabs.query({ active: true, currentWindow: true }, tabs => {

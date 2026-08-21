@@ -49,6 +49,7 @@ var RhythiaX = RhythiaX || {};
         const cur = activeButton(buttons);
         if (cur) update(cur, true);
       });
+      strip._rhythiaxResizeObserver = ro;
       ro.observe(strip);
     }
 
@@ -108,6 +109,7 @@ var RhythiaX = RhythiaX || {};
         const cards = RhythiaX.findScoreCards().filter(card => host.contains(card));
         cards.forEach(card => { card.classList.remove('rhythiax-redesigned'); card.querySelector('.rhythiax-redesign-wrapper')?.remove(); card.querySelectorAll('[data-rhythiax-original-display]').forEach(child => { child.style.display = child.getAttribute('data-rhythiax-original-display'); child.removeAttribute('data-rhythiax-original-display'); }); });
         RhythiaX.enhanceScoreCards(); RhythiaX.injectAbsoluteDates();
+        RhythiaX.applyScoreFilter?.();
         host.classList.remove('rhythiax-profile-score-tabs-switching'); host.removeAttribute('aria-busy');
         prepareEntering(host);
         state.indicator = installIndicator(RhythiaX.qsa('button', host).filter(tab => tabPattern.test(tab.textContent.trim()))) || state.indicator;
@@ -130,12 +132,13 @@ var RhythiaX = RhythiaX || {};
       if (showMoreBtn && /show\s+more|load\s+more/i.test(showMoreBtn.textContent || '')) {
         let attempts = 0;
         const checkNewCards = () => {
-          const unenhanced = (RhythiaX.SiteDomBridge?.findScoreCards() || RhythiaX.findScoreCards?.() || []).filter(
+          const unenhanced = (RhythiaX.findScoreCards?.() || []).filter(
             card => !card.classList.contains('rhythiax-redesigned')
           );
           if (unenhanced.length > 0) {
             RhythiaX.enhanceScoreCards?.();
             RhythiaX.injectAbsoluteDates?.();
+            RhythiaX.applyScoreFilter?.();
           } else if (++attempts < 25) {
             window.setTimeout(checkNewCards, 80);
           }

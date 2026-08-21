@@ -1,6 +1,6 @@
 # Privacy Policy
 
-Last updated: 2026-08-15
+Last updated: 2026-08-24
 
 Rhythia Reimagined is an unofficial community browser extension for Rhythia.
 It is maintained by Shuriel and is not affiliated with or endorsed by Capo

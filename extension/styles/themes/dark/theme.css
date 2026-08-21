@@ -59,3 +59,37 @@ body[data-rhythiax-theme="dark"] #root [role="switch"][aria-checked="false"] { b
 body[data-rhythiax-theme="dark"] #root [role="switch"] > span { background: #ffffff !important; box-shadow: 0 1px 2px rgba(0,0,0,.38); }
 body[data-rhythiax-theme="dark"] #root [role="switch"][aria-checked="false"] > span { transform: translateX(.25rem) !important; }
 body[data-rhythiax-theme="dark"] #root [role="switch"][aria-checked="true"] > span { transform: translateX(1.25rem) !important; }
+
+/* Open stat accordion and history container in Dark preset */
+body[data-rhythiax-theme="dark"] .rhythiax-official-stat-row.rhythiax-stat-row-open {
+  background: color-mix(in srgb, var(--rhythiax-inner-surface, #1e1f21) 88%, var(--rhythiax-accent, #60a5fa) 12%) !important;
+  border-left: 3px solid var(--rhythiax-accent, #60a5fa) !important;
+  border-top: 1px solid color-mix(in srgb, var(--rhythiax-accent, #60a5fa) 45%, transparent) !important;
+  border-right: 1px solid color-mix(in srgb, var(--rhythiax-accent, #60a5fa) 45%, transparent) !important;
+  border-bottom: 1px solid color-mix(in srgb, var(--rhythiax-accent, #60a5fa) 25%, rgba(255, 255, 255, 0.06)) !important;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.16) !important;
+}
+body[data-rhythiax-theme="dark"] .rhythiax-history-row {
+  background: color-mix(in srgb, var(--rhythiax-inner-surface, #1e1f21) 90%, var(--rhythiax-accent, #60a5fa) 10%) !important;
+  border-left: 3px solid var(--rhythiax-accent, #60a5fa) !important;
+  border-right: 1px solid color-mix(in srgb, var(--rhythiax-accent, #60a5fa) 45%, transparent) !important;
+  border-bottom: 1px solid color-mix(in srgb, var(--rhythiax-accent, #60a5fa) 45%, transparent) !important;
+}
+
+/* Dark theme component surfaces */
+body[data-rhythiax-theme="dark"] .rhythiax-score-card,
+body[data-rhythiax-theme="dark"] .rhythiax-profile-box,
+body[data-rhythiax-theme="dark"] .rhythiax-stats-panel,
+body[data-rhythiax-theme="dark"] .rhythiax-accordion {
+  background: var(--rhythiax-surface, #151618) !important;
+  border-color: var(--rhythiax-border, rgba(255, 255, 255, 0.10)) !important;
+}
+body[data-rhythiax-theme="dark"] .rhythiax-score-card .rhythiax-card-stat-item,
+body[data-rhythiax-theme="dark"] .rhythiax-score-card .rhythiax-card-stat-box,
+body[data-rhythiax-theme="dark"] .rhythiax-score-card .rhythiax-card-rp-box,
+body[data-rhythiax-theme="dark"] .rhythiax-official-stat-row:not(.rhythiax-stat-row-open) {
+  background: var(--rhythiax-inner-surface, #1e1f21) !important;
+  border-color: var(--rhythiax-border, rgba(255, 255, 255, 0.08)) !important;
+}
+
+

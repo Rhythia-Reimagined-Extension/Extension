@@ -5,7 +5,7 @@ var RhythiaX = RhythiaX || {};
   const domain = RhythiaX.ScoreCardDomain;
 
   function absoluteDates() {
-    (RhythiaX.SiteDomBridge?.findScoreCards() || RhythiaX.findScoreCards()).forEach(card => {
+    RhythiaX.findScoreCards().forEach(card => {
       const button = card.querySelector('button');
       const target = button?.querySelector('span') || button;
       const text = target?.textContent.trim();
@@ -40,7 +40,7 @@ var RhythiaX = RhythiaX || {};
   function actions(card) {
     const container = document.createElement('div');
     container.className = 'rhythiax-card-buttons';
-    const replay = (RhythiaX.SiteDomBridge?.findReplayLink(card)) || RhythiaX.findReplayLink(card);
+    const replay = RhythiaX.findReplayLink(card);
     const safeReplayUrl = replay && replayUrl(replay.getAttribute('href'));
     const showWatch = RhythiaX.isModuleOptionEnabled?.('scoreCards', 'watchReplay') !== false;
 
@@ -164,45 +164,74 @@ var RhythiaX = RhythiaX || {};
     if (buttons) header.appendChild(buttons);
     content.appendChild(header);
 
-    // Stats Row
+    // Stats Row (Order: 1. RP + Weighted RP, 2. Notes, 3. Combo / Misses)
     const statsRow = document.createElement('div');
     statsRow.className = 'rhythiax-card-stats-row';
 
-    // 1. Notes
-    const notesBox = document.createElement('div');
-    notesBox.className = 'rhythiax-card-stat-box';
-    notesBox.innerHTML = `<span class="rhythiax-card-stat-label">Notes</span><span class="rhythiax-card-stat-value">${RhythiaX.formatNumber(parseInt(score.notes, 10) || 0)}</span>`;
-    statsRow.appendChild(notesBox);
-
-    // 2. Combo / Misses
-    const comboMissBox = document.createElement('div');
-    comboMissBox.className = 'rhythiax-card-stat-box';
-    const missesNum = parseInt(score.misses, 10) || 0;
-    if (score.fullCombo || missesNum === 0) {
-      comboMissBox.innerHTML = `<span class="rhythiax-card-stat-label">Combo</span><span class="rhythiax-card-stat-value rhythiax-stat-fullcombo">Full Combo</span>`;
-    } else {
-      comboMissBox.innerHTML = `<span class="rhythiax-card-stat-label">Misses</span><span class="rhythiax-card-stat-value rhythiax-stat-miss">${missesNum}</span>`;
-    }
-    statsRow.appendChild(comboMissBox);
-
-    // 3. Raw RP + Weighted RP
+    // 1. Raw RP + Weighted RP
     const rpBox = document.createElement('div');
     rpBox.className = 'rhythiax-card-rp-box';
-    const rawRp = RhythiaX.formatNumber(Math.round(parseFloat(score.rpEarned) || 0));
-    const weightedRp = RhythiaX.formatNumber(Math.round(parseFloat(score.weightedRp) || 0));
+    const parseRp = value => (RhythiaX.parseLocalizedNumber ? RhythiaX.parseLocalizedNumber(value) : (Number.parseFloat(String(value ?? '').replace(/,/g, '')) || 0));
+    const rawRp = RhythiaX.formatNumber(Math.round(parseRp(score.rpEarned)));
+    const weightedRp = RhythiaX.formatNumber(Math.round(parseRp(score.weightedRp)));
 
-    rpBox.innerHTML = `
-      <div class="rhythiax-card-rp-main">
-        <span class="rhythiax-card-rp-val">${rawRp}</span>
-        <span class="rhythiax-card-rp-lbl">RP</span>
-      </div>
-      <div class="rhythiax-card-rp-divider"></div>
-      <div class="rhythiax-card-rp-sub">
-        <span class="rhythiax-card-rp-sub-lbl">Weighted</span>
-        <span class="rhythiax-card-rp-sub-val">${weightedRp}</span>
-      </div>
-    `;
+    const rpMain = document.createElement('div');
+    rpMain.className = 'rhythiax-card-rp-main';
+    const rpVal = document.createElement('span');
+    rpVal.className = 'rhythiax-card-rp-val';
+    rpVal.textContent = rawRp;
+    const rpLbl = document.createElement('span');
+    rpLbl.className = 'rhythiax-card-rp-lbl';
+    rpLbl.textContent = 'RP';
+    rpMain.append(rpVal, rpLbl);
+
+    const rpDivider = document.createElement('div');
+    rpDivider.className = 'rhythiax-card-rp-divider';
+
+    const rpSub = document.createElement('div');
+    rpSub.className = 'rhythiax-card-rp-sub';
+    const rpSubLbl = document.createElement('span');
+    rpSubLbl.className = 'rhythiax-card-rp-sub-lbl';
+    rpSubLbl.textContent = 'Weighted';
+    const rpSubVal = document.createElement('span');
+    rpSubVal.className = 'rhythiax-card-rp-sub-val';
+    rpSubVal.textContent = weightedRp;
+    rpSub.append(rpSubLbl, rpSubVal);
+
+    rpBox.append(rpMain, rpDivider, rpSub);
     statsRow.appendChild(rpBox);
+
+    // 2. Notes
+    const notesBox = document.createElement('div');
+    notesBox.className = 'rhythiax-card-stat-box';
+    const notesLabel = document.createElement('span');
+    notesLabel.className = 'rhythiax-card-stat-label';
+    notesLabel.textContent = 'Notes';
+    const notesValue = document.createElement('span');
+    notesValue.className = 'rhythiax-card-stat-value';
+    notesValue.textContent = RhythiaX.formatNumber(parseInt(score.notes, 10) || 0);
+    notesBox.append(notesLabel, notesValue);
+    statsRow.appendChild(notesBox);
+
+    // 3. Combo / Misses
+    const comboMissBox = document.createElement('div');
+    comboMissBox.className = 'rhythiax-card-stat-box';
+    const comboMissLabel = document.createElement('span');
+    comboMissLabel.className = 'rhythiax-card-stat-label';
+    const comboMissValue = document.createElement('span');
+    comboMissValue.className = 'rhythiax-card-stat-value';
+    const missesNum = parseInt(score.misses, 10) || 0;
+    if (score.fullCombo || missesNum === 0) {
+      comboMissLabel.textContent = 'Combo';
+      comboMissValue.classList.add('rhythiax-stat-fullcombo');
+      comboMissValue.textContent = 'Full Combo';
+    } else {
+      comboMissLabel.textContent = 'Misses';
+      comboMissValue.classList.add('rhythiax-stat-miss');
+      comboMissValue.textContent = String(missesNum);
+    }
+    comboMissBox.append(comboMissLabel, comboMissValue);
+    statsRow.appendChild(comboMissBox);
 
     content.appendChild(statsRow);
     wrapper.append(strip, content);
@@ -299,7 +328,7 @@ var RhythiaX = RhythiaX || {};
 
   function enhance() {
     if (!RhythiaX.isModuleEnabled('scoreCards') || !RhythiaX.isModuleOptionEnabled('scoreCards', 'customCards')) return;
-    const cards = RhythiaX.SiteDomBridge?.findScoreCards() || RhythiaX.findScoreCards();
+    const cards = RhythiaX.findScoreCards();
     cards.forEach(card => {
       if (card.classList.contains('rhythiax-redesigned') || card.querySelector('.rhythiax-redesign-wrapper')) return;
       card.classList.add('rhythiax-score-card');
@@ -319,6 +348,7 @@ var RhythiaX = RhythiaX || {};
       });
     });
     RhythiaX.applyConfiguredScoreView?.();
+    RhythiaX.applyScoreFilter?.();
     RhythiaX.log('Enhanced', cards.length, 'score cards');
   }
 

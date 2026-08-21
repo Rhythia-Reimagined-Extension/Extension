@@ -16,7 +16,9 @@ body[data-rhythiax-theme] #root [class*="bg-white/10"],
 body[data-rhythiax-theme] #root [class*="bg-white/[0.02]"],
 body[data-rhythiax-theme] #root [class*="bg-white/[0.03]"],
 body[data-rhythiax-theme] #root [class*="bg-white/[0.035]"],
-body[data-rhythiax-theme] #root [class*="bg-white/[0.04]"] {
+body[data-rhythiax-theme] #root [class*="bg-white/[0.04]"],
+body[data-rhythiax-theme] #root [class*="bg-white/[0.055]"],
+body[data-rhythiax-theme] #root [class*="bg-white/[0.08]"] {
    background-color: var(--rhythiax-inner-surface) !important;
    border-color: var(--rhythiax-border) !important;
 }

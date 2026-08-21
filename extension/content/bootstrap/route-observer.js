@@ -15,6 +15,7 @@ RhythiaX.ContentBootstrap = (function () {
     observer?.disconnect();
     observer = null;
     RhythiaX.ContentLifecycle.clearTimers();
+    RhythiaX.ChangelogPageComposition?.stop?.();
     RhythiaX.apiAbortController?.abort();
     RhythiaX.apiAbortController = null;
   }
@@ -51,6 +52,7 @@ RhythiaX.ContentBootstrap = (function () {
         if (document.querySelector('div.relative.py-2:not(.rhythiax-redesigned)')) {
           RhythiaX.enhanceScoreCards?.();
           RhythiaX.injectAbsoluteDates?.();
+          RhythiaX.applyScoreFilter?.();
         }
       }
       if (!RhythiaX.injected) RhythiaX.ContentLifecycle.queueInject(100);

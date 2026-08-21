@@ -38,6 +38,18 @@ RhythiaX.localDateKey = function (date) {
   return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
 };
 
+RhythiaX.subtractDaysFromDate = function (dateText, days = 1) {
+  const match = String(dateText || '').match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (!match) return '';
+  const date = new Date(Number(match[1]), Number(match[2]) - 1, Number(match[3]));
+  date.setDate(date.getDate() - Number(days || 0));
+  return RhythiaX.localDateKey(date);
+};
+
+RhythiaX.previousDate = function (dateText) {
+  return RhythiaX.subtractDaysFromDate(dateText, 1);
+};
+
 RhythiaX.formatRelativeDate = function (date) {
   if (!(date instanceof Date) || Number.isNaN(date.getTime())) return '';
   const seconds = Math.max(0, Math.floor((Date.now() - date.getTime()) / 1000));
@@ -71,7 +83,7 @@ function cleanStatValueString(value) {
     return value.textContent?.trim() || '';
   }
   let str = String(value).trim();
-  str = str.replace(/\s*[\+\-\=]\s*[\d,\.]+%?$/, '').trim();
+  str = str.replace(/(?<=\S)\s*[\+\-\=]\s*[\d,\.]+%?$/, '').trim();
   return str;
 }
 
@@ -86,7 +98,7 @@ RhythiaX.parseStatNumber = function (value) {
 
 RhythiaX.parseLocalizedNumber = function (value) {
   const cleaned = cleanStatValueString(value);
-  const text = cleaned.replace(/[\s\u00a0]/g, '');
+  const text = cleaned.replace(/%/g, '').replace(/[\s\u00a0]/g, '');
   if (!text) return 0;
   const commaCount = (text.match(/,/g) || []).length;
   const dotCount = (text.match(/\./g) || []).length;
@@ -95,11 +107,29 @@ RhythiaX.parseLocalizedNumber = function (value) {
     const decimalSeparator = text.lastIndexOf(',') > text.lastIndexOf('.') ? ',' : '.';
     const groupingSeparator = decimalSeparator === ',' ? '.' : ',';
     normalized = text.replace(new RegExp(`\\${groupingSeparator}`, 'g'), '').replace(decimalSeparator, '.');
-  } else if (commaCount || dotCount) {
-    const separator = commaCount ? ',' : '.';
+  } else if (commaCount > 1 || dotCount > 1) {
+    // Multiple separators of the same kind always mean thousands grouping (e.g. 1,000,000 or 1.000.000)
+    const separator = commaCount > 1 ? ',' : '.';
+    normalized = text.replace(new RegExp(`\\${separator}`, 'g'), '');
+  } else if (commaCount === 1 || dotCount === 1) {
+    const separator = commaCount === 1 ? ',' : '.';
     const parts = text.split(separator);
-    const isThousandsGrouping = parts.length > 1 && parts.slice(1).every(part => part.length === 3);
-    normalized = isThousandsGrouping ? parts.join('') : `${parts.slice(0, -1).join('')}.${parts[parts.length - 1]}`;
+    // If there is only a single separator, numbers in web apps / Rhythia with 1-3 decimals (e.g. 1.250, 99.50, 1.2)
+    // or decimal fractions should be treated as decimal separator UNLESS it's an integer thousands grouping with >=4 leading digits (e.g. 100,000)
+    // or parts[0] is >= 1000. Standard format on site uses dots for decimals ("12.345") or spaces/commas for thousands.
+    // When comma is used alone and 3 decimals follow with leading <= 3 digits (e.g. "1,234"), in English/standard web it can be thousands.
+    // But for dots (e.g. "1.250" tempo/rp), single dot is decimal.
+    if (separator === '.' && parts.length === 2) {
+      normalized = `${parts[0]}.${parts[1]}`;
+    } else if (separator === ',' && parts.length === 2) {
+      // If comma with 3 digits and leading is 1-3 digits, in typical English numbers it's thousands separator (e.g. "1,032")
+      // In stats ("1,032 plays"), it's thousands grouping.
+      if (parts[1].length === 3 && parts[0].length >= 1 && parts[0].length <= 3) {
+        normalized = `${parts[0]}${parts[1]}`;
+      } else {
+        normalized = `${parts[0]}.${parts[1]}`;
+      }
+    }
   }
   const number = Number.parseFloat(normalized);
   return Number.isFinite(number) ? number : 0;

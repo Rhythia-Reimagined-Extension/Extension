@@ -4,6 +4,8 @@ importScripts(
   'shared/time.js',
   'shared/data/data-schema.js',
   'shared/data/data-migrations.js',
+  'shared/data/data-repository.js',
+  'core/bridges/storage-mutation-bridge.js',
   'core/data/transfer/serialization.js',
   'core/data/transfer/validation.js',
   'core/data/transfer/conflict-policy.js',
@@ -47,10 +49,24 @@ function backgroundStorageGet(keys) {
 
 async function backgroundStableRecords() {
   const all = await backgroundStorageGet(null);
-  return Object.entries(all)
-    .filter(([key, value]) => key.startsWith(RHYTHIAX_DATA_PREFIX) && value && typeof value === 'object')
-    .map(([key, value]) => RhythiaX.normalizeDataRecord(value, key.slice(RHYTHIAX_DATA_PREFIX.length)))
-    .filter(record => record?.profileId);
+  const now = Date.now();
+  const records = [];
+  const updates = {};
+  for (const [key, value] of Object.entries(all)) {
+    if (key.startsWith(RHYTHIAX_DATA_PREFIX) && value && typeof value === 'object') {
+      const record = RhythiaX.normalizeDataRecord(value, key.slice(RHYTHIAX_DATA_PREFIX.length));
+      if (record?.profileId) {
+        if (RhythiaX.rollRecordOpenDay && RhythiaX.rollRecordOpenDay(record, now)) {
+          updates[key] = record;
+        }
+        records.push(record);
+      }
+    }
+  }
+  if (Object.keys(updates).length > 0) {
+    try { await chrome.storage.local.set(updates); } catch (_) { /* best effort */ }
+  }
+  return records;
 }
 
 async function backgroundSettings() {
@@ -222,9 +238,6 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     }).catch(() => sendResponse({ ok: false }));
     return true;
   }
-  if (message?.type !== 'rhythiax-backup-now') return false;
-  scheduleBackup();
-  sendResponse({ ok: true });
   return false;
 });
 

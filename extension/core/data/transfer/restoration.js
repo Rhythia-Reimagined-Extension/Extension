@@ -29,10 +29,19 @@
       rhythiaxPopupSize: 'popupSize',
       rhythiaxPopupSizeVersion: 'popupSizeVersion',
     };
-    const settings = Object.keys(keyMap).reduce((values, key) => {
-      if (appSettings[key] !== undefined) values[keyMap[key]] = appSettings[key];
-      return values;
-    }, {});
+    const directKeys = ['modules', 'moduleOptions', 'theme', 'popupSize', 'popupSizeVersion'];
+    const settings = {};
+
+    // Support both prefixed keys (rhythiaxModules) and canonical keys (modules)
+    for (const key of directKeys) {
+      if (appSettings[key] !== undefined) settings[key] = appSettings[key];
+    }
+    for (const [prefixed, canonical] of Object.entries(keyMap)) {
+      if (appSettings[prefixed] !== undefined && settings[canonical] === undefined) {
+        settings[canonical] = appSettings[prefixed];
+      }
+    }
+
     if (!Object.keys(settings).length) return;
     await RhythiaX.StorageMutationBridge.appSettingsReplace(settings);
   }
@@ -59,7 +68,12 @@
       records = records.map(record => scopedRecord(record, options));
       const existing = await RhythiaX.listDataRecords();
       if (options.createRecovery === true && typeof RhythiaX.createRecoveryBackup === 'function') {
-        try { const recovery = await RhythiaX.createRecoveryBackup(); if (!recovery.ok) return { ...preview, ok: false, errors: [`Restore safety backup was not created: ${recovery.reason || 'unknown error'}.`] }; }
+        try {
+          const recovery = await RhythiaX.createRecoveryBackup();
+          if (!recovery.ok && recovery.reason !== 'setup-required' && recovery.reason !== 'manual-only') {
+            return { ...preview, ok: false, errors: [`Restore safety backup was not created: ${recovery.reason || 'unknown error'}.`] };
+          }
+        }
         catch (error) { return { ...preview, ok: false, errors: [`Restore safety backup was not created: ${String(error?.message || error)}.`] }; }
       }
       let merge;
@@ -101,7 +115,42 @@
            return { ...preview, ok: false, errors: [`Restore failed without completing: ${String(error?.message || error)}`] };
          }
       };
-      return RhythiaX.dataCanonicalWrite ? RhythiaX.dataCanonicalWrite(restore) : restore();
+        return RhythiaX.dataCanonicalWrite ? RhythiaX.dataCanonicalWrite(restore) : restore();
+    },
+    prepareRestore(existingRecords, importedRecords, options = {}) {
+      const strategy = options.strategy || 'merge';
+      const existing = (Array.isArray(existingRecords) ? existingRecords : []).map(r => RhythiaX.normalizeDataRecord(r, r?.profileId)).filter(Boolean);
+      const imported = (Array.isArray(importedRecords) ? importedRecords : []).map(r => RhythiaX.normalizeDataRecord(r, r?.profileId)).filter(Boolean);
+
+      if (strategy === 'replace') {
+        return {
+          records: imported,
+          strategy: 'replace',
+        };
+      }
+
+      if (strategy === 'keep-existing') {
+        const existingMap = new Map(existing.map(r => [String(r.profileId), r]));
+        const result = [...existing];
+        for (const imp of imported) {
+          if (!existingMap.has(String(imp.profileId))) {
+            result.push(imp);
+          }
+        }
+        return {
+          records: result,
+          strategy: 'keep-existing',
+        };
+      }
+
+      // Default merge
+      const merge = RhythiaX.DataTransferConflictPolicy.mergeRecords(existing, imported);
+      return {
+        records: merge.records,
+        added: merge.added,
+        updated: merge.updated,
+        strategy: 'merge',
+      };
     },
   };
 }());

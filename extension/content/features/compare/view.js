@@ -195,7 +195,7 @@ var RhythiaX = RhythiaX || {};
       open.className = 'rhythiax-compare-open';
       open.textContent = 'Open comparison';
       open.addEventListener('click', () => {
-        void openComparison().catch(error => {
+        void openComparison(open).catch(error => {
           if (!isContextInvalidated(error)) RhythiaX.captureError(error, 'Compare modal failed to open');
         });
       });
@@ -208,8 +208,7 @@ var RhythiaX = RhythiaX || {};
   }
 
   function number(value) {
-    const parsed = RhythiaX.parseLocalizedNumber ? RhythiaX.parseLocalizedNumber(value) : Number.parseFloat(String(value ?? '').replace(/[^0-9.-]/g, ''));
-    return Number.isFinite(parsed) ? parsed : 0;
+    return metrics.number(value);
   }
 
   function metricValue(player, key, scopedScores = null) {
@@ -248,7 +247,8 @@ var RhythiaX = RhythiaX || {};
     return countries.length > 1 && countries.every(country => country && country === countries[0]);
   }
 
-  async function openComparison() {
+  async function openComparison(trigger = null) {
+    const returnFocus = trigger || (document.activeElement instanceof HTMLElement ? document.activeElement : null);
     const generation = loader.nextGeneration();
     const list = (await readList()).map(enrichCurrentComparisonItem);
     if (!isGenerationCurrent(generation)) return;
@@ -267,7 +267,7 @@ var RhythiaX = RhythiaX || {};
     document.querySelector('.rhythiax-compare-modal')?.remove();
     const overlay = document.createElement('div');
     overlay.className = 'rhythiax-compare-modal';
-     overlay.innerHTML = `<div class="rhythiax-compare-dialog" role="dialog" aria-modal="true"><button class="rhythiax-compare-close" aria-label="Close comparison">${icon('M6 6l12 12M18 6L6 18')}</button><button class="rhythiax-compare-info" type="button" aria-label="Weighted metrics information" aria-expanded="false">i</button><aside class="rhythiax-compare-info-popover" hidden><h2>Weighted metrics</h2><dl><div><dt>Comparison</dt><dd>Compared with the equal average of the other players.</dd></div><div><dt>Weighted Accuracy</dt><dd>Accuracy weighted by notes, speed and difficulty.</dd></div><div><dt>Weighted Miss Rate</dt><dd>Misses divided by notes, using the same weights. Lower is better.</dd></div><div><dt>Weighted Speed</dt><dd>Average speed modifier using the same weights.</dd></div><div><dt>Weight formula</dt><dd>Notes × speed factor × difficulty factor.</dd></div></dl><div class="rhythiax-compare-info-options"></div></aside><div class="rhythiax-compare-content"></div></div>`;
+     overlay.innerHTML = `<div class="rhythiax-compare-dialog" role="dialog" aria-modal="true" aria-label="Player comparison"><button class="rhythiax-compare-close" aria-label="Close comparison">${icon('M6 6l12 12M18 6L6 18')}</button><button class="rhythiax-compare-info" type="button" aria-label="Weighted metrics information" aria-expanded="false">i</button><aside class="rhythiax-compare-info-popover" hidden><h2>Weighted metrics</h2><dl><div><dt>Comparison</dt><dd>Compared with the equal average of the other players.</dd></div><div><dt>Weighted Accuracy</dt><dd>Accuracy weighted by notes, speed and difficulty.</dd></div><div><dt>Weighted Miss Rate</dt><dd>Misses divided by notes, using the same weights. Lower is better.</dd></div><div><dt>Weighted Speed</dt><dd>Average speed modifier using the same weights.</dd></div><div><dt>Weight formula</dt><dd>Notes × speed factor × difficulty factor.</dd></div></dl><div class="rhythiax-compare-info-options"></div></aside><div class="rhythiax-compare-content"></div></div>`;
      const content = overlay.querySelector('.rhythiax-compare-content');
      const infoOptions = overlay.querySelector('.rhythiax-compare-info-options');
      if (infoOptions) {
@@ -356,16 +356,32 @@ var RhythiaX = RhythiaX || {};
          controls.querySelector('[data-filter="order"]').addEventListener('change', event => { filters.order = event.target.value; refresh(); });
       };
       bindMapFilters();
+      const dialog = overlay.querySelector('.rhythiax-compare-dialog');
+      const closeBtn = overlay.querySelector('.rhythiax-compare-close');
       let modalClosing = false;
       let modalCloseTimer = null;
+      const onModalKeyDown = event => {
+        if (event.key === 'Escape') {
+          event.preventDefault();
+          closeComparison();
+          return;
+        }
+        if (event.key === 'Tab') {
+          RhythiaX.trapFocus?.(dialog, event);
+        }
+      };
       const finishModalClosing = () => {
         if (modalClosing !== true) return;
         if (modalCloseTimer) {
           clearTimeout(modalCloseTimer);
           modalCloseTimer = null;
         }
+        document.removeEventListener('keydown', onModalKeyDown, true);
         overlay.remove();
         renderTray();
+        if (returnFocus?.isConnected && typeof returnFocus.focus === 'function') {
+          returnFocus.focus();
+        }
       };
       const closeComparison = () => {
         if (modalClosing) return;
@@ -382,9 +398,11 @@ var RhythiaX = RhythiaX || {};
         }, { once: true });
         modalCloseTimer = setTimeout(finishModalClosing, 260);
     };
-     overlay.querySelector('.rhythiax-compare-close').addEventListener('click', closeComparison);
+     closeBtn.addEventListener('click', closeComparison);
      overlay.addEventListener('click', event => { if (event.target === overlay) closeComparison(); });
+     document.addEventListener('keydown', onModalKeyDown, true);
      document.body.appendChild(overlay);
+     closeBtn.focus();
    }
 
    function metricDelta(value, average, lowerIsBetter = false, key = '') {
@@ -422,11 +440,7 @@ var RhythiaX = RhythiaX || {};
   }
 
   function scoreMapKey(score) {
-    return String(score?.songTitle || score?.title || '')
-      .normalize('NFKC')
-      .trim()
-      .replace(/\s+/g, ' ')
-      .toLocaleLowerCase();
+    return metrics.scoreMapKey(score);
   }
 
     function mapPool(profiles, filters = {}) {

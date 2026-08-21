@@ -11,9 +11,9 @@ RhythiaX.calcWeightedRp = function (scores) {
   if (!scores.length) return 0;
   const deduped = RhythiaX.dedupeScores(scores);
   if (!deduped.length) return 0;
-   return deduped.reduce((sum, s) => sum + (RhythiaX.parseLocalizedNumber
-     ? RhythiaX.parseLocalizedNumber(s.weightedRp)
-     : (parseFloat(s.weightedRp) || 0)), 0);
+  return deduped.reduce((sum, s) => sum + (RhythiaX.parseLocalizedNumber
+    ? RhythiaX.parseLocalizedNumber(s.weightedRp)
+    : (Number.parseFloat(String(s.weightedRp ?? '').replace(/,/g, '')) || 0)), 0);
 };
 
 RhythiaX.calcRawUnweightedRp = function (scores) {
@@ -21,14 +21,7 @@ RhythiaX.calcRawUnweightedRp = function (scores) {
   const deduped = RhythiaX.dedupeScores(scores);
   return deduped.reduce((sum, s) => sum + (RhythiaX.parseLocalizedNumber
     ? RhythiaX.parseLocalizedNumber(s.rpEarned)
-    : (parseFloat(s.rpEarned) || 0)), 0);
-};
-
-// Debug: log grade distribution after mapping
-RhythiaX._logGradeDist = function (scores) {
-  const dist = {};
-  scores.forEach(s => { dist[s.grade] = (dist[s.grade] || 0) + 1; });
-  RhythiaX.log('Grade distribution:', dist);
+    : (Number.parseFloat(String(s.rpEarned ?? '').replace(/,/g, '')) || 0)), 0);
 };
 
 RhythiaX.getSpeedBuckets = function (scores) {

@@ -159,11 +159,12 @@ RhythiaX.parseScoreCard = function (card) {
 RhythiaX.dedupeScores = function (scores) {
   if (!scores || !scores.length) return [];
   const bestPerMap = new Map();
+  const parseNum = value => (RhythiaX.parseLocalizedNumber ? RhythiaX.parseLocalizedNumber(value) : (Number.parseFloat(String(value ?? '').replace(/,/g, '')) || 0));
   scores.forEach(s => {
     const key = s.scoreId || [s.songTitle, s.mods, s.speed, s.difficultyColor].join('|') || 'unknown-score';
-    const rp = parseFloat(s.rpEarned) || 0;
+    const rp = parseNum(s.rpEarned);
     const existing = bestPerMap.get(key);
-    if (!existing || rp > (parseFloat(existing.rpEarned) || 0)) {
+    if (!existing || rp > parseNum(existing.rpEarned)) {
       bestPerMap.set(key, s);
     }
   });
@@ -180,7 +181,9 @@ RhythiaX.mapApiScores = function (rawScores) {
       ?? (typeof s.difficulty === 'number' ? s.difficulty : undefined);
     const missCount = s.misses ?? s.missCount ?? s.numMisses ?? 0;
     if (s.accuracy !== undefined && s.accuracy !== null) {
-      accNum = Number.parseFloat(String(s.accuracy).replace('%', ''));
+      accNum = RhythiaX.parseLocalizedNumber
+        ? RhythiaX.parseLocalizedNumber(s.accuracy)
+        : Number.parseFloat(String(s.accuracy).replace('%', ''));
       if (Number.isFinite(accNum)) accuracy = accNum.toFixed(2) + '%';
     } else if (noteCount > 0) {
       accNum = noteCount > 0 ? (1 - missCount / noteCount) * 100 : null;
@@ -205,7 +208,12 @@ RhythiaX.mapApiScores = function (rawScores) {
     const misses = String(s.misses ?? s.missCount ?? s.numMisses ?? 0);
     const pickValue = (...values) => {
       const usable = values.filter(value => value !== undefined && value !== null && value !== '');
-      return usable.find(value => Number.isFinite(Number.parseFloat(String(value).replace(',', '.'))) && Number.parseFloat(String(value).replace(',', '.')) !== 0) ?? usable[0] ?? 0;
+      return usable.find(value => {
+        const num = RhythiaX.parseLocalizedNumber
+          ? RhythiaX.parseLocalizedNumber(value)
+          : Number.parseFloat(String(value).replace(',', '.'));
+        return Number.isFinite(num) && num !== 0;
+      }) ?? usable[0] ?? 0;
     };
     // Raw RP is the unweighted value earned by the play. `awarded_sp` is only
     // a final fallback because some API responses expose weighted gain there.

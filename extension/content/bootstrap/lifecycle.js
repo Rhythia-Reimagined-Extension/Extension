@@ -26,6 +26,7 @@ RhythiaX.ContentLifecycle = (function () {
     try {
       if (pageType === 'profile') RhythiaX.injectProfileCrown?.();
       if (pageType === 'score-replay') return RhythiaX.injectScoreReplay?.() || false;
+      if (pageType === 'changelog') return RhythiaX.injectChangelog?.() || false;
       return RhythiaX.injectProfile();
     } catch (error) {
       if (invalidated(error)) {
@@ -40,6 +41,7 @@ RhythiaX.ContentLifecycle = (function () {
   function hasInjectedContent() {
     const pageType = RhythiaX.PageRouteContext.type();
     if (pageType === 'score-replay') return Boolean(document.querySelector('.rhythiax-score-replay-fullscreen-button'));
+    if (pageType === 'changelog') return Boolean(document.querySelector('[data-rhythiax-changelog-tab]'));
     if (RhythiaX.isModuleEnabled?.('advancedStats') === false) return true;
     if (pageType === 'profile') return Boolean(document.querySelector('.rhythiax-injected-stats-section, .rhythiax-profile-box, .rhythiax-injected-grade-row'));
     return false;
@@ -91,6 +93,7 @@ RhythiaX.ContentLifecycle = (function () {
     RhythiaX.apiAbortController = null;
     RhythiaX.CompareLoader?.reset();
     RhythiaX.cleanupScoreReplay?.();
+    RhythiaX.cleanupChangelog?.();
     RhythiaX.clearLoadingState();
     retryGeneration++;
     RhythiaX.injected = false;
@@ -98,6 +101,8 @@ RhythiaX.ContentLifecycle = (function () {
     RhythiaX.profileCrownEnabled = false;
     RhythiaX.profileAvatarEffectRollPath = null;
     RhythiaX.profileAvatarEffectEnabled = false;
+    RhythiaX.activeGrades = null;
+    RhythiaX.activeSpeed = null;
     RhythiaX.cleanupStaleElements();
     if (RhythiaX.PageRouteContext.type() === 'maps') return;
     scheduleRetries();

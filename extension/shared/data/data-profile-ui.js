@@ -192,13 +192,20 @@ RhythiaX.showStatHistory = async function (row, historyKey) {
   const list = document.createElement('div');
   list.className = 'rhythiax-history-list';
 
-  points.forEach((point, index) => {
+  const PAGE_SIZE = 7;
+  let visibleCount = Math.min(PAGE_SIZE, points.length);
+
+  function createHistoryItem(point, index) {
     const item = document.createElement('div');
     item.className = 'rhythiax-history-item';
-    item.style.setProperty('--item-idx', String(index));
+    item.style.setProperty('--item-idx', String(index % PAGE_SIZE));
     const date = document.createElement('span');
     date.className = 'rhythiax-history-date';
-    date.innerHTML = `${point.date || '—'} · <span class="rhythiax-history-kind">${point.kind === 'open' ? 'live' : 'saved'}</span>`;
+    date.textContent = `${point.date || '—'} · `;
+    const kind = document.createElement('span');
+    kind.className = 'rhythiax-history-kind';
+    kind.textContent = point.kind === 'open' ? 'live' : 'saved';
+    date.appendChild(kind);
     const value = document.createElement('span');
     value.className = 'rhythiax-history-value';
     value.textContent = dataUiFormatValue(key, point.metrics?.[key]);
@@ -207,16 +214,41 @@ RhythiaX.showStatHistory = async function (row, historyKey) {
     const previous = points[index + 1];
     const change = dataUiMetricDelta(key, point.metrics?.[key], previous?.metrics?.[key]);
     delta.textContent = change || '—';
-    delta.classList.add(change === null ? 'rhythiax-history-delta-neutral' : dataUiDeltaClass(change, false));
+    const deltaType = change === null ? 'neutral' : dataUiDeltaClass(change, false);
+    delta.classList.add(`rhythiax-history-delta-${deltaType}`, deltaType);
     item.append(date, value, delta);
-    list.appendChild(item);
-  });
-  if (!points.length) {
-    const empty = document.createElement('div');
-    empty.className = 'rhythiax-history-item rhythiax-history-empty';
-    empty.textContent = 'History starts after the first saved profile state.';
-    list.appendChild(empty);
+    return item;
   }
+
+  function renderHistoryItems() {
+    list.innerHTML = '';
+    if (!points.length) {
+      const empty = document.createElement('div');
+      empty.className = 'rhythiax-history-item rhythiax-history-empty';
+      empty.textContent = 'History starts after the first saved profile state.';
+      list.appendChild(empty);
+      return;
+    }
+    for (let i = 0; i < visibleCount; i++) {
+      list.appendChild(createHistoryItem(points[i], i));
+    }
+    if (visibleCount < points.length) {
+      const moreButton = document.createElement('button');
+      moreButton.type = 'button';
+      moreButton.className = 'rhythiax-history-more-button';
+      const remaining = points.length - visibleCount;
+      moreButton.textContent = `Show more (${remaining})`;
+      moreButton.setAttribute('aria-label', `Show more history (${remaining} remaining)`);
+      moreButton.addEventListener('click', (event) => {
+        event.stopPropagation();
+        visibleCount = Math.min(visibleCount + PAGE_SIZE, points.length);
+        renderHistoryItems();
+      });
+      list.appendChild(moreButton);
+    }
+  }
+
+  renderHistoryItems();
   historyInner.appendChild(list);
   historyRow.appendChild(historyInner);
 
@@ -227,20 +259,15 @@ RhythiaX.showStatHistory = async function (row, historyKey) {
 };
 
 function dataUiPreviousDate(dateText) {
-  const match = String(dateText || '').match(/^(\d{4})-(\d{2})-(\d{2})$/);
-  if (!match) return '';
-  const date = new Date(Number(match[1]), Number(match[2]) - 1, Number(match[3]));
-  date.setDate(date.getDate() - 1);
-  return RhythiaX.localDateKey(date);
+  return RhythiaX.previousDate ? RhythiaX.previousDate(dateText) : '';
 }
 
 function dataUiDateMinusDays(dateText, days) {
-  let result = dateText;
-  for (let index = 0; index < days; index++) result = dataUiPreviousDate(result);
-  return result;
+  return RhythiaX.subtractDaysFromDate ? RhythiaX.subtractDaysFromDate(dateText, days) : '';
 }
 
-RhythiaX.showRankHistory = async function () {
+RhythiaX.showRankHistory = async function (trigger = null) {
+  const returnFocus = trigger || (document.activeElement instanceof HTMLElement ? document.activeElement : null);
   const existing = document.querySelector('.rhythiax-rank-history-overlay');
   if (existing) {
     existing.remove();
@@ -263,6 +290,7 @@ RhythiaX.showRankHistory = async function () {
   dialog.className = 'rhythiax-rank-history-dialog';
   dialog.setAttribute('role', 'dialog');
   dialog.setAttribute('aria-modal', 'true');
+  dialog.setAttribute('aria-label', 'Ranking history');
   const heading = document.createElement('div');
   heading.className = 'rhythiax-rank-history-heading';
   const title = document.createElement('h2');
@@ -270,6 +298,7 @@ RhythiaX.showRankHistory = async function () {
   const close = document.createElement('button');
   close.type = 'button';
   close.className = 'rhythiax-rank-history-close';
+  close.setAttribute('aria-label', 'Close ranking history');
   close.textContent = '×';
   heading.append(title, close);
   dialog.appendChild(heading);
@@ -283,7 +312,13 @@ RhythiaX.showRankHistory = async function () {
     const current = latest?.metrics?.[key];
     const previous = previousWeek?.metrics?.[key];
     const change = dataUiMetricDelta(key, current, previous);
-    card.innerHTML = `<span>Weekly change · ${label}</span><strong>${change || '—'}</strong><small>${change ? `${latest.date} vs ${previousWeek.date}` : 'Not enough history yet'}</small>`;
+    const labelSpan = document.createElement('span');
+    labelSpan.textContent = `Weekly change · ${label}`;
+    const strong = document.createElement('strong');
+    strong.textContent = change || '—';
+    const small = document.createElement('small');
+    small.textContent = change ? `${latest.date} vs ${previousWeek.date}` : 'Not enough history yet';
+    card.append(labelSpan, strong, small);
     weekly.appendChild(card);
   });
   dialog.appendChild(weekly);
@@ -317,7 +352,30 @@ RhythiaX.showRankHistory = async function () {
   tableWrap.appendChild(table);
   dialog.appendChild(tableWrap);
   overlay.appendChild(dialog);
+
+  let isClosing = false;
+  const finishClose = () => {
+    if (isClosing) return;
+    isClosing = true;
+    document.removeEventListener('keydown', onDialogKeyDown, true);
+    overlay.remove();
+    if (returnFocus?.isConnected && typeof returnFocus.focus === 'function') {
+      returnFocus.focus();
+    }
+  };
+  const onDialogKeyDown = event => {
+    if (event.key === 'Escape') {
+      event.preventDefault();
+      finishClose();
+      return;
+    }
+    if (event.key === 'Tab') {
+      RhythiaX.trapFocus?.(dialog, event);
+    }
+  };
+  document.addEventListener('keydown', onDialogKeyDown, true);
+  close.addEventListener('click', finishClose);
+  overlay.addEventListener('click', event => { if (event.target === overlay) finishClose(); });
   document.body.appendChild(overlay);
-  close.addEventListener('click', () => overlay.remove());
-  overlay.addEventListener('click', event => { if (event.target === overlay) overlay.remove(); });
+  close.focus();
 };

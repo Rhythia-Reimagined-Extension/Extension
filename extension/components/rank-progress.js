@@ -16,12 +16,14 @@ const RHYTHIAX_CAND_GM_MAX_RANK = 400; // Rank at which Cand. GM segment starts 
 const RHYTHIAX_PROGRESS_DURATION = 1400;
 
 function rankProgressRp(value) {
-  const number = Number(value);
+  const number = RhythiaX.parseLocalizedNumber ? RhythiaX.parseLocalizedNumber(value) : Number(value);
   return Number.isFinite(number) ? Math.max(0, number) : 0;
 }
 
 function rankProgressRank(value) {
-  const number = Number.parseInt(String(value || '').replace(/[^0-9]/g, ''), 10);
+  const number = RhythiaX.parseStatNumber
+    ? RhythiaX.parseStatNumber(value)
+    : Number.parseInt(String(value || '').replace(/[^0-9]/g, ''), 10);
   return Number.isFinite(number) ? number : 0;
 }
 
@@ -478,9 +480,7 @@ RhythiaX.animateTitleProgressionFromCache = async function (playerId, currentRp,
   if (currentRp === undefined || currentRp === null || String(currentRp).trim() === '') return;
   if (globalRank === undefined || globalRank === null || String(globalRank).trim() === '') return;
   const fromRp = rankProgressRp(previousRp);
-  const toRp = RhythiaX.parseLocalizedNumber
-    ? RhythiaX.parseLocalizedNumber(currentRp)
-    : rankProgressRp(currentRp);
+  const toRp = rankProgressRp(currentRp);
   const fromRank = rankProgressRank(previous?.globalRank);
   const toRank = rankProgressRank(globalRank);
   if (!Number.isFinite(toRp) || !Number.isFinite(toRank)) return;
@@ -492,12 +492,8 @@ RhythiaX.animateTitleProgressionUpdate = function (visit, updatedPlayer) {
   const bar = document.querySelector('.rhythiax-accordion .rhythiax-rankpath-bar');
   const initial = visit?.initialPlayer;
   if (!bar?._rhythiaxAnimate || !initial || !updatedPlayer) return;
-  const parseRp = value => {
-    const number = RhythiaX.parseLocalizedNumber ? RhythiaX.parseLocalizedNumber(value) : Number(value);
-    return Number.isFinite(number) ? number : 0;
-  };
-  const fromRp = parseRp(initial.rp);
-  const toRp = parseRp(updatedPlayer.rp);
+  const fromRp = rankProgressRp(initial.rp);
+  const toRp = rankProgressRp(updatedPlayer.rp);
   const fromRank = rankProgressRank(initial.globalRank);
   const toRank = rankProgressRank(updatedPlayer.globalRank);
   if (fromRp === toRp && fromRank === toRank) return;

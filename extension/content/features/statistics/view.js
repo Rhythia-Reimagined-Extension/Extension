@@ -3,7 +3,6 @@ var RhythiaX = RhythiaX || {};
 
 (function () {
   const domain = RhythiaX.StatisticsDomain;
-  const service = RhythiaX.StatisticsService;
   function row(label, value, historyKey) {
     const element = document.createElement('div'); element.className = 'rhythiax-official-stat-row';
     const labelElement = document.createElement('div'); labelElement.className = 'rhythiax-official-stat-label'; labelElement.textContent = label;
@@ -31,19 +30,27 @@ var RhythiaX = RhythiaX || {};
   function values(player, scores, playerRp, ratingScores) {
     const source = ratingScores || scores; const playCount = RhythiaX.parseStatNumber(player.playCount) || scores.length;
     const weighted = RhythiaX.parseLocalizedNumber(playerRp) || RhythiaX.calcWeightedRp(scores);
-    const squaresHit = RhythiaX.parseStatNumber(player.squaresHit);
-    const displayedSquaresHit = Number.isFinite(squaresHit)
-      ? squaresHit
+    const parsedSquaresHit = RhythiaX.parseStatNumber(player.squaresHit);
+    const displayedSquaresHit = Number.isFinite(parsedSquaresHit) && parsedSquaresHit > 0
+      ? parsedSquaresHit
       : scores.reduce((sum, score) => sum + (parseInt(score.notes, 10) || 0), 0);
     return [['Weighted RP', RhythiaX.formatNumber(Math.round(weighted)), 'weightedRp'], ['Raw RP', RhythiaX.formatNumber(Math.round(RhythiaX.calcRawUnweightedRp(scores))), 'rawRp'], ['AVG Accuracy', domain.averageAccuracy(scores, player) === '—' ? '—' : domain.averageAccuracy(scores, player) + '%', 'avgAccuracy'], ['FC Count', RhythiaX.formatNumber(domain.fullComboCount(source)), 'fcCount'], ['Play Count', RhythiaX.formatNumber(playCount), 'playCount'], ['Squares Hit', RhythiaX.formatNumber(displayedSquaresHit), 'squaresHit']];
   }
   function injectOfficial(scores, player, ratingScores) {
-    const container = RhythiaX.SiteDomBridge?.findOfficialStatsContainer() || RhythiaX.findOfficialStatsContainer();
+    const container = RhythiaX.findOfficialStatsContainer();
     const space = container?.querySelector('.space-y-3'); if (!space) { RhythiaX.log('Official stats container not found'); return false; }
     space.querySelectorAll(':scope > div').forEach(element => {
       if (element.classList.contains('rhythiax-injected-stats-section') || element.classList.contains('rhythiax-history-row')) return;
       const text = element.textContent.trim(); const label = element.children[0]?.textContent?.trim().toLowerCase(); const valueEl = element.children[element.children.length - 1];
-      if (/^Play count/i.test(text) || /^Squares hit/i.test(text) || /^(AVG|Average)\.?\s*(RP|Accuracy)/i.test(text) || /^AG\s+Accuracy/i.test(text)) { if (label === 'play count') player.playCount = RhythiaX.parseStatNumber(valueEl); if (label === 'squares hit') player.squaresHit = RhythiaX.parseStatNumber(valueEl); element.style.display = 'none'; return; }
+      if (/^Play count/i.test(text) || /^Squares hit/i.test(text) || /^(AVG|Average)\.?\s*(RP|Accuracy)/i.test(text) || /^AG\s+Accuracy/i.test(text)) {
+        if (label === 'play count') player.playCount = RhythiaX.parseStatNumber(valueEl);
+        if (label === 'squares hit') {
+          const parsedSquares = RhythiaX.parseStatNumber(valueEl);
+          player.squaresHit = parsedSquares > 0 ? parsedSquares : '';
+        }
+        element.style.display = 'none';
+        return;
+      }
       const left = element.querySelector('div:first-child') || element.children[0]; const right = element.querySelector('div:last-child') || element.children[1];
       if (/^Rhythm Points/i.test(text) || /^Weighted RP/i.test(text)) {
         if (left) left.textContent = 'Weighted RP';

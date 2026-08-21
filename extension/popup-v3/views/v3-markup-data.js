@@ -26,18 +26,6 @@ checkControl = function checkControl(id, label) {
   return v3CoreCheckControl(id, label);
 };
 
-function profileHistoryTable(record) {
-  const points = [
-    ...(record?.history?.openDay?.captures || []).slice(-1).map(point => ({ ...point, kind: 'open' })),
-    ...Object.values(record?.history?.daily || {}).sort((a, b) => String(b.date).localeCompare(String(a.date))),
-  ];
-  if (!points.length) return '<p class="v3-helper">No history records have been captured for this profile yet.</p>';
-  return `<div class="v3-profile-history-table"><div><span>Date</span><strong>Stats</strong><em>State</em></div>${points.map(point => {
-    const values = (RhythiaX.DATA_METRIC_KEYS || []).filter(key => point.metrics?.[key] !== null && point.metrics?.[key] !== undefined).slice(0, 3).map(key => `${key}: ${point.metrics[key]}`).join(' | ') || 'No metric values';
-    return `<div><span>${escapeHtml(point.date || 'No date')}</span><strong>${escapeHtml(values)}</strong><em>${point.kind === 'open' ? 'Open' : 'Closed'}</em></div>`;
-  }).join('')}</div>`;
-}
-
 function metricLabel(key) { return HISTORY_METRICS.find(([id]) => id === key)?.[1] || key; }
 function metricValue(key, value) {
   if (value === null || value === undefined) return 'No value';
@@ -98,7 +86,7 @@ function dataOverview() {
 }
 
 function dataStorage() {
-  return `<section class="v3-card"><div class="v3-card-title"><strong>Storage and cleanup</strong><span>Automatic limits</span></div><div class="v3-storage-grid">${proxyControl('history-retention', 'Keep closed days', 'select', [['90', '90 days'], ['30', '30 days'], ['60', '60 days'], ['180', '180 days'], ['0', 'Never']])}<div class="v3-setting-pair">${proxyControl('history-max-storage', 'Maximum cache size (MB)', 'number')}${proxyControl('history-open-day-storage', 'Open-day limit (MB)', 'number')}</div><div class="v3-setting-pair">${proxyControl('history-snapshot-interval', 'Snapshot interval (minutes)', 'number')}${proxyControl('history-max-snapshots', 'Max snapshots / day', 'number')}</div></div><p class="v3-helper">Identical metric data is deduplicated. Set Snapshot interval to 0 for no time cooldown.</p></section><section class="v3-card"><div class="v3-card-title"><strong>Title Progression data</strong><span>Stored separately</span></div><button type="button" class="v3-danger-button" data-v3-action="delete-title">Delete Title Progression data</button></section>`;
+  return `<section class="v3-card"><div class="v3-card-title"><strong>Storage and cleanup</strong><span>Internal safeguards</span></div><div class="v3-storage-grid">${proxyControl('history-retention', 'Keep closed days', 'select', [['90', '90 days'], ['30', '30 days'], ['60', '60 days'], ['180', '180 days'], ['0', 'Never']])}<div class="v3-setting-pair">${proxyControl('history-max-storage', 'Max history cache (MB)', 'number')}${proxyControl('history-open-day-storage', 'Open-day limit (MB)', 'number')}</div><div class="v3-setting-pair">${proxyControl('history-snapshot-interval', 'Snapshot interval (minutes)', 'number')}${proxyControl('history-max-snapshots', 'Max snapshots / day', 'number')}</div></div><p class="v3-helper">Browser storage has the unlimitedStorage permission. The limits configured here are internal extension safeguards to keep memory and history lookups performant.</p><div class="v3-button-row" style="margin-top: 8px;"><button type="button" class="v3-secondary-button" data-v3-action="cleanup-orphaned-data">Repair &amp; clean orphaned data</button></div></section><section class="v3-card"><div class="v3-card-title"><strong>Title Progression data</strong><span>Stored separately</span></div><button type="button" class="v3-danger-button" data-v3-action="delete-title">Delete Title Progression data</button></section>`;
 }
 
 function backupRestoreMarkup() {
@@ -309,7 +297,8 @@ async function confirmV3BackupRestore() {
   if (!state.backupRestoreRaw || !state.backupRestorePreview?.ok) return;
   const isRecovery = state.backupRestoreSource === 'recovery';
   const isBackup = state.backupRestoreSource === 'backup';
-  const result = await RhythiaX.importDataExport(state.backupRestoreRaw, { ...v3RestoreOptions(), createRecovery: !isRecovery, allowRepair: true });
+  const hasBackupFolder = Boolean(state.backupState?.folderName && state.backupState?.status !== 'setup-required');
+  const result = await RhythiaX.importDataExport(state.backupRestoreRaw, { ...v3RestoreOptions(), createRecovery: !isRecovery && hasBackupFolder, allowRepair: true });
   if (!result.ok) {
     if (!isRecovery) state.backupRestorePreview = result;
     render();

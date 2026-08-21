@@ -29,10 +29,12 @@ RhythiaX.injectTempoProfile = function (scores, target, pageType) {
   speedOrder.forEach((key, index) => {
     const count = buckets[key];
     const percent = total ? Math.round((count / total) * 100) : 0;
+    const isFiltered = RhythiaX.activeSpeed !== null;
     const active = RhythiaX.activeSpeed === key;
+    const show = !isFiltered || active;
     const colors = RhythiaX.SPEED_COLORS[key] || ['#888', '#666'];
     const item = document.createElement('div');
-    item.className = `rhythiax-profile-list-item rhythiax-speed-item${active || RhythiaX.activeSpeed === null ? ' active' : ''}${count === 0 ? ' rhythiax-profile-item-empty' : ''}`;
+    item.className = `rhythiax-profile-list-item rhythiax-speed-item${show ? ' active' : ''}${isFiltered && !active ? ' is-dimmed' : ''}${count === 0 ? ' rhythiax-profile-item-empty' : ''}`;
     item.dataset.speedKey = key;
     item.tabIndex = 0;
     item.setAttribute('role', 'button');
@@ -43,7 +45,29 @@ RhythiaX.injectTempoProfile = function (scores, target, pageType) {
     item.style.setProperty('--item-idx', String(index));
 
     const barPercent = total ? (count / total) * 100 : 0;
-    item.innerHTML = `<span class="rhythiax-profile-list-label">${key}x</span><span class="rhythiax-profile-list-track"><i style="width:${barPercent}%;background:linear-gradient(90deg, ${colors[0]}, ${colors[1]})"></i></span><span class="rhythiax-profile-list-count">${count} ${count === 1 ? 'play' : 'plays'}</span><span class="rhythiax-profile-list-share">${percent}%</span>`;
+    const labelSpan = document.createElement('span');
+    labelSpan.className = 'rhythiax-profile-list-label';
+    labelSpan.textContent = `${key}x`;
+
+    const trackSpan = document.createElement('span');
+    trackSpan.className = 'rhythiax-profile-list-track';
+    const trackBar = document.createElement('i');
+    trackBar.style.width = `${barPercent}%`;
+    trackBar.style.background = `linear-gradient(90deg, ${colors[0]}, ${colors[1]})`;
+    if (isFiltered) {
+      trackBar.style.filter = active ? 'brightness(1.2) saturate(1.1)' : 'opacity(.3)';
+    }
+    trackSpan.appendChild(trackBar);
+
+    const countSpan = document.createElement('span');
+    countSpan.className = 'rhythiax-profile-list-count';
+    countSpan.textContent = `${count} ${count === 1 ? 'play' : 'plays'}`;
+
+    const shareSpan = document.createElement('span');
+    shareSpan.className = 'rhythiax-profile-list-share';
+    shareSpan.textContent = `${percent}%`;
+
+    item.append(labelSpan, trackSpan, countSpan, shareSpan);
 
     const toggle = () => {
       RhythiaX.activeSpeed = RhythiaX.activeSpeed === key ? null : key;
@@ -69,15 +93,29 @@ RhythiaX.injectTempoProfile = function (scores, target, pageType) {
   });
   section.appendChild(content);
 
-  let profilesGrid = statsContainer.querySelector('.rhythiax-profiles-grid')
-    || (statsContainer.parentElement && Array.from(statsContainer.parentElement.children).find(element => element.classList.contains('rhythiax-profiles-grid')));
-  const gradeSection = statsContainer.querySelector('.rhythiax-injected-grade-row') || statsContainer.querySelector('.rhythiax-profile-box') || RhythiaX.qs('.rhythiax-injected-grade-row') || RhythiaX.qs('.rhythiax-profile-box');
+  const profilesGrid = RhythiaX.ensureProfilesGrid
+    ? RhythiaX.ensureProfilesGrid(statsContainer)
+    : (function () {
+        let grid = statsContainer.querySelector('.rhythiax-profiles-grid')
+          || (statsContainer.parentElement && Array.from(statsContainer.parentElement.children).find(element => element.classList?.contains('rhythiax-profiles-grid')))
+          || document.querySelector('.rhythiax-profiles-grid');
+        if (!grid) {
+          grid = document.createElement('div');
+          grid.className = 'rhythiax-profiles-grid rhythiax-profile-page-grid';
+          if (!statsContainer.parentElement) statsContainer.appendChild(grid);
+          else statsContainer.after(grid);
+        } else {
+          grid.classList.add('rhythiax-profile-page-grid');
+        }
+        return grid;
+      })();
+
   if (profilesGrid) {
-    profilesGrid.classList.add('rhythiax-profile-page-grid');
     profilesGrid.appendChild(section);
+  } else if (!statsContainer.parentElement) {
+    statsContainer.appendChild(section);
+  } else {
+    statsContainer.after(section);
   }
-  else if (gradeSection && gradeSection.parentElement) gradeSection.after(section);
-  else if (statsContainer.parentElement) statsContainer.after(section);
-  else statsContainer.appendChild(section);
   return section;
 };

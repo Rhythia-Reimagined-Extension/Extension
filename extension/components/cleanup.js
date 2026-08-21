@@ -6,12 +6,17 @@ var RhythiaX = RhythiaX || {};
 
 // ─── Cleanup stale injected elements ─────────
 RhythiaX.cleanupStaleElements = function (preserveCards) {
-  RhythiaX.activeGrades = null;
-  RhythiaX.activeSpeed = null;
+  if (!preserveCards) {
+    RhythiaX.activeGrades = null;
+    RhythiaX.activeSpeed = null;
+  }
   RhythiaX.cleanupOfficialStats?.();
   // API refreshes retain the Title Progression card, so its in-flight RP
   // animation must continue rather than being cancelled mid-transition.
   if (!preserveCards) RhythiaX.cleanupRankProgressAnimations?.();
+  RhythiaX.cleanupFriendsQuickList?.();
+  RhythiaX.qsa('.rhythiax-friends-quick-panel').forEach(el => el.remove());
+  RhythiaX.qsa('.rhythiax-friends-quick-backdrop').forEach(el => el.remove());
   RhythiaX.qsa('.rhythiax-absolute-date').forEach(el => el.remove());
   RhythiaX.qsa('.rhythiax-stats-panel').forEach(el => el.remove());
   // Also remove our injected sections from the official stats container
@@ -24,6 +29,13 @@ RhythiaX.cleanupStaleElements = function (preserveCards) {
   RhythiaX.qsa('.rhythiax-profile-crown').forEach(el => el.remove());
   RhythiaX.qsa('.rhythiax-profile-avatar-effect').forEach(el => el.remove());
   RhythiaX.qsa('.rhythiax-profile-avatar-effect-host').forEach(el => el.classList.remove('rhythiax-profile-avatar-effect-host'));
+  RhythiaX.qsa('.rhythiax-profile-score-tab-strip').forEach(el => {
+    if (el._rhythiaxResizeObserver) {
+      el._rhythiaxResizeObserver.disconnect();
+      delete el._rhythiaxResizeObserver;
+    }
+    delete el.__rhythiaxResizeObserved;
+  });
   RhythiaX.qsa('.rhythiax-score-replay-fullscreen-button').forEach(el => el.remove());
   RhythiaX.qsa('.rhythiax-score-replay-fullscreen').forEach(el => el.classList.remove('rhythiax-score-replay-fullscreen'));
 

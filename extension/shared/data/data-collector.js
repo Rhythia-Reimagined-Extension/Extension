@@ -11,8 +11,8 @@ function collectorHasValue(value) {
 function collectorNumber(value) {
   if (!collectorHasValue(value)) return null;
   const parsed = RhythiaX.parseLocalizedNumber
-    ? RhythiaX.parseLocalizedNumber(String(value).replace('%', ''))
-    : Number.parseFloat(String(value).replace(',', '.'));
+    ? RhythiaX.parseLocalizedNumber(value)
+    : Number.parseFloat(String(value).replace(/,/g, '.').replace('%', ''));
   return Number.isFinite(parsed) ? parsed : null;
 }
 
@@ -23,7 +23,9 @@ function collectorNonNegative(value) {
 
 function collectorNonNegativeInteger(value) {
   if (!collectorHasValue(value)) return null;
-  const parsed = Number.parseInt(String(value).replace(/[^0-9-]/g, ''), 10);
+  const parsed = RhythiaX.parseStatNumber
+    ? RhythiaX.parseStatNumber(value)
+    : Number.parseInt(String(value).replace(/[^0-9-]/g, ''), 10);
   return Number.isFinite(parsed) ? Math.max(0, parsed) : null;
 }
 
@@ -90,7 +92,7 @@ function collectorBuildMetrics(player, scores, ratingScores, settings) {
       ? fcSource.filter(score => score?.grade === 'SS' || score?.fullCombo === true || Number.parseInt(score?.misses, 10) === 0).length
       : null;
     metrics.playCount = playCount !== null ? playCount : (scoreDataAvailable ? scores.length : null);
-    metrics.squaresHit = squaresHit !== null
+    metrics.squaresHit = squaresHit !== null && squaresHit > 0
       ? squaresHit
       : (scoreDataAvailable ? scores.reduce((sum, score) => sum + (Number.parseInt(score?.notes, 10) || 0), 0) : null);
     const effectivePlayCount = metrics.playCount;
@@ -182,7 +184,8 @@ RhythiaX.dataSnapshotHasMetricChange = function (left, right) {
   return RhythiaX.DATA_METRIC_KEYS.some(key => {
     const leftValue = left.metrics?.[key] ?? null;
     const rightValue = right.metrics?.[key] ?? null;
-    if (leftValue === null || rightValue === null) return false;
+    if (leftValue === null && rightValue === null) return false;
+    if (leftValue === null || rightValue === null) return true;
     return Number(leftValue) !== Number(rightValue);
   });
 };

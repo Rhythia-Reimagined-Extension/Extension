@@ -1,4 +1,7 @@
 
+window.RhythiaX = window.RhythiaX || {};
+RhythiaX.PopupV3 = RhythiaX.PopupV3 || {};
+
 const screen = document.querySelector('#v3-screen');
 const nav = document.querySelector('#v3-nav');
 if (!screen || !nav) throw new Error('Popup V3 surface is missing.');
@@ -7,6 +10,7 @@ const MODULES = {
   advancedStats: { label: 'Advanced Stats', description: 'Rating and tempo breakdown profiles', category: 'profile', icon: 'stats' },
   playerCompare: { label: 'Player Compare', description: 'Compare maps and Rhythm Points side by side', category: 'profile', icon: 'compare' },
   titleProgression: { label: 'Title Progression', description: 'Animated RP and rank progress', category: 'profile', icon: 'progress' },
+  easterEggs: { label: 'Easter Eggs', description: 'Playful number effects and cosmetic touches', category: 'profile', icon: 'sparkles' },
   scoreCards: { label: 'Score Display', description: 'Score Cards on player profiles', category: 'scores', icon: 'scores' },
   statHistory: { label: 'Stat History', description: 'Daily stat history and progress delta badges', category: 'history', icon: 'history' },
   rankingHistory: { label: 'Ranking History', description: 'Global, country and RP history', category: 'history', icon: 'rank' },
@@ -18,7 +22,7 @@ const CATEGORIES = {
 };
 const DEFAULT_MODULES = {
   advancedStats: true, scoreCards: true, titleProgression: true,
-  statHistory: true, rankingHistory: true, playerCompare: true,
+  statHistory: true, rankingHistory: true, playerCompare: true, easterEggs: true,
 };
 const state = {
   route: 'overview', dataView: 'overview', theme: 'reimagined', size: 'default',

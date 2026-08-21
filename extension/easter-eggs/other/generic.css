@@ -1,0 +1,124 @@
+/* =============================================
+   Rhythia Reimagined - Generic / Number Easter Eggs (67, 69, 420)
+   ============================================= */
+
+.rhythiax-number-egg {
+  display: inline-block;
+  position: relative;
+  white-space: nowrap;
+  letter-spacing: inherit;
+  font-family: inherit;
+  font-size: inherit;
+  font-weight: inherit;
+  line-height: inherit;
+  vertical-align: baseline;
+  margin: 0;
+  padding: 0;
+}
+
+.rhythiax-number-egg--sixty-seven .rhythiax-number-egg__digit {
+  display: inline-block;
+  margin: 0;
+  padding: 0;
+  line-height: inherit;
+  vertical-align: baseline;
+  animation: none;
+}
+
+.rhythiax-number-egg--sixty-seven.rhythiax-number-egg--active .rhythiax-number-egg__digit,
+.rhythiax-number-egg--sixty-seven.rhythiax-number-egg--forced .rhythiax-number-egg__digit {
+  animation: rhythiax-sixty-seven-forced 2s linear infinite;
+}
+
+.rhythiax-number-egg--sixty-seven.rhythiax-number-egg--active .rhythiax-number-egg__digit:nth-child(2),
+.rhythiax-number-egg--sixty-seven.rhythiax-number-egg--forced .rhythiax-number-egg__digit:nth-child(2) {
+  animation-delay: -1s;
+}
+
+.rhythiax-number-egg--sixty-nine {
+  transform-origin: 50% 70%;
+  transition: transform 0.5s ease-out, color 0.5s ease-out, text-shadow 0.5s ease-out;
+}
+
+.rhythiax-number-egg--sixty-nine.rhythiax-number-egg--active {
+  z-index: 1;
+  color: #ef477f;
+  animation: rhythiax-sixty-nine 4s ease-in-out;
+  text-shadow: 0 0 0.35em rgba(239, 71, 127, 0.55), 0 0 0.8em rgba(255, 74, 111, 0.3);
+}
+
+.rhythiax-number-egg--sixty-nine.rhythiax-number-egg--active::before,
+.rhythiax-number-egg--sixty-nine.rhythiax-number-egg--active::after {
+  content: '\2665';
+  position: absolute;
+  top: -0.95em;
+  left: 50%;
+  color: #ef477f;
+  font-size: 0.7em;
+  line-height: 1;
+  pointer-events: none;
+  animation: rhythiax-heart-float 4s ease-out;
+}
+
+.rhythiax-number-egg--sixty-nine.rhythiax-number-egg--active::before {
+  color: #e8395f;
+  font-size: 0.52em;
+  margin-left: -0.85em;
+  margin-top: 0.3em;
+  animation-delay: 0.18s;
+}
+
+.rhythiax-number-egg--four-twenty {
+  animation: none;
+}
+
+.rhythiax-number-egg--four-twenty.rhythiax-number-egg--active,
+.rhythiax-number-egg--four-twenty.rhythiax-number-egg--forced {
+  animation: rhythiax-four-twenty-forced 2s ease-in-out;
+}
+
+@keyframes rhythiax-sixty-seven-forced {
+  0%, 50%, 100% { transform: translateY(0); }
+  25% { transform: translateY(-0.2em); }
+  75% { transform: translateY(0.2em); }
+}
+
+@keyframes rhythiax-sixty-nine {
+  0%, 100% { transform: rotate(0deg) translateY(0) scale(1); }
+  18% { transform: rotate(-7deg) translateY(-0.08em) scale(1.04); }
+  38% { transform: rotate(5deg) translateY(0.02em) scale(1.02); }
+  62% { transform: rotate(-5deg) translateY(-0.06em) scale(1.04); }
+  82% { transform: rotate(4deg) translateY(0) scale(1.01); }
+}
+
+@keyframes rhythiax-heart-float {
+  0% { opacity: 0; transform: translate(-50%, 0.15em) scale(0.55) rotate(-8deg); }
+  18% { opacity: 1; }
+  100% { opacity: 0; transform: translate(-50%, -1em) scale(1.08) rotate(8deg); }
+}
+
+@keyframes rhythiax-four-twenty-forced {
+  0%, 100% { color: inherit; text-shadow: none; }
+  20%, 70% {
+    color: #63e878;
+    text-shadow: 0 0 0.35em rgba(61, 214, 91, 0.95), 0 0 1em rgba(61, 214, 91, 0.55);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rhythiax-number-egg--sixty-seven .rhythiax-number-egg__digit,
+  .rhythiax-number-egg--sixty-nine,
+  .rhythiax-number-egg--sixty-nine::before,
+  .rhythiax-number-egg--sixty-nine::after,
+  .rhythiax-number-egg--four-twenty {
+    animation: none;
+  }
+
+  .rhythiax-number-egg--sixty-nine.rhythiax-number-egg--active::after {
+    display: none;
+  }
+
+  .rhythiax-number-egg--sixty-nine.rhythiax-number-egg--active::before {
+    display: none;
+  }
+}

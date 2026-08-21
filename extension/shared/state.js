@@ -14,5 +14,4 @@ RhythiaX.apiAbortController = null;
 
 chrome.runtime.onMessage.addListener(message => {
   if (message?.type === 'rhythiax-debug-logs') RhythiaX.setDebugLogging?.(message.enabled);
-  if (message?.type === 'rhythiax-developer-mode') RhythiaX.setDeveloperMode?.(message.enabled);
 });

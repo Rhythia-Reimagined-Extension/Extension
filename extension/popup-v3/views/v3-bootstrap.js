@@ -1,3 +1,6 @@
+window.RhythiaX = window.RhythiaX || {};
+RhythiaX.PopupV3 = RhythiaX.PopupV3 || {};
+
 // Consume the background request natively after the initial V3 surface exists.
 // Legacy uses the same remove-on-truthy protocol; failed reads/removes do not open the screen.
 function consumeV3BackupSettingsRequest(result) {

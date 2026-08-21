@@ -95,7 +95,7 @@ var RhythiaX = globalThis.RhythiaX || {};
     let queue = Promise.resolve();
 
     function enqueue(task) {
-      const next = queue.then(task, task);
+      const next = queue.then(() => task(), () => task());
       queue = next.catch(() => {});
       return next;
     }

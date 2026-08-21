@@ -11,7 +11,7 @@
 .rhythiax-scores-grid .rhythiax-modern-card .rhythiax-card-strip { flex-direction: row !important; gap: 12px !important; }
 .rhythiax-scores-grid .rhythiax-card-grade-label { font-size: 24px; }
 .rhythiax-scores-grid .rhythiax-card-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-.rhythiax-scores-grid .rhythiax-modern-card .rhythiax-card-stats-row { grid-template-columns: 1fr 1fr; gap: 6px; }
+.rhythiax-scores-grid .rhythiax-modern-card .rhythiax-card-stats-row { grid-template-columns: 1fr 1fr; gap: 8px; }
 .rhythiax-scores-grid .rhythiax-modern-card .rhythiax-card-rp-box { grid-column: 1 / -1; }
 
 /* In grid view the title gets its own full-width line. Actions and date then
@@ -63,7 +63,7 @@
   .rhythiax-legacy-card .rhythiax-card-stat-label { font-size: 9px; }
   .rhythiax-legacy-card .rhythiax-card-stat-value { font-size: 11px; }
 
-  .rhythiax-modern-card .rhythiax-card-stats-row { grid-template-columns: 1fr 1fr; gap: 5px; }
+  .rhythiax-modern-card .rhythiax-card-stats-row { grid-template-columns: 1fr 1fr; gap: 6px; }
   .rhythiax-modern-card .rhythiax-card-rp-box { grid-column: 1 / -1; }
   
   .rhythiax-reigning .rhythiax-card-content::before { position: static; align-self: flex-end; margin-bottom: -5px; }
@@ -73,9 +73,9 @@
   position: relative;
   overflow: hidden !important;
   border-radius: 12px !important;
-  margin-bottom: 6px !important;
+  margin-bottom: 8px !important;
   background: var(--rhythiax-surface, #18191a) !important;
-  border: 1px solid var(--rhythiax-border, rgba(255, 255, 255, 0.10)) !important;
+  border: 1px solid var(--rhythiax-border, rgba(255, 255, 255, 0.12)) !important;
   padding: 0 !important;
   min-height: 0 !important;
   transform: scale(1);
@@ -83,6 +83,6 @@
 }
 
 .rhythiax-score-card:hover {
-  border-color: var(--rhythiax-accent, rgba(148, 163, 184, 0.38)) !important;
-  box-shadow: 0 5px 16px rgba(0, 0, 0, 0.16);
+  border-color: var(--rhythiax-accent, rgba(148, 163, 184, 0.45)) !important;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.22);
 }

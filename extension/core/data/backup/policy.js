@@ -10,6 +10,7 @@ RhythiaX.DATA_BACKUP_AUTOMATIC_DIRECTORY_NAME = 'Automatic';
 RhythiaX.DATA_BACKUP_MANUAL_DIRECTORY_NAME = 'Manual';
 RhythiaX.DATA_BACKUP_RECOVERY_DIRECTORY_NAME = 'Recovery';
 RhythiaX.DATA_BACKUP_RECOVERY_TTL_MS = 3 * 24 * 60 * 60 * 1000;
+RhythiaX.DATA_BACKUP_MAX_MANUAL_FILES = 30;
 RhythiaX.DATA_BACKUP_LEGACY_STABLE_FILE_NAME = 'rhythiax-stable-backup.json';
 
 function backupPolicyStorageGet(keys) {
@@ -63,7 +64,7 @@ function backupPolicyAutomaticFileName(slot) {
 }
 
 function backupPolicyIsAutomaticFile(fileName) {
-  return /^rhythia-reimagined-(current|previous|archive)-v[^/]+\.json$/.test(String(fileName || ''));
+  return /^rhythia-reimagined-(current|previous|archive(-\d+)?)-v[^/]+\.json$/.test(String(fileName || ''));
 }
 
 function backupPolicyIsManualFile(fileName) {

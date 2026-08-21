@@ -11,6 +11,7 @@ RhythiaX.MODULE_DEFAULTS = {
   statHistory: true,
   rankingHistory: true,
   playerCompare: true,
+  easterEggs: true,
 };
 
 RhythiaX.MODULE_SETTING_DEFAULTS = {
@@ -71,6 +72,13 @@ RhythiaX.getScoreCardLayout = function () {
 RhythiaX.applyModuleSettings = function (settings) {
   RhythiaX.moduleSettings = { ...RhythiaX.MODULE_DEFAULTS, ...(settings || {}) };
   document.documentElement.dataset.rhythiaxModulesReady = 'true';
+  if (RhythiaX.EasterEggs) {
+    if (RhythiaX.isModuleEnabled('easterEggs')) {
+      RhythiaX.EasterEggs.start?.();
+    } else {
+      RhythiaX.EasterEggs.stop?.();
+    }
+  }
 };
 
 function loadModuleStorage(key, defaults, apply) {

@@ -85,40 +85,8 @@ RhythiaX.developerMode = false;
   });
   window.addEventListener('unhandledrejection', event => RhythiaX.captureError(event.reason, 'Unhandled promise rejection'));
 })();
-RhythiaX.setLoadingState = function (message) {
-  let indicator = document.querySelector('.rhythiax-loading-indicator');
-  if (!indicator) {
-    indicator = document.createElement('div');
-    indicator.className = 'rhythiax-loading-indicator';
-    document.body.appendChild(indicator);
-  }
-  indicator.textContent = message;
-};
 RhythiaX.clearLoadingState = function () {
   document.querySelector('.rhythiax-loading-indicator')?.remove();
-};
-RhythiaX.markDataRefresh = function () {
-  const targets = document.querySelectorAll('.rhythiax-stats-panel, .rhythiax-injected-stats-section, .rhythiax-injected-grade-row, .rhythiax-redesign-wrapper');
-  targets.forEach(el => {
-    el.classList.remove('rhythiax-data-refresh');
-    el.classList.add('rhythiax-data-refresh');
-  });
-  // Force one style pass for the whole batch, not one synchronous layout per card.
-  void document.documentElement.offsetWidth;
-  window.setTimeout(() => targets.forEach(el => el.classList.remove('rhythiax-data-refresh')), 500);
-};
-RhythiaX.setDataLoadingState = function (loading) {
-  const targets = [
-    document.querySelector('.rhythiax-stats-panel'),
-    RhythiaX.findOfficialStatsContainer?.(),
-  ].filter(Boolean);
-  targets.forEach(target => target.classList.toggle('rhythiax-data-loading', loading));
-  document.querySelectorAll('.rhythiax-redesign-wrapper').forEach(el => {
-    el.classList.toggle('rhythiax-data-loading', loading);
-  });
-  document.querySelectorAll('.rhythiax-profile-box').forEach(el => {
-    el.classList.toggle('rhythiax-data-loading', loading);
-  });
 };
 
 RhythiaX.findScoreCards = function () {
@@ -173,3 +141,63 @@ RhythiaX.findOfficialStatsContainer = function () {
   }
   return null;
 };
+
+RhythiaX.ensureProfilesGrid = function (statsContainer) {
+  const target = statsContainer || RhythiaX.findOfficialStatsContainer();
+  if (!target) return null;
+
+  let profilesGrid = target.querySelector('.rhythiax-profiles-grid')
+    || (target.parentElement && Array.from(target.parentElement.children).find(element => element.classList?.contains('rhythiax-profiles-grid')))
+    || document.querySelector('.rhythiax-profiles-grid');
+
+  if (!profilesGrid) {
+    profilesGrid = document.createElement('div');
+    profilesGrid.className = 'rhythiax-profiles-grid rhythiax-profile-page-grid';
+    if (!target.parentElement) {
+      target.appendChild(profilesGrid);
+    } else {
+      target.after(profilesGrid);
+    }
+  } else {
+    profilesGrid.classList.add('rhythiax-profile-page-grid');
+  }
+
+  return profilesGrid;
+};
+
+// ─── Modal Accessibility / Focus Trap Helpers ──
+RhythiaX.getFocusableElements = function (container) {
+  if (!container) return [];
+  const candidates = [...container.querySelectorAll(
+    'button:not([disabled]), [href]:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
+  )];
+  return candidates.filter(el => {
+    if (el.closest('[hidden]')) return false;
+    if (el.getAttribute('aria-hidden') === 'true') return false;
+    if (typeof el.getClientRects === 'function' && el.getClientRects().length === 0 && el.offsetParent === null) return false;
+    return true;
+  });
+};
+
+RhythiaX.trapFocus = function (container, event) {
+  if (!container || event.key !== 'Tab') return;
+  const focusable = RhythiaX.getFocusableElements(container);
+  if (!focusable.length) {
+    event.preventDefault();
+    return;
+  }
+  const first = focusable[0];
+  const last = focusable[focusable.length - 1];
+  if (event.shiftKey) {
+    if (document.activeElement === first || !container.contains(document.activeElement)) {
+      event.preventDefault();
+      last.focus();
+    }
+  } else {
+    if (document.activeElement === last || !container.contains(document.activeElement)) {
+      event.preventDefault();
+      first.focus();
+    }
+  }
+};
+

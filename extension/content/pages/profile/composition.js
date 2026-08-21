@@ -88,7 +88,10 @@ RhythiaX.extractPlayerData = function () {
         const valueEl = row.children[row.children.length - 1];
         if (!rp && (label === 'rhythm points' || label === 'weighted rp')) rp = profileDisplayNumber(valueEl);
         if (label === 'play count') playCount = RhythiaX.parseStatNumber(valueEl);
-        if (label === 'squares hit') squaresHit = RhythiaX.parseStatNumber(valueEl);
+        if (label === 'squares hit') {
+          const parsedSquares = RhythiaX.parseStatNumber(valueEl);
+          squaresHit = parsedSquares > 0 ? String(parsedSquares) : '';
+        }
         if (label === 'avg. accuracy') {
           const parsedAccuracy = profileDisplayNumber(valueEl);
           avgAccuracy = RhythiaX.normalizeDataMetricValue
@@ -104,7 +107,10 @@ RhythiaX.extractPlayerData = function () {
       for (let i = 0; i < lines.length; i++) {
         if (lines[i] === 'RP' && i + 1 < lines.length) rp = profileDisplayNumber(lines[i + 1]);
         if (!playCount && lines[i] === 'Play count' && i + 1 < lines.length) playCount = lines[i + 1].replace(/[, ]/g, '');
-        if (!squaresHit && lines[i] === 'Squares hit' && i + 1 < lines.length) squaresHit = lines[i + 1].replace(/[, ]/g, '');
+        if (!squaresHit && lines[i] === 'Squares hit' && i + 1 < lines.length) {
+          const parsedSquares = Number(lines[i + 1].replace(/[, ]/g, ''));
+          squaresHit = Number.isFinite(parsedSquares) && parsedSquares > 0 ? String(parsedSquares) : '';
+        }
       }
     }
 
@@ -132,6 +138,7 @@ RhythiaX.enhanceProfileHeader = function () {
 
 // ─── Shuriel's crown Easter egg ───────────────
 RhythiaX.injectProfileCrown = function () {
+  if (RhythiaX.isModuleEnabled?.('easterEggs') === false) return;
   const path = window.location.pathname;
   if (!/^\/player\/255585(?:\/|$)/.test(path)) return;
   if (RhythiaX.profileCrownRollPath !== path) {
@@ -155,6 +162,7 @@ RhythiaX.injectProfileCrown = function () {
 
 // ─── Player-specific profile effects ────────────
 RhythiaX.injectProfileAvatarEffects = function () {
+  if (RhythiaX.isModuleEnabled?.('easterEggs') === false) return;
   const playerId = window.location.pathname.match(/^\/player\/([^/]+)/)?.[1];
   if (playerId !== '5602' && playerId !== '147') return;
   if (RhythiaX.profileAvatarEffectRollPath !== window.location.pathname) {
@@ -199,7 +207,7 @@ RhythiaX.injectRankHistoryButton = function () {
   trigger.addEventListener('click', event => {
     event.preventDefault();
     event.stopPropagation();
-    RhythiaX.showRankHistory();
+    RhythiaX.showRankHistory(trigger);
   });
 
   rankGrid.classList.add('rhythiax-rank-grid-with-history');

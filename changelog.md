@@ -4,54 +4,66 @@ All notable user-facing changes are documented in this file.
 
 ---
 version: 1.1.0
-date: 2026-08-15
-title: UI Modernization & Cleanup
+date: 2026-08-24
+title: UI Polish & Stability
 listed: yes
 ---
 
-## 1.1.0 - UI Modernization & Cleanup - 2026-08-15
+## 1.1.0 - UI Polish & Stability - 2026-08-24
 
 ## Featured
 
-- Redesigned the Title Progression bar with a modern look and smooth animations.
-- Modernized profile score cards with a compact layout, scaled accuracy bar, and a classic view toggle.
-- Cleaned and streamlined extension architecture and assets for improved stability and performance.
+- Redesigned the Title Progression bar with smoother animations.
+- Reworked profile score cards to be more compact, added a scaled accuracy bar, and added an option to keep using the classic layout.
+- Cleaned up unused scripts and old styles to make pages load faster.
+- Updated the extension icons.
 
 ## Added
 
-- Added an option in popup settings to switch between modern compact score cards and the classic layout.
-- Added smooth transition animations when switching between score collections (Reigning, Top, Recent).
-- Improved how the Changelog page works and made it update online directly from GitHub instead of offline.
+- Added an option in popup settings to switch between compact score cards and the classic layout.
+- Added smooth transitions when switching tabs between Reigning, Top, and Recent scores.
+- Added a toggle in popup settings to turn off Easter eggs if you don't want them.
+- The in-page Changelog now pulls update notes directly from GitHub so they're always current.
 
 ## Improved
 
-- Refreshed Rating Profile and Tempo Profile cards with modern styling and smoother animations.
-- Polished profile stats history layout for better readability and spacing.
-- Clarified history settings in the popup with clearer guidance.
-- Optimized Easter egg handling.
+- Stat history on profiles now shows the last 7 entries with a "Show more" button so it doesn't stretch the page.
+- Switching themes is now instant without page stutter.
+- Improved spacing and number formatting in stats history.
+- Polished Rating and Tempo Profile cards with better contrast and layout.
+- You can now press Escape to close popups and modals.
 
 ## Changed
 
-- Refined profile score tab buttons with clearer active highlights.
-- Advanced Stats now uses Profile Surface as the default layout for Rating Profile and Tempo Profile cards.
+- Clearer highlights on active score collection tabs.
+- Advanced Stats now uses the new card layout for Rating and Tempo profiles by default.
+- Removed unnecessary browser permissions.
 
 ## Fixed
 
-- Fixed Title Progression rank tracking not always loading properly on certain profiles.
-- Fixed score cards layout compatibility with recent Rhythia site updates.
+- Fixed broken numbers and calculations caused by commas and thousand separators.
+- Fixed green/red change colors (+/-) in stat history looking wrong on certain themes.
+- Fixed contrast and readability issues on White and Reimagined themes.
+- Fixed daily stat history skipping entries when days roll over at midnight.
+- Fixed Title Progression rank not loading on some profiles.
+- Fixed score cards breaking after recent Rhythia website updates.
+- Fixed score filters (grade/speed) resetting when loading more scores or switching tabs.
+- Fixed backup files not restoring saved settings.
+- Fixed profile and friends list sometimes failing to load on first visit.
 
 ## Removed
 
-- Removed obsolete score tools and features from the `/scores` page since Rhythia removed direct links to it from player profiles, but full theme styling is still preserved if visited directly.
-- Removed legacy Streamslop catalog integration as it didn't provide any meaningful use and slowed down navigation.
-- Removed the Rhythia Reimagined badge from the bottom-right corner to keep the interface clean and unobtrusive.
+- Removed old tools from the `/scores` page since Rhythia no longer links to it from profiles (theme styling is still kept if you visit it directly).
+- Removed the old Streamslop catalog integration as it was barely used and slowed down navigation.
+- Removed the extension badge in the bottom-right corner to keep the screen clean.
 - Removed the old changelog timeline bar for a simpler layout.
+- Removed unused background scripts and old CSS files.
 
 ## Notes
 
-- Behind the scenes, project files have been reorganized, cleaned up, and moved under the new GitHub organization.
-- The full extension source code is now publicly available at [GitHub Extension Repository](https://github.com/Rhythia-Reimagined-Extension/Extension).
-- These foundational cleanups will make future updates much easier while improving overall performance and existing features.
+- Behind the scenes, the project was reorganized, cleaned up, and moved to the new GitHub organization.
+- Your saved settings and profile history won't be lost with this update.
+- The extension source code is open at [GitHub Extension Repository](https://github.com/Rhythia-Reimagined-Extension/Extension).
 
 ---
 version: 1.0.1

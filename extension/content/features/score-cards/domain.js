@@ -7,7 +7,17 @@ var RhythiaX = RhythiaX || {};
     const mapTitle = card.querySelector('.truncate span, .whitespace-nowrap span, span.font-medium, .truncate')?.textContent.trim();
     return { score, date: RhythiaX.parseRelativeTime(score.timeAgo), scoreHref: card.querySelector('a[href*="/score/"]')?.getAttribute('href') || '', songTitle: mapTitle || score.songTitle || '' };
   }
-  function stats(score) { return [{ label: 'Mods', value: score.mods }, { label: 'Notes', value: RhythiaX.formatNumber(parseInt(score.notes, 10)) }, { label: 'Raw RP', value: RhythiaX.formatNumber(Math.round(parseFloat(score.rpEarned))) }, { label: 'Accuracy', value: score.accuracy }, { label: 'Misses', value: score.misses, isMisses: true }, { label: 'Weighted RP', value: RhythiaX.formatNumber(Math.round(parseFloat(score.weightedRp))) }]; }
+  function stats(score) {
+    const parseNum = value => (RhythiaX.parseLocalizedNumber ? RhythiaX.parseLocalizedNumber(value) : (Number.parseFloat(String(value ?? '').replace(/,/g, '')) || 0));
+    return [
+      { label: 'Mods', value: score.mods },
+      { label: 'Notes', value: RhythiaX.formatNumber(parseInt(score.notes, 10)) },
+      { label: 'Raw RP', value: RhythiaX.formatNumber(Math.round(parseNum(score.rpEarned))) },
+      { label: 'Accuracy', value: score.accuracy },
+      { label: 'Misses', value: score.misses, isMisses: true },
+      { label: 'Weighted RP', value: RhythiaX.formatNumber(Math.round(parseNum(score.weightedRp))) }
+    ];
+  }
 
   function parseModsList(score) {
     const modsList = [];

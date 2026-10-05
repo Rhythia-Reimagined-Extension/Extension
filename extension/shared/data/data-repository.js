@@ -4,34 +4,68 @@
 
 var RhythiaX = RhythiaX || {};
 
+function isExtensionValid() {
+  return typeof chrome !== 'undefined' && Boolean(chrome.storage?.local);
+}
+
 function dataStorageGet(keys) {
   return new Promise((resolve, reject) => {
-    chrome.storage.local.get(keys, result => {
-      const error = chrome.runtime.lastError;
-      if (error) reject(new Error(error.message));
-      else resolve(result || {});
-    });
+    if (!isExtensionValid()) return resolve({});
+    try {
+      chrome.storage.local.get(keys, result => {
+        const error = chrome.runtime?.lastError;
+        if (error) {
+          if (error.message?.includes('Extension context invalidated')) return resolve({});
+          reject(new Error(error.message));
+        } else {
+          resolve(result || {});
+        }
+      });
+    } catch (err) {
+      if (err.message?.includes('Extension context invalidated')) return resolve({});
+      reject(err);
+    }
   });
 }
 
 function dataStorageSet(values) {
   return new Promise((resolve, reject) => {
-    chrome.storage.local.set(values, () => {
-      const error = chrome.runtime.lastError;
-      if (error) reject(new Error(error.message));
-      else resolve();
-    });
+    if (!isExtensionValid()) return resolve();
+    try {
+      chrome.storage.local.set(values, () => {
+        const error = chrome.runtime?.lastError;
+        if (error) {
+          if (error.message?.includes('Extension context invalidated')) return resolve();
+          reject(new Error(error.message));
+        } else {
+          resolve();
+        }
+      });
+    } catch (err) {
+      if (err.message?.includes('Extension context invalidated')) return resolve();
+      reject(err);
+    }
   });
 }
 
 function dataStorageRemove(keys) {
   if (!keys.length) return Promise.resolve();
   return new Promise((resolve, reject) => {
-    chrome.storage.local.remove(keys, () => {
-      const error = chrome.runtime.lastError;
-      if (error) reject(new Error(error.message));
-      else resolve();
-    });
+    if (!isExtensionValid()) return resolve();
+    try {
+      chrome.storage.local.remove(keys, () => {
+        const error = chrome.runtime?.lastError;
+        if (error) {
+          if (error.message?.includes('Extension context invalidated')) return resolve();
+          reject(new Error(error.message));
+        } else {
+          resolve();
+        }
+      });
+    } catch (err) {
+      if (err.message?.includes('Extension context invalidated')) return resolve();
+      reject(err);
+    }
   });
 }
 
@@ -55,12 +89,14 @@ function dataEntryKey(profileId) {
 RhythiaX.getDataSettings = async function () {
   await RhythiaX.dataRepositoryReady;
   const result = await dataStorageGet({ [RhythiaX.DATA_SETTINGS_KEY]: RhythiaX.DATA_DEFAULT_SETTINGS });
-  return RhythiaX.normalizeDataSettings(result[RhythiaX.DATA_SETTINGS_KEY]);
+  const settings = RhythiaX.normalizeDataSettings(result[RhythiaX.DATA_SETTINGS_KEY]);
+  return settings.communityConsentVersion === RhythiaX.COMMUNITY_CONSENT_VERSION
+    ? settings : { ...settings, syncMode: 'local-only', telemetryEnabled: false };
 };
 
 RhythiaX.saveDataSettings = async function (settings, options = {}) {
   await RhythiaX.dataRepositoryReady;
-  if (RhythiaX.dataStorageReadOnly && options.allowRepair !== true) throw new Error('Local data is read-only until a verified backup restore repairs the storage.');
+  if (RhythiaX.dataStorageReadOnly && options.allowRepair !== true) throw new Error('Local data is read-only because validation failed; contact support before modifying stored data.');
   const normalized = RhythiaX.normalizeDataSettings(settings);
   await dataStorageSet({ [RhythiaX.DATA_SETTINGS_KEY]: normalized });
   return normalized;
@@ -77,7 +113,7 @@ RhythiaX.getDataRecord = async function (profileId) {
 
 RhythiaX.saveDataRecord = async function (record, options = {}) {
   await RhythiaX.dataRepositoryReady;
-  if (RhythiaX.dataStorageReadOnly && options.allowRepair !== true) throw new Error('Local data is read-only until a verified backup restore repairs the storage.');
+  if (RhythiaX.dataStorageReadOnly && options.allowRepair !== true) throw new Error('Local data is read-only because validation failed; contact support before modifying stored data.');
   const normalized = RhythiaX.normalizeDataRecord(record, record?.profileId);
   if (!normalized.profileId) throw new Error('Cannot save data without profileId.');
   normalized.updatedAt = Date.now();
@@ -87,7 +123,7 @@ RhythiaX.saveDataRecord = async function (record, options = {}) {
 
 RhythiaX.removeDataRecord = async function (profileId, options = {}) {
   await RhythiaX.dataRepositoryReady;
-  if (RhythiaX.dataStorageReadOnly && options.allowRepair !== true) throw new Error('Local data is read-only until a verified backup restore repairs the storage.');
+  if (RhythiaX.dataStorageReadOnly && options.allowRepair !== true) throw new Error('Local data is read-only because validation failed; contact support before modifying stored data.');
   const id = String(profileId || '').trim();
   if (!id) return;
   await dataStorageRemove([dataEntryKey(id)]);
@@ -104,7 +140,7 @@ RhythiaX.listDataRecords = async function () {
 
 RhythiaX.clearDataRecords = async function (options = {}) {
   await RhythiaX.dataRepositoryReady;
-  if (RhythiaX.dataStorageReadOnly && options.allowRepair !== true) throw new Error('Local data is read-only until a verified backup restore repairs the storage.');
+  if (RhythiaX.dataStorageReadOnly && options.allowRepair !== true) throw new Error('Local data is read-only because validation failed; contact support before modifying stored data.');
   const all = await dataStorageGet(null);
   const keys = Object.keys(all).filter(key => key.startsWith(RhythiaX.DATA_STORAGE_ENTRY_PREFIX));
   await dataStorageRemove(keys);

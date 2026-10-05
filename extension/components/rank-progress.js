@@ -465,15 +465,7 @@ RhythiaX.animateTitleProgressionFromCache = async function (playerId, currentRp,
   if (navigationToken !== RhythiaX.navigationToken) return;
   const bar = document.querySelector('.rhythiax-accordion .rhythiax-rankpath-bar');
   if (!bar?._rhythiaxAnimate) return;
-  let previousTitle = visit?.previousPlayer;
-  if (!previousTitle) {
-    const titleState = await RhythiaX.getDataTitleProgressionState?.(playerId);
-    if (navigationToken !== RhythiaX.navigationToken) return;
-    previousTitle = titleState ? {
-      rp: titleState.rp,
-      globalRank: titleState.globalRank,
-    } : null;
-  }
+  const previousTitle = visit?.previousPlayer;
   const previous = previousTitle;
   const previousRp = previous?.rp;
   if (previousRp === undefined || previousRp === null || previousRp === '') return;

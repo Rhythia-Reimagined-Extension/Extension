@@ -20,4 +20,7 @@ RhythiaX.SiteDomBridge = {
   findOfficialStatsContainer(...args) {
     return RhythiaX.findOfficialStatsContainer(...args);
   },
+  findHeaderRankArea(...args) {
+    return RhythiaX.findHeaderRankArea(...args);
+  },
 };

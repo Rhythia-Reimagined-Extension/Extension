@@ -1,18 +1,16 @@
 {
   "manifest_version": 3,
   "name": "Rhythia Reimagined",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "minimum_chrome_version": "116",
   "description": "Make your Rhythia profile easier to read, customize, and explore",
   "action": {
     "default_title": "Rhythia Reimagined",
-    "default_popup": "popup-v3/popup.html"
+    "default_popup": "popup/popup.html"
   },
   "permissions": [
     "storage",
-    "unlimitedStorage",
-    "offscreen",
-    "alarms"
+    "unlimitedStorage"
   ],
   "background": {
     "service_worker": "background.js"
@@ -21,7 +19,8 @@
     "https://www.rhythia.com/*",
     "https://rhythia.com/*",
     "https://production.rhythia.com/*",
-    "https://raw.githubusercontent.com/*"
+    "https://raw.githubusercontent.com/*",
+    "https://rhythia.shuriel.com/*"
   ],
   "content_scripts": [
     {
@@ -36,6 +35,7 @@
         "shared/data/data-schema.js",
         "shared/data/data-migrations.js",
         "shared/data/data-repository.js",
+        "shared/community-consent.js",
         "core/bridges/data-store-bridge.js",
         "core/bridges/storage-mutation-bridge.js",
         "shared/modules.js",
@@ -49,31 +49,35 @@
         "shared/time.js",
         "shared/scores.js",
         "shared/api.js",
+        "shared/vps-client.js",
         "core/bridges/rhythia-api-bridge.js",
         "shared/stats.js",
         "shared/filters.js",
         "shared/data/data-collector.js",
         "shared/data/data-history.js",
-        "shared/data/data-title-progression.js",
         "shared/data/data-profile-ui.js",
-        "core/data/transfer/serialization.js",
-        "core/data/transfer/validation.js",
-        "core/data/transfer/conflict-policy.js",
-        "core/data/transfer/restoration.js",
-        "core/data/transfer/api.js",
-        "shared/data/data-transfer.js",
         "shared/easter-eggs.js",
         "components/cleanup.js",
         "components/rank-progress.js",
         "components/accordion.js",
         "content/features/statistics/domain.js",
+        "content/features/playstyle/domain.js",
+        "content/features/playstyle/scout.js",
+        "content/features/playstyle/loader.js",
+        "content/features/playstyle/view.js",
         "content/features/statistics/view.js",
         "components/stats-panel.js",
         "components/rating-profile.js",
         "components/tempo-profile.js",
         "content/features/score-cards/domain.js",
-        "content/features/score-cards/service.js",
+        "content/features/score-cards/store.js",
+        "content/features/score-cards/actions.js",
+        "content/features/score-cards/previews.js",
+        "content/features/score-cards/templates/template-flagship.js",
+        "content/features/score-cards/templates/template-eclipse.js",
+        "content/features/score-cards/templates/template-ribbon.js",
         "content/features/score-cards/view.js",
+        "content/features/score-cards/service.js",
         "components/score-card.js",
         "content/features/compare/store.js",
         "content/features/compare/loader.js",
@@ -81,6 +85,10 @@
         "content/features/compare/view.js",
         "components/player-compare.js",
         "content/features/friends/quick-list.js",
+        "content/features/title-progression/icons.js",
+        "content/features/title-progression/domain.js",
+        "content/features/title-progression/view.js",
+        "content/features/title-progression/service.js",
         "content/bootstrap/route-context.js",
         "content/bootstrap/lifecycle.js",
         "content/bootstrap/route-observer.js",
@@ -95,10 +103,14 @@
       ],
       "css": [
         "styles/foundation/tokens.css",
+        "styles/bridge/anti-flicker.css",
         "styles/foundation/base.css",
         "styles/components/score-card/base.css",
-        "styles/components/score-card/layout.css",
-        "styles/components/score-card/podium.css",
+        "styles/components/score-card/variant-a.css",
+        "styles/components/score-card/variant-b.css",
+        "styles/components/score-card/variant-c.css",
+        "styles/components/score-card/actions.css",
+        "styles/components/score-card/scores-hub.css",
         "styles/components/profile-stats/base.css",
         "styles/components/profile-stats/grades.css",
         "styles/components/profile-stats/charts.css",
@@ -107,11 +119,12 @@
         "styles/components/profile-box.css",
         "styles/components/profile-presets.css",
         "styles/components/rank-history.css",
-        "styles/components/local-backup.css",
         "styles/components/country-leaderboard.css",
         "styles/components/compare/base.css",
         "styles/components/compare/layout.css",
         "styles/components/compare/theme.css",
+        "styles/components/playstyle.css",
+        "styles/components/title-progression.css",
         "easter-eggs/profiles/profiles.css",
         "easter-eggs/other/generic.css",
         "styles/pages/home.css",
@@ -132,6 +145,17 @@
         "styles/themes/reimagined/pages/profile.css",
         "styles/themes/white/theme.css",
         "styles/themes/white/pages/profile.css"
+      ]
+    },
+    {
+      "matches": [
+        "https://www.rhythia.com/*",
+        "https://rhythia.com/*"
+      ],
+      "run_at": "document_start",
+      "css": [
+        "styles/foundation/tokens.css",
+        "styles/bridge/anti-flicker.css"
       ]
     }
   ],

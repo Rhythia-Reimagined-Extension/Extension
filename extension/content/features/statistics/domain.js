@@ -19,6 +19,10 @@ var RhythiaX = RhythiaX || {};
     return values.length ? (values.reduce((sum, value) => sum + value, 0) / values.length).toFixed(2) : '—';
   }
   function fullComboCount(scores) { return scores.filter(score => score.grade === 'SS' || score.fullCombo === true || score.fullCombo === 1 || (score.fullCombo == null && number(score.misses) === 0)).length; }
-  function mapsPerWeek(playCount, hereSince) { const weeks = RhythiaX.weeksSince(hereSince); return weeks > 0 && playCount > 0 ? (playCount / weeks).toFixed(1) : '—'; }
+  function mapsPerWeek(playCount, hereSince) {
+    const parsedPlay = Number(playCount);
+    const weeks = RhythiaX.weeksSince ? RhythiaX.weeksSince(hereSince) : 0;
+    return weeks > 0 && parsedPlay > 0 ? (parsedPlay / weeks).toFixed(1) : '—';
+  }
   RhythiaX.StatisticsDomain = { number, averageAccuracy, fullComboCount, mapsPerWeek };
 })();

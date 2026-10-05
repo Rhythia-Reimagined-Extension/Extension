@@ -53,11 +53,11 @@ var RhythiaX = RhythiaX || {};
 
   function wrapNumberMatchesInTextNode(textNode) {
     try {
-      if (!textNode || !textNode.isConnected) {
+      if (!textNode || textNode.isConnected === false) {
         return;
       }
       const parent = textNode.parentNode;
-      if (!parent || !parent.isConnected || parent.closest?.(`.${EGG_CLASS}`) || parent.closest?.('[data-v3-root], [cmdk-root]')) {
+      if (!parent || parent.isConnected === false || parent.closest?.(`.${EGG_CLASS}`) || parent.closest?.('[data-v3-root], [cmdk-root]')) {
         return;
       }
       if (IGNORED_TAGS.has(parent.nodeName)) {
@@ -65,11 +65,11 @@ var RhythiaX = RhythiaX || {};
       }
 
       const text = textNode.nodeValue;
-      if (!text || !/(?:67|69|420)/.test(text)) {
+      if (!text || !/(?<![\d,.\-]|\d\s+)(?:67|69|420)(?![\d,.]|\s+\d)/.test(text)) {
         return;
       }
 
-      const regex = /(67|69|420)/g;
+      const regex = /(?<![\d,.\-]|\d\s+)(67|69|420)(?![\d,.]|\s+\d)/g;
       let match;
       let lastIndex = 0;
       const fragment = document.createDocumentFragment();
@@ -130,7 +130,7 @@ var RhythiaX = RhythiaX || {};
                 if (!p || IGNORED_TAGS.has(p.nodeName) || p.closest?.(`.${EGG_CLASS}`)) {
                   return FILTER_REJECT;
                 }
-                if (/(?:67|69|420)/.test(node?.nodeValue || '')) {
+                if (/(?<![\d,.\-]|\d\s+)(?:67|69|420)(?![\d,.]|\s+\d)/.test(node?.nodeValue || '')) {
                   return FILTER_ACCEPT;
                 }
                 return FILTER_SKIP;

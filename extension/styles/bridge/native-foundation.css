@@ -58,7 +58,7 @@ body[data-rhythiax-theme] #root .fixed.top-0.left-0.w-full[class*="h-[60px]"] {
 body[data-rhythiax-theme] #root .fixed.top-0.left-0.w-full[class*="h-[60px]"] [class*="bg-[#2F4184"] {
    background: color-mix(in srgb, var(--rhythiax-accent) 14%, var(--rhythiax-home-inner)) !important;
 }
-body[data-rhythiax-theme] #root .fixed.top-0.left-0.w-full[class*="h-[60px]"] a:hover,
+body[data-rhythiax-theme] #root .fixed.top-0.left-0.w-full[class*="h-[60px]"] a:not(:has(img[src*="navlogo"])):hover,
 body[data-rhythiax-theme] #root .fixed.top-0.left-0.w-full[class*="h-[60px]"] button:hover {
    background: color-mix(in srgb, var(--rhythiax-accent) 22%, transparent) !important;
 }

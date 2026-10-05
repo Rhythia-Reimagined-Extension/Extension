@@ -1,0 +1,221 @@
+/* ==========================================================================
+   Rhythia Reimagined — Score Card: Variant C (Pro Ribbon)
+   Compact 64px slim ribbon with clean contrast, toned-down subtle glow,
+   bordered stat cells, and aligned columns.
+   ========================================================================== */
+
+.rhythiax-sc-ribbon {
+  min-height: 64px;
+  padding: 8px 14px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+/* User requested: NO horizontal translation on hover */
+.rhythiax-sc-ribbon:hover {
+  border-color: var(--sc-border-strong);
+}
+
+/* Left: Rank & Grade Badge */
+.rhythiax-sc-ribbon-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+.rhythiax-sc-ribbon-rank {
+  font-size: 12px;
+  font-weight: 800;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  color: var(--sc-text-muted);
+  width: 24px;
+  text-align: center;
+}
+
+.rhythiax-sc-ribbon-reign {
+  font-size: 10px;
+  font-weight: 800;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  color: var(--grade-color, #38bdf8);
+  border: 1px solid var(--grade-color, #38bdf8);
+  padding: 1px 4px;
+  border-radius: 4px;
+}
+
+.rhythiax-sc-ribbon-grade {
+  font-size: 20px;
+  font-weight: 900;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  color: var(--grade-color, #4ade80);
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  background: var(--sc-inner-bg);
+  border: 1.5px solid var(--grade-color, #4ade80);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  /* Subdued subtle shadow instead of excessive neon glow */
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+/* Middle: Title & Meta */
+.rhythiax-sc-ribbon-main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.rhythiax-sc-ribbon-title-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Right: Aligned Statistics Columns with clean bordered cells */
+.rhythiax-sc-ribbon-stats {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.rhythiax-sc-ribbon-stat-col {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 3px 9px;
+  border-radius: 7px;
+  border: 1px solid var(--sc-border-strong);
+  background: var(--sc-dock-cell-bg);
+  min-width: 64px;
+}
+
+.rhythiax-sc-ribbon-stat-col.stat-hits {
+  min-width: 78px;
+}
+
+.rhythiax-sc-ribbon-stat-lbl {
+  font-size: 9px;
+  font-weight: 600;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  text-transform: uppercase;
+  color: var(--sc-text-muted);
+  letter-spacing: 0.4px;
+}
+
+.rhythiax-sc-ribbon-stat-val {
+  font-size: 12px;
+  font-weight: 700;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  font-variant-numeric: tabular-nums lining-nums;
+  color: var(--sc-text-strong);
+  white-space: nowrap;
+}
+
+.rhythiax-sc-ribbon-stat-val.rhythiax-sc-acc {
+  color: var(--grade-color, #4ade80);
+}
+
+.rhythiax-sc-ribbon-stat-val.rhythiax-sc-wrp {
+  color: var(--sc-accent, #c084fc);
+  font-size: 12.5px;
+}
+
+.rhythiax-sc-ribbon-stat-val.rhythiax-sc-miss {
+  color: var(--miss-color, #f87171);
+}
+
+.rhythiax-sc-ribbon-stat-val.rhythiax-sc-fc {
+  color: var(--fc-color, #4ade80);
+}
+
+.rhythiax-sc-ribbon-dock-sub {
+  font-size: 9.5px;
+  font-weight: 600;
+  color: var(--sc-text-muted);
+  margin-left: 2px;
+}
+
+/* ==========================================================================
+   Variant C: Grid Mode Adaptation (2-Column Kafelki)
+   ========================================================================== */
+.is-grid .rhythiax-sc-ribbon,
+[data-scores-view="grid"] .rhythiax-sc-ribbon {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  grid-template-rows: auto auto;
+  grid-template-areas:
+    "left main"
+    "stats stats";
+  row-gap: 8px;
+  column-gap: 10px;
+  padding: 10px 12px;
+  min-height: 114px;
+  position: relative;
+}
+
+.is-grid .rhythiax-sc-ribbon-left,
+[data-scores-view="grid"] .rhythiax-sc-ribbon-left {
+  grid-area: left;
+  align-self: center;
+}
+
+.is-grid .rhythiax-sc-ribbon-main,
+[data-scores-view="grid"] .rhythiax-sc-ribbon-main {
+  grid-area: main;
+  min-width: 0;
+  padding-right: 28px;
+}
+
+.is-grid .rhythiax-sc-ribbon-title-row .rhythiax-sc-title,
+[data-scores-view="grid"] .rhythiax-sc-ribbon-title-row .rhythiax-sc-title {
+  font-size: 13.5px;
+}
+
+.is-grid .rhythiax-sc-ribbon-stats,
+[data-scores-view="grid"] .rhythiax-sc-ribbon-stats {
+  grid-area: stats;
+  width: 100%;
+  display: flex;
+  gap: 5px;
+}
+
+.is-grid .rhythiax-sc-ribbon-stat-col,
+[data-scores-view="grid"] .rhythiax-sc-ribbon-stat-col {
+  flex: 1;
+  min-width: 0 !important;
+  padding: 3.5px 4px;
+}
+
+.is-grid .rhythiax-sc-ribbon-stat-lbl,
+[data-scores-view="grid"] .rhythiax-sc-ribbon-stat-lbl {
+  font-size: 7.5px;
+  letter-spacing: 0.3px;
+}
+
+.is-grid .rhythiax-sc-ribbon-stat-val,
+[data-scores-view="grid"] .rhythiax-sc-ribbon-stat-val {
+  font-size: 11.5px;
+}
+
+.is-grid .rhythiax-sc-ribbon-stat-val.rhythiax-sc-wrp,
+[data-scores-view="grid"] .rhythiax-sc-ribbon-stat-val.rhythiax-sc-wrp {
+  font-size: 11.5px;
+}
+
+.is-grid .rhythiax-sc-ribbon-dock-sub,
+[data-scores-view="grid"] .rhythiax-sc-ribbon-dock-sub {
+  font-size: 9px;
+}
+
+.is-grid .rhythiax-sc-ribbon .rhythiax-sc-action-btn,
+[data-scores-view="grid"] .rhythiax-sc-ribbon .rhythiax-sc-action-btn {
+  position: absolute;
+  top: 9px;
+  right: 10px;
+}

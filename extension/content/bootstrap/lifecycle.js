@@ -20,13 +20,23 @@ RhythiaX.ContentLifecycle = (function () {
 
   function inject() {
     if (RhythiaX.extensionContextInvalidated) return false;
+    if (RhythiaX.isMasterActive && !RhythiaX.isMasterActive()) return false;
     if (document.documentElement?.dataset.rhythiaxSettingsReady !== 'true') return false;
     const pageType = RhythiaX.PageRouteContext.type();
     if (!RhythiaX.PageRouteContext.isInjectable()) return false;
     try {
-      if (pageType === 'profile') RhythiaX.injectProfileCrown?.();
+      if (pageType === 'profile') {
+        RhythiaX.injectProfileCrown?.();
+        RhythiaX.injectProfileCreatorBadge?.();
+      }
       if (pageType === 'score-replay') return RhythiaX.injectScoreReplay?.() || false;
       if (pageType === 'changelog') return RhythiaX.injectChangelog?.() || false;
+      if (pageType === 'scores') {
+        const ready = RhythiaX.enhanceScoreCards?.() === true;
+        RhythiaX.applyScoreFilter?.();
+        RhythiaX.injected = ready;
+        return ready;
+      }
       return RhythiaX.injectProfile();
     } catch (error) {
       if (invalidated(error)) {
@@ -42,12 +52,21 @@ RhythiaX.ContentLifecycle = (function () {
     const pageType = RhythiaX.PageRouteContext.type();
     if (pageType === 'score-replay') return Boolean(document.querySelector('.rhythiax-score-replay-fullscreen-button'));
     if (pageType === 'changelog') return Boolean(document.querySelector('[data-rhythiax-changelog-tab]'));
+    if (pageType === 'scores') {
+      if (RhythiaX.isModuleEnabled?.('scoreCards') === false
+        || RhythiaX.isModuleOptionEnabled?.('scoreCards', 'customCards') === false) return true;
+      return Boolean(document.querySelector('.rhythiax-redesigned, .rhythiax-score-card, .rhythiax-scores-hub'));
+    }
     if (RhythiaX.isModuleEnabled?.('advancedStats') === false) return true;
-    if (pageType === 'profile') return Boolean(document.querySelector('.rhythiax-injected-stats-section, .rhythiax-profile-box, .rhythiax-injected-grade-row'));
+    // A surviving Scores Hub or title card does not mean the native statistics
+    // subtree survived the SPA render as well.
+    if (pageType === 'profile') return Boolean(document.querySelector('.rhythiax-stats-panel, .rhythiax-stats-tabs, .rhythiax-reimagined-stats-body, .rhythiax-injected-stats-section, .rhythiax-profile-box, .rhythiax-injected-grade-row'));
     return false;
   }
 
   function recover() {
+    if (String(RhythiaX.profileRequestContext?.playerId || '') === String(RhythiaX.PageRouteContext.playerId?.() || '')
+      && RhythiaX.profileRequestContext?.navigationToken === RhythiaX.navigationToken) return;
     if (RhythiaX.extensionContextInvalidated || !RhythiaX.injected || hasInjectedContent()) return;
     RhythiaX.log('Injected content was removed; scheduling a fresh injection');
     RhythiaX.clearLoadingState();
@@ -88,6 +107,8 @@ RhythiaX.ContentLifecycle = (function () {
   function handleNavigation() {
     if (RhythiaX.extensionContextInvalidated) return;
     RhythiaX.navigationToken++;
+    RhythiaX.profileHistoryContext = null;
+    RhythiaX.profileRequestContext = null;
     RhythiaX.loadTheme?.();
     RhythiaX.apiAbortController?.abort();
     RhythiaX.apiAbortController = null;
@@ -105,6 +126,10 @@ RhythiaX.ContentLifecycle = (function () {
     RhythiaX.activeSpeed = null;
     RhythiaX.cleanupStaleElements();
     if (RhythiaX.PageRouteContext.type() === 'maps') return;
+    const nextPlayerId = typeof window !== 'undefined' ? window.location.pathname.match(/\/player\/(\d+)/)?.[1] : null;
+    if (nextPlayerId) {
+      RhythiaX.prefetchPlayerData?.(nextPlayerId);
+    }
     scheduleRetries();
     startReadinessPoll();
   }

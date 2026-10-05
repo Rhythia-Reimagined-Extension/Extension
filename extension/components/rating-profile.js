@@ -1,10 +1,17 @@
 // =============================================
 // Rhythia X - Rating Profile
+// Note: Active Playstyle feature is in content/features/playstyle/
 // =============================================
 
 var RhythiaX = RhythiaX || {};
 
 RhythiaX.injectRatingProfile = function (scores, ratingScores, target, pageType) {
+  if (target?.classList?.contains('rhythiax-pane-performance') && RhythiaX.PlaystyleView?.render) {
+    const player = RhythiaX.profileHistoryContext?.player || (typeof RhythiaX.extractPlayerData === 'function' ? RhythiaX.extractPlayerData() : null);
+    const playerId = RhythiaX.profileHistoryContext?.playerId || player?.id;
+    return RhythiaX.PlaystyleView.render(target, { scores: ratingScores || scores, player, playerId });
+  }
+
   const statsContainer = target || RhythiaX.findOfficialStatsContainer();
   if (!statsContainer) return null;
 
@@ -16,7 +23,7 @@ RhythiaX.injectRatingProfile = function (scores, ratingScores, target, pageType)
 
   const title = document.createElement('div');
   title.className = 'rhythiax-profile-box-title';
-  title.innerHTML = '<span class="rhythiax-profile-box-heading"><svg class="rhythiax-profile-box-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg><span>Rating Profile</span></span><span class="rhythiax-profile-box-meta"></span>';
+  title.innerHTML = '<span class="rhythiax-profile-box-heading"><svg class="rhythiax-profile-box-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19V9"></path><path d="M10 19V5"></path><path d="M16 19v-7"></path><path d="M22 19V3"></path></svg><span>Grade Distribution</span></span><span class="rhythiax-profile-box-meta"></span>';
   title.querySelector('.rhythiax-profile-box-meta').textContent = `${source.length} ${source.length === 1 ? 'rated play' : 'rated plays'}`;
   container.appendChild(title);
 
@@ -121,3 +128,4 @@ RhythiaX.injectRatingProfile = function (scores, ratingScores, target, pageType)
   }
   return container;
 };
+

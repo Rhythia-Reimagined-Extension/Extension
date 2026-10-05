@@ -9,8 +9,8 @@ var RhythiaX = RhythiaX || {};
 // @param {number|string} [globalRank] — global rank, used for Grandmaster
 RhythiaX.wrapTitleProgression = function (rp, globalRank) {
   if (!RhythiaX.isModuleEnabled('titleProgression')) return;
-  // Broad search for any element whose trimmed text equals "title progression"
-  const candidates = RhythiaX.qsa('h2, h3, h4, div, span, p');
+  const container = RhythiaX.qs('.lg\\:col-span-3, [class*="col-span"], main') || document.body;
+  const candidates = RhythiaX.qsa('h2, h3, h4, [class*="font-semibold"], [class*="font-bold"], div, span, p', container);
   let titleEl = null;
   for (const el of candidates) {
     // Only check leaf-ish elements (no nested children with their own text blocks)

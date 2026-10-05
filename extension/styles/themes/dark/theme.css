@@ -6,59 +6,191 @@ body[data-rhythiax-theme="dark"] {
 
 /* Dark keeps the artwork, with a controlled opacity so it does not overpower
    the page content. */
-body[data-rhythiax-theme="dark"] #root .top-\[60px\].left-0.overflow-hidden.h-64 { opacity: .72 !important; filter: saturate(.9) !important; }
+body[data-rhythiax-theme="dark"] #root .top-\[60px\].left-0.overflow-hidden.h-64 {
+  opacity: .72 !important;
+  filter: saturate(.9) !important;
+}
 
 /* Dark preset media surfaces keep a strong readable layer over artwork. */
 body[data-rhythiax-theme="dark"] #root img[src="/discordicon.png"],
 body[data-rhythiax-theme="dark"] #root img[src="/supporticon.png"],
-body[data-rhythiax-theme="dark"] #root img[src="/settingsicon.png"] { display: block !important; visibility: visible !important; opacity: 1 !important; filter: none !important; mix-blend-mode: normal !important; }
-body[data-rhythiax-theme="dark"] #root [class*="bg-[#141516]"] { background-color: color-mix(in srgb, #141516 70%, var(--rhythiax-surface)) !important; opacity: 1 !important; }
-body[data-rhythiax-theme="dark"] #root img[src*="beatmap-img-"] ~ [class*="bg-gradient-to-t"] { background-image: linear-gradient(to top, rgba(7,9,14,.92), rgba(7,9,14,.18) 58%, transparent) !important; background-color: transparent !important; }
-body[data-rhythiax-theme="dark"] #root img[src*="beatmap-img-"] ~ [class*="bg-black/35"] { background-color: rgba(7,9,14,.82) !important; }
-body[data-rhythiax-theme="dark"] #root img[src*="beatmap-img-"] ~ [class*="bg-black/0"] { background-color: transparent !important; }
-body[data-rhythiax-theme="dark"] #root img[src*="beatmap-img-"] ~ div[class*="bottom-0"] > div[class*="bg-black/35"] { color: #fff !important; border-color: rgba(255,255,255,.18) !important; }
-body[data-rhythiax-theme="dark"] #root img[src*="beatmap-img-"] ~ div[class*="bottom-0"] > div[class*="bg-black/35"] [class*="text-white"],
-body[data-rhythiax-theme="dark"] #root img[src*="beatmap-img-"] ~ div[class*="bottom-0"] > div[class*="bg-black/35"] [class*="text-neutral-"] { color: #fff !important; }
-body[data-rhythiax-theme="dark"] #root img[src*="beatmap-img-"] ~ button[class*="bg-[#111214]"] { background: linear-gradient(180deg, rgba(36,39,46,.96), rgba(10,12,16,.96)) !important; color: #fff !important; border-color: rgba(255,255,255,.24) !important; }
-body[data-rhythiax-theme="dark"] #root div:has(> .pointer-events-none[class*="bg-black/70"]) { color: #fff !important; }
-body[data-rhythiax-theme="dark"] #root div:has(> .pointer-events-none[class*="bg-black/70"]) [class*="text-white"],
-body[data-rhythiax-theme="dark"] #root div:has(> .pointer-events-none[class*="bg-black/70"]) [class*="text-neutral-300"] { color: #fff !important; }
-body[data-rhythiax-theme="dark"] #root [class*="bg-[#1e1f21]"]:has(img[src="/settingsicon.png"]) { background: var(--rhythiax-inner-surface) !important; border-color: var(--rhythiax-border-strong) !important; color: var(--rhythiax-text-strong) !important; }
-body[data-rhythiax-theme="dark"] #root [class*="bg-[#1e1f21]"]:has(img[src="/settingsicon.png"]):hover { background: #292a2d !important; }
-body[data-rhythiax-theme="dark"] #root div[class*="bg-[#1e1f21]"]:has(svg.lucide-users-round) { background: var(--rhythiax-inner-surface) !important; border-color: var(--rhythiax-border-strong) !important; color: var(--rhythiax-text-strong) !important; }
-body[data-rhythiax-theme="dark"] #root button[class*="bg-[#1e1f21]"]:has(svg.lucide-user-round-plus) { background: var(--rhythiax-inner-surface) !important; border-color: var(--rhythiax-border-strong) !important; color: var(--rhythiax-text-strong) !important; }
-body[data-rhythiax-theme="dark"] #root button[class*="bg-[#1e1f21]"]:has(svg.lucide-user-round-plus):hover:not(:disabled) { background: #292a2d !important; }
+body[data-rhythiax-theme="dark"] #root img[src="/settingsicon.png"] {
+  display: block !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  filter: none !important;
+  mix-blend-mode: normal !important;
+}
 
-/* Keep the injected Compare action in the same neutral control language as
-   the native profile actions instead of giving it a separate blue outline. */
-body[data-rhythiax-theme="dark"] .rhythiax-compare-profile-button {
-  border-color: var(--rhythiax-border-strong) !important;
-  color: var(--rhythiax-text-strong) !important;
+body[data-rhythiax-theme="dark"] #root [class*="bg-[#141516]"] {
+  background-color: color-mix(in srgb, #141516 70%, var(--rhythiax-surface)) !important;
+  opacity: 1 !important;
+}
+
+body[data-rhythiax-theme="dark"] #root img[src*="beatmap-img-"]~[class*="bg-gradient-to-t"] {
+  background-image: linear-gradient(to top, rgba(7, 9, 14, .92), rgba(7, 9, 14, .18) 58%, transparent) !important;
+  background-color: transparent !important;
+}
+
+body[data-rhythiax-theme="dark"] #root img[src*="beatmap-img-"]~[class*="bg-black/35"] {
+  background-color: rgba(7, 9, 14, .82) !important;
+}
+
+body[data-rhythiax-theme="dark"] #root img[src*="beatmap-img-"]~[class*="bg-black/0"] {
+  background-color: transparent !important;
+}
+
+body[data-rhythiax-theme="dark"] #root img[src*="beatmap-img-"]~div[class*="bottom-0"]>div[class*="bg-black/35"] {
+  color: #fff !important;
+  border-color: rgba(255, 255, 255, .18) !important;
+}
+
+body[data-rhythiax-theme="dark"] #root img[src*="beatmap-img-"]~div[class*="bottom-0"]>div[class*="bg-black/35"] [class*="text-white"],
+body[data-rhythiax-theme="dark"] #root img[src*="beatmap-img-"]~div[class*="bottom-0"]>div[class*="bg-black/35"] [class*="text-neutral-"] {
+  color: #fff !important;
+}
+
+body[data-rhythiax-theme="dark"] #root img[src*="beatmap-img-"]~button[class*="bg-[#111214]"] {
+  background: linear-gradient(180deg, rgba(36, 39, 46, .96), rgba(10, 12, 16, .96)) !important;
+  color: #fff !important;
+  border-color: rgba(255, 255, 255, .24) !important;
+}
+
+body[data-rhythiax-theme="dark"] #root div:has(> .pointer-events-none[class*="bg-black/70"]) {
+  color: #fff !important;
+}
+
+body[data-rhythiax-theme="dark"] #root div:has(> .pointer-events-none[class*="bg-black/70"]) [class*="text-white"],
+body[data-rhythiax-theme="dark"] #root div:has(> .pointer-events-none[class*="bg-black/70"]) [class*="text-neutral-300"] {
+  color: #fff !important;
+}
+
+body[data-rhythiax-theme="dark"] #root [class*="bg-[#1e1f21]"]:has(img[src*="settingsicon"]),
+body[data-rhythiax-theme="dark"] #root [class*="bg-control"]:has(img[src*="settingsicon"]),
+body[data-rhythiax-theme="dark"] #root button:has(img[src*="settingsicon"]),
+body[data-rhythiax-theme="dark"] #root button[aria-label="Settings"],
+body[data-rhythiax-theme="dark"] #root button[role="combobox"],
+body[data-rhythiax-theme="dark"] #root .fixed.top-0 a[href="/changelog"],
+body[data-rhythiax-theme="dark"] #root .fixed.top-0 a[aria-label="Changelog"],
+body[data-rhythiax-theme="dark"] #root .fixed.top-0 [class*="bg-[#2F4184]"] {
   background: var(--rhythiax-inner-surface) !important;
-}
-body[data-rhythiax-theme="dark"] .rhythiax-compare-profile-button:hover,
-body[data-rhythiax-theme="dark"] .rhythiax-compare-profile-button.is-active {
-  border-color: var(--rhythiax-accent) !important;
+  border: 1px solid var(--rhythiax-border-strong) !important;
   color: var(--rhythiax-text-strong) !important;
-  background: color-mix(in srgb, var(--rhythiax-accent) 10%, var(--rhythiax-inner-surface)) !important;
-  box-shadow: 0 0 0 3px color-mix(in srgb, var(--rhythiax-accent) 10%, transparent) !important;
 }
-body[data-rhythiax-theme="dark"] #root [class*="rounded-xl"][class*="border-white/10"][class*="bg-[#111214]"]:has(.badge-hunt-space-cloud) { background-color: var(--rhythiax-surface) !important; }
-body[data-rhythiax-theme="dark"] #root [class*="rounded-xl"][class*="border-white/10"][class*="bg-[#111214]"]:has(.badge-hunt-space-cloud) > .pointer-events-none,
-body[data-rhythiax-theme="dark"] #root [class*="rounded-xl"][class*="border-white/10"][class*="bg-[#111214]"]:has(.badge-hunt-space-cloud) > .absolute.inset-0.bg-black\/25 { display: none !important; }
+
+body[data-rhythiax-theme="dark"] #root [class*="bg-[#1e1f21]"]:has(img[src*="settingsicon"]):hover,
+body[data-rhythiax-theme="dark"] #root [class*="bg-control"]:has(img[src*="settingsicon"]):hover,
+body[data-rhythiax-theme="dark"] #root button:has(img[src*="settingsicon"]):hover,
+body[data-rhythiax-theme="dark"] #root button[aria-label="Settings"]:hover,
+body[data-rhythiax-theme="dark"] #root button[role="combobox"]:hover,
+body[data-rhythiax-theme="dark"] #root .fixed.top-0 a[href="/changelog"]:hover,
+body[data-rhythiax-theme="dark"] #root .fixed.top-0 a[aria-label="Changelog"]:hover,
+body[data-rhythiax-theme="dark"] #root .fixed.top-0 [class*="bg-[#2F4184]"]:hover {
+  background: #24262e !important;
+  border-color: rgba(255, 255, 255, .25) !important;
+  color: #ffffff !important;
+}
+
+body[data-rhythiax-theme="dark"] #root [class*="bg-[#1e1f21]"]:has(img[src*="settingsicon"]) img[src*="settingsicon"],
+body[data-rhythiax-theme="dark"] #root [class*="bg-control"]:has(img[src*="settingsicon"]) img[src*="settingsicon"],
+body[data-rhythiax-theme="dark"] #root button:has(img[src*="settingsicon"]) img[src*="settingsicon"],
+body[data-rhythiax-theme="dark"] #root button[aria-label="Settings"] img[src*="settingsicon"] {
+  filter: grayscale(1) brightness(0) invert(1) !important;
+  opacity: .85 !important;
+}
+
+body[data-rhythiax-theme="dark"] #root button[role="combobox"] svg,
+body[data-rhythiax-theme="dark"] #root .fixed.top-0 a[href="/changelog"] svg,
+body[data-rhythiax-theme="dark"] #root .fixed.top-0 a[aria-label="Changelog"] svg {
+  color: #f4f4f5 !important;
+  opacity: .9 !important;
+}
+
+body[data-rhythiax-theme="dark"] .rhythiax-compare-profile-button,
+body[data-rhythiax-theme="dark"] #root .rhythiax-friends-quick-trigger,
+body[data-rhythiax-theme="dark"] #root div:has(> svg.lucide-users-round),
+body[data-rhythiax-theme="dark"] #root button:has(svg.lucide-user-round-plus),
+body[data-rhythiax-theme="dark"] #root button:has(svg.lucide-user-round-minus),
+body[data-rhythiax-theme="dark"] #root button.bg-control,
+body[data-rhythiax-theme="dark"] #root a.bg-control,
+body[data-rhythiax-theme="dark"] #root [role="button"].bg-control {
+  background: var(--rhythiax-inner-surface, #1d1f22) !important;
+  border: 1px solid rgba(255, 255, 255, 0.12) !important;
+  color: #f8fafc !important;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.35) !important;
+}
+
+body[data-rhythiax-theme="dark"] .rhythiax-compare-profile-button:hover,
+body[data-rhythiax-theme="dark"] .rhythiax-compare-profile-button.is-active,
+body[data-rhythiax-theme="dark"] #root .rhythiax-friends-quick-trigger:hover,
+body[data-rhythiax-theme="dark"] #root div:has(> svg.lucide-users-round):hover,
+body[data-rhythiax-theme="dark"] #root button:has(svg.lucide-user-round-plus):hover,
+body[data-rhythiax-theme="dark"] #root button:has(svg.lucide-user-round-minus):hover,
+body[data-rhythiax-theme="dark"] #root button.bg-control:hover,
+body[data-rhythiax-theme="dark"] #root a.bg-control:hover,
+body[data-rhythiax-theme="dark"] #root [role="button"].bg-control:hover {
+  background: color-mix(in srgb, var(--rhythiax-accent, #60a5fa) 18%, var(--rhythiax-inner-surface, #1d1f22)) !important;
+  border-color: rgba(96, 165, 250, 0.45) !important;
+  color: #ffffff !important;
+  box-shadow: 0 2px 8px rgba(96, 165, 250, 0.18) !important;
+}
+
+body[data-rhythiax-theme="dark"] .rhythiax-compare-profile-button svg,
+body[data-rhythiax-theme="dark"] #root .rhythiax-friends-quick-trigger svg,
+body[data-rhythiax-theme="dark"] #root div:has(> svg.lucide-users-round) svg,
+body[data-rhythiax-theme="dark"] #root button:has(svg.lucide-user-round-plus) svg,
+body[data-rhythiax-theme="dark"] #root button:has(svg.lucide-user-round-minus) svg {
+  color: #f8fafc !important;
+  stroke: #f8fafc !important;
+}
+
+body[data-rhythiax-theme="dark"] #root [class*="rounded-xl"][class*="border-white/10"][class*="bg-[#111214]"]:has(.badge-hunt-space-cloud) {
+  background-color: var(--rhythiax-surface) !important;
+}
+
+body[data-rhythiax-theme="dark"] #root [class*="rounded-xl"][class*="border-white/10"][class*="bg-[#111214]"]:has(.badge-hunt-space-cloud)>.pointer-events-none,
+body[data-rhythiax-theme="dark"] #root [class*="rounded-xl"][class*="border-white/10"][class*="bg-[#111214]"]:has(.badge-hunt-space-cloud)>.absolute.inset-0.bg-black\/25 {
+  display: none !important;
+}
 
 /* Keep native dialogs on the same dark preset surfaces. */
-body[data-rhythiax-theme="dark"] [role="dialog"] { background: linear-gradient(180deg, var(--rhythiax-surface), var(--rhythiax-page-bg)) !important; }
+body[data-rhythiax-theme="dark"] [role="dialog"] {
+  background: linear-gradient(180deg, var(--rhythiax-surface), var(--rhythiax-page-bg)) !important;
+}
+
 body[data-rhythiax-theme="dark"] [role="dialog"] [class*="bg-[#1a1b1c]"],
-body[data-rhythiax-theme="dark"] [role="dialog"] [class*="bg-black/20"] { background: var(--rhythiax-inner-surface) !important; border-color: var(--rhythiax-border) !important; }
-body[data-rhythiax-theme="dark"] [role="dialog"] [class*="text-white"] { color: var(--rhythiax-text-strong) !important; }
+body[data-rhythiax-theme="dark"] [role="dialog"] [class*="bg-black/20"] {
+  background: var(--rhythiax-inner-surface) !important;
+  border-color: var(--rhythiax-border) !important;
+}
+
+body[data-rhythiax-theme="dark"] [role="dialog"] [class*="text-white"] {
+  color: var(--rhythiax-text-strong) !important;
+}
 
 /* Switches expose both states clearly while using the Dark accent. */
-body[data-rhythiax-theme="dark"] #root [role="switch"][aria-checked="true"] { background: linear-gradient(180deg, #60a5fa 0%, #2563eb 100%) !important; box-shadow: inset 0 0 0 1px rgba(147,197,253,.45) !important; }
-body[data-rhythiax-theme="dark"] #root [role="switch"][aria-checked="false"] { background: linear-gradient(180deg, #3f444b 0%, #24272c 100%) !important; box-shadow: inset 0 0 0 1px rgba(255,255,255,.18) !important; }
-body[data-rhythiax-theme="dark"] #root [role="switch"] > span { background: #ffffff !important; box-shadow: 0 1px 2px rgba(0,0,0,.38); }
-body[data-rhythiax-theme="dark"] #root [role="switch"][aria-checked="false"] > span { transform: translateX(.25rem) !important; }
-body[data-rhythiax-theme="dark"] #root [role="switch"][aria-checked="true"] > span { transform: translateX(1.25rem) !important; }
+body[data-rhythiax-theme="dark"] #root [role="switch"][aria-checked="true"] {
+  background: linear-gradient(180deg, #60a5fa 0%, #2563eb 100%) !important;
+  box-shadow: inset 0 0 0 1px rgba(147, 197, 253, .45) !important;
+}
+
+body[data-rhythiax-theme="dark"] #root [role="switch"][aria-checked="false"] {
+  background: linear-gradient(180deg, #3f444b 0%, #24272c 100%) !important;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .18) !important;
+}
+
+body[data-rhythiax-theme="dark"] #root [role="switch"]>span {
+  background: #ffffff !important;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, .38);
+}
+
+body[data-rhythiax-theme="dark"] #root [role="switch"][aria-checked="false"]>span {
+  transform: translateX(.25rem) !important;
+}
+
+body[data-rhythiax-theme="dark"] #root [role="switch"][aria-checked="true"]>span {
+  transform: translateX(1.25rem) !important;
+}
 
 /* Open stat accordion and history container in Dark preset */
 body[data-rhythiax-theme="dark"] .rhythiax-official-stat-row.rhythiax-stat-row-open {
@@ -69,12 +201,7 @@ body[data-rhythiax-theme="dark"] .rhythiax-official-stat-row.rhythiax-stat-row-o
   border-bottom: 1px solid color-mix(in srgb, var(--rhythiax-accent, #60a5fa) 25%, rgba(255, 255, 255, 0.06)) !important;
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.16) !important;
 }
-body[data-rhythiax-theme="dark"] .rhythiax-history-row {
-  background: color-mix(in srgb, var(--rhythiax-inner-surface, #1e1f21) 90%, var(--rhythiax-accent, #60a5fa) 10%) !important;
-  border-left: 3px solid var(--rhythiax-accent, #60a5fa) !important;
-  border-right: 1px solid color-mix(in srgb, var(--rhythiax-accent, #60a5fa) 45%, transparent) !important;
-  border-bottom: 1px solid color-mix(in srgb, var(--rhythiax-accent, #60a5fa) 45%, transparent) !important;
-}
+
 
 /* Dark theme component surfaces */
 body[data-rhythiax-theme="dark"] .rhythiax-score-card,
@@ -84,6 +211,7 @@ body[data-rhythiax-theme="dark"] .rhythiax-accordion {
   background: var(--rhythiax-surface, #151618) !important;
   border-color: var(--rhythiax-border, rgba(255, 255, 255, 0.10)) !important;
 }
+
 body[data-rhythiax-theme="dark"] .rhythiax-score-card .rhythiax-card-stat-item,
 body[data-rhythiax-theme="dark"] .rhythiax-score-card .rhythiax-card-stat-box,
 body[data-rhythiax-theme="dark"] .rhythiax-score-card .rhythiax-card-rp-box,
@@ -92,4 +220,88 @@ body[data-rhythiax-theme="dark"] .rhythiax-official-stat-row:not(.rhythiax-stat-
   border-color: var(--rhythiax-border, rgba(255, 255, 255, 0.08)) !important;
 }
 
+/* Harmonized Progress and Rankings styling in Dark */
+body[data-rhythiax-theme="dark"] .rhythiax-reimagined-metric-card,
+body[data-rhythiax-theme="dark"] .rhythiax-rank-history-weekly-card {
+  background: color-mix(in srgb, var(--rhythiax-text-strong, #f8fafc) 3%, var(--rhythiax-inner-surface, #1e1f21)) !important;
+  border-color: var(--rhythiax-border, rgba(255, 255, 255, 0.08)) !important;
+}
 
+body[data-rhythiax-theme="dark"] .rhythiax-reimagined-metric-card:hover,
+body[data-rhythiax-theme="dark"] .rhythiax-rank-history-weekly-card:hover {
+  border-color: color-mix(in srgb, var(--rhythiax-accent, #60a5fa) 50%, var(--rhythiax-border, rgba(255, 255, 255, 0.12))) !important;
+  background: color-mix(in srgb, var(--rhythiax-accent, #60a5fa) 6%, var(--rhythiax-inner-surface, #1e1f21)) !important;
+}
+
+body[data-rhythiax-theme="dark"] .rhythiax-history-pane .rhythiax-history-row,
+body[data-rhythiax-theme="dark"] .rhythiax-inline-rank-history .rhythiax-rank-history-table-wrap {
+  background: var(--rhythiax-inner-surface, #1e1f21) !important;
+  border-color: var(--rhythiax-border, rgba(255, 255, 255, 0.08)) !important;
+}
+
+body[data-rhythiax-theme="dark"] .rhythiax-history-pane .rhythiax-history-table tr.rhythiax-history-item:not(.rhythiax-history-week-subrow):hover td,
+body[data-rhythiax-theme="dark"] .rhythiax-inline-rank-history .rhythiax-rank-history-table tbody tr:not(.rhythiax-history-week-subrow):hover td {
+  background: color-mix(in srgb, var(--rhythiax-accent, #60a5fa) 8%, transparent) !important;
+}
+
+body[data-rhythiax-theme="dark"] .rhythiax-inline-rank-history .rhythiax-rank-history-current td {
+  background: color-mix(in srgb, var(--rhythiax-accent, #60a5fa) 5%, transparent) !important;
+}
+
+body[data-rhythiax-theme="dark"] .rhythiax-history-week-subrow,
+body[data-rhythiax-theme="dark"] .rhythiax-history-week-subrow td,
+body[data-rhythiax-theme="dark"] .rhythiax-history-week-subrow:hover,
+body[data-rhythiax-theme="dark"] .rhythiax-history-week-subrow:hover td,
+body[data-rhythiax-theme="dark"] tr.rhythiax-history-week-subrow:hover td,
+body[data-rhythiax-theme="dark"] table tbody tr.rhythiax-history-week-subrow:hover td {
+  background: color-mix(in srgb, var(--rhythiax-page-bg, #090511) 55%, transparent) !important;
+  cursor: default !important;
+}
+
+body[data-rhythiax-theme="dark"] .rhythiax-history-week-subrow * {
+  cursor: default !important;
+}
+
+body[data-rhythiax-theme="dark"] .rhythiax-card-date,
+body[data-rhythiax-theme="dark"] .rhythiax-score-card .rhythiax-card-date,
+body[data-rhythiax-theme="dark"] .rhythiax-absolute-date {
+  background: rgba(13, 15, 20, 0.75) !important;
+  border: 1px solid rgba(255, 255, 255, 0.16) !important;
+  color: #f1f5f9 !important;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.85) !important;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.4) !important;
+}
+
+/* Dark theme score actions menu & toasts */
+body[data-rhythiax-theme="dark"] .rhythiax-score-actions-menu {
+  background: #151619 !important;
+  background-color: #151619 !important;
+  border: 1px solid rgba(255, 255, 255, 0.14) !important;
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.6), 0 4px 10px rgba(0, 0, 0, 0.4) !important;
+}
+
+body[data-rhythiax-theme="dark"] .rhythiax-score-menu-item {
+  color: #e2e8f0 !important;
+}
+
+body[data-rhythiax-theme="dark"] .rhythiax-score-menu-item:hover,
+body[data-rhythiax-theme="dark"] .rhythiax-score-menu-item:focus-visible {
+  background: rgba(255, 255, 255, 0.08) !important;
+  color: #ffffff !important;
+}
+
+body[data-rhythiax-theme="dark"] .rhythiax-score-menu-divider {
+  background: rgba(255, 255, 255, 0.1) !important;
+}
+
+body[data-rhythiax-theme="dark"] .rhythiax-toast {
+  background: #131416 !important;
+  background-color: #131416 !important;
+  border-color: rgba(255, 255, 255, 0.16) !important;
+  color: #f8fafc !important;
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.6) !important;
+}
+
+body[data-rhythiax-theme="dark"] .rhythiax-toast.rhythiax-toast-info {
+  border-left-color: var(--rhythiax-accent, #60a5fa) !important;
+}

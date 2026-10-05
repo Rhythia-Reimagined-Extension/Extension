@@ -1,356 +1,191 @@
-// Score-card DOM rendering and enhancement mounts.
+// ============================================================================
+// Rhythia Reimagined — Score Card View (Modular Card Renderer & DOM Enhancer)
+// ============================================================================
+
 var RhythiaX = RhythiaX || {};
 
 (function () {
-  const domain = RhythiaX.ScoreCardDomain;
+  'use strict';
 
-  function absoluteDates() {
-    RhythiaX.findScoreCards().forEach(card => {
-      const button = card.querySelector('button');
-      const target = button?.querySelector('span') || button;
-      const text = target?.textContent.trim();
-      if (!target || !/\d+\s*(second|minute|hour|day|week|month|year)s?\s*ago/i.test(text) || target.querySelector('.rhythiax-absolute-date')) return;
-      const date = RhythiaX.parseRelativeTime(text);
-      if (!date) return;
-      const value = document.createElement('span');
-      value.className = 'rhythiax-absolute-date';
-      value.textContent = `${RhythiaX.formatDate(date)} (${RhythiaX.formatRelativeDate(date)})`;
-      target.appendChild(value);
-    });
+  /**
+   * Creates a fully styled, interactive Score Card element from a score data object.
+   * Uses the currently active layout variant (Variant A, B, or C).
+   */
+  function createCardFromScore(scoreData, rankIndex = null, tabType = '') {
+    if (!scoreData) return null;
+
+    const store = RhythiaX.ScoreCardStore;
+    const variant = store?.getVariant?.() || 'variant_a';
+    const templates = RhythiaX.ScoreCardTemplates || {};
+    const renderer = (templates[variant] && templates[variant].render) ||
+                     (templates.variant_a && templates.variant_a.render);
+
+    if (!renderer) {
+      console.error('[RhythiaX] No score card template renderer found for variant:', variant);
+      return null;
+    }
+
+    const data = { ...scoreData };
+    if (rankIndex != null && rankIndex >= 0) {
+      data.rankIndex = rankIndex;
+    }
+    if (tabType === 'reign' || data.isReign) {
+      data.isReign = true;
+    }
+
+    // Render modern card
+    const cardEl = renderer(data, { rankIndex, tabType });
+    if (!cardEl) return null;
+
+    cardEl._rhythiaxScoreData = data;
+    cardEl.setAttribute('data-rhythiax-enhanced', 'true');
+    cardEl.setAttribute('data-rhythiax-variant', variant);
+    if (tabType) cardEl.setAttribute('data-rhythiax-score-type', tabType);
+
+    // Try transferring existing native actions button (e.g. from hidden native sections)
+    if (RhythiaX.ScoreCardActions?.attachNativeActionsButton) {
+      RhythiaX.ScoreCardActions.attachNativeActionsButton(cardEl, data);
+    }
+
+    // Attach actions menu popover handlers
+    if (RhythiaX.ScoreCardActions?.attachActionHandlers) {
+      RhythiaX.ScoreCardActions.attachActionHandlers(cardEl, data);
+    }
+
+    // Non-blocking async artwork & metadata resolution
+    const mapHashOrId = data.beatmapHash || data.beatmapId || data.songId || data.hash;
+    if (mapHashOrId && RhythiaX.ScoreCardPreviews?.resolveCardPreview) {
+      RhythiaX.ScoreCardPreviews.resolveCardPreview(cardEl, mapHashOrId, data.speed || 1);
+    }
+
+    return cardEl;
   }
 
-  function scoreUrl(value) {
-    try {
-      const url = new URL(value, window.location.href);
-      return url.origin === window.location.origin && /^\/score\/[^/?#]+(?:\/|$)/.test(url.pathname) ? url.href : '';
-    } catch (_) {
-      return '';
+  /**
+   * Redesigns a native score card found in the DOM.
+   */
+  function redesign(card, rankIndex = null, tabType = '') {
+    if (!card || card.dataset?.rhythiaxEnhanced === 'true') return card;
+
+    const parsed = RhythiaX.ScoreCardDomain?.parse?.(card);
+    const scoreObj = parsed?.score || (RhythiaX.parseScoreCard ? RhythiaX.parseScoreCard(card) : {});
+    if (RhythiaX.isScoreHydrated && !RhythiaX.isScoreHydrated(scoreObj)) {
+      return card;
     }
+
+    const mergedData = {
+      ...scoreObj,
+      songTitle: parsed?.songTitle || scoreObj.songTitle || '',
+      songArtist: parsed?.songArtist || scoreObj.artist || '',
+      mapper: parsed?.mapper || scoreObj.mapper || '',
+      date: parsed?.date || scoreObj.absoluteDate || scoreObj.timeAgo || '',
+      scoreHref: parsed?.scoreHref || '',
+      mapHref: parsed?.mapHref || '',
+      replayUrl: parsed?.replayUrl || '',
+    };
+
+    const newCard = createCardFromScore(mergedData, rankIndex, tabType);
+    if (!newCard) return card;
+
+    // Wrap / Replace native card contents while preserving original element
+    card.dataset.rhythiaxEnhanced = 'true';
+    card.classList.add('rhythiax-score-card', 'rhythiax-redesigned', 'rhythiax-card-enhanced-host');
+    card.innerHTML = '';
+    card.appendChild(newCard);
+    card._rhythiaxEnhancedCard = newCard;
+
+    return newCard;
   }
 
-  function replayUrl(value) {
-    try {
-      const url = new URL(value, window.location.href);
-      return url.protocol === 'https:' && (/^\/replay(?:\/|$)/.test(url.pathname) || /\.rhr$/i.test(url.pathname)) ? url.href : '';
-    } catch (_) {
-      return '';
-    }
-  }
-
-  function actions(card) {
-    const container = document.createElement('div');
-    container.className = 'rhythiax-card-buttons';
-    const replay = RhythiaX.findReplayLink(card);
-    const safeReplayUrl = replay && replayUrl(replay.getAttribute('href'));
-    const showWatch = RhythiaX.isModuleOptionEnabled?.('scoreCards', 'watchReplay') !== false;
-
-    if (safeReplayUrl) {
-      const scoreHref = scoreUrl(domain.parse(card).scoreHref);
-      if (showWatch && scoreHref) {
-        const view = document.createElement('a');
-        view.className = 'rhythiax-card-btn rhythiax-card-btn-view';
-        view.href = scoreHref;
-        view.title = 'View replay';
-        view.setAttribute('aria-label', 'View replay');
-        view.innerHTML = '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M5 3v18l15-9z"/></svg>';
-        container.appendChild(view);
-      }
-      const download = document.createElement('a');
-      download.className = 'rhythiax-card-btn rhythiax-card-btn-download';
-      download.href = safeReplayUrl;
-      download.target = '_blank';
-      download.rel = 'noopener noreferrer';
-      download.download = '';
-      download.title = 'Download replay';
-      download.setAttribute('aria-label', 'Download replay');
-      download.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>';
-      container.appendChild(download);
-    }
-    return container.childElementCount ? container : null;
-  }
-
-  function redesignModern(card, parsed) {
-    const score = parsed.score;
-    const gradeKey = score.grade || '?';
-    const gradeColor = RhythiaX.GRADE_COLORS[gradeKey] || '#888';
-    const gradeBg = RhythiaX.GRADE_BG[gradeKey] || 'rgba(255,255,255,0.05)';
-    const gradeStripColor = RhythiaX.GRADE_STRIP_COLORS[gradeKey] || gradeColor;
-
-    const wrapper = document.createElement('div');
-    wrapper.className = 'rhythiax-redesign-wrapper rhythiax-modern-card';
-
-    // Left Strip (Grade + Accuracy + Scaled Accuracy Bar)
-    const strip = document.createElement('div');
-    strip.className = 'rhythiax-card-strip';
-    strip.style.backgroundColor = gradeBg;
-    strip.style.borderRight = `3px solid ${gradeStripColor}`;
-
-    const gradeLabel = document.createElement('div');
-    gradeLabel.className = 'rhythiax-card-grade-label';
-    gradeLabel.textContent = gradeKey;
-    gradeLabel.style.color = gradeColor;
-
-    const accLabel = document.createElement('div');
-    accLabel.className = 'rhythiax-card-acc-label';
-    accLabel.textContent = score.accuracy || '—';
-
-    const accBarWrap = document.createElement('div');
-    accBarWrap.className = 'rhythiax-card-acc-bar-wrap';
-    accBarWrap.title = `Accuracy: ${score.accuracy || '—'}`;
-
-    const accBarFill = document.createElement('div');
-    accBarFill.className = 'rhythiax-card-acc-bar-fill';
-    const fillPercent = domain.getAccuracyFillPercent(score.accuracy);
-    accBarFill.style.width = `${fillPercent}%`;
-    accBarFill.style.backgroundColor = gradeColor;
-    accBarWrap.appendChild(accBarFill);
-
-    strip.append(gradeLabel, accLabel, accBarWrap);
-
-    // Right Content
-    const content = document.createElement('div');
-    content.className = 'rhythiax-card-content';
-
-    const header = document.createElement('div');
-    header.className = 'rhythiax-card-header';
-
-    const titleGroup = document.createElement('div');
-    titleGroup.className = 'rhythiax-card-title-group';
-
-    const titleRow = document.createElement('div');
-    titleRow.className = 'rhythiax-card-title-row';
-
-    const title = document.createElement('a');
-    title.className = 'rhythiax-card-title';
-    const scoreHref = scoreUrl(parsed.scoreHref);
-    if (scoreHref) title.href = scoreHref;
-    else title.removeAttribute('href');
-    title.textContent = parsed.songTitle;
-    title.title = parsed.songTitle;
-    titleRow.appendChild(title);
-
-    // Mod pills
-    const modsList = domain.parseModsList(score);
-    if (modsList.length > 0) {
-      const modsWrapper = document.createElement('div');
-      modsWrapper.className = 'rhythiax-card-mods';
-      modsList.forEach(mod => {
-        const pill = document.createElement('span');
-        pill.className = 'rhythiax-mod-pill';
-        pill.textContent = mod;
-        const cleanMod = mod.toLowerCase().replace(/[^a-z0-9]/g, '');
-        if (/^\d+(\.\d+)?x$/i.test(mod)) {
-          const speedNum = RhythiaX.normalizeSpeed(parseFloat(mod));
-          const speedClass = `rhythiax-mod-speed-${speedNum.replace('.', '')}`;
-          pill.classList.add('rhythiax-mod-speed', speedClass);
-        } else {
-          pill.classList.add(`rhythiax-mod-${cleanMod}`);
-        }
-        modsWrapper.appendChild(pill);
-      });
-      titleRow.appendChild(modsWrapper);
-    }
-    titleGroup.appendChild(titleRow);
-
-    if (parsed.date) {
-      const date = document.createElement('div');
-      date.className = 'rhythiax-card-date';
-      date.textContent = `${RhythiaX.formatDate(parsed.date)} (${score.timeAgo || RhythiaX.formatRelativeDate(parsed.date)})`;
-      titleGroup.appendChild(date);
-    }
-    header.appendChild(titleGroup);
-
-    const buttons = actions(card);
-    if (buttons) header.appendChild(buttons);
-    content.appendChild(header);
-
-    // Stats Row (Order: 1. RP + Weighted RP, 2. Notes, 3. Combo / Misses)
-    const statsRow = document.createElement('div');
-    statsRow.className = 'rhythiax-card-stats-row';
-
-    // 1. Raw RP + Weighted RP
-    const rpBox = document.createElement('div');
-    rpBox.className = 'rhythiax-card-rp-box';
-    const parseRp = value => (RhythiaX.parseLocalizedNumber ? RhythiaX.parseLocalizedNumber(value) : (Number.parseFloat(String(value ?? '').replace(/,/g, '')) || 0));
-    const rawRp = RhythiaX.formatNumber(Math.round(parseRp(score.rpEarned)));
-    const weightedRp = RhythiaX.formatNumber(Math.round(parseRp(score.weightedRp)));
-
-    const rpMain = document.createElement('div');
-    rpMain.className = 'rhythiax-card-rp-main';
-    const rpVal = document.createElement('span');
-    rpVal.className = 'rhythiax-card-rp-val';
-    rpVal.textContent = rawRp;
-    const rpLbl = document.createElement('span');
-    rpLbl.className = 'rhythiax-card-rp-lbl';
-    rpLbl.textContent = 'RP';
-    rpMain.append(rpVal, rpLbl);
-
-    const rpDivider = document.createElement('div');
-    rpDivider.className = 'rhythiax-card-rp-divider';
-
-    const rpSub = document.createElement('div');
-    rpSub.className = 'rhythiax-card-rp-sub';
-    const rpSubLbl = document.createElement('span');
-    rpSubLbl.className = 'rhythiax-card-rp-sub-lbl';
-    rpSubLbl.textContent = 'Weighted';
-    const rpSubVal = document.createElement('span');
-    rpSubVal.className = 'rhythiax-card-rp-sub-val';
-    rpSubVal.textContent = weightedRp;
-    rpSub.append(rpSubLbl, rpSubVal);
-
-    rpBox.append(rpMain, rpDivider, rpSub);
-    statsRow.appendChild(rpBox);
-
-    // 2. Notes
-    const notesBox = document.createElement('div');
-    notesBox.className = 'rhythiax-card-stat-box';
-    const notesLabel = document.createElement('span');
-    notesLabel.className = 'rhythiax-card-stat-label';
-    notesLabel.textContent = 'Notes';
-    const notesValue = document.createElement('span');
-    notesValue.className = 'rhythiax-card-stat-value';
-    notesValue.textContent = RhythiaX.formatNumber(parseInt(score.notes, 10) || 0);
-    notesBox.append(notesLabel, notesValue);
-    statsRow.appendChild(notesBox);
-
-    // 3. Combo / Misses
-    const comboMissBox = document.createElement('div');
-    comboMissBox.className = 'rhythiax-card-stat-box';
-    const comboMissLabel = document.createElement('span');
-    comboMissLabel.className = 'rhythiax-card-stat-label';
-    const comboMissValue = document.createElement('span');
-    comboMissValue.className = 'rhythiax-card-stat-value';
-    const missesNum = parseInt(score.misses, 10) || 0;
-    if (score.fullCombo || missesNum === 0) {
-      comboMissLabel.textContent = 'Combo';
-      comboMissValue.classList.add('rhythiax-stat-fullcombo');
-      comboMissValue.textContent = 'Full Combo';
-    } else {
-      comboMissLabel.textContent = 'Misses';
-      comboMissValue.classList.add('rhythiax-stat-miss');
-      comboMissValue.textContent = String(missesNum);
-    }
-    comboMissBox.append(comboMissLabel, comboMissValue);
-    statsRow.appendChild(comboMissBox);
-
-    content.appendChild(statsRow);
-    wrapper.append(strip, content);
-    return wrapper;
-  }
-
-  function redesignLegacy(card, parsed) {
-    const score = parsed.score;
-    const gradeKey = score.grade || '?';
-    const gradeColor = RhythiaX.GRADE_COLORS[gradeKey] || '#888';
-    const gradeBg = RhythiaX.GRADE_BG[gradeKey] || 'rgba(255,255,255,0.05)';
-    const gradeStripColor = RhythiaX.GRADE_STRIP_COLORS[gradeKey] || gradeColor;
-
-    const wrapper = document.createElement('div');
-    wrapper.className = 'rhythiax-redesign-wrapper rhythiax-legacy-card';
-
-    const strip = document.createElement('div');
-    strip.className = 'rhythiax-card-strip';
-    strip.style.backgroundColor = gradeBg;
-    strip.style.borderRight = `3px solid ${gradeStripColor}`;
-
-    const grade = document.createElement('div');
-    grade.className = 'rhythiax-card-grade';
-    const gradeLabel = document.createElement('span');
-    gradeLabel.className = 'rhythiax-card-grade-label';
-    gradeLabel.textContent = gradeKey;
-    gradeLabel.style.color = gradeColor;
-    const accuracyLabel = document.createElement('span');
-    accuracyLabel.className = 'rhythiax-card-acc-label';
-    accuracyLabel.textContent = score.accuracy;
-    grade.append(gradeLabel, accuracyLabel);
-    strip.appendChild(grade);
-
-    const content = document.createElement('div');
-    content.className = 'rhythiax-card-content';
-    const top = document.createElement('div');
-    top.className = 'rhythiax-card-top';
-    const title = document.createElement('a');
-    title.className = 'rhythiax-card-title';
-    const scoreHref = scoreUrl(parsed.scoreHref);
-    if (scoreHref) title.href = scoreHref;
-    else title.removeAttribute('href');
-    title.textContent = parsed.songTitle;
-    top.appendChild(title);
-
-    if (parsed.date) {
-      const date = document.createElement('span');
-      date.className = 'rhythiax-card-date';
-      date.textContent = `${RhythiaX.formatDate(parsed.date)} (${score.timeAgo || RhythiaX.formatRelativeDate(parsed.date)})`;
-      top.appendChild(date);
-    }
-    content.appendChild(top);
-
-    const buttons = actions(card);
-    if (buttons) content.appendChild(buttons);
-
-    const grid = document.createElement('div');
-    grid.className = 'rhythiax-card-stats';
-    domain.stats(score).forEach(item => {
-      const stat = document.createElement('div');
-      stat.className = 'rhythiax-card-stat-item';
-      const label = document.createElement('span');
-      label.className = 'rhythiax-card-stat-label';
-      const value = document.createElement('span');
-      value.className = 'rhythiax-card-stat-value';
-      if (item.isMisses && item.value === '0') {
-        value.textContent = 'Full Combo';
-        value.classList.add('rhythiax-stat-fullcombo');
-      } else {
-        label.textContent = item.label;
-        value.textContent = item.value;
-        if (item.isMisses) value.classList.add('rhythiax-stat-miss');
-      }
-      stat.append(label, value);
-      grid.appendChild(stat);
-    });
-    content.appendChild(grid);
-    wrapper.append(strip, content);
-    return wrapper;
-  }
-
-  function redesign(card) {
-    const parsed = domain.parse(card);
-    const score = parsed.score;
-    card.dataset.rhythiaxScoreId = score.scoreId;
-    card.dataset.rhythiaxGrade = score.grade;
-    card.dataset.rhythiaxSpeed = RhythiaX.normalizeSpeed(score.speed);
-
-    const isLegacy = RhythiaX.getScoreCardLayout?.() === 'legacy';
-    return isLegacy ? redesignLegacy(card, parsed) : redesignModern(card, parsed);
-  }
-
-  function indicator() {}
-
+  /**
+   * Enhances all native score cards currently on the page.
+   */
   function enhance() {
-    if (!RhythiaX.isModuleEnabled('scoreCards') || !RhythiaX.isModuleOptionEnabled('scoreCards', 'customCards')) return;
-    const cards = RhythiaX.findScoreCards();
-    cards.forEach(card => {
-      if (card.classList.contains('rhythiax-redesigned') || card.querySelector('.rhythiax-redesign-wrapper')) return;
-      card.classList.add('rhythiax-score-card');
-      const wrapper = redesign(card);
-      card.insertBefore(wrapper, card.firstChild);
-      card.classList.add('rhythiax-redesigned');
-      card.querySelector('.flex.justify-end')?.style.setProperty('display', 'none');
-      const type = RhythiaX.ScoreCardService.profileType(card);
-      if (type) {
-        card.dataset.rhythiaxScoreType = type;
-        card.classList.toggle('rhythiax-reigning', type === 'reigning');
+    if (!RhythiaX.isModuleEnabled) return false;
+    if (!RhythiaX.isModuleEnabled('scoreCards')) return true;
+    if (RhythiaX.isModuleOptionEnabled?.('scoreCards', 'customCards') === false) return true;
+    // On profile pages, ScoresHub manages all score cards cleanly in its own container.
+    // In-place native redesign is ONLY for the global /scores leaderboard page.
+    if (RhythiaX.PageRouteContext?.type?.() === 'profile') return;
+
+    const cards = RhythiaX.findScoreCards ? RhythiaX.findScoreCards() : [];
+    cards.forEach((card, idx) => {
+      if (!card.dataset?.rhythiaxEnhanced) {
+        redesign(card, idx + 1);
       }
-      Array.from(card.children).forEach(child => {
-        if (child === wrapper || child.classList.contains('rhythiax-expanded-panel')) return;
-        child.setAttribute('data-rhythiax-original-display', child.style.display || '');
-        child.style.display = 'none';
-      });
     });
-    RhythiaX.applyConfiguredScoreView?.();
-    RhythiaX.applyScoreFilter?.();
-    RhythiaX.log('Enhanced', cards.length, 'score cards');
+    // Skeletons can appear before their score data. Keep readiness retries until
+    // every current card was rendered successfully; later cards use the observer.
+    return cards.length > 0 && cards.every(card => card.dataset?.rhythiaxEnhanced === 'true');
   }
 
-  RhythiaX.ScoreCardView = { absoluteDates, redesign, enhance, indicator };
+  /**
+   * Restores native appearance if module is disabled.
+   */
+  function unenhance() {
+    const hosts = document.querySelectorAll('.rhythiax-card-enhanced-host');
+    hosts.forEach(host => {
+      host.classList.remove('rhythiax-card-enhanced-host', 'rhythiax-score-card', 'rhythiax-redesigned');
+      delete host.dataset.rhythiaxEnhanced;
+      const inner = host.querySelector('.rhythiax-sc-card');
+      if (inner) inner.remove();
+    });
+    if (typeof document !== 'undefined') {
+      document.querySelectorAll('.rhythiax-score-actions-menu, .rhythiax-sc-menu-popover').forEach(el => el.remove());
+      document.querySelectorAll('.rhythiax-toast-container').forEach(el => el.remove());
+    }
+  }
+
+  /**
+   * Re-renders all enhanced cards when user switches variant in the popup.
+   */
+  function reRenderAllCards() {
+    const cards = document.querySelectorAll('.rhythiax-sc-card');
+    cards.forEach(card => {
+      const data = card._rhythiaxScoreData;
+      if (!data) return;
+
+      const parent = card.parentElement;
+      if (!parent) return;
+
+      const rankIndex = data.rankIndex;
+      const tabType = card.getAttribute('data-rhythiax-score-type') || '';
+      const refreshed = createCardFromScore(data, rankIndex, tabType);
+      if (refreshed) {
+        parent.replaceChild(refreshed, card);
+      }
+    });
+  }
+
+  // Listen for variant change events
+  if (typeof window !== 'undefined') {
+    window.addEventListener('rhythiax:scorecard-variant-changed', () => {
+      reRenderAllCards();
+    });
+  }
+
+  RhythiaX.ScoreCardView = {
+    createCardFromScore,
+    redesign,
+    enhance,
+    unenhance,
+    reRenderAllCards,
+    findNativeActionsButton: (card, data) => RhythiaX.ScoreCardActions?.findNativeActionsButton?.(card, data),
+    attachNativeActionsButton: (card, data) => RhythiaX.ScoreCardActions?.attachNativeActionsButton?.(card, data),
+    syncNativeScoreActions: (hub) => RhythiaX.ScoreCardActions?.syncNativeScoreActions?.(hub),
+    openScoreActionsMenu: (btn, card, data) => RhythiaX.ScoreCardActions?.openActionMenu?.(btn, card, data),
+    closeScoreActionsMenu: () => RhythiaX.ScoreCardActions?.closeActiveMenu?.(),
+    isScorePinned: (scoreId, card) => RhythiaX.ScoreCardActions?.isScorePinned?.(scoreId, card),
+    toggleScorePin: (scoreId, card) => RhythiaX.ScoreCardActions?.toggleScorePin?.(scoreId, card),
+    showScoreToast: (msg, type) => RhythiaX.ScoreCardStore?.showToast?.(msg, type),
+  };
+
+  // Backwards compatibility mappings for composition.js and route-observer.js
+  RhythiaX.enhanceScoreCards = enhance;
+  RhythiaX.unenhanceScoreCards = unenhance;
+  RhythiaX.syncNativeScoreActions = (hub) => RhythiaX.ScoreCardActions?.syncNativeScoreActions?.(hub);
+  RhythiaX.openScoreActionsMenu = (btn, card, data) => RhythiaX.ScoreCardActions?.openActionMenu?.(btn, card, data);
+  RhythiaX.closeScoreActionsMenu = () => RhythiaX.ScoreCardActions?.closeActiveMenu?.();
+  RhythiaX.isScorePinned = (scoreId, card) => RhythiaX.ScoreCardActions?.isScorePinned?.(scoreId, card);
+  RhythiaX.toggleScorePin = (scoreId, card) => RhythiaX.ScoreCardActions?.toggleScorePin?.(scoreId, card);
 })();

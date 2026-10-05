@@ -225,3 +225,153 @@
     animation: none;
   }
 }
+
+/* =============================================
+   Creator of Reimagined Badge (Easter egg)
+   ============================================= */
+
+.rhythiax-creator-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  width: 22px;
+  height: 22px;
+  padding: 2px;
+  border-radius: 6px;
+  background: linear-gradient(135deg, rgba(88, 28, 135, 0.45) 0%, rgba(30, 7, 56, 0.75) 100%);
+  border: 1px solid rgba(168, 85, 247, 0.45);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.12);
+  cursor: pointer;
+  user-select: none;
+  vertical-align: middle;
+  flex-shrink: 0;
+  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1),
+              border-color 0.2s ease,
+              background 0.2s ease,
+              box-shadow 0.2s ease;
+}
+
+.rhythiax-creator-badge__icon-wrap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+}
+
+.rhythiax-creator-badge__icon {
+  display: block;
+  width: 16px;
+  height: 16px;
+  overflow: visible;
+  filter: drop-shadow(0 0 3px rgba(168, 85, 247, 0.45));
+  transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1),
+              filter 0.25s ease;
+}
+
+.rhythiax-creator-badge:hover {
+  transform: translateY(-1px) scale(1.08);
+  border-color: rgba(216, 180, 254, 0.85);
+  background: linear-gradient(135deg, rgba(126, 34, 206, 0.7) 0%, rgba(76, 29, 149, 0.9) 100%);
+  box-shadow: 0 0 12px rgba(168, 85, 247, 0.6), 0 2px 8px rgba(0, 0, 0, 0.5), inset 0 1px 1px rgba(255, 255, 255, 0.3);
+}
+
+.rhythiax-creator-badge:hover .rhythiax-creator-badge__icon {
+  transform: scale(1.08);
+  filter: drop-shadow(0 0 6px rgba(192, 132, 252, 0.9));
+}
+
+.rhythiax-creator-badge:active {
+  transform: translateY(0) scale(0.96);
+}
+
+.rhythiax-creator-badge:focus-visible {
+  outline: 2px solid #c084fc;
+  outline-offset: 2px;
+}
+
+/* Tooltip */
+.rhythiax-creator-badge__tooltip {
+  position: absolute;
+  bottom: calc(100% + 7px);
+  left: 50%;
+  transform: translateX(-50%) translateY(4px);
+  padding: 4px 9px 5px;
+  background: #0f0719;
+  border: 1px solid rgba(168, 85, 247, 0.55);
+  border-radius: 6px;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.7), 0 0 12px rgba(147, 51, 234, 0.35);
+  color: #f3e8ff;
+  font-size: 11.5px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  line-height: 1.2;
+  white-space: nowrap;
+  pointer-events: none;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.18s cubic-bezier(0.16, 1, 0.3, 1),
+              transform 0.18s cubic-bezier(0.16, 1, 0.3, 1),
+              visibility 0.18s;
+  z-index: 9999;
+}
+
+.rhythiax-creator-badge__tooltip::after {
+  content: '';
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  margin-left: -4px;
+  border-width: 4px 4px 0 4px;
+  border-style: solid;
+  border-color: rgba(168, 85, 247, 0.55) transparent transparent transparent;
+}
+
+.rhythiax-creator-badge:hover .rhythiax-creator-badge__tooltip,
+.rhythiax-creator-badge:focus-visible .rhythiax-creator-badge__tooltip {
+  opacity: 1;
+  visibility: visible;
+  transform: translateX(-50%) translateY(0);
+}
+
+.rhythiax-creator-badge__text {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+}
+
+.rhythiax-creator-badge__highlight {
+  background: linear-gradient(135deg, #f5d0fe 0%, #d8b4fe 50%, #c084fc 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  font-weight: 700;
+}
+
+/* White theme adaptation */
+body[data-rhythiax-theme="white"] .rhythiax-creator-badge {
+  background: linear-gradient(135deg, rgba(243, 232, 255, 0.8) 0%, rgba(216, 180, 254, 0.55) 100%);
+  border-color: rgba(147, 51, 234, 0.35);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.6);
+}
+
+body[data-rhythiax-theme="white"] .rhythiax-creator-badge:hover {
+  background: linear-gradient(135deg, rgba(233, 213, 255, 0.95) 0%, rgba(192, 132, 252, 0.7) 100%);
+  border-color: rgba(147, 51, 234, 0.7);
+  box-shadow: 0 0 10px rgba(168, 85, 247, 0.35), 0 2px 6px rgba(0, 0, 0, 0.1);
+}
+
+body[data-rhythiax-theme="white"] .rhythiax-creator-badge__tooltip {
+  background: #1e1035;
+  color: #faf5ff;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rhythiax-creator-badge,
+  .rhythiax-creator-badge__icon,
+  .rhythiax-creator-badge__tooltip {
+    transition: none !important;
+    transform: none !important;
+  }
+}
+

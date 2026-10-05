@@ -1,0 +1,302 @@
+/* ==========================================================================
+   Rhythia Reimagined — Score Card: Variant A (Dual-Stage Dissolve Flagship)
+   Top-aligned artwork, theme-responsive contrast, crisp bordered stat cells,
+   centered 44px hero grade, dynamic Reign crown, clean Full Combo text dock.
+   ========================================================================== */
+
+.rhythiax-sc-flagship {
+  min-height: 92px;
+}
+
+/* 1. Seamless Artwork Stage (Top-aligned as requested) */
+.rhythiax-sc-flagship .rhythiax-sc-art-stage {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 600px;
+  pointer-events: none;
+  overflow: hidden;
+  z-index: 1;
+  contain: strict;
+  transform: translateZ(0);
+  will-change: transform;
+}
+
+/* Layer 1: Soft intermediate blur */
+.rhythiax-sc-flagship .rhythiax-sc-art-blur {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 100%;
+  background-image: var(--card-art-url, none);
+  background-repeat: no-repeat;
+  background-position: center 25%;
+  background-size: cover;
+  filter: blur(16px) saturate(1.8);
+  opacity: 0.52;
+  mask-image: linear-gradient(to right, transparent 0%, transparent 12%, rgba(0,0,0,0.2) 26%, rgba(0,0,0,0.65) 52%, #000 85%);
+  -webkit-mask-image: linear-gradient(to right, transparent 0%, transparent 12%, rgba(0,0,0,0.2) 26%, rgba(0,0,0,0.65) 52%, #000 85%);
+  transform: translateZ(0);
+}
+
+/* Layer 2: Sharp original artwork (Halfway between top and center: 25%) */
+.rhythiax-sc-flagship .rhythiax-sc-art-sharp {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 100%;
+  background-image: var(--card-art-url, none);
+  background-repeat: no-repeat;
+  background-position: center 25%;
+  background-size: cover;
+  opacity: 0.82;
+  mask-image: linear-gradient(to right, transparent 0%, transparent 26%, rgba(0,0,0,0.15) 38%, rgba(0,0,0,0.5) 55%, rgba(0,0,0,0.9) 75%, #000 92%);
+  -webkit-mask-image: linear-gradient(to right, transparent 0%, transparent 26%, rgba(0,0,0,0.15) 38%, rgba(0,0,0,0.5) 55%, rgba(0,0,0,0.9) 75%, #000 92%);
+  transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.3s ease;
+}
+
+/* User requested: on hover ONLY the background zooms subtly */
+.rhythiax-sc-flagship:hover .rhythiax-sc-art-sharp {
+  transform: scale(1.04);
+  opacity: 0.94;
+}
+
+/* 2. Monolith Column: Centered 44px Grade + Corner Tag */
+.rhythiax-sc-flagship .rhythiax-sc-monolith {
+  flex: 0 0 92px;
+  min-width: 92px;
+  background: var(--sc-inner-bg);
+  border-right: 2.5px solid var(--grade-color, #4ade80);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  z-index: 3;
+}
+
+.rhythiax-sc-flagship .rhythiax-sc-corner-tag {
+  position: absolute;
+  top: 7px;
+  left: 9px;
+  font-size: 11px;
+  font-weight: 700;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  color: var(--sc-text-muted);
+  letter-spacing: 0.2px;
+}
+
+.rhythiax-sc-flagship .rhythiax-sc-corner-reign {
+  position: absolute;
+  top: 6px;
+  left: 8px;
+  display: flex;
+  align-items: center;
+  gap: 3.5px;
+  font-size: 10px;
+  font-weight: 800;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  color: var(--grade-color, #38bdf8);
+  letter-spacing: 0.3px;
+}
+
+.rhythiax-sc-flagship .rhythiax-sc-corner-reign svg {
+  width: 12px;
+  height: 12px;
+  fill: var(--grade-color, #38bdf8);
+}
+
+.rhythiax-sc-flagship .rhythiax-sc-grade-hero {
+  font-size: 44px;
+  font-weight: 900;
+  line-height: 1;
+  color: var(--grade-color, #4ade80);
+  letter-spacing: 0.5px;
+  margin-top: 4px;
+}
+
+/* 3. Body Content */
+.rhythiax-sc-flagship .rhythiax-sc-body {
+  flex: 1;
+  min-width: 0;
+  padding: 10px 18px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 8px;
+  position: relative;
+  z-index: 3;
+}
+
+.rhythiax-sc-flagship .rhythiax-sc-top-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.rhythiax-sc-flagship .rhythiax-sc-title-box {
+  flex: 1;
+  min-width: 0;
+}
+
+.rhythiax-sc-flagship .rhythiax-sc-top-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* 4. The Dock: Bordered cells for crisp readability and contrast */
+.rhythiax-sc-flagship .rhythiax-sc-dock {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: transparent;
+  align-self: flex-start;
+}
+
+.rhythiax-sc-flagship .rhythiax-sc-dock-col {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 4px 10px;
+  border-radius: 7px;
+  border: 1px solid var(--sc-border-strong);
+  background: var(--sc-dock-cell-bg);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
+  min-width: 68px;
+}
+
+.rhythiax-sc-flagship .rhythiax-sc-dock-lbl {
+  font-size: 9.5px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  text-transform: uppercase;
+  color: var(--sc-text-muted);
+}
+
+.rhythiax-sc-flagship .rhythiax-sc-dock-val {
+  font-size: 13px;
+  font-weight: 700;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  font-variant-numeric: tabular-nums lining-nums;
+  color: var(--sc-text-strong);
+  white-space: nowrap;
+}
+
+.rhythiax-sc-flagship .rhythiax-sc-dock-val.rhythiax-sc-acc {
+  color: var(--grade-color, #4ade80);
+}
+
+.rhythiax-sc-flagship .rhythiax-sc-dock-val.rhythiax-sc-wrp {
+  color: var(--sc-accent, #c084fc);
+  font-size: 13.5px;
+}
+
+.rhythiax-sc-flagship .rhythiax-sc-dock-val.rhythiax-sc-miss {
+  color: var(--miss-color, #f87171);
+}
+
+.rhythiax-sc-flagship .rhythiax-sc-dock-val.rhythiax-sc-fc {
+  color: var(--fc-color, #4ade80);
+}
+
+.rhythiax-sc-flagship .rhythiax-sc-dock-sub {
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--sc-text-muted);
+  margin-left: 2px;
+}
+
+.rhythiax-sc-flagship .rhythiax-sc-dock-sep {
+  display: none;
+}
+
+/* ==========================================================================
+   Variant A: Grid Mode Adaptation (2-Column Kafelki)
+   ========================================================================== */
+.is-grid .rhythiax-sc-flagship,
+[data-scores-view="grid"] .rhythiax-sc-flagship {
+  min-height: 114px;
+}
+
+.is-grid .rhythiax-sc-flagship .rhythiax-sc-monolith,
+[data-scores-view="grid"] .rhythiax-sc-flagship .rhythiax-sc-monolith {
+  flex: 0 0 76px;
+  min-width: 76px;
+}
+
+.is-grid .rhythiax-sc-flagship .rhythiax-sc-grade-hero,
+[data-scores-view="grid"] .rhythiax-sc-flagship .rhythiax-sc-grade-hero {
+  font-size: 38px;
+}
+
+.is-grid .rhythiax-sc-flagship .rhythiax-sc-corner-tag,
+[data-scores-view="grid"] .rhythiax-sc-flagship .rhythiax-sc-corner-tag {
+  top: 5px;
+  left: 7px;
+  font-size: 10px;
+}
+
+.is-grid .rhythiax-sc-flagship .rhythiax-sc-corner-reign,
+[data-scores-view="grid"] .rhythiax-sc-flagship .rhythiax-sc-corner-reign {
+  top: 5px;
+  left: 6px;
+  font-size: 9.5px;
+}
+
+.is-grid .rhythiax-sc-flagship .rhythiax-sc-art-stage,
+[data-scores-view="grid"] .rhythiax-sc-flagship .rhythiax-sc-art-stage {
+  width: 280px;
+  max-width: 65%;
+}
+
+.is-grid .rhythiax-sc-flagship .rhythiax-sc-body,
+[data-scores-view="grid"] .rhythiax-sc-flagship .rhythiax-sc-body {
+  padding: 8px 12px;
+  gap: 6px;
+}
+
+.is-grid .rhythiax-sc-flagship .rhythiax-sc-title,
+[data-scores-view="grid"] .rhythiax-sc-flagship .rhythiax-sc-title {
+  font-size: 13.5px;
+}
+
+.is-grid .rhythiax-sc-flagship .rhythiax-sc-dock,
+[data-scores-view="grid"] .rhythiax-sc-flagship .rhythiax-sc-dock {
+  width: 100%;
+  display: flex;
+  gap: 5px;
+  align-self: stretch;
+}
+
+.is-grid .rhythiax-sc-flagship .rhythiax-sc-dock-col,
+[data-scores-view="grid"] .rhythiax-sc-flagship .rhythiax-sc-dock-col {
+  flex: 1;
+  min-width: 0;
+  padding: 3.5px 4px;
+}
+
+.is-grid .rhythiax-sc-flagship .rhythiax-sc-dock-lbl,
+[data-scores-view="grid"] .rhythiax-sc-flagship .rhythiax-sc-dock-lbl {
+  font-size: 7.5px;
+  letter-spacing: 0.3px;
+}
+
+.is-grid .rhythiax-sc-flagship .rhythiax-sc-dock-val,
+[data-scores-view="grid"] .rhythiax-sc-flagship .rhythiax-sc-dock-val {
+  font-size: 11.5px;
+}
+
+.is-grid .rhythiax-sc-flagship .rhythiax-sc-dock-val.rhythiax-sc-wrp,
+[data-scores-view="grid"] .rhythiax-sc-flagship .rhythiax-sc-dock-val.rhythiax-sc-wrp {
+  font-size: 11.5px;
+}
+
+.is-grid .rhythiax-sc-flagship .rhythiax-sc-dock-sub,
+[data-scores-view="grid"] .rhythiax-sc-flagship .rhythiax-sc-dock-sub {
+  font-size: 9px;
+}

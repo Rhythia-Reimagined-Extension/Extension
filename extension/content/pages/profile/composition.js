@@ -28,60 +28,156 @@ function profileDisplayNumber(value) {
   return Number.isFinite(number) ? String(number) : '';
 }
 
+function extractCleanRankText(container) {
+  if (!container) return '';
+  const clone = container.cloneNode(true);
+  clone.querySelectorAll(
+    'small, svg, .rhythiax-profile-history-delta, .rhythiax-history-delta, [class*="delta"], [class*="text-green"], [class*="text-red"], [class*="text-emerald"], [title*="rank" i], [title*="Rank" i], [title*="Climbed" i], [title*="Dropped" i]'
+  ).forEach(e => e.remove());
+
+  clone.querySelectorAll('*').forEach(el => {
+    const t = el.textContent.trim();
+    if (/^[▲▼+\-]\s*\d+/.test(t) || /\bthis week\b/i.test(t)) {
+      el.remove();
+    }
+  });
+
+  if (typeof document !== 'undefined' && typeof document.createTreeWalker === 'function') {
+    try {
+      const walker = document.createTreeWalker(clone, 4 /* NodeFilter.SHOW_TEXT */, null);
+      let node;
+      while ((node = walker.nextNode())) {
+        const m = node.nodeValue.match(/#\s*([0-9,]+)/);
+        if (m) return '#' + m[1].replace(/,/g, '');
+      }
+    } catch (_) {}
+  }
+
+  const match = clone.textContent.match(/#\s*([0-9,]+)/);
+  return match ? '#' + match[1].replace(/,/g, '') : '';
+}
+RhythiaX.extractCleanRankText = extractCleanRankText;
+
 // ─── Extract player data (profile page) ──────
 RhythiaX.extractPlayerData = function () {
-  const username = RhythiaX.qs('.text-xl.font-bold')?.textContent?.trim() || 'Unknown';
+  let username = '';
+  const currentPathId = RhythiaX.ProfilePageAdapter?.playerId?.() || window.location.pathname.match(/^\/player\/([^/]+)\/?$/)?.[1] || '';
+  if (RhythiaX.profileHistoryContext?.playerId === currentPathId && RhythiaX.profileHistoryContext?.player?.username && RhythiaX.profileHistoryContext.player.username !== 'Unknown') {
+    username = RhythiaX.profileHistoryContext.player.username;
+  }
+  if (!username) {
+    const candidates = RhythiaX.qsa('.text-2xl.font-bold, .text-xl.font-bold, h1, [class*="font-bold"][class*="text-2xl"]');
+    for (const el of candidates) {
+      if (el.querySelector('a[href*="/clans/"], img[src*="user-avatar"]') || el.closest('a[href*="/clans/"]')) continue;
+      if (el.querySelector('button[aria-label*="username" i], svg.lucide-info')) continue;
+      if (el.classList?.contains('shrink-0') && el.querySelector('img')) continue;
+      const text = el.textContent?.trim() || '';
+      if (text && !/^show previous usernames/i.test(text) && !/^clan\b/i.test(text)) {
+        username = text;
+        break;
+      }
+    }
+  }
+  if (!username) username = 'Unknown';
   const flagImg = RhythiaX.qs('img[src*="/flags/"]') || RhythiaX.qs('img[src*=".svg"]');
   const country = flagImg?.src?.match(/\/([A-Z]{2})\.svg/)?.[1] || '';
   const avatar = RhythiaX.qsa('img[src*="user-avatar"]').find(img => (
-    String(img.className || '').includes('md:size-[150px]')
+    String(img.className || '').includes('md:size-[150px]') || String(img.className || '').includes('rounded-')
   ))?.src || RhythiaX.qs('img[src*="user-avatar"]')?.src || '';
-  const bio = RhythiaX.qs('.prose p')?.textContent?.trim() || '';
+  const bio = RhythiaX.qs('.prose p, .prose')?.textContent?.trim() || '';
 
-  let globalRank = '', countryRank = '';
-  const globalLabel = RhythiaX.qsa('div, span').find(function (el) {
-    return el.textContent.trim().toLowerCase() === 'global';
-  });
-  const rankGrid = globalLabel?.closest('[style*="grid-template-columns"]') || globalLabel?.parentElement?.parentElement;
-  if (rankGrid) {
-    const globalCard = globalLabel.closest('div.min-w-0') || globalLabel.parentElement;
-    const globalButton = globalCard?.querySelector('button');
-    globalRank = (RhythiaX.cleanStatValueString ? RhythiaX.cleanStatValueString(globalButton) : globalButton?.textContent?.trim()) || '';
+  let globalRank = '', countryRank = '', rp = '';
 
-    const rankButtons = RhythiaX.qsa('button', rankGrid).filter(function (button) {
-      return button !== globalButton;
-    });
-    const countryButton = rankButtons.find(function (button) {
-      const text = (RhythiaX.cleanStatValueString ? RhythiaX.cleanStatValueString(button) : button.textContent.trim());
-      return text.startsWith('#');
-    });
-    countryRank = (RhythiaX.cleanStatValueString ? RhythiaX.cleanStatValueString(countryButton) : countryButton?.textContent?.trim()) || '';
+  // 1. Header Rank & RP Area (New Single-Column Layout)
+  const headerRankArea = RhythiaX.findHeaderRankArea();
+  if (headerRankArea) {
+    const cards = RhythiaX.qsa('button, div', headerRankArea);
+    // Global
+    const globalLabel = cards.find(el => el.textContent.trim().toLowerCase() === 'global');
+    if (globalLabel) {
+      const parent = globalLabel.closest('button') || globalLabel.parentElement;
+      if (parent) {
+        globalRank = extractCleanRankText(parent);
+      }
+    }
+    // Country
+    const countryLabel = cards.find(el => el.textContent.trim().toLowerCase() === 'country');
+    if (countryLabel) {
+      const parent = countryLabel.closest('button') || countryLabel.parentElement;
+      if (parent) {
+        countryRank = extractCleanRankText(parent);
+      }
+    }
+    // RP
+    const rpLabel = cards.find(el => el.textContent.trim().toLowerCase() === 'rhythm points');
+    if (rpLabel) {
+      const card = rpLabel.closest('.rounded-lg, [class*="rounded-"]') || rpLabel.parentElement;
+      const valEl = card?.querySelector('.tabular-nums, [class*="tabular-nums"], [class*="text-lg"], [class*="text-xl"]')
+        || (card?.children && card.children.length > 1 ? card.children[1] : null)
+        || card?.lastElementChild;
+      if (valEl && valEl !== rpLabel) rp = profileDisplayNumber(valEl);
+    }
   }
 
-  let rp = '', playCount = '', squaresHit = '', avgAccuracy = '';
-  const sidebar = RhythiaX.qs('.lg\\:col-span-3');
-  if (sidebar) {
-    // The responsive profile card contains both "Points" and "Rhythm Points"
-    // labels. Read the value from that card before using broad sidebar fallbacks.
-    const rhythmPointsLabel = RhythiaX.qsa('span, div').find(el => (
-      el.textContent.trim().toLowerCase() === 'rhythm points'
-      && el.closest('.min-w-0')
-    ));
-    const rhythmPointsCard = rhythmPointsLabel?.closest('.min-w-0');
-    const rhythmPointsValue = rhythmPointsCard?.lastElementChild;
-    if (rhythmPointsValue) {
-      const parsedRp = profileDisplayNumber(rhythmPointsValue);
-      if (parsedRp) rp = parsedRp;
+  // Header RP Fallback if not found in headerRankArea
+  if (!rp) {
+    const header = RhythiaX.qs('.max-w-\\[1120px\\], .max-w-\\[1100px\\], main') || document;
+    const anyRpLabel = RhythiaX.qsa('div, span, p', header).find(el => el.textContent.trim().toLowerCase() === 'rhythm points');
+    if (anyRpLabel) {
+      const card = anyRpLabel.closest('.rounded-lg, [class*="rounded-"]') || anyRpLabel.parentElement;
+      const valEl = card?.querySelector('.tabular-nums, [class*="tabular-nums"], [class*="text-lg"], [class*="text-xl"]')
+        || (card?.children && card.children.length > 1 ? card.children[1] : null)
+        || card?.lastElementChild;
+      if (valEl && valEl !== anyRpLabel) rp = profileDisplayNumber(valEl);
     }
+  }
 
-    // Try to find RP from the sidebar (the big RP number)
-    const rpEl = sidebar.querySelector('[class*="text-4xl"]');
-    if (!rp && rpEl) rp = profileDisplayNumber(rpEl);
+  // Global / Country / RP Fallback
+  if (!globalRank || !countryRank) {
+    const header = RhythiaX.qs('.max-w-\\[1120px\\], .max-w-\\[1100px\\], main') || document;
+    if (!globalRank) {
+      const globalButton = RhythiaX.qsa('button, div', header).find(b => b.textContent.includes('Global') && b.textContent.includes('#'));
+      if (globalButton) {
+        globalRank = extractCleanRankText(globalButton);
+      }
+    }
+    if (!countryRank) {
+      const countryButton = RhythiaX.qsa('button, div', header).find(b => b.textContent.includes('Country') && b.textContent.includes('#'));
+      if (countryButton) {
+        countryRank = extractCleanRankText(countryButton);
+      }
+    }
+  }
 
-    // Read the current label/value rows. The site formats large values with
-    // non-breaking spaces, so parsing the complete card text is unreliable.
-    const statsBox = RhythiaX.findOfficialStatsContainer();
-    if (statsBox) {
+  let playCount = '', squaresHit = '', avgAccuracy = '';
+  const statsBox = RhythiaX.findOfficialStatsContainer();
+  if (statsBox) {
+    // New layout: grid with items containing label + value
+    const statBlocks = RhythiaX.qsa('div', statsBox).filter(el => {
+      const text = el.children[0]?.textContent?.trim().toLowerCase();
+      return text && (text === 'play count' || text === 'squares hit' || text === 'avg. accuracy' || text === 'avg. rp' || text === 'rhythm points' || text === 'weighted rp');
+    });
+
+    statBlocks.forEach(block => {
+      const label = block.children[0]?.textContent?.trim().toLowerCase();
+      const valEl = block.children[block.children.length - 1];
+      if (label === 'play count') playCount = RhythiaX.parseStatNumber(valEl);
+      if (label === 'squares hit') {
+        const parsedSquares = RhythiaX.parseStatNumber(valEl);
+        squaresHit = parsedSquares > 0 ? String(parsedSquares) : '';
+      }
+      if (label === 'avg. accuracy') {
+        const parsedAccuracy = profileDisplayNumber(valEl);
+        avgAccuracy = RhythiaX.normalizeDataMetricValue ? (RhythiaX.normalizeDataMetricValue('avgAccuracy', parsedAccuracy) ?? '') : parsedAccuracy;
+      }
+      // Only match actual rhythm points or weighted rp, NEVER avg. rp (which is average RP per play ~300)
+      if (!rp && (label === 'rhythm points' || label === 'weighted rp')) {
+        rp = profileDisplayNumber(valEl);
+      }
+    });
+
+    // Old layout row fallback (.space-y-3 > div)
+    if (!playCount || !squaresHit) {
       RhythiaX.qsa('.space-y-3 > div', statsBox).forEach(row => {
         if (row.classList.contains('rhythiax-injected-stats-section') || row.classList.contains('rhythiax-history-row')) return;
         const label = row.children[0]?.textContent?.trim().toLowerCase();
@@ -94,33 +190,23 @@ RhythiaX.extractPlayerData = function () {
         }
         if (label === 'avg. accuracy') {
           const parsedAccuracy = profileDisplayNumber(valueEl);
-          avgAccuracy = RhythiaX.normalizeDataMetricValue
-            ? (RhythiaX.normalizeDataMetricValue('avgAccuracy', parsedAccuracy) ?? '')
-            : parsedAccuracy;
+          avgAccuracy = RhythiaX.normalizeDataMetricValue ? (RhythiaX.normalizeDataMetricValue('avgAccuracy', parsedAccuracy) ?? '') : parsedAccuracy;
         }
       });
     }
+  }
 
-    // Fallback: scan all text in sidebar
-    if (!rp) {
-      const lines = sidebar.textContent.split('\n').map(l => l.trim()).filter(Boolean);
-      for (let i = 0; i < lines.length; i++) {
-        if (lines[i] === 'RP' && i + 1 < lines.length) rp = profileDisplayNumber(lines[i + 1]);
-        if (!playCount && lines[i] === 'Play count' && i + 1 < lines.length) playCount = lines[i + 1].replace(/[, ]/g, '');
-        if (!squaresHit && lines[i] === 'Squares hit' && i + 1 < lines.length) {
-          const parsedSquares = Number(lines[i + 1].replace(/[, ]/g, ''));
-          squaresHit = Number.isFinite(parsedSquares) && parsedSquares > 0 ? String(parsedSquares) : '';
-        }
+  // Sidebar Fallback for older DOM versions
+  const sidebar = RhythiaX.qs('.lg\\:col-span-3');
+  if (sidebar && (!rp || !playCount)) {
+    const lines = sidebar.textContent.split('\n').map(l => l.trim()).filter(Boolean);
+    for (let i = 0; i < lines.length; i++) {
+      if (!rp && lines[i] === 'RP' && i + 1 < lines.length) rp = profileDisplayNumber(lines[i + 1]);
+      if (!playCount && lines[i] === 'Play count' && i + 1 < lines.length) playCount = lines[i + 1].replace(/[, ]/g, '');
+      if (!squaresHit && lines[i] === 'Squares hit' && i + 1 < lines.length) {
+        const parsedSquares = Number(lines[i + 1].replace(/[, ]/g, ''));
+        squaresHit = Number.isFinite(parsedSquares) && parsedSquares > 0 ? String(parsedSquares) : '';
       }
-    }
-
-    // Current profiles label the header value "Rhythm Points" instead of
-    // exposing the old standalone "RP" element.
-    if (!rp) {
-      const rpLabel = RhythiaX.qsa('div, span').find(el => el.textContent.trim().toLowerCase() === 'rhythm points');
-      const rpCard = rpLabel?.parentElement;
-      const valueEl = rpCard?.children?.[rpCard.children.length - 1];
-      if (valueEl && valueEl !== rpLabel) rp = profileDisplayNumber(valueEl);
     }
   }
 
@@ -160,6 +246,76 @@ RhythiaX.injectProfileCrown = function () {
   avatarWrapper.appendChild(crown);
 };
 
+// ─── Creator of Reimagined Badge (Easter egg) ─
+RhythiaX.injectProfileCreatorBadge = function () {
+  const path = window.location.pathname;
+  if (!/^\/player\/255585(?:\/|$)/.test(path)) return;
+  if (RhythiaX.qs('.rhythiax-creator-badge')) return;
+
+  const flagImg = RhythiaX.qs('img[src*="/flags/"]');
+  const flagLink = flagImg?.closest('a[href*="/leaderboards/"]') || flagImg?.closest('a');
+  const metaRow = flagLink?.parentElement
+    || RhythiaX.qs('.flex.flex-wrap.items-center.gap-2:has(img[src*="/flags/"])')
+    || RhythiaX.qs('div.mt-1.flex.min-w-0.flex-wrap.items-center.gap-2')
+    || RhythiaX.qs('.mx-auto.max-w-\\[1100px\\] .flex.flex-wrap.items-center.gap-2');
+
+  if (!metaRow) return;
+
+  const badge = document.createElement('div');
+  badge.className = 'rhythiax-creator-badge';
+  badge.setAttribute('tabindex', '0');
+  badge.setAttribute('role', 'img');
+  badge.setAttribute('aria-label', 'Creator of Reimagined');
+  badge.innerHTML = `
+    <div class="rhythiax-creator-badge__icon-wrap">
+      <svg class="rhythiax-creator-badge__icon" viewBox="0 0 512 512" aria-hidden="true">
+        <defs>
+          <path id="rhythiax-creator-r" d="M119 74h177c75 0 126 41 126 111 0 48-24 82-67 99l80 118H304l-66-105h-44v105H119V74Zm75 65v95h94c39 0 59-17 59-48 0-31-20-47-59-47h-94Z"/>
+          <linearGradient id="rhythiax-creator-rim-t" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0%" stop-color="#ffffff"/>
+            <stop offset="40%" stop-color="#d8b4fe"/>
+            <stop offset="100%" stop-color="#9333ea"/>
+          </linearGradient>
+          <linearGradient id="rhythiax-creator-rim-b" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="#6b21a8"/>
+            <stop offset="100%" stop-color="#19022b"/>
+          </linearGradient>
+          <linearGradient id="rhythiax-creator-center" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0%" stop-color="#a855f7"/>
+            <stop offset="50%" stop-color="#7e22ce"/>
+            <stop offset="100%" stop-color="#4c1d95"/>
+          </linearGradient>
+          <linearGradient id="rhythiax-creator-r-gradient" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="#ffffff"/>
+            <stop offset="60%" stop-color="#fdf4ff"/>
+            <stop offset="100%" stop-color="#f3e8ff"/>
+          </linearGradient>
+        </defs>
+        <polygon points="256,40 472,256 256,472 40,256" fill="#000000" opacity="0.6" transform="translate(0, 16)"/>
+        <polygon points="256,36 476,256 256,476 36,256" fill="url(#rhythiax-creator-rim-b)"/>
+        <polygon points="256,36 476,256 410,256 256,102 102,256 36,256" fill="url(#rhythiax-creator-rim-t)"/>
+        <polygon points="256,36 476,256 256,476 36,256" fill="none" stroke="#e9d5ff" stroke-width="4" opacity="0.85"/>
+        <polygon points="256,96 416,256 256,416 96,256" fill="#140224"/>
+        <polygon points="256,102 410,256 256,410 102,256" fill="url(#rhythiax-creator-center)"/>
+        <polyline points="108,256 256,108 404,256" fill="none" stroke="#ffffff" stroke-width="4" opacity="0.6"/>
+        <use href="#rhythiax-creator-r" fill="#0b0117" transform="translate(0, 12)"/>
+        <use href="#rhythiax-creator-r" fill="none" stroke="#120224" stroke-width="24" stroke-linejoin="round"/>
+        <use href="#rhythiax-creator-r" fill="url(#rhythiax-creator-r-gradient)"/>
+        <path d="M119 74h177c75 0 126 41 126 111 0 6 0 12-2 18-8-60-56-96-124-96H119V74Z" fill="#ffffff" opacity="0.9"/>
+      </svg>
+    </div>
+    <div class="rhythiax-creator-badge__tooltip" role="tooltip">
+      <span class="rhythiax-creator-badge__text">Creator of <span class="rhythiax-creator-badge__highlight">Reimagined</span></span>
+    </div>
+  `.trim();
+
+  if (flagLink && flagLink.isConnected && flagLink.parentElement === metaRow) {
+    flagLink.insertAdjacentElement('afterend', badge);
+  } else {
+    metaRow.appendChild(badge);
+  }
+};
+
 // ─── Player-specific profile effects ────────────
 RhythiaX.injectProfileAvatarEffects = function () {
   if (RhythiaX.isModuleEnabled?.('easterEggs') === false) return;
@@ -192,46 +348,78 @@ RhythiaX.injectProfileAvatarEffects = function () {
   avatarWrapper.appendChild(effect);
 };
 
-RhythiaX.injectRankHistoryButton = function () {
-  if (RhythiaX.qs('.rhythiax-rank-history-trigger')) return;
-  const globalLabel = RhythiaX.qsa('div, span').find(el => el.textContent.trim().toLowerCase() === 'global');
-  const rankGrid = globalLabel?.closest('[style*="grid-template-columns"]') || globalLabel?.parentElement?.parentElement;
-  if (!rankGrid || rankGrid.children.length < 3) return;
+RhythiaX.enhanceHeaderDeltas = function (playerId) {
+  if (!playerId) return;
+  RhythiaX.removeNativeRankDeltas?.(document);
+};
 
-  const trigger = document.createElement('button');
-  trigger.type = 'button';
-  trigger.className = 'rhythiax-rank-history-trigger';
-  trigger.setAttribute('aria-label', 'Show ranking history');
-  trigger.title = 'Ranking history';
-  trigger.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="8" cy="12" r="4.5"></circle><path d="M8 9.5V12l1.8 1.2M12.5 17l2.8-3.5 2 1.5 3.2-4.5M18.5 10.5h2v2"></path></svg>';
-  trigger.addEventListener('click', event => {
-    event.preventDefault();
-    event.stopPropagation();
-    RhythiaX.showRankHistory(trigger);
-  });
+RhythiaX.enhanceTitleProgression = function (player, scoreSets) {
+  const card = RhythiaX.ProfilePageAdapter?.titleProgressionCard?.() || RhythiaX.TitleProgression?.Service?.findNativeTitleCard?.(document);
+  if (!card) return;
 
-  rankGrid.classList.add('rhythiax-rank-grid-with-history');
-  rankGrid.appendChild(trigger);
+  const showProgression = RhythiaX.isModuleOptionEnabled ? RhythiaX.isModuleOptionEnabled('titleProgression', 'showProgression') : true;
+  const showHistory = RhythiaX.isModuleOptionEnabled ? RhythiaX.isModuleOptionEnabled('titleProgression', 'showHistory') : true;
+  const isEnabled = RhythiaX.isModuleEnabled ? RhythiaX.isModuleEnabled('titleProgression') : true;
+
+  if (!isEnabled || (!showProgression && !showHistory)) {
+    RhythiaX.TitleProgression?.Service?.unmount?.(card);
+    RhythiaX.TitleProgression?.Service?.cleanup?.();
+    return;
+  }
+  const sets = scoreSets || RhythiaX.profileHistoryContext?.scoreSets;
+  RhythiaX.TitleProgression?.Service?.mount?.(card, player, sets);
+};
+
+// DOM can still belong to the previous player while the SPA route already
+// points elsewhere. Only an ID-checked profile response owns these metrics.
+RhythiaX.profilePlayerFromApi = function (playerId, profile, mode = 'normal') {
+  if (!profile || String(profile.id) !== String(playerId)) return null;
+  const prefix = mode === 'spin' || mode === 'vr' ? `${mode}_` : '';
+  const points = profile[`${prefix}skill_points`];
+  const rank = profile[`${prefix}position`];
+  const countryRank = profile[`${prefix}country_position`];
+  return {
+    id: String(playerId),
+    profileMode: prefix ? mode : 'normal',
+    username: String(profile.username || 'Unknown').trim(),
+    country: String(profile.flag || profile.country || '').trim(),
+    avatar: profile.avatar_url || profile.profile_image || '',
+    bio: String(profile.about_me || ''),
+    rp: points == null ? '' : String(points),
+    playCount: prefix || profile.play_count == null ? '' : String(profile.play_count),
+    squaresHit: prefix || profile.squares_hit == null ? '' : String(profile.squares_hit),
+    globalRank: rank == null ? '' : '#' + rank,
+    countryRank: countryRank == null ? '' : '#' + countryRank,
+    // Both the cards and the history calculate accuracy from the same score
+    // response, never from a native/injected row left by another render.
+    avgAccuracy: '',
+    rankHistory: prefix ? null : profile.rank_history,
+    created_at: profile.created_at,
+    userProfile: prefix ? { ...profile, skill_points: points, position: rank, country_position: countryRank, rank_history: null } : profile,
+  };
+};
+
+RhythiaX.profileScoreSetsForMode = function (sets, mode) {
+  if (!sets || (mode !== 'spin' && mode !== 'vr')) return sets;
+  const topScores = sets[`${mode}TopScores`] || [];
+  return { ...sets, stats: null, scores: topScores, ratingScores: topScores,
+    topScores, recentScores: sets[`${mode}RecentScores`] || [], reignScores: [],
+    topScoreCount: topScores.length, isLoading: false };
 };
 
 // ─── Full injection for profile page ─────────
 RhythiaX.injectProfile = function () {
+  (RhythiaX.dataCanonicalWrite ? RhythiaX.maintainDataHistory?.() : Promise.resolve())?.catch(error => console.warn("RhythiaX: History maintenance failed:", error));
   if (RhythiaX.injected) {
     return;
   }
-  if (RhythiaX.qs('.rhythiax-stats-panel') || RhythiaX.qs('.rhythiax-injected-stats-section')) {
-    RhythiaX.injected = true;
-    return;
-  }
 
-  const sidebar = RhythiaX.ProfilePageAdapter.sidebar();
-  const content = RhythiaX.ProfilePageAdapter.content();
-  const scoreCards = RhythiaX.ProfilePageAdapter.scoreCards();
   const officialStats = RhythiaX.ProfilePageAdapter.officialStats();
+  const headerArea = RhythiaX.ProfilePageAdapter.headerRankArea();
 
-  RhythiaX.log('injectProfile — sidebar:', !!sidebar, 'content:', !!content, 'official stats:', !!officialStats, 'score cards:', scoreCards.length);
+  RhythiaX.log('injectProfile — official stats:', !!officialStats, 'header area:', !!headerArea);
 
-  if (!sidebar || !content || !officialStats || scoreCards.length === 0) {
+  if (!officialStats && !headerArea) {
     RhythiaX.log('Profile not ready yet');
     return false;
   }
@@ -240,70 +428,101 @@ RhythiaX.injectProfile = function () {
   RhythiaX.cleanupStaleElements();
 
   RhythiaX.log('=== INJECTING PROFILE ===');
-    const player = RhythiaX.extractPlayerData();
-    RhythiaX.injectPlayerCompare(player);
-  const scores = RhythiaX.extractScores();
+  const playerId = RhythiaX.ProfilePageAdapter.playerId();
+  const player = {};
+  // Native score cards can also be left over from the previous route.
+  const scores = [];
   RhythiaX.log('Profile page data parsed', { scoreCount: scores.length });
 
-  const playerId = RhythiaX.ProfilePageAdapter.playerId();
   const navigationToken = RhythiaX.navigationToken;
-  const titleProgressionVisit = RhythiaX.beginTitleProgressionVisit?.(playerId, player);
-  const dataVisitId = titleProgressionVisit?.visitId
-    || `${playerId || 'profile'}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+  const profileSearch = window.location.search;
+  const requestedMode = new URLSearchParams(profileSearch || '').get('mode');
+  const profileMode = requestedMode === 'spin' || requestedMode === 'vr' ? requestedMode : 'normal';
+  const isNormalProfile = profileMode === 'normal';
+  const isCurrentProfile = () => navigationToken === RhythiaX.navigationToken
+    && window.location.search === profileSearch
+    && String(RhythiaX.ProfilePageAdapter.playerId()) === String(playerId);
+  const dataVisitId = `${playerId || 'profile'}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 
   const renderProfile = (scoreSets, renderMode, renderPlayer = player) => {
-    if (navigationToken !== RhythiaX.navigationToken) return;
-    const hasApiData = scoreSets && scoreSets.scores?.length > 0;
+    if (!isCurrentProfile() || String(renderPlayer.id) !== String(playerId)) return false;
+    scoreSets = RhythiaX.profileScoreSetsForMode(scoreSets, profileMode);
+    const hasApiData = scoreSets && (scoreSets.scores?.length > 0 || !isNormalProfile);
     const isInitialRender = renderMode === 'initial';
+    const isCacheRender = renderMode === 'cache';
     if (!isInitialRender) RhythiaX.cleanupStaleElements(true);
+    const initialScores = scores || [];
+    const initialTopScores = initialScores.filter(s => s.scoreType === 'top' || !s.scoreType);
+    const initialReignScores = initialScores.filter(s => s.scoreType === 'reign');
+    const initialRecentScores = initialScores.filter(s => s.scoreType === 'recent');
     const data = hasApiData
-      ? (renderMode === 'cache' ? scoreSets : RhythiaX.mergeWeightedRp(scoreSets, scores))
-      : { scores, ratingScores: scores };
+      ? (isCacheRender ? scoreSets : RhythiaX.mergeWeightedRp(scoreSets, scores))
+      : {
+          isLoading: !initialScores.length,
+          scores: initialScores,
+          ratingScores: initialScores,
+          topScores: initialTopScores,
+          reignScores: initialReignScores,
+          recentScores: initialRecentScores
+        };
+    const accuracy = RhythiaX.StatisticsDomain.averageAccuracy(data.scores || [], { avgAccuracy: '' });
+    renderPlayer.avgAccuracy = accuracy === '—' ? '' : Number(accuracy);
     RhythiaX.profileHistoryContext = { playerId, player: renderPlayer, scoreSets: data };
-    const renderScores = data.scores;
-    RhythiaX.log('Rendering profile with', renderScores.length, 'scores');
+    const renderScores = data.scores || [];
+    RhythiaX.log('Rendering profile with', renderScores.length, 'scores, mode:', renderMode);
     if (!RhythiaX.buildStatsPanel(renderPlayer, renderScores, renderPlayer.rp, 'profile', data.ratingScores, { deferProfiles: isInitialRender })) {
       RhythiaX.error('Profile stats were not ready after data loading');
       RhythiaX.clearLoadingState();
-      return;
+      return false;
     }
-    const dataCapture = Promise.resolve(RhythiaX.recordProfileDataCapture?.(playerId, renderPlayer, data, {
-      visitId: dataVisitId,
-      source: isInitialRender ? 'dom' : 'api',
-    }));
+    const dataCapture = (isNormalProfile && !isCacheRender && hasApiData)
+      ? Promise.resolve(RhythiaX.recordProfileDataCapture?.(playerId, renderPlayer, data, {
+          visitId: dataVisitId,
+          source: isInitialRender ? 'dom' : 'api',
+          isCurrentProfile,
+          verifiedProfile: true,
+        }))
+      : Promise.resolve(null);
     dataCapture.catch(error => {
       if (navigationToken === RhythiaX.navigationToken) RhythiaX.captureError(error, 'New profile data capture failed');
     });
-    if (!document.querySelector('.rhythiax-accordion')) {
-      RhythiaX.wrapTitleProgression?.(renderPlayer.rp, renderPlayer.globalRank);
-      if (isInitialRender) RhythiaX.animateTitleProgressionFromCache?.(playerId, renderPlayer.rp, renderPlayer.globalRank, titleProgressionVisit);
-    }
-    if (isInitialRender) RhythiaX.recordTitleProgressionSnapshot?.(titleProgressionVisit, renderPlayer, 'initial');
-    if (isInitialRender) {
+
+    if (isInitialRender || isCacheRender) {
       const enhanceInitialView = () => {
-        if (navigationToken !== RhythiaX.navigationToken) {
+        if (!isCurrentProfile()) {
           return;
         }
-        RhythiaX.injectRankHistoryButton();
-        RhythiaX.enhanceProfileHeader();
-        RhythiaX.injectProfileCrown();
-        RhythiaX.injectProfileAvatarEffects();
+        if (isNormalProfile && !data.isLoading) {
+          RhythiaX.enhanceHeaderDeltas?.(playerId, renderPlayer);
+        }
+        RhythiaX.enhanceTitleProgression?.(renderPlayer, data);
+        RhythiaX.enhanceProfileHeader?.();
+        RhythiaX.injectProfileCrown?.();
+        RhythiaX.injectProfileCreatorBadge?.();
+        RhythiaX.injectProfileAvatarEffects?.();
         RhythiaX.enhanceOwnFriendsCounter?.();
-        RhythiaX.enhanceScoreCards();
-        RhythiaX.injectAbsoluteDates();
         RhythiaX.injectDeferredStatsProfiles?.(renderScores, data.ratingScores, 'profile');
       };
       if (typeof window.requestAnimationFrame === 'function') window.requestAnimationFrame(enhanceInitialView);
       else window.setTimeout(enhanceInitialView, 0);
     }
-    // The current profile uses native tabs for Reigning, Top and Recent
-    // scores. Delegate the listener once so React can replace the tab panel
-    // without losing the plugin's score-card enhancements.
-    RhythiaX.installProfileScoreTabs?.();
+    // Mount the unified Scores Hub with tabs, 20-items pagination, and instant search
+    RhythiaX.mountScoresHub?.(data);
     dataCapture.then(result => {
-      if (navigationToken !== RhythiaX.navigationToken) return;
-      RhythiaX.maybeShowLocalBackupPrompt?.(result);
+      if (!isCurrentProfile() || !isNormalProfile) return;
       return RhythiaX.applyProfileHistoryIndicators?.(playerId, result?.snapshot);
+    }).then(() => {
+      if (!isCurrentProfile() || !isNormalProfile) return;
+      const rankingPane = document.querySelector('.rhythiax-pane-ranking');
+      if (rankingPane && (rankingPane.dataset.renderedPlayer !== String(playerId) || !rankingPane.hasChildNodes())) {
+        rankingPane.dataset.renderedPlayer = String(playerId);
+        RhythiaX.renderInlineRankHistory?.(rankingPane, playerId);
+      }
+      const historyPane = document.querySelector('.rhythiax-pane-stats .rhythiax-history-pane');
+      if (historyPane && (historyPane.dataset.renderedPlayer !== String(playerId) || !historyPane.hasChildNodes())) {
+        historyPane.dataset.renderedPlayer = String(playerId);
+        RhythiaX.renderInlineProgressHistory?.(historyPane, playerId);
+      }
     }).catch(error => {
       if (navigationToken === RhythiaX.navigationToken && !/Extension context invalidated/i.test(String(error?.message || error))) {
         RhythiaX.captureError(error, 'Profile history indicators failed');
@@ -312,32 +531,43 @@ RhythiaX.injectProfile = function () {
     return true;
   };
 
-  // Render the visible page data immediately. API data refines it afterwards.
-  if (!renderProfile(null, 'initial')) {
-    RhythiaX.clearLoadingState();
-    return false;
-  }
-  // Only lock out retries after the first complete render succeeded. The site
-  // can still be replacing its page tree when injectProfile is first called.
-  RhythiaX.injected = true;
+  // Instant cache hydration or initial skeleton state (prevents layout shifts and fake data)
+  const cachedScoreSets = playerId ? RhythiaX.getCachedPlayerScoreSets?.(playerId) : null;
+  const cachedProfile = playerId ? RhythiaX.getCachedUserProfile?.(playerId) : null;
+
+  const cachedPlayer = RhythiaX.profilePlayerFromApi(playerId, cachedProfile, profileMode);
+  const rendered = cachedPlayer && cachedScoreSets
+    ? renderProfile(cachedScoreSets, 'cache', cachedPlayer) : false;
+
   if (!playerId) {
     RhythiaX.log('=== PROFILE INJECTION COMPLETE ===');
-    return true;
+    return Boolean(rendered);
   }
+
+  // Mark the request in progress so readiness retries cannot capture stale DOM.
+  RhythiaX.injected = true;
+  const pendingProfile = { playerId, navigationToken };
+  RhythiaX.profileRequestContext = pendingProfile;
 
   const controller = new AbortController();
   RhythiaX.apiAbortController = controller;
-  RhythiaX.fetchPlayerScoreSets(playerId, controller.signal).then(scoreSets => {
-    if (navigationToken !== RhythiaX.navigationToken) return;
-    if (scoreSets?.scores?.length) {
-      const updatedPlayer = RhythiaX.extractPlayerData();
+  Promise.all([
+    RhythiaX.fetchPlayerScoreSets(playerId, controller.signal),
+    RhythiaX.fetchUserProfile ? RhythiaX.fetchUserProfile(playerId, controller.signal) : Promise.resolve(null),
+  ]).then(([scoreSets, userProfile]) => {
+    if (!isCurrentProfile()) return;
+    const updatedPlayer = RhythiaX.profilePlayerFromApi(playerId, userProfile, profileMode);
+    if (scoreSets && updatedPlayer) {
+
       renderProfile(scoreSets, 'api', updatedPlayer);
-      RhythiaX.animateTitleProgressionUpdate?.(titleProgressionVisit, updatedPlayer);
-        RhythiaX.recordTitleProgressionSnapshot?.(titleProgressionVisit, updatedPlayer, 'updated');
-        RhythiaX.profileHistoryContext = { playerId, player: updatedPlayer, scoreSets };
+      const modeScoreSets = RhythiaX.profileScoreSetsForMode(scoreSets, profileMode);
+      RhythiaX.profileHistoryContext = { playerId, player: updatedPlayer, scoreSets: modeScoreSets };
+      RhythiaX.injectPlayerCompare?.(updatedPlayer);
+      RhythiaX.enhanceTitleProgression?.(updatedPlayer, modeScoreSets);
+      RhythiaX.reportVpsPlayerVisit?.(playerId);
     }
   }).catch(error => {
-    if (navigationToken !== RhythiaX.navigationToken) return;
+    if (!isCurrentProfile()) return;
     if (error?.name !== 'AbortError') {
       Promise.resolve(RhythiaX.recordProfileDataDiagnostic?.(playerId, {
         source: 'api',
@@ -349,6 +579,7 @@ RhythiaX.injectProfile = function () {
     }
   }).finally(() => {
     if (RhythiaX.apiAbortController === controller) RhythiaX.apiAbortController = null;
+    if (RhythiaX.profileRequestContext === pendingProfile) RhythiaX.profileRequestContext = null;
   });
   RhythiaX.log('=== PROFILE DATA LOADING ===');
   return true;
@@ -358,9 +589,9 @@ RhythiaX.ProfilePageComposition = {
   install() {},
   extractPlayer: RhythiaX.extractPlayerData,
   enhanceHeader: RhythiaX.enhanceProfileHeader,
+  enhanceTitleProgression: RhythiaX.enhanceTitleProgression,
   injectCrown: RhythiaX.injectProfileCrown,
+  injectCreatorBadge: RhythiaX.injectProfileCreatorBadge,
   injectAvatarEffects: RhythiaX.injectProfileAvatarEffects,
-  injectRankHistoryButton: RhythiaX.injectRankHistoryButton,
   inject: RhythiaX.injectProfile,
-  maybeShowLocalBackupPrompt: RhythiaX.maybeShowLocalBackupPrompt,
 };

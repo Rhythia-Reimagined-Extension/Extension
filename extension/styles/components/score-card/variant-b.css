@@ -1,0 +1,272 @@
+/* ==========================================================================
+   Rhythia Reimagined — Score Card: Variant B (Glass Eclipse)
+   Compact 64px album art with protruding mini-grade badge (unclipped),
+   top-aligned artwork, theme contrast, and crisp bordered stat cells.
+   ========================================================================== */
+
+.rhythiax-sc-eclipse {
+  min-height: 84px;
+  padding: 10px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+/* Left Group: Artwork & Song Meta */
+.rhythiax-sc-eclipse-left {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  min-width: 0;
+  flex: 1;
+}
+
+/* Disc/square wrapper - MUST BE OVERFLOW: VISIBLE so grade badge protrudes */
+.rhythiax-sc-eclipse-art {
+  position: relative;
+  width: 64px;
+  height: 64px;
+  flex-shrink: 0;
+  overflow: visible;
+}
+
+.rhythiax-sc-eclipse-img-wrap {
+  width: 100%;
+  height: 100%;
+  border-radius: 12px;
+  overflow: hidden;
+  border: 1px solid var(--sc-border-strong);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25);
+  background: var(--sc-inner-bg);
+}
+
+.rhythiax-sc-eclipse-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center top;
+  display: block;
+  transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.rhythiax-sc-eclipse:hover .rhythiax-sc-eclipse-img {
+  transform: scale(1.06);
+}
+
+/* Protruding floating grade badge */
+.rhythiax-sc-eclipse-grade {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  background: var(--sc-bg);
+  border: 2px solid var(--grade-color, #4ade80);
+  color: var(--grade-color, #4ade80);
+  font-size: 13px;
+  font-weight: 900;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  width: 26px;
+  height: 26px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.35);
+  z-index: 5;
+}
+
+.rhythiax-sc-eclipse-info {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+  flex: 1;
+}
+
+.rhythiax-sc-eclipse-title-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.rhythiax-sc-eclipse-rank {
+  font-size: 13px;
+  font-weight: 800;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  color: var(--sc-text-muted);
+  flex-shrink: 0;
+}
+
+.rhythiax-sc-eclipse-reign {
+  font-size: 10px;
+  font-weight: 800;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  color: var(--grade-color, #38bdf8);
+  border: 1px solid var(--grade-color, #38bdf8);
+  padding: 1px 5px;
+  border-radius: 4px;
+  flex-shrink: 0;
+}
+
+/* Right Group: Dock + Action Button */
+.rhythiax-sc-eclipse-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-shrink: 0;
+}
+
+.rhythiax-sc-eclipse .rhythiax-sc-dock {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: transparent;
+}
+
+.rhythiax-sc-eclipse .rhythiax-sc-dock-col {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 4px 10px;
+  border-radius: 7px;
+  border: 1px solid var(--sc-border-strong);
+  background: var(--sc-dock-cell-bg);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
+  min-width: 68px;
+}
+
+.rhythiax-sc-eclipse .rhythiax-sc-dock-lbl {
+  font-size: 9.5px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  text-transform: uppercase;
+  color: var(--sc-text-muted);
+}
+
+.rhythiax-sc-eclipse .rhythiax-sc-dock-val {
+  font-size: 12.5px;
+  font-weight: 700;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  font-variant-numeric: tabular-nums lining-nums;
+  color: var(--sc-text-strong);
+  white-space: nowrap;
+}
+
+.rhythiax-sc-eclipse .rhythiax-sc-dock-val.rhythiax-sc-acc {
+  color: var(--grade-color, #4ade80);
+}
+
+.rhythiax-sc-eclipse .rhythiax-sc-dock-val.rhythiax-sc-wrp {
+  color: var(--sc-accent, #c084fc);
+  font-size: 13px;
+}
+
+.rhythiax-sc-eclipse .rhythiax-sc-dock-val.rhythiax-sc-miss {
+  color: var(--miss-color, #f87171);
+}
+
+.rhythiax-sc-eclipse .rhythiax-sc-dock-val.rhythiax-sc-fc {
+  color: var(--fc-color, #4ade80);
+}
+
+.rhythiax-sc-eclipse .rhythiax-sc-dock-sub {
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--sc-text-muted);
+  margin-left: 2px;
+}
+
+.rhythiax-sc-eclipse .rhythiax-sc-dock-sep {
+  display: none;
+}
+
+/* ==========================================================================
+   Variant B: Grid Mode Adaptation (2-Column Kafelki)
+   ========================================================================== */
+.is-grid .rhythiax-sc-eclipse,
+[data-scores-view="grid"] .rhythiax-sc-eclipse {
+  flex-direction: column;
+  align-items: stretch;
+  justify-content: space-between;
+  padding: 10px 12px;
+  gap: 8px;
+  min-height: 114px;
+  position: relative;
+}
+
+.is-grid .rhythiax-sc-eclipse-left,
+[data-scores-view="grid"] .rhythiax-sc-eclipse-left {
+  width: 100%;
+  gap: 12px;
+  padding-right: 32px;
+}
+
+.is-grid .rhythiax-sc-eclipse-art,
+[data-scores-view="grid"] .rhythiax-sc-eclipse-art {
+  width: 48px;
+  height: 48px;
+}
+
+.is-grid .rhythiax-sc-eclipse-grade,
+[data-scores-view="grid"] .rhythiax-sc-eclipse-grade {
+  width: 22px;
+  height: 22px;
+  font-size: 11px;
+  top: -5px;
+  right: -5px;
+  border-radius: 6px;
+}
+
+.is-grid .rhythiax-sc-eclipse-title-row .rhythiax-sc-title,
+[data-scores-view="grid"] .rhythiax-sc-eclipse-title-row .rhythiax-sc-title {
+  font-size: 13.5px;
+}
+
+.is-grid .rhythiax-sc-eclipse-right,
+[data-scores-view="grid"] .rhythiax-sc-eclipse-right {
+  width: 100%;
+  gap: 0;
+}
+
+.is-grid .rhythiax-sc-eclipse .rhythiax-sc-dock,
+[data-scores-view="grid"] .rhythiax-sc-eclipse .rhythiax-sc-dock {
+  width: 100%;
+  display: flex;
+  gap: 5px;
+}
+
+.is-grid .rhythiax-sc-eclipse .rhythiax-sc-dock-col,
+[data-scores-view="grid"] .rhythiax-sc-eclipse .rhythiax-sc-dock-col {
+  flex: 1;
+  min-width: 0;
+  padding: 3.5px 4px;
+}
+
+.is-grid .rhythiax-sc-eclipse .rhythiax-sc-dock-lbl,
+[data-scores-view="grid"] .rhythiax-sc-eclipse .rhythiax-sc-dock-lbl {
+  font-size: 7.5px;
+  letter-spacing: 0.3px;
+}
+
+.is-grid .rhythiax-sc-eclipse .rhythiax-sc-dock-val,
+[data-scores-view="grid"] .rhythiax-sc-eclipse .rhythiax-sc-dock-val {
+  font-size: 11.5px;
+}
+
+.is-grid .rhythiax-sc-eclipse .rhythiax-sc-dock-val.rhythiax-sc-wrp,
+[data-scores-view="grid"] .rhythiax-sc-eclipse .rhythiax-sc-dock-val.rhythiax-sc-wrp {
+  font-size: 11.5px;
+}
+
+.is-grid .rhythiax-sc-eclipse .rhythiax-sc-dock-sub,
+[data-scores-view="grid"] .rhythiax-sc-eclipse .rhythiax-sc-dock-sub {
+  font-size: 9px;
+}
+
+.is-grid .rhythiax-sc-eclipse .rhythiax-sc-action-btn,
+[data-scores-view="grid"] .rhythiax-sc-eclipse .rhythiax-sc-action-btn {
+  position: absolute;
+  top: 9px;
+  right: 10px;
+}

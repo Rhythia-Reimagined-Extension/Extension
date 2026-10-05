@@ -13,9 +13,6 @@ var RhythiaX = RhythiaX || {};
   RhythiaX.StorageMutationBridge = {
     dataSettingsPatch: patch => request('data-settings-patch', { patch }),
     dataSettingsReplace: settings => request('data-settings-replace', { settings }),
-    dataSettingsWhitelistAdd: entry => request('data-settings-whitelist-add', { entry }),
-    dataSettingsWhitelistRemove: target => request('data-settings-whitelist-remove', { target }),
-    backupStatePatch: patch => request('backup-state-patch', { patch }),
     appSettingsPatch: patch => request('app-settings-patch', { patch }),
     appSettingsReplace: settings => request('app-settings-replace', { settings }),
   };

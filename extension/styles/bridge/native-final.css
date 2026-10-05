@@ -31,15 +31,91 @@ body[data-rhythiax-theme] #root button[class*="border-white/10"],
 body[data-rhythiax-theme] #root a[class*="border-white/10"] { color: var(--rhythiax-text) !important; border-color: var(--rhythiax-border) !important; }
 body[data-rhythiax-theme] #root button[class*="bg-white/5"]:hover,
 body[data-rhythiax-theme] #root a[class*="bg-white/5"]:hover { background-color: var(--rhythiax-accent-soft) !important; border-color: var(--rhythiax-border-strong) !important; }
-body[data-rhythiax-theme] #root [class*="border-blue-400"],
-body[data-rhythiax-theme] #root [class*="bg-blue-500/"] { border-color: color-mix(in srgb, var(--rhythiax-accent) 34%, transparent) !important; background-color: color-mix(in srgb, var(--rhythiax-accent) 11%, transparent) !important; }
+body[data-rhythiax-theme] #root [class*="border-blue-400"]:not([class*="focus-visible:border-blue-400"]) { border-color: color-mix(in srgb, var(--rhythiax-accent) 34%, transparent) !important; }
+body[data-rhythiax-theme] #root [class*="bg-blue-500/"] { background-color: color-mix(in srgb, var(--rhythiax-accent) 11%, transparent) !important; }
+
+/* Destructive buttons (Report user, veto, delete, copyright) keep red styling */
+body[data-rhythiax-theme] #root [class*="bg-red-600"],
+body[data-rhythiax-theme] #root button[aria-label="Report user"],
+body[data-rhythiax-theme] #root button:has(svg.lucide-flag) {
+  background-color: rgba(220, 38, 38, 0.85) !important;
+  border-color: rgba(239, 68, 68, 0.4) !important;
+  color: #ffffff !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+body[data-rhythiax-theme] #root button[aria-label="Report user"],
+body[data-rhythiax-theme] #root button:has(svg.lucide-flag):not(:has(span, p)):not(:empty),
+body[data-rhythiax-theme] #root [class*="bg-red-600"].w-9,
+body[data-rhythiax-theme] #root [class*="bg-red-600"].h-9 {
+  height: 36px !important;
+  width: 36px !important;
+  min-height: 36px !important;
+  min-width: 36px !important;
+  padding: 0 !important;
+}
+/* Destructive text buttons (such as Copyright) keep normal auto width and padding */
+body[data-rhythiax-theme] #root button[class*="bg-red-600"]:not(.w-9):not(.h-9) {
+  width: auto !important;
+  min-width: fit-content !important;
+  padding: 0 14px !important;
+}
+body[data-rhythiax-theme] #root [class*="bg-red-600"]:hover,
+body[data-rhythiax-theme] #root button[aria-label="Report user"]:hover,
+body[data-rhythiax-theme] #root button:has(svg.lucide-flag):hover {
+  background-color: rgb(220, 38, 38) !important;
+  border-color: rgb(239, 68, 68) !important;
+  color: #ffffff !important;
+}
+
+/* Profile action buttons (Friends counter, Add friend, Unfriend) & secondary action controls */
+body[data-rhythiax-theme] #root .rhythiax-friends-quick-trigger,
+body[data-rhythiax-theme] #root div:has(> svg.lucide-users-round),
+body[data-rhythiax-theme] #root button:has(svg.lucide-user-round-plus),
+body[data-rhythiax-theme] #root button:has(svg.lucide-user-round-minus),
+body[data-rhythiax-theme] #root button.bg-control,
+body[data-rhythiax-theme] #root a.bg-control,
+body[data-rhythiax-theme] #root [role="button"].bg-control {
+  background-color: color-mix(in srgb, var(--rhythiax-accent) 18%, var(--rhythiax-inner-surface)) !important;
+  border: 1px solid var(--rhythiax-border-strong) !important;
+  color: var(--rhythiax-text-strong) !important;
+  height: 36px !important;
+  min-height: 36px !important;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.22) !important;
+}
+
+/* Multi-line card buttons (such as difficulty filter tiles on Maps) must never be locked to 36px */
+body[data-rhythiax-theme] #root .grid-cols-5 > button,
+body[data-rhythiax-theme] #root button[class*="py-3"],
+body[data-rhythiax-theme] #root button:has(> .text-xs) {
+  height: auto !important;
+  min-height: 56px !important;
+}
+body[data-rhythiax-theme] #root .rhythiax-friends-quick-trigger:hover,
+body[data-rhythiax-theme] #root div:has(> svg.lucide-users-round):hover,
+body[data-rhythiax-theme] #root button:has(svg.lucide-user-round-plus):hover,
+body[data-rhythiax-theme] #root button:has(svg.lucide-user-round-minus):hover,
+body[data-rhythiax-theme] #root button.bg-control:hover,
+body[data-rhythiax-theme] #root a.bg-control:hover,
+body[data-rhythiax-theme] #root [role="button"].bg-control:hover {
+  background-color: color-mix(in srgb, var(--rhythiax-accent) 28%, var(--rhythiax-inner-surface)) !important;
+  border-color: var(--rhythiax-accent) !important;
+  color: var(--rhythiax-text-strong) !important;
+}
+body[data-rhythiax-theme] #root .rhythiax-friends-quick-trigger svg,
+body[data-rhythiax-theme] #root div:has(> svg.lucide-users-round) svg,
+body[data-rhythiax-theme] #root button:has(svg.lucide-user-round-plus) svg,
+body[data-rhythiax-theme] #root button:has(svg.lucide-user-round-minus) svg {
+  color: currentColor !important;
+}
 body[data-rhythiax-theme] #root [class*="text-blue-300"],
 body[data-rhythiax-theme] #root [class*="text-blue-400"],
 body[data-rhythiax-theme] #root [class*="text-blue-500"] { color: var(--rhythiax-accent) !important; }
 
 /* Radix mounts dialogs in a body-level portal, outside #root. Keep the same
    literal utility classes themeable there as well. */
-body[data-rhythiax-theme] [role="dialog"] {
+body[data-rhythiax-theme] [role="dialog"]:not(.rhythiax-friends-quick-panel):not(.rhythiax-friends-quick-backdrop) {
   background-color: var(--rhythiax-surface) !important;
   color: var(--rhythiax-text) !important;
   border-color: var(--rhythiax-border) !important;
@@ -104,15 +180,18 @@ body[data-rhythiax-theme] #root textarea::placeholder { color: var(--rhythiax-te
 body[data-rhythiax-theme] #root [class*="to-neutral-950"],
 body[data-rhythiax-theme] #root [class*="from-[#0a0a0a"] { --tw-gradient-to: var(--rhythiax-page-bg) !important; --tw-gradient-from: var(--rhythiax-page-bg) !important; }
 body[data-rhythiax-theme] #root footer,
-body[data-rhythiax-theme] #root div:has(> a[href*="github.com/Capo-Games/dmca"]):has(> button),
+body[data-rhythiax-theme] #root div:has(a[href*="github.com/Capo-Games/dmca"]),
+body[data-rhythiax-theme] #root div[class*="border-[#4D65C0]"],
 body[data-rhythiax-theme] #root [class*="text-neutral-500"] { color: var(--rhythiax-text-muted) !important; }
 body[data-rhythiax-theme] #root footer,
-body[data-rhythiax-theme] #root div:has(> a[href*="github.com/Capo-Games/dmca"]):has(> button) {
+body[data-rhythiax-theme] #root div:has(a[href*="github.com/Capo-Games/dmca"]),
+body[data-rhythiax-theme] #root div[class*="border-[#4D65C0]"] {
   background-color: var(--rhythiax-surface) !important;
   border-color: var(--rhythiax-border) !important;
 }
 body[data-rhythiax-theme="white"] #root footer,
-body[data-rhythiax-theme="white"] #root div:has(> a[href*="github.com/Capo-Games/dmca"]):has(> button) {
+body[data-rhythiax-theme="white"] #root div:has(a[href*="github.com/Capo-Games/dmca"]),
+body[data-rhythiax-theme="white"] #root div[class*="border-[#4D65C0]"] {
   color: var(--rhythiax-text) !important;
   background-color: var(--rhythiax-surface) !important;
 }
@@ -128,35 +207,54 @@ body[data-rhythiax-theme] #root .rhythiax-rank-grid-with-history > div > div but
 /* The settings control is native markup with a literal dark background. Keep
    it on the preset surface and tint its icon instead of inheriting white-mode
    image treatment in Reimagined. */
-body[data-rhythiax-theme] #root [class*="bg-[#1e1f21]"]:has(img[src="/settingsicon.png"]) {
+body[data-rhythiax-theme] #root [class*="bg-[#1e1f21]"]:has(img[src*="settingsicon"]),
+body[data-rhythiax-theme] #root [class*="bg-control"]:has(img[src*="settingsicon"]),
+body[data-rhythiax-theme] #root button:has(img[src*="settingsicon"]),
+body[data-rhythiax-theme] #root button[aria-label="Settings"] {
   background: var(--rhythiax-inner-surface) !important;
-  border-color: var(--rhythiax-border-strong) !important;
+  border: 1px solid var(--rhythiax-border-strong) !important;
   color: var(--rhythiax-text-strong) !important;
 }
-body[data-rhythiax-theme="rhythia-reimagined"] #root [class*="bg-[#1e1f21]"]:has(img[src="/settingsicon.png"]) {
-  background: linear-gradient(135deg, #7c3aed 0%, #5b21b6 100%) !important;
-  border-color: rgba(221, 214, 254, .42) !important;
+body[data-rhythiax-theme="rhythia-reimagined"] #root [class*="bg-[#1e1f21]"]:has(img[src*="settingsicon"]),
+body[data-rhythiax-theme="rhythia-reimagined"] #root [class*="bg-control"]:has(img[src*="settingsicon"]),
+body[data-rhythiax-theme="rhythia-reimagined"] #root button:has(img[src*="settingsicon"]),
+body[data-rhythiax-theme="rhythia-reimagined"] #root button[aria-label="Settings"] {
+  background: linear-gradient(135deg, rgba(124, 58, 237, 0.35) 0%, rgba(91, 33, 182, 0.45) 100%) !important;
+  border-color: rgba(221, 214, 254, .36) !important;
 }
-body[data-rhythiax-theme="rhythia-reimagined"] #root [class*="bg-[#1e1f21]"]:has(img[src="/settingsicon.png"]) img[src="/settingsicon.png"] {
+body[data-rhythiax-theme="rhythia-reimagined"] #root [class*="bg-[#1e1f21]"]:has(img[src*="settingsicon"]):hover,
+body[data-rhythiax-theme="rhythia-reimagined"] #root [class*="bg-control"]:has(img[src*="settingsicon"]):hover,
+body[data-rhythiax-theme="rhythia-reimagined"] #root button:has(img[src*="settingsicon"]):hover,
+body[data-rhythiax-theme="rhythia-reimagined"] #root button[aria-label="Settings"]:hover {
+  background: linear-gradient(135deg, rgba(139, 92, 246, 0.55) 0%, rgba(109, 40, 217, 0.65) 100%) !important;
+  border-color: rgba(221, 214, 254, .65) !important;
+  box-shadow: 0 0 12px rgba(139, 92, 246, 0.35) !important;
+}
+body[data-rhythiax-theme="rhythia-reimagined"] #root [class*="bg-[#1e1f21]"]:has(img[src*="settingsicon"]) img[src*="settingsicon"],
+body[data-rhythiax-theme="rhythia-reimagined"] #root [class*="bg-control"]:has(img[src*="settingsicon"]) img[src*="settingsicon"],
+body[data-rhythiax-theme="rhythia-reimagined"] #root button:has(img[src*="settingsicon"]) img[src*="settingsicon"],
+body[data-rhythiax-theme="rhythia-reimagined"] #root button[aria-label="Settings"] img[src*="settingsicon"] {
   filter: grayscale(1) brightness(0) invert(1) !important;
-  opacity: .82 !important;
+  opacity: .88 !important;
 }
 
 /* Map thumbnails must stay above the themed tile background. The site puts
    the image below two absolute overlays, so keep the image's own layer
    explicit instead of letting the theme bridge affect its rendering. */
-body[data-rhythiax-theme] #root img[src*="beatmap-img-"] {
+body[data-rhythiax-theme] #root img[src*="beatmap-img-"],
+body[data-rhythiax-theme] #root img[src*="beatmap-previews"] {
   display: block !important;
   visibility: visible !important;
   opacity: 1 !important;
-  position: relative !important;
   z-index: 0 !important;
   width: 100% !important;
   height: 100% !important;
   object-fit: cover !important;
 }
 body[data-rhythiax-theme] #root img[src*="beatmap-img-"] ~ [class*="bg-gradient-to-t"],
-body[data-rhythiax-theme] #root img[src*="beatmap-img-"] ~ [class*="bg-black/"] {
+body[data-rhythiax-theme] #root img[src*="beatmap-previews"] ~ [class*="bg-gradient-to-t"],
+body[data-rhythiax-theme] #root img[src*="beatmap-img-"] ~ [class*="bg-black/"],
+body[data-rhythiax-theme] #root img[src*="beatmap-previews"] ~ [class*="bg-black/"] {
   z-index: 1 !important;
   background-color: transparent !important;
   pointer-events: none;
@@ -172,6 +270,27 @@ body[data-rhythiax-theme] #root > div:first-child {
 
 /* The first overlay is visual only. Do not let the generic bg-black/20 theme
    rule turn it into a solid surface over the thumbnail. */
-body[data-rhythiax-theme] #root img[src*="beatmap-img-"] ~ [class*="bg-gradient-to-t"] {
+body[data-rhythiax-theme] #root img[src*="beatmap-img-"] ~ [class*="bg-gradient-to-t"],
+body[data-rhythiax-theme] #root img[src*="beatmap-previews"] ~ [class*="bg-gradient-to-t"] {
   background-color: transparent !important;
 }
+
+/* Disable hover effect on navbar logo */
+body #root .fixed.top-0.left-0.w-full[class*="h-[60px]"] a:has(img[src*="navlogo"]),
+body #root .fixed.top-0.left-0.w-full[class*="h-[60px]"] a:has(img[src*="navlogo"]):hover,
+body #root a.h-full.flex.items-center:has(img[src*="navlogo"]),
+body #root a.h-full.flex.items-center:has(img[src*="navlogo"]):hover,
+body #root a[href="/"]:has(img[src*="navlogo"]),
+body #root a[href="/"]:has(img[src*="navlogo"]):hover,
+body #root img[src*="navlogo"],
+body #root img[src*="navlogo"]:hover {
+  background: transparent !important;
+  background-color: transparent !important;
+  border-color: transparent !important;
+  box-shadow: none !important;
+  transform: none !important;
+  filter: none !important;
+  opacity: 1 !important;
+  outline: none !important;
+}
+

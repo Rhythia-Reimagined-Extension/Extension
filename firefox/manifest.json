@@ -1,0 +1,191 @@
+{
+  "manifest_version": 3,
+  "name": "Rhythia Reimagined",
+  "version": "1.2.0",
+  "browser_specific_settings": {
+    "gecko": {
+      "id": "shurieldev@gmail.com",
+      "strict_min_version": "140.0",
+      "data_collection_permissions": {
+        "required": [
+          "authenticationInfo",
+          "browsingActivity",
+          "websiteContent",
+          "personallyIdentifyingInfo"
+        ]
+      }
+    },
+    "gecko_android": {
+      "strict_min_version": "142.0"
+    }
+  },
+  "description": "Make your Rhythia profile easier to read, customize, and explore",
+  "action": {
+    "default_title": "Rhythia Reimagined",
+    "default_popup": "popup/popup.html"
+  },
+  "permissions": [
+    "storage",
+    "unlimitedStorage"
+  ],
+  "background": {
+    "scripts": [
+      "shared/time.js",
+      "shared/data/data-schema.js",
+      "shared/data/data-migrations.js",
+      "shared/data/data-repository.js",
+      "core/bridges/storage-mutation-bridge.js",
+      "core/data/storage-mutation-authority.js",
+      "background.js"
+    ]
+  },
+  "host_permissions": [
+    "https://www.rhythia.com/*",
+    "https://rhythia.com/*",
+    "https://production.rhythia.com/*",
+    "https://raw.githubusercontent.com/*",
+    "https://rhythia.shuriel.com/*"
+  ],
+  "content_scripts": [
+    {
+      "matches": [
+        "https://www.rhythia.com/*",
+        "https://rhythia.com/*"
+      ],
+      "js": [
+        "shared/constants.js",
+        "shared/state.js",
+        "core/bridges/runtime-bridge.js",
+        "shared/data/data-schema.js",
+        "shared/data/data-migrations.js",
+        "shared/data/data-repository.js",
+        "shared/community-consent.js",
+        "core/bridges/data-store-bridge.js",
+        "core/bridges/storage-mutation-bridge.js",
+        "shared/modules.js",
+        "shared/themes/white.js",
+        "shared/themes/dark.js",
+        "shared/themes/reimagined.js",
+        "shared/theme.js",
+        "shared/dom.js",
+        "content/features/country-leaderboard/view.js",
+        "core/bridges/site-dom-bridge.js",
+        "shared/time.js",
+        "shared/scores.js",
+        "shared/api.js",
+        "shared/vps-client.js",
+        "core/bridges/rhythia-api-bridge.js",
+        "shared/stats.js",
+        "shared/filters.js",
+        "shared/data/data-collector.js",
+        "shared/data/data-history.js",
+        "shared/data/data-profile-ui.js",
+        "shared/easter-eggs.js",
+        "components/cleanup.js",
+        "components/rank-progress.js",
+        "components/accordion.js",
+        "content/features/statistics/domain.js",
+        "content/features/playstyle/domain.js",
+        "content/features/playstyle/scout.js",
+        "content/features/playstyle/loader.js",
+        "content/features/playstyle/view.js",
+        "content/features/statistics/view.js",
+        "components/stats-panel.js",
+        "components/rating-profile.js",
+        "components/tempo-profile.js",
+        "content/features/score-cards/domain.js",
+        "content/features/score-cards/store.js",
+        "content/features/score-cards/actions.js",
+        "content/features/score-cards/previews.js",
+        "content/features/score-cards/templates/template-flagship.js",
+        "content/features/score-cards/templates/template-eclipse.js",
+        "content/features/score-cards/templates/template-ribbon.js",
+        "content/features/score-cards/view.js",
+        "content/features/score-cards/service.js",
+        "components/score-card.js",
+        "content/features/compare/store.js",
+        "content/features/compare/loader.js",
+        "content/features/compare/metrics.js",
+        "content/features/compare/view.js",
+        "components/player-compare.js",
+        "content/features/friends/quick-list.js",
+        "content/features/title-progression/icons.js",
+        "content/features/title-progression/domain.js",
+        "content/features/title-progression/view.js",
+        "content/features/title-progression/service.js",
+        "content/bootstrap/route-context.js",
+        "content/bootstrap/lifecycle.js",
+        "content/bootstrap/route-observer.js",
+        "content/pages/profile/adapter.js",
+        "content/pages/profile/history-orchestration.js",
+        "content/pages/profile/composition.js",
+        "content/pages/score-replay/adapter.js",
+        "content/pages/score-replay/composition.js",
+        "content/pages/changelog/adapter.js",
+        "content/pages/changelog/composition.js",
+        "main.js"
+      ],
+      "css": [
+        "styles/foundation/tokens.css",
+        "styles/bridge/anti-flicker.css",
+        "styles/foundation/base.css",
+        "styles/components/score-card/base.css",
+        "styles/components/score-card/variant-a.css",
+        "styles/components/score-card/variant-b.css",
+        "styles/components/score-card/variant-c.css",
+        "styles/components/score-card/actions.css",
+        "styles/components/score-card/scores-hub.css",
+        "styles/components/profile-stats/base.css",
+        "styles/components/profile-stats/grades.css",
+        "styles/components/profile-stats/charts.css",
+        "styles/components/profile-stats/profile-layout.css",
+        "styles/components/profile-stats/responsive.css",
+        "styles/components/profile-box.css",
+        "styles/components/profile-presets.css",
+        "styles/components/rank-history.css",
+        "styles/components/country-leaderboard.css",
+        "styles/components/compare/base.css",
+        "styles/components/compare/layout.css",
+        "styles/components/compare/theme.css",
+        "styles/components/playstyle.css",
+        "styles/components/title-progression.css",
+        "easter-eggs/profiles/profiles.css",
+        "easter-eggs/other/generic.css",
+        "styles/pages/home.css",
+        "styles/pages/profile.css",
+        "styles/pages/score-replay.css",
+        "styles/pages/maps.css",
+        "styles/pages/catalog.css",
+        "styles/pages/support.css",
+        "styles/pages/changelog.css",
+        "styles/bridge/native-foundation.css",
+        "styles/bridge/native-surfaces.css",
+        "styles/bridge/native-pages.css",
+        "styles/bridge/native-final.css",
+        "styles/themes/official-bridge.css",
+        "styles/themes/dark/theme.css",
+        "styles/themes/dark/pages/profile.css",
+        "styles/themes/reimagined/theme.css",
+        "styles/themes/reimagined/pages/profile.css",
+        "styles/themes/white/theme.css",
+        "styles/themes/white/pages/profile.css"
+      ]
+    },
+    {
+      "matches": [
+        "https://www.rhythia.com/*",
+        "https://rhythia.com/*"
+      ],
+      "run_at": "document_start",
+      "css": [
+        "styles/foundation/tokens.css",
+        "styles/bridge/anti-flicker.css"
+      ]
+    }
+  ],
+  "icons": {
+    "16": "icons/icon16.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  }
+}

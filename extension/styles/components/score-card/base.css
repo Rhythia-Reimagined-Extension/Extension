@@ -1,88 +1,316 @@
-.rhythiax-scores-grid {
-  display: grid !important;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  align-items: start;
-  gap: 10px !important;
-}
-.rhythiax-scores-grid .rhythiax-score-card { margin: 0 !important; }
-.rhythiax-scores-grid .rhythiax-redesign-wrapper { min-height: 0; flex-direction: column; }
-.rhythiax-scores-grid .rhythiax-card-strip { flex: none; min-width: 0; width: 100%; padding: 8px 10px; border-right: 0 !important; border-bottom: 3px solid var(--difficulty-color, #888); }
-.rhythiax-scores-grid .rhythiax-card-grade { flex-direction: row !important; gap: 12px !important; }
-.rhythiax-scores-grid .rhythiax-modern-card .rhythiax-card-strip { flex-direction: row !important; gap: 12px !important; }
-.rhythiax-scores-grid .rhythiax-card-grade-label { font-size: 24px; }
-.rhythiax-scores-grid .rhythiax-card-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-.rhythiax-scores-grid .rhythiax-modern-card .rhythiax-card-stats-row { grid-template-columns: 1fr 1fr; gap: 8px; }
-.rhythiax-scores-grid .rhythiax-modern-card .rhythiax-card-rp-box { grid-column: 1 / -1; }
+/* ==========================================================================
+   Rhythia Reimagined — Score Card Base Styles
+   Common foundations, design tokens, typography, and theme variables
+   ========================================================================== */
 
-/* In grid view the title gets its own full-width line. Actions and date then
-   sit below it instead of competing with a truncated map name. */
-.rhythiax-scores-grid .rhythiax-card-top {
-  display: grid;
-  grid-template-columns: auto minmax(0, 1fr);
-  align-items: baseline;
-  gap: 5px;
-  padding-right: 0;
-}
-.rhythiax-scores-grid .rhythiax-card-content {
-  display: flex;
-  flex-direction: column;
-}
-.rhythiax-scores-grid .rhythiax-card-top { order: 1; }
-.rhythiax-scores-grid .rhythiax-card-top .rhythiax-card-title { grid-column: 1 / -1; }
-.rhythiax-scores-grid .rhythiax-card-top .rhythiax-card-date { grid-column: 1 / -1; }
-.rhythiax-scores-grid .rhythiax-card-buttons { order: 2; }
-.rhythiax-scores-grid .rhythiax-card-stats { order: 3; }
-.rhythiax-scores-grid .rhythiax-card-title {
-  display: block;
-  white-space: normal;
-  overflow: visible;
-  text-overflow: clip;
-  overflow-wrap: anywhere;
-}
-.rhythiax-scores-grid .rhythiax-card-date {
-  max-width: none;
-  white-space: normal;
+:root {
+  --grade-ss: #38bdf8;
+  --grade-s: #22d3ee;
+  --grade-a: #4ade80;
+  --grade-b: #a855f7;
+  --grade-c: #facc15;
+  --grade-d: #f97316;
+  --grade-f: #ef4444;
+
+  --fc-color: #4ade80;
+  --miss-color: #f87171;
+
+  /* Default / Fallback Theme Variables */
+  --sc-bg: var(--rhythiax-surface, #180f26);
+  --sc-inner-bg: var(--rhythiax-inner-surface, #221634);
+  --sc-border: var(--rhythiax-border, rgba(216, 180, 254, 0.16));
+  --sc-border-strong: var(--rhythiax-border-strong, rgba(216, 180, 254, 0.32));
+  --sc-text-strong: var(--rhythiax-text-strong, #faf5ff);
+  --sc-text: var(--rhythiax-text, #faf5ff);
+  --sc-text-muted: var(--rhythiax-text-muted, #c4b5d8);
+  --sc-accent: var(--rhythiax-accent, #c084fc);
+  --sc-accent-soft: var(--rhythiax-accent-soft, rgba(192, 132, 252, 0.16));
+  --sc-shadow: var(--rhythiax-shadow, 0 10px 25px rgba(0, 0, 0, 0.25));
+  --sc-mod-pill-bg: #261a3a;
+  --sc-dock-bg: #160f22;
+  --sc-dock-cell-bg: #221634;
 }
 
-@media (max-width: 720px) {
-  .rhythiax-scores-grid { grid-template-columns: 1fr; }
+/* THEME 1: Reimagined (Signature Purple/Violet) */
+body[data-rhythiax-theme="rhythia-reimagined"],
+body[data-rhythiax-theme="reimagined"],
+html[data-rhythiax-theme="rhythia-reimagined"],
+html[data-rhythiax-theme="reimagined"],
+[data-rhythiax-theme="rhythia-reimagined"],
+[data-rhythiax-theme="reimagined"],
+[data-theme="reimagined"] {
+  --sc-bg: #1a1226;
+  --sc-inner-bg: #221634;
+  --sc-border: rgba(216, 180, 254, 0.22);
+  --sc-border-strong: rgba(216, 180, 254, 0.40);
+  --sc-text-strong: #faf5ff;
+  --sc-text: #faf5ff;
+  --sc-text-muted: #c4b5d8;
+  --sc-accent: #c084fc;
+  --sc-accent-soft: rgba(192, 132, 252, 0.16);
+  --sc-shadow: 0 10px 25px rgba(8, 3, 18, 0.4);
+  --sc-mod-pill-bg: #291c3d; /* Solid opaque pill, zero transparency */
+  --sc-dock-bg: #160f22;
+  --sc-dock-cell-bg: #261b36;
 }
 
-@media (max-width: 560px) {
-  .rhythiax-redesign-wrapper { flex-direction: column; }
-  .rhythiax-card-strip { flex: none; min-width: 0; width: 100%; padding: 8px 10px; border-right: 0 !important; border-bottom: 3px solid var(--difficulty-color, #888); }
-  .rhythiax-card-strip .rhythiax-card-grade { flex-direction: row; gap: 12px; }
-  .rhythiax-modern-card .rhythiax-card-strip { flex-direction: row; gap: 10px; }
-  .rhythiax-card-grade-label { font-size: 24px; }
-  .rhythiax-card-content { padding: 10px; }
-  
-  .rhythiax-legacy-card .rhythiax-card-top { padding-right: 100px; flex-wrap: wrap; }
-  .rhythiax-legacy-card .rhythiax-card-title { flex-basis: 100%; }
-  .rhythiax-legacy-card .rhythiax-card-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 5px; }
-  .rhythiax-legacy-card .rhythiax-card-stat-item { padding-inline: 5px; }
-  .rhythiax-legacy-card .rhythiax-card-stat-label { font-size: 9px; }
-  .rhythiax-legacy-card .rhythiax-card-stat-value { font-size: 11px; }
-
-  .rhythiax-modern-card .rhythiax-card-stats-row { grid-template-columns: 1fr 1fr; gap: 6px; }
-  .rhythiax-modern-card .rhythiax-card-rp-box { grid-column: 1 / -1; }
-  
-  .rhythiax-reigning .rhythiax-card-content::before { position: static; align-self: flex-end; margin-bottom: -5px; }
+/* THEME 2: Dark / Pure Black (Obsidian Zinc) */
+body[data-rhythiax-theme="dark"],
+html[data-rhythiax-theme="dark"],
+[data-rhythiax-theme="dark"],
+[data-theme="dark"] {
+  --sc-bg: #151619;
+  --sc-inner-bg: #1d1f22;
+  --sc-border: rgba(255, 255, 255, 0.16);
+  --sc-border-strong: rgba(255, 255, 255, 0.30);
+  --sc-text-strong: #f8fafc;
+  --sc-text: #f8fafc;
+  --sc-text-muted: #94a3b8;
+  --sc-accent: #60a5fa;
+  --sc-accent-soft: rgba(96, 165, 250, 0.15);
+  --sc-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+  --sc-mod-pill-bg: #22252a;
+  --sc-dock-bg: #151619;
+  --sc-dock-cell-bg: #1d1f22;
 }
 
-.rhythiax-score-card {
+/* THEME 3: White / Light Mode */
+body[data-rhythiax-theme="white"],
+html[data-rhythiax-theme="white"],
+[data-rhythiax-theme="white"],
+[data-theme="white"] {
+  --sc-bg: #ffffff;
+  --sc-inner-bg: #f1f5f9;
+  --sc-border: rgba(15, 23, 42, 0.16);
+  --sc-border-strong: rgba(15, 23, 42, 0.32);
+  --sc-text-strong: #0f172a;
+  --sc-text: #0f172a;
+  --sc-text-muted: #64748b;
+  --sc-accent: #7c3aed;
+  --sc-accent-soft: rgba(124, 58, 237, 0.12);
+  --sc-shadow: 0 4px 16px rgba(15, 23, 42, 0.08);
+  --sc-mod-pill-bg: #f1f5f9;
+  --sc-dock-bg: #f8fafc;
+  --sc-dock-cell-bg: #ffffff;
+}
+
+/* Base Card Container */
+.rhythiax-sc-card {
   position: relative;
-  overflow: hidden !important;
-  border-radius: 12px !important;
-  margin-bottom: 8px !important;
-  background: var(--rhythiax-surface, #18191a) !important;
-  border: 1px solid var(--rhythiax-border, rgba(255, 255, 255, 0.12)) !important;
-  padding: 0 !important;
-  min-height: 0 !important;
-  transform: scale(1);
-  transition: border-color 0.18s ease, background 0.18s ease, box-shadow 0.18s ease;
+  background: var(--sc-bg);
+  border: 1px solid var(--sc-border);
+  border-radius: 14px;
+  display: flex;
+  box-shadow: var(--sc-shadow);
+  overflow: hidden;
+  box-sizing: border-box;
+  font-family: inherit;
+  color: var(--sc-text);
+  /* User requested: NO glowing or lighting up on hover */
+  transition: border-color 0.2s ease;
+  cursor: default;
+  /* Scroll Performance Optimizations: content-visibility skips rendering offscreen cards */
+  content-visibility: auto;
+  contain-intrinsic-size: 92px;
+  contain: layout style paint;
+  transform: translateZ(0);
 }
 
-.rhythiax-score-card:hover {
-  border-color: var(--rhythiax-accent, rgba(148, 163, 184, 0.45)) !important;
-  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.22);
+.rhythiax-scores-list.is-grid .rhythiax-sc-card {
+  contain-intrinsic-size: 114px;
+}
+
+/* Host element for native replacement */
+.rhythiax-card-enhanced-host {
+  padding: 0 !important;
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+}
+
+.rhythiax-sc-title-box {
+  cursor: default;
+}
+
+/* Title link - inline and cursor only on text itself */
+.rhythiax-sc-title {
+  font-size: 15px;
+  font-weight: 800;
+  color: var(--sc-text-strong);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-decoration: none;
+  display: inline-block;
+  width: fit-content;
+  max-width: 100%;
+  vertical-align: middle;
+  transition: color 0.15s ease;
+  cursor: pointer;
+}
+
+.rhythiax-sc-title:hover {
+  color: var(--sc-accent);
+  text-decoration: underline;
+}
+
+/* Meta line (mapper, relative date, duration) */
+.rhythiax-sc-meta-line {
+  font-size: 11.5px;
+  color: var(--sc-text-muted);
+  margin-top: 3px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.rhythiax-sc-meta-line strong {
+  font-weight: 700;
+  color: var(--sc-text-strong);
+}
+
+.rhythiax-sc-meta-sep {
+  opacity: 0.35;
+  user-select: none;
+  font-size: 8.5px;
+  margin: 0 1px;
+}
+
+/* Mods Wrap & Pills */
+.rhythiax-sc-mods-wrap {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+
+.rhythiax-sc-mods-below-mapper {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-wrap: nowrap;
+  min-width: 0;
+  height: 28px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: none;
+  margin-top: 4px;
+}
+
+.rhythiax-sc-mods-below-mapper::-webkit-scrollbar {
+  display: none;
+}
+
+.rhythiax-sc-no-mods {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--sc-text-muted);
+  white-space: nowrap;
+}
+
+.rhythiax-sc-mods-below-mapper .rhythiax-sc-mod-pill {
+  flex-shrink: 0;
+}
+
+.rhythiax-sc-mod-pill:focus-visible {
+  outline: 2px solid var(--sc-accent);
+  outline-offset: 2px;
+}
+
+/* Solid Opaque Mod Pill (Zero Transparency & Zero Lag) */
+.rhythiax-sc-mod-pill {
+  font-size: 10.5px;
+  font-weight: 800;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  padding: 2.5px 6.5px;
+  height: 22px;
+  border-radius: 5px;
+  display: inline-flex;
+  align-items: center;
+  gap: 3.5px;
+  background: var(--sc-mod-pill-bg);
+  border: 1px solid var(--sc-border-strong);
+  color: var(--sc-text-strong);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.18);
+  letter-spacing: 0.2px;
+  line-height: 1;
+  user-select: none;
+  white-space: nowrap;
+  transition: all 0.15s ease;
+}
+
+/* Enlarged pill when mod icon is active */
+.rhythiax-sc-mod-pill.has-icon {
+  height: 28px;
+  padding: 3px 8px;
+  gap: 6px;
+  border-radius: 7px;
+}
+
+.rhythiax-sc-mod-pill.has-icon.icon-only {
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  gap: 0;
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+  justify-content: center;
+}
+
+.rhythiax-sc-mod-icon {
+  width: 15px;
+  height: 15px;
+  object-fit: contain;
+  vertical-align: middle;
+  flex-shrink: 0;
+}
+
+.rhythiax-sc-mod-pill.has-icon .rhythiax-sc-mod-icon {
+  width: 20px;
+  height: 20px;
+}
+
+.rhythiax-sc-mod-pill.has-icon.icon-only .rhythiax-sc-mod-icon {
+  width: 28px;
+  height: 28px;
+}
+
+.rhythiax-sc-mod-name {
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.2px;
+}
+
+.rhythiax-sc-mod-pill.has-icon .rhythiax-sc-mod-name {
+  font-size: 11.5px;
+  font-weight: 750;
+}
+
+/* Shared 3-dots action button */
+.rhythiax-sc-action-btn {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  border: 1px solid var(--sc-border);
+  background: var(--sc-inner-bg);
+  color: var(--sc-text-muted);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  flex-shrink: 0;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.15);
+}
+
+.rhythiax-sc-action-btn:hover {
+  background: var(--sc-bg);
+  border-color: var(--sc-border-strong);
+  color: var(--sc-text-strong);
+  transform: scale(1.04);
 }

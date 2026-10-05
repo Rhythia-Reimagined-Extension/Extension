@@ -17,10 +17,9 @@ listed: yes
 - Going online: Added a connection to my community history server. Instead of relying only on records collected in your own browser, you can also load available ranking history for the top 1,000 players and additional discovered profiles.
 - Reimagined Score Cards: Replaced the Modern/Legacy card choices with three new designs and optional background artwork. Rebuilt the profile score browser with search and numbered pages at the top and bottom. Pick your favorite look, then actually find the score you're looking for.
 - Reimagined Playstyle: Replaced the separate Rating and Tempo profiles with a Playstyle view: a player summary, standout plays, and speed and accuracy-grade breakdowns with score counts.
-- Reimagined Title Progression: Rebuilt the progression view with a map-like layout and title milestones. More fun to look at, more Reimagined... You get the idea.
+- Reimagined Title Progression: Rebuilt the progression view with a map-like layout and title milestones. More fun to look at, more Reimagined...
 - Reimagined Compare: Rebuilt the comparison view with clearer stat differences and a layout for 2 players. The previous version allowed 4.
 - Reimagined Popup: Replaced the old popup with a simpler layout and reorganized settings. Again... Hopefully this one gets to stay for a while.
-- Firefox joins the party: Added a separate Firefox desktop package. Reimagined isn't just a Chromium thing anymore. For now, installation is temporary; a signed Firefox store release is still to come.
 
 ## Added
 

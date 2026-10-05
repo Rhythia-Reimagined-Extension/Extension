@@ -1,10 +1,17 @@
 // =============================================
-// Rhythia X - Tempo Profile (Speed Distribution)
+// Rhythia X - Tempo Profile
+// Note: Active Playstyle feature is in content/features/playstyle/
 // =============================================
 
 var RhythiaX = RhythiaX || {};
 
 RhythiaX.injectTempoProfile = function (scores, target, pageType) {
+  if (target?.classList?.contains('rhythiax-pane-performance') && RhythiaX.PlaystyleView?.render) {
+    const player = RhythiaX.profileHistoryContext?.player || (typeof RhythiaX.extractPlayerData === 'function' ? RhythiaX.extractPlayerData() : null);
+    const playerId = RhythiaX.profileHistoryContext?.playerId || player?.id;
+    return RhythiaX.PlaystyleView.render(target, { scores, player, playerId });
+  }
+
   const statsContainer = target || RhythiaX.findOfficialStatsContainer();
   if (!statsContainer) return null;
 
@@ -18,7 +25,7 @@ RhythiaX.injectTempoProfile = function (scores, target, pageType) {
 
   const title = document.createElement('div');
   title.className = 'rhythiax-profile-box-title';
-  title.innerHTML = '<span class="rhythiax-profile-box-heading"><svg class="rhythiax-profile-box-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 14 4-4"></path><path d="M3.34 19a10 10 0 1 1 17.32 0"></path></svg><span>Tempo Profile</span></span><span class="rhythiax-profile-box-meta"></span>';
+  title.innerHTML = '<span class="rhythiax-profile-box-heading"><svg class="rhythiax-profile-box-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 14 4-4"></path><path d="M3.34 19a10 10 0 1 1 17.32 0"></path></svg><span>Speed Distribution</span></span><span class="rhythiax-profile-box-meta"></span>';
   title.querySelector('.rhythiax-profile-box-meta').textContent = `${total} ${total === 1 ? 'play' : 'plays'}`;
   section.appendChild(title);
 
@@ -119,3 +126,4 @@ RhythiaX.injectTempoProfile = function (scores, target, pageType) {
   }
   return section;
 };
+

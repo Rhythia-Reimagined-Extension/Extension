@@ -3,7 +3,6 @@ var RhythiaX = globalThis.RhythiaX || {};
 
 (function () {
   const DATA_SETTINGS_OPERATION = 'data-settings';
-  const BACKUP_STATE_OPERATION = 'backup-state';
   const APP_SETTINGS_OPERATION = 'app-settings';
   const APP_SETTING_KEYS = {
     modules: 'rhythiaxModules',
@@ -11,12 +10,6 @@ var RhythiaX = globalThis.RhythiaX || {};
     theme: 'rhythiaxTheme',
     popupSize: 'rhythiaxPopupSize',
     popupSizeVersion: 'rhythiaxPopupSizeVersion',
-  };
-  const BACKUP_STATE_DEFAULT = {
-    status: 'setup-required', folderName: '', automaticFiles: [], manualFiles: [], recoveryFiles: [],
-    lastAttemptAt: null, lastSuccessAt: null, lastFingerprint: '', lastError: '',
-    recordCount: 0, dailyCount: 0, titleCount: 0, automaticBytes: 0, manualBytes: 0, recoveryBytes: 0,
-    fileName: '', bytes: 0,
   };
 
   function isPlainObject(value) {
@@ -54,13 +47,6 @@ var RhythiaX = globalThis.RhythiaX || {};
     const invalid = Object.keys(value).find(key => !allowed.includes(key));
     if (invalid) throw new Error(`${label} contains an unsupported field: ${invalid}.`);
     if (!Object.keys(value).length) throw new Error(`${label} must not be empty.`);
-  }
-
-    function whitelistIdentity(entry) {
-      const id = String(entry?.id || entry?.playerId || '').trim();
-      const username = String(entry?.username || entry?.name || '').trim();
-      if (!id && !username) throw new Error('Whitelist entry requires an id or username.');
-      return { id, username, usernameKey: username.toLocaleLowerCase(), addedAt: entry?.addedAt };
   }
 
   function appValues(payload, replace) {
@@ -110,44 +96,39 @@ var RhythiaX = globalThis.RhythiaX || {};
       const defaults = RhythiaX.DATA_DEFAULT_SETTINGS || {};
       const allowed = Object.keys(defaults);
       return enqueue(async () => {
-        if (isReadOnly()) throw new Error('Local data is read-only until a verified backup restore repairs the storage.');
+        await RhythiaX.dataRepositoryReady;
+        if (isReadOnly()) throw new Error('Local data is read-only because validation failed; contact support before modifying stored data.');
         const result = await storageCall(local, 'get', { [settingsKey]: defaults });
         const current = RhythiaX.normalizeDataSettings(result[settingsKey]);
         let next;
         if (kind === 'patch') {
-          assertKeys(payload.patch, allowed.filter(key => key !== 'whitelist'), 'Data settings patch');
+          assertKeys(payload.patch, allowed.filter(key => key !== 'communityConsentVersion'), 'Data settings patch');
           next = RhythiaX.normalizeDataSettings({ ...current, ...payload.patch });
         } else if (kind === 'replace') {
-          assertKeys(payload.settings, allowed, 'Data settings replacement');
-          next = RhythiaX.normalizeDataSettings(payload.settings);
-        } else {
-          const entry = whitelistIdentity(kind === 'whitelist-add' ? payload.entry : payload.target);
-          const entries = Array.isArray(current.whitelist) ? current.whitelist : [];
-          const retained = entries.filter(item => entry.id
-            ? String(item?.id || '').trim() !== entry.id
-            : String(item?.username || '').trim().toLocaleLowerCase() !== entry.usernameKey);
+          assertKeys(payload.settings, allowed.filter(key => key !== 'communityConsentVersion'), 'Data settings replacement');
+          next = RhythiaX.normalizeDataSettings({ ...payload.settings, communityConsentVersion: current.communityConsentVersion });
+        } else if (kind === 'community-consent') {
+          const choices = {
+            'hybrid-reports': { syncMode: 'hybrid', telemetryEnabled: true },
+            'cloud-no-reports': { syncMode: 'cloud-only', telemetryEnabled: false },
+            'hybrid-no-reports': { syncMode: 'hybrid', telemetryEnabled: false },
+            'local-only': { syncMode: 'local-only', telemetryEnabled: false },
+          };
+          if (typeof payload.choice !== 'string' || !Object.prototype.hasOwnProperty.call(choices, payload.choice)) throw new Error('Unsupported community choice.');
           next = RhythiaX.normalizeDataSettings({
-            ...current,
-            whitelist: kind === 'whitelist-add' ? [...retained, { id: entry.id, username: entry.username, addedAt: entry.addedAt }] : retained,
+            ...current, ...choices[payload.choice], communityConsentVersion: RhythiaX.COMMUNITY_CONSENT_VERSION,
           });
+        } else {
+          throw new Error('Unsupported data settings operation.');
         }
         return commit(settingsKey, next);
       });
     }
 
-    function mutateBackupState(payload) {
-      const stateKey = RhythiaX.DATA_BACKUP_STATE_KEY || 'rhythiaxDataBackupState';
-      return enqueue(async () => {
-        if (isReadOnly()) throw new Error('Local data is read-only until a verified backup restore repairs the storage.');
-        assertKeys(payload.patch, Object.keys(BACKUP_STATE_DEFAULT), 'Backup state patch');
-        const result = await storageCall(local, 'get', { [stateKey]: BACKUP_STATE_DEFAULT });
-        return commit(stateKey, { ...BACKUP_STATE_DEFAULT, ...(result[stateKey] || {}), ...payload.patch });
-      });
-    }
-
     function mutateAppSettings(replace, payload) {
       return enqueue(async () => {
-        if (isReadOnly()) throw new Error('Local data is read-only until a verified backup restore repairs the storage.');
+        await RhythiaX.dataRepositoryReady;
+        if (isReadOnly()) throw new Error('Local data is read-only because validation failed; contact support before modifying stored data.');
         const values = appValues(payload, replace);
         const keys = Object.values(APP_SETTING_KEYS);
         const current = replace ? {} : await storageCall(local, 'get', keys);
@@ -163,9 +144,6 @@ var RhythiaX = globalThis.RhythiaX || {};
         switch (message.operation) {
           case 'data-settings-patch': return mutateDataSettings('patch', message.payload || {});
           case 'data-settings-replace': return mutateDataSettings('replace', message.payload || {});
-          case 'data-settings-whitelist-add': return mutateDataSettings('whitelist-add', message.payload || {});
-          case 'data-settings-whitelist-remove': return mutateDataSettings('whitelist-remove', message.payload || {});
-          case 'backup-state-patch': return mutateBackupState(message.payload || {});
           case 'app-settings-patch': return mutateAppSettings(false, message.payload || {});
           case 'app-settings-replace': return mutateAppSettings(true, message.payload || {});
           default: throw new Error('Unsupported storage mutation operation.');
@@ -177,9 +155,7 @@ var RhythiaX = globalThis.RhythiaX || {};
       dispatch,
       dataSettingsPatch: patch => mutateDataSettings('patch', { patch }),
       dataSettingsReplace: settings => mutateDataSettings('replace', { settings }),
-      dataSettingsWhitelistAdd: entry => mutateDataSettings('whitelist-add', { entry }),
-      dataSettingsWhitelistRemove: target => mutateDataSettings('whitelist-remove', { target }),
-      backupStatePatch: patch => mutateBackupState({ patch }),
+      communityConsent: choice => mutateDataSettings('community-consent', { choice }),
       appSettingsPatch: patch => mutateAppSettings(false, { patch }),
       appSettingsReplace: settings => mutateAppSettings(true, { settings }),
     };

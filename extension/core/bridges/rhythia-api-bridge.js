@@ -8,6 +8,9 @@ RhythiaX.RhythiaApiBridge = {
   fetchPlayerScores(...args) {
     return RhythiaX.fetchPlayerScores(...args);
   },
+  fetchUserProfile(...args) {
+    return RhythiaX.fetchUserProfile(...args);
+  },
   mergeWeightedRp(...args) {
     return RhythiaX.mergeWeightedRp(...args);
   },

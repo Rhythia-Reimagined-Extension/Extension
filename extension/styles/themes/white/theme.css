@@ -1,269 +1,614 @@
 /* White preset additions. Palette values come from shared/themes/white.js;
-   this file contains only behaviour that is inherently light-mode specific. */
+   this file contains behaviour and overrides inherently light-mode specific. */
 body[data-rhythiax-theme="white"] {
   color-scheme: light;
-  --rhythiax-accent: #52525b;
-  --rhythiax-accent-soft: rgba(82, 82, 91, .12);
-  --rhythiax-nav-hover: rgba(82, 82, 91, .14);
-  --rhythiax-text-subtle: color-mix(in srgb, var(--rhythiax-text-muted) 78%, transparent);
+  --rhythiax-accent: #7c3aed;
+  --rhythiax-accent-soft: rgba(124, 58, 237, 0.12);
+  --rhythiax-nav-hover: rgba(124, 58, 237, 0.08);
+  --rhythiax-text-subtle: color-mix(in srgb, var(--rhythiax-text-muted, #475569) 78%, transparent);
+  --checker-from: #e2e8f5;
+  --checker-to: #cdd8eb;
+  --checker-cell: rgba(30, 41, 59, 0.08);
+}
+
+/* Cards, scorecards, and dialog surfaces in White mode */
+body[data-rhythiax-theme="white"] #root .bg-surface,
+body[data-rhythiax-theme="white"] #root [class*="bg-surface"] {
+  background-color: var(--rhythiax-surface, #ffffff) !important;
+  border-color: var(--rhythiax-border, rgba(15, 23, 42, 0.12)) !important;
+  color: var(--rhythiax-text, #0f172a) !important;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.05), 0 4px 12px rgba(15, 23, 42, 0.05) !important;
+}
+
+body[data-rhythiax-theme="white"] #root .bg-raised,
+body[data-rhythiax-theme="white"] #root [class*="bg-raised"] {
+  background-color: var(--rhythiax-inner-surface, #eaedf4) !important;
+  border-color: rgba(15, 23, 42, 0.10) !important;
+  color: var(--rhythiax-text, #0f172a) !important;
+}
+
+body[data-rhythiax-theme="white"] #root .bg-control,
+body[data-rhythiax-theme="white"] #root [class*="bg-control"] {
+  background-color: var(--rhythiax-input-surface, #edf0f5) !important;
+  border-color: rgba(15, 23, 42, 0.14) !important;
+  color: var(--rhythiax-text, #0f172a) !important;
+}
+
+body[data-rhythiax-theme="white"] #root .border-line,
+body[data-rhythiax-theme="white"] #root [class*="border-line"] {
+  border-color: var(--rhythiax-border, rgba(15, 23, 42, 0.12)) !important;
+}
+
+body[data-rhythiax-theme="white"] #root .border-line-strong,
+body[data-rhythiax-theme="white"] #root [class*="border-line-strong"] {
+  border-color: var(--rhythiax-border-strong, rgba(15, 23, 42, 0.22)) !important;
+}
+
+/* Ensure text inside white surfaces and markdown prose has rich, sharp contrast */
+body[data-rhythiax-theme="white"] #root .bg-surface [class*="text-white"],
+body[data-rhythiax-theme="white"] #root .bg-raised [class*="text-white"],
+body[data-rhythiax-theme="white"] #root [class*="bg-surface"] [class*="text-white"],
+body[data-rhythiax-theme="white"] #root .bg-surface h1,
+body[data-rhythiax-theme="white"] #root .bg-surface h2,
+body[data-rhythiax-theme="white"] #root .bg-surface h3,
+body[data-rhythiax-theme="white"] #root .bg-surface h4,
+body[data-rhythiax-theme="white"] #root .bg-surface svg[class*="text-white"] {
+  color: #0f172a !important;
+}
+
+/* Prose markdown (About me, descriptions, user bios) */
+body[data-rhythiax-theme="white"] .prose,
+body[data-rhythiax-theme="white"] .prose-invert,
+body[data-rhythiax-theme="white"] .prose-invert *,
+body[data-rhythiax-theme="white"] [class*="prose-invert"] * {
+  --tw-prose-body: #0f172a !important;
+  --tw-prose-headings: #0f172a !important;
+  --tw-prose-lead: #334155 !important;
+  --tw-prose-links: var(--rhythiax-accent, #5b21b6) !important;
+  --tw-prose-bold: #020617 !important;
+  --tw-prose-counters: #475569 !important;
+  --tw-prose-bullets: #475569 !important;
+  --tw-prose-hr: rgba(15, 23, 42, 0.16) !important;
+  --tw-prose-quotes: #0f172a !important;
+  --tw-prose-quote-borders: rgba(15, 23, 42, 0.22) !important;
+  --tw-prose-captions: #475569 !important;
+  --tw-prose-code: #0f172a !important;
+  --tw-prose-invert-body: #0f172a !important;
+  --tw-prose-invert-headings: #0f172a !important;
+  color: #0f172a !important;
+}
+
+/* Neutral text utilities - ensure clear readability on light canvas */
+body[data-rhythiax-theme="white"] #root [class*="text-neutral-100"],
+body[data-rhythiax-theme="white"] #root [class*="text-neutral-200"],
+body[data-rhythiax-theme="white"] #root [class*="text-neutral-300"] {
+  color: #1e293b !important;
+}
+
+body[data-rhythiax-theme="white"] #root [class*="text-neutral-400"],
+body[data-rhythiax-theme="white"] #root [class*="text-neutral-500"] {
+  color: #475569 !important;
+}
+
+body[data-rhythiax-theme="white"] #root [class*="text-neutral-600"] {
+  color: #64748b !important;
+}
+
+/* Grandmaster progress bar ticks and crown decorations */
+body[data-rhythiax-theme="white"] [title*="Grandmaster"] svg path,
+body[data-rhythiax-theme="white"] [title*="Grandmaster"] svg rect,
+body[data-rhythiax-theme="white"] svg[viewBox="0 0 160 8"] path,
+body[data-rhythiax-theme="white"] svg[viewBox="0 0 160 8"] rect {
+  fill: rgba(15, 23, 42, 0.12) !important;
+  stroke: rgba(15, 23, 42, 0.28) !important;
+}
+
+body[data-rhythiax-theme="white"] [title*="Grandmaster"] svg.lucide-crown {
+  color: #64748b !important;
+}
+
+/* Inactive / empty progress track bars */
+body[data-rhythiax-theme="white"] #root [class*="bg-white/[0.08]"],
+body[data-rhythiax-theme="white"] #root [class*="bg-white/10"],
+body[data-rhythiax-theme="white"] #root [class*="bg-white/5"] {
+  background-color: rgba(15, 23, 42, 0.08) !important;
+}
+body[data-rhythiax-theme="white"] #root [class*="ring-white/"] {
+  --tw-ring-color: rgba(15, 23, 42, 0.12) !important;
 }
 
 body[data-rhythiax-theme="white"] .rhythiax-rank-history-overlay {
-  background: rgba(15, 23, 42, .16);
+  background: rgba(15, 23, 42, 0.22);
 }
 
 body[data-rhythiax-theme="white"] #root [class*="bg-neutral-950"],
 body[data-rhythiax-theme="white"] #root [class*="border-neutral-950"] {
-  background-color: var(--rhythiax-page-bg) !important;
-  border-color: var(--rhythiax-border) !important;
+  background-color: var(--rhythiax-page-bg, #e2e6ed) !important;
+  border-color: var(--rhythiax-border, rgba(15, 23, 42, 0.12)) !important;
 }
 
 body[data-rhythiax-theme="white"] #root [class*="bg-[#242526]"],
 body[data-rhythiax-theme="white"] #root [class*="bg-[#1F2021]"] {
-  background-color: var(--rhythiax-inner-surface, #f5f7fa) !important;
-  border-color: var(--rhythiax-border) !important;
+  background-color: var(--rhythiax-inner-surface, #eaedf4) !important;
+  border-color: var(--rhythiax-border, rgba(15, 23, 42, 0.12)) !important;
 }
 
-/* White fade overlay above Show more button. Replace dark #111214 gradient with light surface. */
+/* White fade overlay above Show more button. Replace dark gradient with light surface. */
 body[data-rhythiax-theme="white"] #root [class*="bg-gradient-to-t"][class*="from-[#111214]"],
 body[data-rhythiax-theme="white"] #root .pointer-events-none[class*="bg-gradient-to-t"] {
   background-image: linear-gradient(to top, var(--rhythiax-surface, #ffffff) 15%, transparent 100%) !important;
 }
 
 body[data-rhythiax-theme="white"] #root button[class*="rounded-full"] {
-  background: linear-gradient(180deg, #ffffff 0%, #f1f3f6 100%) !important;
-  background-color: #f1f3f6 !important;
-  border-color: rgba(24, 24, 27, .16) !important;
-  color: #18181b !important;
-  box-shadow: 0 1px 3px rgba(30, 41, 59, .08);
-}
-body[data-rhythiax-theme="white"] #root button[class*="rounded-full"]:hover {
-  background: linear-gradient(180deg, #f8f9fa 0%, #e2e8f0 100%) !important;
-  background-color: #e2e8f0 !important;
-  border-color: rgba(24, 24, 27, .24) !important;
-  color: #09090b !important;
+  background: linear-gradient(180deg, #ffffff 0%, #edf0f5 100%) !important;
+  background-color: #edf0f5 !important;
+  border-color: rgba(15, 23, 42, 0.15) !important;
+  color: #0f172a !important;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.06);
 }
 
-/* White's hero background is a paper-like neutral gradient. Do not let the
-   native image and its `to-neutral-950` overlay create a black page strip. */
+body[data-rhythiax-theme="white"] #root button[class*="rounded-full"]:hover {
+  background: linear-gradient(180deg, #f8fafc 0%, #dfe4ed 100%) !important;
+  background-color: #dfe4ed !important;
+  border-color: rgba(15, 23, 42, 0.26) !important;
+  color: #020617 !important;
+}
+
+/* White's hero background allows the native checkerboard SVG to display using --checker-from / --checker-to */
 body[data-rhythiax-theme="white"] #root .top-\[60px\].left-0.overflow-hidden.h-64 {
-  background-image: linear-gradient(180deg, #ffffff 0%, #f3f5f8 34%, #dfe4eb 72%, #eef2f7 100%) !important;
-  background-color: #eef2f7 !important;
   opacity: 1 !important;
   filter: none !important;
 }
-body[data-rhythiax-theme="white"] #root .top-\[60px\].left-0.overflow-hidden.h-64 > img,
-body[data-rhythiax-theme="white"] #root .top-\[60px\].left-0.overflow-hidden.h-64 > div[class*="bg-gradient-to-b"] {
-  display: none !important;
+
+body[data-rhythiax-theme="white"] #root .top-\[60px\].left-0.overflow-hidden.h-64 svg {
+  display: block !important;
+  visibility: visible !important;
+  opacity: 1 !important;
 }
 
-/* Native profile artwork uses a black caption gradient. White mode does not
-   need that dark veil, so keep the avatar artwork untouched. */
-body[data-rhythiax-theme="white"] #root [class*="from-transparent"][class*="via-\[#0a0a0a73\]"][class*="to-neutral-950"] {
-  display: none !important;
+body[data-rhythiax-theme="white"] #root .top-\[60px\].left-0.overflow-hidden.h-64 [class*="bg-gradient-to-b"],
+body[data-rhythiax-theme="white"] #root [class*="from-transparent"][class*="via-[#0a0a0a73]"][class*="to-neutral-950"] {
+  --tw-gradient-from: transparent !important;
+  --tw-gradient-via: rgba(248, 250, 252, 0.5) !important;
+  --tw-gradient-to: var(--rhythiax-page-bg, #f8fafc) !important;
 }
 
-/* White navigation uses a neutral paper gradient instead of the original
-   blue controls. Keep every label and icon dark enough to remain readable. */
+/* White navigation with crisp definition, subtle bottom border and shadow */
 body[data-rhythiax-theme="white"] #root .fixed.top-0.left-0.w-full[class*="h-[60px]"] {
-  background: linear-gradient(180deg, #ffffff 0%, #f1f3f6 100%) !important;
-  background-image: linear-gradient(180deg, #ffffff 0%, #f1f3f6 100%) !important;
-  border-bottom-color: rgba(24, 24, 27, .16) !important;
-  color: #18181b !important;
+  background: linear-gradient(180deg, #ffffff 0%, #f4f6fa 100%) !important;
+  background-image: linear-gradient(180deg, #ffffff 0%, #f4f6fa 100%) !important;
+  border-bottom: 1px solid rgba(15, 23, 42, 0.12) !important;
+  box-shadow: 0 1px 4px rgba(15, 23, 42, 0.05);
+  color: #0f172a !important;
 }
+
 body[data-rhythiax-theme="white"] #root .fixed.top-0.left-0.w-full[class*="h-[60px]"] a,
 body[data-rhythiax-theme="white"] #root .fixed.top-0.left-0.w-full[class*="h-[60px]"] button,
 body[data-rhythiax-theme="white"] #root .fixed.top-0.left-0.w-full[class*="h-[60px]"] [class*="text-white"] {
-  color: #18181b !important;
-}
-body[data-rhythiax-theme="white"] #root .fixed.top-0.left-0.w-full[class*="h-[60px]"] [class*="bg-[#2F4184]"],
-body[data-rhythiax-theme="white"] #root .fixed.top-0.left-0.w-full[class*="h-[60px]"] [class*="bg-[#344a9e"]] {
-  background: linear-gradient(180deg, #f8f9fa 0%, #dfe3e8 100%) !important;
-  background-color: #e7e9ed !important;
-  border-color: rgba(24, 24, 27, .14) !important;
-}
-body[data-rhythiax-theme="white"] #root .fixed.top-0.left-0.w-full[class*="h-[60px]"] a:hover,
-body[data-rhythiax-theme="white"] #root .fixed.top-0.left-0.w-full[class*="h-[60px]"] button:hover {
-  background: linear-gradient(180deg, #e5e7eb 0%, #c7cbd1 100%) !important;
-  background-color: #d1d5db !important;
-  color: #09090b !important;
-}
-body[data-rhythiax-theme="white"] #root .fixed.top-0.left-0.w-full[class*="h-[60px]"] [class*="border-white/10"] {
-  border-color: rgba(24, 24, 27, .16) !important;
+  color: #0f172a !important;
 }
 
-/* White panels use dark text, but media controls and image captions retain a
-   dark backing so their white icons and labels do not disappear. */
-body[data-rhythiax-theme="white"] [role="dialog"][class*="bg-[#111214]"] {
-  background: linear-gradient(180deg, #ffffff 0%, #f1f3f6 100%) !important;
-  color: #18181b !important;
-  border-color: rgba(30, 41, 59, .16) !important;
+body[data-rhythiax-theme="white"] #root .fixed.top-0.left-0.w-full[class*="h-[60px]"] [class*="bg-[#2F4184]"],
+body[data-rhythiax-theme="white"] #root .fixed.top-0.left-0.w-full[class*="h-[60px]"] [class*="bg-[#344a9e]"] {
+  background: #edf0f5 !important;
+  background-color: #edf0f5 !important;
+  border-color: rgba(15, 23, 42, 0.12) !important;
+  color: #0f172a !important;
 }
-body[data-rhythiax-theme="white"] [role="dialog"][class*="bg-[#111214]"] [class*="text-white"] {
-  color: #18181b !important;
+
+body[data-rhythiax-theme="white"] #root .fixed.top-0.left-0.w-full[class*="h-[60px]"] a:hover,
+body[data-rhythiax-theme="white"] #root .fixed.top-0.left-0.w-full[class*="h-[60px]"] button:hover {
+  background: #dfe4ed !important;
+  background-color: #dfe4ed !important;
+  border-color: rgba(15, 23, 42, 0.22) !important;
+  color: #020617 !important;
 }
+
+body[data-rhythiax-theme="white"] #root .fixed.top-0.left-0.w-full[class*="h-[60px]"] [class*="border-white/10"] {
+  border-color: rgba(15, 23, 42, 0.12) !important;
+}
+
+/* White panels use dark text with refined gray contrast layers */
+body[data-rhythiax-theme="white"] [role="dialog"][class*="bg-[#111214]"],
+body[data-rhythiax-theme="white"] [role="dialog"]:not(.rhythiax-friends-quick-panel):not(.rhythiax-friends-quick-backdrop) {
+  background: #ffffff !important;
+  color: #0f172a !important;
+  border-color: rgba(15, 23, 42, 0.14) !important;
+  box-shadow: 0 16px 40px rgba(15, 23, 42, 0.14) !important;
+}
+
+body[data-rhythiax-theme="white"] [role="dialog"][class*="bg-[#111214]"] [class*="text-white"],
+body[data-rhythiax-theme="white"] [role="dialog"] [class*="text-white"] {
+  color: #0f172a !important;
+}
+
 body[data-rhythiax-theme="white"] [role="dialog"][class*="bg-[#111214]"] [class*="bg-[#1a1b1c]"],
-body[data-rhythiax-theme="white"] [role="dialog"][class*="bg-[#111214]"] [class*="bg-black/20"] {
-  background: #f5f7fa !important;
-  border-color: rgba(30, 41, 59, .14) !important;
+body[data-rhythiax-theme="white"] [role="dialog"][class*="bg-[#111214]"] [class*="bg-black/20"],
+body[data-rhythiax-theme="white"] [role="dialog"] [class*="bg-[#1a1b1c]"],
+body[data-rhythiax-theme="white"] [role="dialog"] [class*="bg-black/20"] {
+  background: var(--rhythiax-inner-surface, #eaedf4) !important;
+  border-color: rgba(15, 23, 42, 0.10) !important;
 }
+
+body[data-rhythiax-theme="white"] [role="dialog"] [class*="bg-[#111214]"] {
+  background: #dfe4ed !important;
+}
+
+body[data-rhythiax-theme="white"] [role="dialog"] [class*="text-neutral-300"],
+body[data-rhythiax-theme="white"] [role="dialog"] [class*="text-neutral-400"],
+body[data-rhythiax-theme="white"] [role="dialog"] [class*="text-neutral-500"] {
+  color: #475569 !important;
+}
+
+body[data-rhythiax-theme="white"] [role="dialog"] input,
+body[data-rhythiax-theme="white"] [role="dialog"] [role="combobox"] {
+  background: #ffffff !important;
+  color: #0f172a !important;
+  border-color: rgba(15, 23, 42, 0.18) !important;
+}
+
 body[data-rhythiax-theme="white"] #root [class*="bg-yellow-400/10"] {
   background: linear-gradient(180deg, #fef3c7 0%, #fde68a 100%) !important;
-  border-color: rgba(161, 98, 7, .25) !important;
+  border-color: rgba(161, 98, 7, 0.28) !important;
   color: #854d0e !important;
 }
+
 body[data-rhythiax-theme="white"] #root [class*="bg-yellow-400/10"] [class*="text-yellow-300"] {
   color: #a16207 !important;
 }
 
-/* Trophy totals on the native Clans page use pale yellow text on White's
-   surface. Darken the number while leaving the trophy icon unchanged. */
-body[data-rhythiax-theme="white"][data-rhythiax-page="clans"] #root .flex.items-center.justify-center.gap-1\.5.font-semibold.text-yellow-200 > span {
+/* Trophy totals on the native Clans page */
+body[data-rhythiax-theme="white"][data-rhythiax-page="clans"] #root .flex.items-center.justify-center.gap-1\.5.font-semibold.text-yellow-200>span {
   color: #854d0e !important;
 }
 
-/* The native share control uses pale blue text, which nearly disappears on
-   White's surface. Keep it neutral and give the small icon button a clear
-   boundary in both resting and hover states. */
+/* The native share control with tactile light-gray background */
 body[data-rhythiax-theme="white"] #root button[aria-label^="Copy share link"] {
-  background: #f1f5f9 !important;
-  border-color: #94a3b8 !important;
-  color: #3f3f46 !important;
-  box-shadow: 0 1px 2px rgba(30, 41, 59, .12) !important;
-}
-body[data-rhythiax-theme="white"] #root button[aria-label^="Copy share link"]:hover {
-  background: #e2e8f0 !important;
-  border-color: #64748b !important;
-  color: #18181b !important;
-}
-body[data-rhythiax-theme="white"] #root img[src*="beatmap-img-"] ~ div [class*="bg-blue-600/65"] {
-  background: linear-gradient(180deg, #71717a 0%, #3f3f46 100%) !important;
-  border-color: rgba(255,255,255,.32) !important;
+  background: #edf0f5 !important;
+  border-color: rgba(15, 23, 42, 0.18) !important;
+  color: #334155 !important;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.06) !important;
 }
 
-/* Media-specific rules stay in the preset file so White can deliberately
-   keep artwork captions dark while the rest of the page remains light. */
-body[data-rhythiax-theme="white"] #root .top-\[60px\].left-0.overflow-hidden { opacity: .72 !important; filter: saturate(.9) !important; }
+body[data-rhythiax-theme="white"] #root button[aria-label^="Copy share link"]:hover {
+  background: #dfe4ed !important;
+  border-color: rgba(15, 23, 42, 0.32) !important;
+  color: #0f172a !important;
+}
+
+/* Media-specific rules */
+body[data-rhythiax-theme="white"] #root .top-\[60px\].left-0.overflow-hidden {
+  opacity: 0.76 !important;
+  filter: saturate(0.92) !important;
+}
+
 body[data-rhythiax-theme="white"] #root img[src="/discordicon.png"],
 body[data-rhythiax-theme="white"] #root img[src="/supporticon.png"],
-body[data-rhythiax-theme="white"] #root img[src="/settingsicon.png"] { display: block !important; visibility: visible !important; opacity: 1 !important; filter: none !important; mix-blend-mode: normal !important; }
-body[data-rhythiax-theme="white"] #root [class*="bg-[#141516]"] { background-color: color-mix(in srgb, #141516 70%, var(--rhythiax-surface)) !important; opacity: 1 !important; }
-body[data-rhythiax-theme="white"] #root img[src*="beatmap-img-"] ~ [class*="bg-gradient-to-t"] { background-image: linear-gradient(to top, rgba(7,9,14,.92), rgba(7,9,14,.18) 58%, transparent) !important; background-color: transparent !important; }
-body[data-rhythiax-theme="white"] #root img[src*="beatmap-img-"] ~ [class*="bg-black/35"] { background-color: rgba(7,9,14,.82) !important; }
-body[data-rhythiax-theme="white"] #root img[src*="beatmap-img-"] ~ [class*="bg-black/0"] { background-color: transparent !important; }
-body[data-rhythiax-theme="white"] #root img[src*="beatmap-img-"] ~ div[class*="bottom-0"] > div[class*="bg-black/35"] {
-  color: #18181b !important;
-  background: rgba(255,255,255,.78) !important;
-  border-color: rgba(30,41,59,.18) !important;
+body[data-rhythiax-theme="white"] #root img[src="/settingsicon.png"] {
+  display: block !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  filter: none !important;
+  mix-blend-mode: normal !important;
+}
+
+body[data-rhythiax-theme="white"] #root [class*="bg-[#141516]"] {
+  background-color: color-mix(in srgb, #141516 70%, var(--rhythiax-surface, #ffffff)) !important;
+  opacity: 1 !important;
+}
+
+/* Supporter strip on player profile in White theme - soft, elegant pastel instead of harsh dark purple */
+body[data-rhythiax-theme="white"] #root a[title="Rhythia Supporter"],
+body[data-rhythiax-theme="white"] #root a[aria-label="Learn about Rhythia Supporter"],
+body[data-rhythiax-theme="white"] #root a[href="/support"][class*="--strip"] {
+  background-color: #faf5ff !important;
+  background-image: var(--strip), linear-gradient(to right, rgba(147, 51, 234, 0.12), rgba(192, 38, 211, 0.08), rgba(244, 114, 182, 0.12)) !important;
+  border-top-color: rgba(147, 51, 234, 0.18) !important;
+  filter: saturate(0.85) !important;
+}
+
+body[data-rhythiax-theme="white"] #root a[title="Rhythia Supporter"]:hover,
+body[data-rhythiax-theme="white"] #root a[aria-label="Learn about Rhythia Supporter"]:hover,
+body[data-rhythiax-theme="white"] #root a[href="/support"][class*="--strip"]:hover {
+  background-image: var(--strip), linear-gradient(to right, rgba(147, 51, 234, 0.20), rgba(192, 38, 211, 0.14), rgba(244, 114, 182, 0.18)) !important;
+  border-top-color: rgba(147, 51, 234, 0.3) !important;
+  filter: saturate(0.95) !important;
+}
+
+/* Beatmap cards overlay and high contrast titles */
+body[data-rhythiax-theme="white"] #root img[src*="beatmap-img-"]~[class*="bg-gradient-to-t"],
+body[data-rhythiax-theme="white"] #root img[src*="beatmap-previews"]~[class*="bg-gradient-to-t"] {
+  background-image: linear-gradient(to top, rgba(255, 255, 255, 0.98) 0%, rgba(255, 255, 255, 0.88) 45%, rgba(255, 255, 255, 0.35) 75%, transparent 100%) !important;
+  background-color: transparent !important;
+}
+
+body[data-rhythiax-theme="white"] #root img[src*="beatmap-img-"]~[class*="bg-black/"],
+body[data-rhythiax-theme="white"] #root img[src*="beatmap-previews"]~[class*="bg-black/"] {
+  background-color: transparent !important;
+}
+
+body[data-rhythiax-theme="white"] #root .group:has(img[src*="beatmap-"]),
+body[data-rhythiax-theme="white"] #root :is(a, div):has(> img[src*="beatmap-"]) {
+  border-color: rgba(15, 23, 42, 0.12) !important;
+  background-color: #ffffff !important;
+}
+
+/* Beatmap card titles - crisp black against the white gradient */
+body[data-rhythiax-theme="white"] #root .line-clamp-2,
+body[data-rhythiax-theme="white"] #root [class*="line-clamp-2"],
+body[data-rhythiax-theme="white"] #root img[src*="beatmap-"] ~ div a .line-clamp-2,
+body[data-rhythiax-theme="white"] #root img[src*="beatmap-"] ~ div a [class*="text-white"],
+body[data-rhythiax-theme="white"] #root a[href*="/maps/"] [class*="text-white"],
+body[data-rhythiax-theme="white"] #root a[href*="/map/"] [class*="text-white"] {
+  color: #020617 !important;
+  font-weight: 700 !important;
+  text-shadow: 0 1px 2px rgba(255, 255, 255, 0.5) !important;
+}
+
+body[data-rhythiax-theme="white"] #root .line-clamp-2:hover,
+body[data-rhythiax-theme="white"] #root a[href*="/maps/"]:hover [class*="text-white"],
+body[data-rhythiax-theme="white"] #root a[href*="/map/"]:hover [class*="text-white"],
+body[data-rhythiax-theme="white"] #root img[src*="beatmap-"] ~ div a:hover [class*="text-white"] {
+  color: var(--rhythiax-accent, #5b21b6) !important;
+}
+
+/* Beatmap floating pill badges (Ranked, difficulty, stats) - vibrant with crisp white icons and text */
+body[data-rhythiax-theme="white"] #root img[src*="beatmap-"] ~ div [class*="rounded-full"][class*="bg-blue-600"],
+body[data-rhythiax-theme="white"] #root img[src*="beatmap-"] ~ div [class*="rounded-full"][class*="bg-neutral-800"],
+body[data-rhythiax-theme="white"] #root img[src*="beatmap-"] ~ div [class*="rounded-full"][class*="bg-black/"] {
+  color: #ffffff !important;
+  backdrop-filter: blur(8px) !important;
+  -webkit-backdrop-filter: blur(8px) !important;
+}
+
+body[data-rhythiax-theme="white"] #root img[src*="beatmap-"] ~ div [class*="rounded-full"][class*="bg-blue-600"] {
+  background-color: rgba(37, 99, 235, 0.88) !important;
+  border-color: rgba(96, 165, 250, 0.65) !important;
+}
+
+body[data-rhythiax-theme="white"] #root img[src*="beatmap-"] ~ div [class*="rounded-full"][class*="bg-neutral-800"] {
+  background-color: rgba(30, 41, 59, 0.88) !important;
+  border-color: rgba(148, 163, 184, 0.45) !important;
+}
+
+body[data-rhythiax-theme="white"] #root img[src*="beatmap-"] ~ div [class*="rounded-full"][class*="bg-black/"] {
+  background-color: rgba(15, 23, 42, 0.8) !important;
+  border-color: rgba(255, 255, 255, 0.22) !important;
+}
+
+body[data-rhythiax-theme="white"] #root img[src*="beatmap-"] ~ div [class*="rounded-full"] :is(svg, path, span) {
+  color: #ffffff !important;
+  fill: currentColor !important;
+}
+
+body[data-rhythiax-theme="white"] #root img[src*="beatmap-"] ~ div [class*="rounded-full"] span[style*="color"] {
+  color: inherit !important;
+}
+
+body[data-rhythiax-theme="white"] #root img[src*="beatmap-"] ~ div [class*="rounded-full"] svg.lucide-star {
+  fill: none !important;
+}
+
+/* Beatmap card bottom metadata bar */
+body[data-rhythiax-theme="white"] #root .group:has(img[src*="beatmap-"]) > div:last-child {
+  background-color: var(--rhythiax-surface, #ffffff) !important;
+}
+
+body[data-rhythiax-theme="white"] #root .group:has(img[src*="beatmap-"]) > div:last-child a {
+  color: #475569 !important;
+}
+
+body[data-rhythiax-theme="white"] #root .group:has(img[src*="beatmap-"]) > div:last-child a:hover {
+  color: #020617 !important;
+}
+
+body[data-rhythiax-theme="white"] #root .group:has(img[src*="beatmap-"]) > div:last-child button {
+  color: #475569 !important;
+}
+
+body[data-rhythiax-theme="white"] #root .group:has(img[src*="beatmap-"]) > div:last-child button:hover {
+  color: #020617 !important;
+}
+
+body[data-rhythiax-theme="white"] #root .group:has(img[src*="beatmap-"]) > div:last-child svg {
+  color: #475569 !important;
+  fill: currentColor !important;
+}
+
+body[data-rhythiax-theme="white"] #root .group:has(img[src*="beatmap-"]) > div:last-child :is(button, a):hover svg {
+  color: #020617 !important;
+}
+
+body[data-rhythiax-theme="white"] #root img[src*="beatmap-img-"]~div[class*="bottom-0"]>div[class*="bg-black/35"],
+body[data-rhythiax-theme="white"] #root img[src*="beatmap-previews"]~div[class*="bottom-0"]>div[class*="bg-black/35"] {
+  color: #0f172a !important;
+  background: rgba(255, 255, 255, 0.94) !important;
+  border-color: rgba(15, 23, 42, 0.14) !important;
   backdrop-filter: blur(14px) saturate(115%) !important;
 }
-body[data-rhythiax-theme="white"] #root img[src*="beatmap-img-"] ~ div[class*="bottom-0"] > div[class*="bg-black/35"] [class*="text-white"],
-body[data-rhythiax-theme="white"] #root img[src*="beatmap-img-"] ~ div[class*="bottom-0"] > div[class*="bg-black/35"] [class*="text-neutral-"] { color: #18181b !important; }
-body[data-rhythiax-theme="white"] #root img[src*="beatmap-img-"] ~ div[class*="bottom-0"] > div[class*="bg-black/35"] a { color: #52525b !important; }
-body[data-rhythiax-theme="white"] #root img[src*="beatmap-img-"] ~ div[class*="bottom-0"] > div[class*="bg-black/35"] a:hover { color: #09090b !important; }
-body[data-rhythiax-theme="white"] #root img[src*="beatmap-img-"] ~ button[class*="bg-[#111214]"] { background: linear-gradient(180deg, rgba(36,39,46,.96), rgba(10,12,16,.96)) !important; color: #fff !important; border-color: rgba(255,255,255,.24) !important; }
-body[data-rhythiax-theme="white"] #root div:has(> .pointer-events-none[class*="bg-black/70"]) { color: #fff !important; }
+
+body[data-rhythiax-theme="white"] #root img[src*="beatmap-img-"]~button[class*="bg-[#111214]"],
+body[data-rhythiax-theme="white"] #root img[src*="beatmap-previews"]~button[class*="bg-[#111214]"] {
+  background: #f1f5f9 !important;
+  color: #020617 !important;
+  border-color: rgba(15, 23, 42, 0.16) !important;
+}
+
+body[data-rhythiax-theme="white"] #root div:has(> .pointer-events-none[class*="bg-black/70"]) {
+  color: #ffffff !important;
+}
+
 body[data-rhythiax-theme="white"] #root div:has(> .pointer-events-none[class*="bg-black/70"]) [class*="text-white"],
-body[data-rhythiax-theme="white"] #root div:has(> .pointer-events-none[class*="bg-black/70"]) [class*="text-neutral-300"] { color: #fff !important; }
-body[data-rhythiax-theme="white"] #root [class*="bg-[#1e1f21]"]:has(img[src="/settingsicon.png"]) {
-  background: linear-gradient(180deg, #ffffff 0%, #eef1f4 100%) !important;
-  border-color: rgba(24,24,27,.18) !important;
-  color: #18181b !important;
+body[data-rhythiax-theme="white"] #root div:has(> .pointer-events-none[class*="bg-black/70"]) [class*="text-neutral-300"] {
+  color: #ffffff !important;
 }
-body[data-rhythiax-theme="white"] #root [class*="bg-[#1e1f21]"]:has(img[src="/settingsicon.png"]) img[src="/settingsicon.png"] { filter: brightness(0) !important; }
-body[data-rhythiax-theme="white"] #root [class*="rounded-xl"][class*="border-white/10"][class*="bg-[#111214]"]:has(.badge-hunt-space-cloud) { background-color: var(--rhythiax-surface) !important; }
-body[data-rhythiax-theme="white"] #root [class*="rounded-xl"][class*="border-white/10"][class*="bg-[#111214]"]:has(.badge-hunt-space-cloud) > .pointer-events-none,
-body[data-rhythiax-theme="white"] #root [class*="rounded-xl"][class*="border-white/10"][class*="bg-[#111214]"]:has(.badge-hunt-space-cloud) > .absolute.inset-0.bg-black\/25 { display: none !important; }
 
-/* Profile Settings is a native dialog with literal dark utility classes.
-   Translate the whole dialog, not just its outer shell, to the White palette. */
-body[data-rhythiax-theme="white"] [role="dialog"] {
-  background: linear-gradient(180deg, #ffffff 0%, #f1f3f6 100%) !important;
-  color: #18181b !important;
-  border-color: rgba(30,41,59,.16) !important;
-}
-body[data-rhythiax-theme="white"] [role="dialog"] [class*="bg-[#1a1b1c]"],
-body[data-rhythiax-theme="white"] [role="dialog"] [class*="bg-black/20"] {
-  background: #f5f7fa !important;
-  border-color: rgba(30,41,59,.14) !important;
-}
-body[data-rhythiax-theme="white"] [role="dialog"] [class*="bg-[#111214]"] { background: #e5e7eb !important; }
-body[data-rhythiax-theme="white"] [role="dialog"] [class*="text-white"] { color: #18181b !important; }
-body[data-rhythiax-theme="white"] [role="dialog"] [class*="text-neutral-300"],
-body[data-rhythiax-theme="white"] [role="dialog"] [class*="text-neutral-400"],
-body[data-rhythiax-theme="white"] [role="dialog"] [class*="text-neutral-500"] { color: #52525b !important; }
-body[data-rhythiax-theme="white"] [role="dialog"] input,
-body[data-rhythiax-theme="white"] [role="dialog"] [role="combobox"] {
+/* Control buttons, settings icon, and action triggers */
+body[data-rhythiax-theme="white"] #root [class*="bg-[#1e1f21]"]:has(img[src*="settingsicon"]),
+body[data-rhythiax-theme="white"] #root [class*="bg-control"]:has(img[src*="settingsicon"]),
+body[data-rhythiax-theme="white"] #root button:has(img[src*="settingsicon"]),
+body[data-rhythiax-theme="white"] #root button[aria-label="Settings"],
+body[data-rhythiax-theme="white"] #root button[role="combobox"],
+body[data-rhythiax-theme="white"] #root .fixed.top-0 a[href="/changelog"],
+body[data-rhythiax-theme="white"] #root .fixed.top-0 a[aria-label="Changelog"],
+body[data-rhythiax-theme="white"] #root .fixed.top-0 [class*="bg-[#2F4184]"],
+body[data-rhythiax-theme="white"] .rhythiax-compare-profile-button,
+body[data-rhythiax-theme="white"] #root .rhythiax-friends-quick-trigger,
+body[data-rhythiax-theme="white"] #root button:has(svg.lucide-user-round-plus),
+body[data-rhythiax-theme="white"] #root button:has(svg.lucide-user-round-minus),
+body[data-rhythiax-theme="white"] #root div:has(> svg.lucide-users-round),
+body[data-rhythiax-theme="white"] #root button.bg-control,
+body[data-rhythiax-theme="white"] #root a.bg-control,
+body[data-rhythiax-theme="white"] #root [role="button"].bg-control {
   background: #ffffff !important;
-  color: #18181b !important;
-  border-color: rgba(30,41,59,.22) !important;
+  border: 1px solid rgba(15, 23, 42, 0.14) !important;
+  color: #0f172a !important;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.05) !important;
 }
 
-/* Switches use aria-checked as their source of truth. Both positions remain
-   visible in White instead of relying on the native blue utility class. */
+body[data-rhythiax-theme="white"] #root [class*="bg-[#1e1f21]"]:has(img[src*="settingsicon"]):hover,
+body[data-rhythiax-theme="white"] #root [class*="bg-control"]:has(img[src*="settingsicon"]):hover,
+body[data-rhythiax-theme="white"] #root button:has(img[src*="settingsicon"]):hover,
+body[data-rhythiax-theme="white"] #root button[aria-label="Settings"]:hover,
+body[data-rhythiax-theme="white"] #root button[role="combobox"]:hover,
+body[data-rhythiax-theme="white"] #root .fixed.top-0 a[href="/changelog"]:hover,
+body[data-rhythiax-theme="white"] #root .fixed.top-0 a[aria-label="Changelog"]:hover,
+body[data-rhythiax-theme="white"] #root .fixed.top-0 [class*="bg-[#2F4184]"]:hover,
+body[data-rhythiax-theme="white"] .rhythiax-compare-profile-button:hover,
+body[data-rhythiax-theme="white"] .rhythiax-compare-profile-button.is-active,
+body[data-rhythiax-theme="white"] #root .rhythiax-friends-quick-trigger:hover,
+body[data-rhythiax-theme="white"] #root button:has(svg.lucide-user-round-plus):hover,
+body[data-rhythiax-theme="white"] #root button:has(svg.lucide-user-round-minus):hover,
+body[data-rhythiax-theme="white"] #root div:has(> svg.lucide-users-round):hover,
+body[data-rhythiax-theme="white"] #root button.bg-control:hover,
+body[data-rhythiax-theme="white"] #root a.bg-control:hover,
+body[data-rhythiax-theme="white"] #root [role="button"].bg-control:hover {
+  background: #eaedf4 !important;
+  border-color: rgba(15, 23, 42, 0.28) !important;
+  color: #020617 !important;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.08) !important;
+}
+
+body[data-rhythiax-theme="white"] #root [class*="bg-[#1e1f21]"]:has(img[src*="settingsicon"]) img[src*="settingsicon"],
+body[data-rhythiax-theme="white"] #root [class*="bg-control"]:has(img[src*="settingsicon"]) img[src*="settingsicon"],
+body[data-rhythiax-theme="white"] #root button:has(img[src*="settingsicon"]) img[src*="settingsicon"],
+body[data-rhythiax-theme="white"] #root button[aria-label="Settings"] img[src*="settingsicon"] {
+  filter: grayscale(1) brightness(0) !important;
+  opacity: 0.78 !important;
+}
+
+body[data-rhythiax-theme="white"] #root button[role="combobox"] svg,
+body[data-rhythiax-theme="white"] #root .fixed.top-0 a[href="/changelog"] svg,
+body[data-rhythiax-theme="white"] #root .fixed.top-0 a[aria-label="Changelog"] svg {
+  color: #0f172a !important;
+  stroke: #0f172a !important;
+  opacity: 0.88 !important;
+}
+
+body[data-rhythiax-theme="white"] #root button[role="combobox"] span {
+  color: #0f172a !important;
+}
+
+body[data-rhythiax-theme="white"] .rhythiax-compare-profile-button svg,
+body[data-rhythiax-theme="white"] #root .rhythiax-friends-quick-trigger svg,
+body[data-rhythiax-theme="white"] #root button:has(svg.lucide-user-round-plus) svg,
+body[data-rhythiax-theme="white"] #root button:has(svg.lucide-user-round-minus) svg,
+body[data-rhythiax-theme="white"] #root div:has(> svg.lucide-users-round) svg {
+  color: #0f172a !important;
+  stroke: #0f172a !important;
+}
+
+body[data-rhythiax-theme="white"] #root [class*="rounded-xl"][class*="border-white/10"][class*="bg-[#111214]"]:has(.badge-hunt-space-cloud) {
+  background-color: var(--rhythiax-surface, #ffffff) !important;
+}
+
+body[data-rhythiax-theme="white"] #root [class*="rounded-xl"][class*="border-white/10"][class*="bg-[#111214]"]:has(.badge-hunt-space-cloud)>.pointer-events-none,
+body[data-rhythiax-theme="white"] #root [class*="rounded-xl"][class*="border-white/10"][class*="bg-[#111214]"]:has(.badge-hunt-space-cloud)>.absolute.inset-0.bg-black\/25 {
+  display: none !important;
+}
+
+/* Switches use aria-checked as their source of truth */
 body[data-rhythiax-theme="white"] #root [role="switch"][aria-checked="true"] {
-  background: linear-gradient(180deg, #52525b 0%, #27272a 100%) !important;
-  box-shadow: inset 0 0 0 1px rgba(24,24,27,.28), 0 1px 2px rgba(24,24,27,.18) !important;
+  background: var(--rhythiax-accent, #5b21b6) !important;
+  box-shadow: inset 0 0 0 1px rgba(15, 23, 42, 0.24), 0 1px 2px rgba(15, 23, 42, 0.16) !important;
 }
+
 body[data-rhythiax-theme="white"] #root [role="switch"][aria-checked="false"] {
-  background: linear-gradient(180deg, #e5e7eb 0%, #cbd5e1 100%) !important;
-  box-shadow: inset 0 0 0 1px rgba(30,41,59,.24) !important;
+  background: linear-gradient(180deg, #e2e6ee 0%, #cbd5e1 100%) !important;
+  box-shadow: inset 0 0 0 1px rgba(15, 23, 42, 0.20) !important;
 }
-body[data-rhythiax-theme="white"] #root [role="switch"] > span { background: #ffffff !important; box-shadow: 0 1px 2px rgba(24,24,27,.28); }
-body[data-rhythiax-theme="white"] #root [role="switch"][aria-checked="false"] > span { transform: translateX(.25rem) !important; }
-body[data-rhythiax-theme="white"] #root [role="switch"][aria-checked="true"] > span { transform: translateX(1.25rem) !important; }
+
+body[data-rhythiax-theme="white"] #root [role="switch"]>span {
+  background: #ffffff !important;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.28);
+}
+
+body[data-rhythiax-theme="white"] #root [role="switch"][aria-checked="false"]>span {
+  transform: translateX(0.25rem) !important;
+}
+
+body[data-rhythiax-theme="white"] #root [role="switch"][aria-checked="true"]>span {
+  transform: translateX(1.25rem) !important;
+}
 
 /* Open stat accordion and history container in White preset */
 body[data-rhythiax-theme="white"] .rhythiax-official-stat-row.rhythiax-stat-row-open {
-  background: color-mix(in srgb, var(--rhythiax-inner-surface, #f5f7fa) 90%, var(--rhythiax-accent, #52525b) 10%) !important;
-  border-left: 3px solid var(--rhythiax-accent, #52525b) !important;
-  border-top: 1px solid color-mix(in srgb, var(--rhythiax-accent, #52525b) 45%, transparent) !important;
-  border-right: 1px solid color-mix(in srgb, var(--rhythiax-accent, #52525b) 45%, transparent) !important;
-  border-bottom: 1px solid color-mix(in srgb, var(--rhythiax-accent, #52525b) 25%, rgba(0, 0, 0, 0.08)) !important;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.06) !important;
+  background: color-mix(in srgb, var(--rhythiax-inner-surface, #eaedf4) 88%, var(--rhythiax-accent, #5b21b6) 12%) !important;
+  border-left: 3px solid var(--rhythiax-accent, #5b21b6) !important;
+  border-top: 1px solid color-mix(in srgb, var(--rhythiax-accent, #5b21b6) 40%, transparent) !important;
+  border-right: 1px solid color-mix(in srgb, var(--rhythiax-accent, #5b21b6) 40%, transparent) !important;
+  border-bottom: 1px solid color-mix(in srgb, var(--rhythiax-accent, #5b21b6) 20%, rgba(15, 23, 42, 0.08)) !important;
+  box-shadow: 0 2px 10px rgba(15, 23, 42, 0.06) !important;
 }
+
 body[data-rhythiax-theme="white"] .rhythiax-official-stat-row.rhythiax-stat-row-open .rhythiax-official-stat-label,
 body[data-rhythiax-theme="white"] .rhythiax-official-stat-row.rhythiax-stat-row-open .rhythiax-official-stat-value {
-  color: #18181b !important;
+  color: #0f172a !important;
 }
-body[data-rhythiax-theme="white"] .rhythiax-history-row {
-  background: color-mix(in srgb, var(--rhythiax-inner-surface, #f5f7fa) 92%, var(--rhythiax-accent, #52525b) 8%) !important;
-  border-left: 3px solid var(--rhythiax-accent, #52525b) !important;
-  border-right: 1px solid color-mix(in srgb, var(--rhythiax-accent, #52525b) 45%, transparent) !important;
-  border-bottom: 1px solid color-mix(in srgb, var(--rhythiax-accent, #52525b) 45%, transparent) !important;
-  box-shadow: 0 6px 14px rgba(0, 0, 0, 0.06) !important;
+
+body[data-rhythiax-theme="white"] .rhythiax-history-pane .rhythiax-history-row {
+  background: #ffffff !important;
+  border: 1px solid rgba(15, 23, 42, 0.10) !important;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.03) !important;
 }
 body[data-rhythiax-theme="white"] .rhythiax-history-header {
-  border-bottom-color: rgba(51, 65, 85, 0.16) !important;
+  border-bottom-color: rgba(15, 23, 42, 0.10) !important;
 }
 body[data-rhythiax-theme="white"] .rhythiax-history-title {
-  color: #18181b !important;
+  color: #0f172a !important;
+}
+body[data-rhythiax-theme="white"] .rhythiax-history-subtitle {
+  color: #475569 !important;
 }
 body[data-rhythiax-theme="white"] .rhythiax-history-icon {
-  color: var(--rhythiax-accent, #52525b) !important;
+  color: #334155 !important;
 }
 body[data-rhythiax-theme="white"] .rhythiax-history-badge {
-  color: #52525b !important;
-  background: rgba(0, 0, 0, 0.05) !important;
-  border-color: rgba(51, 65, 85, 0.16) !important;
+  color: #334155 !important;
+  background: var(--rhythiax-inner-surface, #eaedf4) !important;
+  border-color: rgba(15, 23, 42, 0.10) !important;
 }
-body[data-rhythiax-theme="white"] .rhythiax-history-item {
-  color: #52525b !important;
+body[data-rhythiax-theme="white"] .rhythiax-history-table th {
+  color: #475569 !important;
+  border-bottom-color: rgba(15, 23, 42, 0.10) !important;
 }
-body[data-rhythiax-theme="white"] .rhythiax-history-item:hover {
-  background: rgba(0, 0, 0, 0.04) !important;
+body[data-rhythiax-theme="white"] .rhythiax-history-table td {
+  border-bottom-color: rgba(15, 23, 42, 0.06) !important;
+}
+body[data-rhythiax-theme="white"] .rhythiax-history-date {
+  color: #334155 !important;
 }
 body[data-rhythiax-theme="white"] .rhythiax-history-value {
-  color: #18181b !important;
+  color: #0f172a !important;
 }
 body[data-rhythiax-theme="white"] .rhythiax-history-more-button {
-  background: #f1f5f9 !important;
-  border-color: #cbd5e1 !important;
+  background: var(--rhythiax-inner-surface, #eaedf4) !important;
+  border-color: rgba(15, 23, 42, 0.12) !important;
   color: #334155 !important;
 }
 body[data-rhythiax-theme="white"] .rhythiax-history-more-button:hover {
-  background: #e2e8f0 !important;
-  border-color: #94a3b8 !important;
+  background: #dfe4ed !important;
+  border-color: rgba(15, 23, 42, 0.22) !important;
   color: #0f172a !important;
 }
 
@@ -273,216 +618,1083 @@ body[data-rhythiax-theme="white"] .rhythiax-profile-box,
 body[data-rhythiax-theme="white"] .rhythiax-stats-panel,
 body[data-rhythiax-theme="white"] .rhythiax-accordion {
   background: var(--rhythiax-surface, #ffffff) !important;
-  border-color: rgba(51, 65, 85, 0.22) !important;
-  box-shadow: 0 2px 8px rgba(51, 65, 85, 0.045) !important;
+  border-color: var(--rhythiax-border, rgba(15, 23, 42, 0.12)) !important;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.05), 0 4px 14px rgba(15, 23, 42, 0.05) !important;
 }
-body[data-rhythiax-theme="white"] .rhythiax-score-card .rhythiax-card-stat-item,
+
+/* Maps difficulty filter buttons */
+body[data-rhythiax-theme="white"] #root .grid-cols-5 > button {
+  height: auto !important;
+  min-height: 56px !important;
+  padding: 12px 16px !important;
+  border-radius: 8px !important;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.05) !important;
+}
+body[data-rhythiax-theme="white"] #root .grid-cols-5 > button:not([class*="bg-blue-500"]):not([class*="border-blue-400"]) {
+  background-color: #ffffff !important;
+  border: 1px solid rgba(15, 23, 42, 0.14) !important;
+}
+body[data-rhythiax-theme="white"] #root .grid-cols-5 > button:not([class*="bg-blue-500"]):not([class*="border-blue-400"]):hover {
+  background-color: #f1f4f9 !important;
+  border-color: rgba(15, 23, 42, 0.28) !important;
+}
+body[data-rhythiax-theme="white"] #root .grid-cols-5 > button [class*="text-white"],
+body[data-rhythiax-theme="white"] #root .grid-cols-5 > button .text-sm {
+  color: #0f172a !important;
+}
+body[data-rhythiax-theme="white"] #root .grid-cols-5 > button .text-xs,
+body[data-rhythiax-theme="white"] #root .grid-cols-5 > button [class*="text-neutral-500"] {
+  color: #475569 !important;
+}
+body[data-rhythiax-theme="white"] #root .grid-cols-5 > button[class*="bg-blue-500"],
+body[data-rhythiax-theme="white"] #root .grid-cols-5 > button[class*="border-blue-400"] {
+  background: color-mix(in srgb, var(--rhythiax-accent, #5b21b6) 12%, #ffffff) !important;
+  border-color: var(--rhythiax-accent, #5b21b6) !important;
+  box-shadow: 0 0 0 1px var(--rhythiax-accent, #5b21b6) !important;
+}
+body[data-rhythiax-theme="white"] #root .grid-cols-5 > button[class*="bg-blue-500"] [class*="text-white"],
+body[data-rhythiax-theme="white"] #root .grid-cols-5 > button[class*="border-blue-400"] [class*="text-white"],
+body[data-rhythiax-theme="white"] #root .grid-cols-5 > button[class*="bg-blue-500"] .text-sm,
+body[data-rhythiax-theme="white"] #root .grid-cols-5 > button[class*="border-blue-400"] .text-sm {
+  color: var(--rhythiax-accent, #5b21b6) !important;
+  font-weight: 700 !important;
+}
+
+/* Supporter rows on leaderboards and user entries - strictly scoped to player row items */
+body[data-rhythiax-theme="white"] #root a[href*="/player/"]:has(img[src*="supporterbg"]),
+body[data-rhythiax-theme="white"] #root a[href*="/player/"]:has(picture source[srcset*="supporterbg"]),
+body[data-rhythiax-theme="white"] #root [class*="border-purple-"]:has(> img[src*="supporterbg"]),
+body[data-rhythiax-theme="white"] #root [class*="border-purple-"]:has(> picture img),
+body[data-rhythiax-theme="white"] #root [class*="border-purple-"]:has(> div > picture img) {
+  background: linear-gradient(90deg, #f5f3ff 0%, #faf5ff 55%, #ffffff 100%) !important;
+  border-color: rgba(168, 85, 247, 0.45) !important;
+  box-shadow: 0 2px 8px rgba(168, 85, 247, 0.10) !important;
+}
+
+body[data-rhythiax-theme="white"] #root a[href*="/player/"]:has(img[src*="supporterbg"]):hover,
+body[data-rhythiax-theme="white"] #root a[href*="/player/"]:has(picture source[srcset*="supporterbg"]):hover,
+body[data-rhythiax-theme="white"] #root [class*="border-purple-"]:has(> img[src*="supporterbg"]):hover,
+body[data-rhythiax-theme="white"] #root [class*="border-purple-"]:has(> picture img):hover,
+body[data-rhythiax-theme="white"] #root [class*="border-purple-"]:has(> div > picture img):hover {
+  background: linear-gradient(90deg, #ede9fe 0%, #f5f3ff 55%, #ffffff 100%) !important;
+  border-color: rgba(168, 85, 247, 0.65) !important;
+}
+
+body[data-rhythiax-theme="white"] #root a[href*="/player/"]:not(:has(img[src*="supporterbg"])):not(:has(picture source[srcset*="supporterbg"])):hover {
+  background-color: rgba(91, 33, 182, 0.04) !important;
+}
+
+body[data-rhythiax-theme="white"] picture:has(source[srcset*="supporterbg"]) img,
+body[data-rhythiax-theme="white"] #root [class*="border-purple-"]:has(img[src*="supporterbg"]) picture img {
+  opacity: 0.22 !important;
+  mix-blend-mode: multiply !important;
+  filter: saturate(1.4) !important;
+}
+
+body[data-rhythiax-theme="white"] img[src*="supporterheart"] {
+  filter: drop-shadow(0 2px 4px rgba(168, 85, 247, 0.35)) !important;
+}
+
+body[data-rhythiax-theme="white"] #root a[href*="/player/"]:has(img[src*="supporterbg"]) [class*="text-white"],
+body[data-rhythiax-theme="white"] #root a[href*="/player/"]:has(picture source[srcset*="supporterbg"]) [class*="text-white"],
+body[data-rhythiax-theme="white"] #root [class*="border-purple-"]:has(img[src*="supporterbg"]) [class*="text-white"],
+body[data-rhythiax-theme="white"] #root [class*="border-purple-"]:has(img[src*="supporterbg"]) a,
+body[data-rhythiax-theme="white"] #root [class*="border-purple-"]:has(img[src*="supporterbg"]) .font-semibold {
+  color: #1e1b4b !important;
+}
+
+body[data-rhythiax-theme="white"] #root a[href*="/player/"]:has(img[src*="supporterbg"]) [class*="text-neutral-"],
+body[data-rhythiax-theme="white"] #root a[href*="/player/"]:has(picture source[srcset*="supporterbg"]) [class*="text-neutral-"],
+body[data-rhythiax-theme="white"] #root [class*="border-purple-"]:has(img[src*="supporterbg"]) [class*="text-neutral-300"],
+body[data-rhythiax-theme="white"] #root [class*="border-purple-"]:has(img[src*="supporterbg"]) [class*="text-neutral-400"] {
+  color: #4338ca !important;
+}
+
+/* Score card typography and high-contrast stat boxes */
+body[data-rhythiax-theme="white"] .rhythiax-score-card .rhythiax-card-bg,
+body[data-rhythiax-theme="white"] .rhythiax-modern-card .rhythiax-card-bg {
+  mask-image: linear-gradient(to right, rgba(0, 0, 0, 1) 0%, rgba(0, 0, 0, 1) 56%, rgba(0, 0, 0, 0) 100%) !important;
+  -webkit-mask-image: linear-gradient(to right, rgba(0, 0, 0, 1) 0%, rgba(0, 0, 0, 1) 56%, rgba(0, 0, 0, 0) 100%) !important;
+}
+
+body[data-rhythiax-theme="white"] .rhythiax-score-card .rhythiax-card-bg.rhythiax-card-bg-loaded,
+body[data-rhythiax-theme="white"] .rhythiax-modern-card .rhythiax-card-bg.rhythiax-card-bg-loaded {
+  opacity: 0.22 !important;
+  filter: contrast(1.06) saturate(1.08) !important;
+}
+
+body[data-rhythiax-theme="white"] .rhythiax-score-card:hover .rhythiax-card-bg.rhythiax-card-bg-loaded,
+body[data-rhythiax-theme="white"] .rhythiax-modern-card:hover .rhythiax-card-bg.rhythiax-card-bg-loaded {
+  opacity: 0.34 !important;
+  filter: contrast(1.08) saturate(1.10) !important;
+}
+
+body[data-rhythiax-theme="white"] .rhythiax-score-card .rhythiax-card-title,
+body[data-rhythiax-theme="white"] .rhythiax-modern-card .rhythiax-card-title {
+  color: #020617 !important;
+  font-weight: 700 !important;
+  text-shadow: none !important;
+}
+
+body[data-rhythiax-theme="white"] .rhythiax-score-card .rhythiax-card-title:hover {
+  color: var(--rhythiax-accent, #5b21b6) !important;
+}
+
+body[data-rhythiax-theme="white"] .rhythiax-score-card .rhythiax-card-artist,
+body[data-rhythiax-theme="white"] .rhythiax-score-card .rhythiax-card-mapper {
+  color: #475569 !important;
+}
+
+body[data-rhythiax-theme="white"] .rhythiax-card-date,
+body[data-rhythiax-theme="white"] .rhythiax-score-card .rhythiax-card-date,
+body[data-rhythiax-theme="white"] .rhythiax-absolute-date {
+  background: rgba(255, 255, 255, 0.92) !important;
+  border: 1px solid rgba(15, 23, 42, 0.18) !important;
+  color: #0f172a !important;
+  font-weight: 650 !important;
+  text-shadow: none !important;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08) !important;
+  backdrop-filter: blur(8px) !important;
+  -webkit-backdrop-filter: blur(8px) !important;
+}
+
 body[data-rhythiax-theme="white"] .rhythiax-score-card .rhythiax-card-stat-box,
-body[data-rhythiax-theme="white"] .rhythiax-score-card .rhythiax-card-rp-box {
-  background: var(--rhythiax-inner-surface, #f5f7fa) !important;
-  border-color: rgba(30, 41, 59, 0.08) !important;
+body[data-rhythiax-theme="white"] .rhythiax-score-card .rhythiax-card-rp-box,
+body[data-rhythiax-theme="white"] .rhythiax-score-card .rhythiax-card-stat-item {
+  background: #edf1f7 !important;
+  border: 1px solid rgba(15, 23, 42, 0.12) !important;
 }
+
+body[data-rhythiax-theme="white"] .rhythiax-score-card .rhythiax-card-stat-label {
+  color: #475569 !important;
+  font-weight: 700 !important;
+}
+
+body[data-rhythiax-theme="white"] .rhythiax-score-card .rhythiax-card-stat-value,
+body[data-rhythiax-theme="white"] .rhythiax-score-card .rhythiax-card-rp-val {
+  color: #020617 !important;
+  font-weight: 800 !important;
+}
+
+body[data-rhythiax-theme="white"] .rhythiax-score-card .rhythiax-card-stat-value.rhythiax-stat-miss {
+  color: #dc2626 !important;
+}
+
+body[data-rhythiax-theme="white"] .rhythiax-score-card .rhythiax-card-stat-value.rhythiax-stat-fullcombo {
+  color: #16a34a !important;
+}
+
+body[data-rhythiax-theme="white"] .rhythiax-score-card .rhythiax-card-rp-lbl {
+  color: var(--rhythiax-accent, #5b21b6) !important;
+  font-weight: 700 !important;
+}
+
+body[data-rhythiax-theme="white"] .rhythiax-score-card .rhythiax-card-rp-sub {
+  color: #475569 !important;
+}
+
+body[data-rhythiax-theme="white"] .rhythiax-score-card .rhythiax-card-rp-divider {
+  background: rgba(15, 23, 42, 0.16) !important;
+}
+
 body[data-rhythiax-theme="white"] .rhythiax-card-buttons {
   background: transparent !important;
 }
+
 body[data-rhythiax-theme="white"] .rhythiax-card-btn {
-  background: #f1f5f9 !important;
-  border-color: #cbd5e1 !important;
+  background: var(--rhythiax-inner-surface, #eaedf4) !important;
+  border-color: rgba(15, 23, 42, 0.12) !important;
   color: #334155 !important;
 }
-body[data-rhythiax-theme="white"] .rhythiax-card-stat-item,
+
+body[data-rhythiax-theme="white"] .rhythiax-card-btn:hover {
+  background: #dfe4ed !important;
+  border-color: rgba(15, 23, 42, 0.24) !important;
+  color: #0f172a !important;
+}
+
+body[data-rhythiax-theme="white"] .rhythiax-card-btn-native-actions:hover,
+body[data-rhythiax-theme="white"] .rhythiax-card-btn-native-actions[data-state="open"],
+body[data-rhythiax-theme="white"] .rhythiax-card-btn-native-actions[aria-expanded="true"] {
+  background: var(--rhythiax-accent-soft, rgba(91, 33, 182, 0.12)) !important;
+  border-color: var(--rhythiax-accent, #5b21b6) !important;
+  color: var(--rhythiax-accent, #5b21b6) !important;
+}
+
 body[data-rhythiax-theme="white"] .rhythiax-official-stat-row:not(.rhythiax-stat-row-open),
 body[data-rhythiax-theme="white"] .rhythiax-grade-breakdown .rhythiax-grade-item {
-  background: var(--rhythiax-inner-surface, #f3f4f6) !important;
-  border-color: rgba(51, 65, 85, 0.16) !important;
+  background: var(--rhythiax-inner-surface, #eaedf4) !important;
+  border-color: rgba(15, 23, 42, 0.09) !important;
 }
+
 body[data-rhythiax-theme="white"] .rhythiax-accordion-header {
-  background: rgba(51, 65, 85, 0.045) !important;
+  background: var(--rhythiax-inner-surface, #eaedf4) !important;
 }
+
 body[data-rhythiax-theme="white"] .rhythiax-accordion-header:hover,
 body[data-rhythiax-theme="white"] .rhythiax-official-stat-row:not(.rhythiax-stat-row-open):hover {
-  background: rgba(51, 65, 85, 0.09) !important;
+  background: #dfe4ed !important;
 }
+
 body[data-rhythiax-theme="white"] .rhythiax-speed-chart {
-  border-bottom-color: rgba(24, 24, 27, 0.14) !important;
+  border-bottom-color: rgba(15, 23, 42, 0.14) !important;
 }
 
 /* White theme rank grid cards */
-body[data-rhythiax-theme="white"] .rhythiax-rank-grid-with-history > a > div,
-body[data-rhythiax-theme="white"] .rhythiax-rank-grid-with-history > div {
-  background: var(--rhythiax-inner-surface, #f3f4f6) !important;
-  border-color: rgba(51, 65, 85, 0.16) !important;
-  box-shadow: 0 1px 3px rgba(51, 65, 85, 0.06);
+body[data-rhythiax-theme="white"] .rhythiax-rank-grid-with-history>a>div,
+body[data-rhythiax-theme="white"] .rhythiax-rank-grid-with-history>div {
+  background: var(--rhythiax-inner-surface, #eaedf4) !important;
+  border-color: rgba(15, 23, 42, 0.10) !important;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04);
 }
-body[data-rhythiax-theme="white"] .rhythiax-rank-grid-with-history > a:hover > div,
-body[data-rhythiax-theme="white"] .rhythiax-rank-grid-with-history > div:hover {
+
+body[data-rhythiax-theme="white"] .rhythiax-rank-grid-with-history>a:hover>div,
+body[data-rhythiax-theme="white"] .rhythiax-rank-grid-with-history>div:hover {
   background: var(--rhythiax-surface, #ffffff) !important;
-  border-color: rgba(51, 65, 85, 0.32) !important;
-  box-shadow: 0 3px 8px rgba(51, 65, 85, 0.10);
+  border-color: rgba(15, 23, 42, 0.24) !important;
+  box-shadow: 0 3px 10px rgba(15, 23, 42, 0.08);
 }
+
 body[data-rhythiax-theme="white"] .rhythiax-rank-grid-with-history [class*="text-neutral-400"],
 body[data-rhythiax-theme="white"] .rhythiax-rank-grid-with-history [class*="text-neutral-300"] {
-  color: #52525b !important;
+  color: #475569 !important;
 }
+
 body[data-rhythiax-theme="white"] .rhythiax-rank-grid-with-history [class*="text-white"],
 body[data-rhythiax-theme="white"] .rhythiax-rank-grid-with-history button {
-  color: #18181b !important;
-}
-body[data-rhythiax-theme="white"] .rhythiax-rank-grid-with-history button:hover {
-  color: var(--rhythiax-accent, #52525b) !important;
+  color: #0f172a !important;
 }
 
+body[data-rhythiax-theme="white"] .rhythiax-rank-grid-with-history button:hover {
+  color: var(--rhythiax-accent, #5b21b6) !important;
+}
 
 /* White Title Progression & Rankpath styling */
-body[data-rhythiax-theme="white"] .rhythiax-accordion-title { color: #27272a !important; }
-body[data-rhythiax-theme="white"] .rhythiax-accordion-arrow { color: #52525b !important; }
-body[data-rhythiax-theme="white"] .rhythiax-title-progression-icon {
-  border-color: #52525b;
-  color: #52525b;
-  background: radial-gradient(circle at 35% 25%, rgba(255, 255, 255, 0.75), rgba(82, 82, 91, 0.10) 58%, transparent);
-  box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.8), 0 0 0 2px rgba(82, 82, 91, 0.08), 0 0 8px rgba(82, 82, 91, 0.16);
+body[data-rhythiax-theme="white"] .rhythiax-accordion-title {
+  color: #0f172a !important;
 }
+
+body[data-rhythiax-theme="white"] .rhythiax-accordion-arrow {
+  color: #475569 !important;
+}
+
+body[data-rhythiax-theme="white"] .rhythiax-title-progression-icon {
+  border-color: #475569;
+  color: #334155;
+  background: radial-gradient(circle at 35% 25%, #ffffff, rgba(71, 85, 105, 0.10) 58%, transparent);
+  box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.8), 0 0 0 2px rgba(71, 85, 105, 0.08), 0 0 8px rgba(71, 85, 105, 0.16);
+}
+
 body[data-rhythiax-theme="white"] .rhythiax-title-progression-icon[data-crown-mode="2d"] {
   background: transparent;
   box-shadow: none;
 }
+
 body[data-rhythiax-theme="white"] .rhythiax-rankpath-track {
-  background: #e2e8f0 !important;
-  border-color: rgba(0, 0, 0, 0.08) !important;
+  background: #dbe0ea !important;
+  border-color: rgba(15, 23, 42, 0.10) !important;
 }
+
 body[data-rhythiax-theme="white"] .rhythiax-rankpath-segment {
-  background: rgba(0, 0, 0, 0.05) !important;
+  background: rgba(15, 23, 42, 0.06) !important;
 }
+
 body[data-rhythiax-theme="white"] .rhythiax-rankpath-track-row-achieved .rhythiax-rankpath-segment {
   filter: none;
-  background: rgba(39, 39, 42, 0.08) !important;
+  background: rgba(15, 23, 42, 0.10) !important;
 }
-body[data-rhythiax-theme="white"] .rhythiax-rankpath-track-row-achieved .rhythiax-rankpath-segment:nth-child(1) .rhythiax-rankpath-segment-fill { background: #ababb3 !important; }
-body[data-rhythiax-theme="white"] .rhythiax-rankpath-track-row-achieved .rhythiax-rankpath-segment:nth-child(2) .rhythiax-rankpath-segment-fill { background: #9d9da6 !important; }
-body[data-rhythiax-theme="white"] .rhythiax-rankpath-track-row-achieved .rhythiax-rankpath-segment:nth-child(3) .rhythiax-rankpath-segment-fill { background: #8f8f99 !important; }
-body[data-rhythiax-theme="white"] .rhythiax-rankpath-track-row-achieved .rhythiax-rankpath-segment:nth-child(4) .rhythiax-rankpath-segment-fill { background: #80808a !important; }
-body[data-rhythiax-theme="white"] .rhythiax-rankpath-track-row-achieved .rhythiax-rankpath-segment:nth-child(5) .rhythiax-rankpath-segment-fill { background: #71717a !important; }
+
+body[data-rhythiax-theme="white"] .rhythiax-rankpath-track-row-achieved .rhythiax-rankpath-segment:nth-child(1) .rhythiax-rankpath-segment-fill {
+  background: #94a3b8 !important;
+}
+
+body[data-rhythiax-theme="white"] .rhythiax-rankpath-track-row-achieved .rhythiax-rankpath-segment:nth-child(2) .rhythiax-rankpath-segment-fill {
+  background: #64748b !important;
+}
+
+body[data-rhythiax-theme="white"] .rhythiax-rankpath-track-row-achieved .rhythiax-rankpath-segment:nth-child(3) .rhythiax-rankpath-segment-fill {
+  background: #475569 !important;
+}
+
+body[data-rhythiax-theme="white"] .rhythiax-rankpath-track-row-achieved .rhythiax-rankpath-segment:nth-child(4) .rhythiax-rankpath-segment-fill {
+  background: #334155 !important;
+}
+
+body[data-rhythiax-theme="white"] .rhythiax-rankpath-track-row-achieved .rhythiax-rankpath-segment:nth-child(5) .rhythiax-rankpath-segment-fill {
+  background: #1e293b !important;
+}
+
 body[data-rhythiax-theme="white"] .rhythiax-rankpath-label,
-body[data-rhythiax-theme="white"] .r-tier-name { color: #3f3f46 !important; }
-body[data-rhythiax-theme="white"] .r-tier-rp { color: #71717a !important; }
-body[data-rhythiax-theme="white"] .rhythiax-rankpath-target-label { color: #52525b !important; }
-body[data-rhythiax-theme="white"] .rhythiax-rankpath-target-line { background: rgba(39, 39, 42, 0.20) !important; }
+body[data-rhythiax-theme="white"] .r-tier-name {
+  color: #1e293b !important;
+}
+
+body[data-rhythiax-theme="white"] .r-tier-rp {
+  color: #475569 !important;
+}
+
+body[data-rhythiax-theme="white"] .rhythiax-rankpath-target-label {
+  color: #334155 !important;
+}
+
+body[data-rhythiax-theme="white"] .rhythiax-rankpath-target-line {
+  background: rgba(15, 23, 42, 0.22) !important;
+}
+
 body[data-rhythiax-theme="white"] .rhythiax-rankpath-crown {
   border-color: #94a3b8;
-  color: #64748b;
-  background: rgba(0, 0, 0, 0.04);
+  color: #475569;
+  background: rgba(15, 23, 42, 0.05);
   box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.08), 0 2px 6px rgba(0, 0, 0, 0.06);
 }
+
 body[data-rhythiax-theme="white"] .rhythiax-rankpath-target-achieved .rhythiax-rankpath-crown,
 body[data-rhythiax-theme="white"] .rhythiax-rankpath-target.achieved .rhythiax-rankpath-crown {
-  border-color: #1e293b;
-  color: #1e293b;
-  background: radial-gradient(circle at 35% 25%, rgba(30, 41, 59, 0.18), rgba(30, 41, 59, 0.05) 54%, transparent);
-  filter: drop-shadow(0 0 6px rgba(30, 41, 59, 0.25));
-  box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.1), 0 0 0 2px rgba(30, 41, 59, 0.1);
+  border-color: #0f172a;
+  color: #0f172a;
+  background: radial-gradient(circle at 35% 25%, rgba(15, 23, 42, 0.18), rgba(15, 23, 42, 0.05) 54%, transparent);
+  filter: drop-shadow(0 0 6px rgba(15, 23, 42, 0.25));
+  box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.1), 0 0 0 2px rgba(15, 23, 42, 0.1);
 }
+
 body[data-rhythiax-theme="white"] .rhythiax-rankpath-target-achieved .rhythiax-rankpath-crown svg,
 body[data-rhythiax-theme="white"] .rhythiax-rankpath-target.achieved .rhythiax-rankpath-crown svg {
-  fill: rgba(30, 41, 59, 0.15);
+  fill: rgba(15, 23, 42, 0.18);
 }
+
 body[data-rhythiax-theme="white"] .rhythiax-rankpath-target[data-crown-mode="3d"] .rhythiax-rankpath-crown {
   border-color: #94a3b8;
-  color: #64748b;
-  background: radial-gradient(circle at 35% 25%, rgba(255, 255, 255, 0.74), rgba(82, 82, 91, 0.10) 54%, rgba(82, 82, 91, 0.04));
-  filter: drop-shadow(0 0 6px rgba(82, 82, 91, 0.18));
-  box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.78), 0 0 0 2px rgba(82, 82, 91, 0.10), 0 0 10px rgba(82, 82, 91, 0.12);
+  color: #475569;
+  background: radial-gradient(circle at 35% 25%, #ffffff, rgba(71, 85, 105, 0.10) 54%, rgba(71, 85, 105, 0.04));
+  filter: drop-shadow(0 0 6px rgba(71, 85, 105, 0.18));
+  box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.78), 0 0 0 2px rgba(71, 85, 105, 0.10), 0 0 10px rgba(71, 85, 105, 0.12);
 }
-body[data-rhythiax-theme="white"] .rhythiax-rankpath-target[data-crown-mode="3d"] .rhythiax-rankpath-crown::before { opacity: 0.20; }
-body[data-rhythiax-theme="white"] .rhythiax-rankpath-target[data-crown-mode="3d"] .rhythiax-rankpath-crown::after { opacity: 0; }
+
+body[data-rhythiax-theme="white"] .rhythiax-rankpath-target[data-crown-mode="3d"] .rhythiax-rankpath-crown::before {
+  opacity: 0.20;
+}
+
+body[data-rhythiax-theme="white"] .rhythiax-rankpath-target[data-crown-mode="3d"] .rhythiax-rankpath-crown::after {
+  opacity: 0;
+}
+
 body[data-rhythiax-theme="white"] .rhythiax-rankpath-target[data-crown-mode="2d"] .rhythiax-rankpath-crown {
-  border-color: #71717a;
-  color: #52525b;
+  border-color: #64748b;
+  color: #475569;
   background: transparent;
   box-shadow: none;
   filter: none;
 }
-body[data-rhythiax-theme="white"] .rhythiax-rankpath-label-past { color: #52525b !important; }
+
+body[data-rhythiax-theme="white"] .rhythiax-rankpath-label-past {
+  color: #475569 !important;
+}
+
 body[data-rhythiax-theme="white"] .rhythiax-rankpath-status-capsule {
-  background: #f1f5f9 !important;
-  border-color: rgba(30, 41, 59, 0.15) !important;
+  background: var(--rhythiax-inner-surface, #eaedf4) !important;
+  border-color: rgba(15, 23, 42, 0.14) !important;
 }
-body[data-rhythiax-theme="white"] .rhythiax-rankpath-status-rp { color: #0f172a !important; }
-body[data-rhythiax-theme="white"] .rhythiax-rankpath-status-goal { color: #475569 !important; }
+
+body[data-rhythiax-theme="white"] .rhythiax-rankpath-status-rp {
+  color: #0f172a !important;
+}
+
+body[data-rhythiax-theme="white"] .rhythiax-rankpath-status-goal {
+  color: #475569 !important;
+}
+
 body[data-rhythiax-theme="white"] .rhythiax-rankpath-status-capsule.is-gm {
-  border-color: rgba(30, 41, 59, 0.3) !important;
-  background: #e2e8f0 !important;
-  box-shadow: 0 0 6px rgba(30, 41, 59, 0.1) !important;
+  border-color: rgba(15, 23, 42, 0.28) !important;
+  background: #dfe4ed !important;
+  box-shadow: 0 0 6px rgba(15, 23, 42, 0.10) !important;
 }
+
 body[data-rhythiax-theme="white"] .rhythiax-rankpath-marker {
   background: #ffffff !important;
-  box-shadow: 0 0 4px var(--active-tier-color, #000), 0 1px 3px rgba(0, 0, 0, 0.3) !important;
+  box-shadow: 0 0 4px var(--active-tier-color, #0f172a), 0 1px 3px rgba(0, 0, 0, 0.25) !important;
 }
+
 body[data-rhythiax-theme="white"] .rhythiax-rankpath-bar.is-grandmaster .rhythiax-rankpath-segment,
 body[data-rhythiax-theme="white"] .rhythiax-rankpath-bar.is-gm .rhythiax-rankpath-segment {
-  background: rgba(39, 39, 42, 0.08) !important;
+  background: rgba(15, 23, 42, 0.10) !important;
 }
+
 body[data-rhythiax-theme="white"] .rhythiax-rankpath-bar.is-grandmaster .rhythiax-rankpath-segment-fill,
 body[data-rhythiax-theme="white"] .rhythiax-rankpath-bar.is-gm .rhythiax-rankpath-segment-fill {
-  background: #334155 !important;
-  box-shadow: 0 0 5px rgba(51, 65, 85, 0.4) !important;
+  background: #1e293b !important;
+  box-shadow: 0 0 5px rgba(15, 23, 42, 0.4) !important;
   filter: none !important;
 }
+
 body[data-rhythiax-theme="white"] .rhythiax-rankpath-bar.is-grandmaster .rhythiax-rankpath-label,
 body[data-rhythiax-theme="white"] .rhythiax-rankpath-bar.is-grandmaster .rhythiax-rankpath-target-label,
 body[data-rhythiax-theme="white"] .rhythiax-rankpath-bar.is-gm .rhythiax-rankpath-target-label {
-  color: #1e293b !important;
+  color: #0f172a !important;
 }
 
 /* White Rank History modal styling */
-body[data-rhythiax-theme="white"] .rhythiax-profile-history-delta { border: 1px solid transparent; }
-body[data-rhythiax-theme="white"] .rhythiax-profile-history-delta.neutral {
-  color: #475569;
-  background: #e2e8f0;
-  border-color: rgba(51, 65, 85, 0.16);
+body[data-rhythiax-theme="white"] .rhythiax-profile-history-delta {
+  border: 1px solid transparent;
 }
+
+body[data-rhythiax-theme="white"] .rhythiax-profile-history-delta.neutral {
+  color: #334155;
+  background: var(--rhythiax-inner-surface, #eaedf4);
+  border-color: rgba(15, 23, 42, 0.12);
+}
+
 body[data-rhythiax-theme="white"] .rhythiax-profile-history-delta.positive {
   color: #15803d;
   background: #dcfce7;
-  border-color: rgba(34, 197, 94, 0.28);
+  border-color: rgba(34, 197, 94, 0.32);
 }
+
 body[data-rhythiax-theme="white"] .rhythiax-profile-history-delta.negative {
   color: #b91c1c;
   background: #fee2e2;
-  border-color: rgba(239, 68, 68, 0.28);
+  border-color: rgba(239, 68, 68, 0.32);
 }
+
 body[data-rhythiax-theme="white"] .rhythiax-rank-history-dialog {
-  color: #18181b;
-  border-color: #cbd5e1;
+  color: #0f172a;
+  border-color: rgba(15, 23, 42, 0.15);
   background: #ffffff;
-  box-shadow: 0 18px 55px rgba(24, 24, 27, 0.18);
+  box-shadow: 0 20px 60px rgba(15, 23, 42, 0.16);
 }
+
 body[data-rhythiax-theme="white"] .rhythiax-rank-history-heading p,
 body[data-rhythiax-theme="white"] .rhythiax-rank-history-close,
 body[data-rhythiax-theme="white"] .rhythiax-rank-history-weekly-card span,
 body[data-rhythiax-theme="white"] .rhythiax-rank-history-weekly-card small,
 body[data-rhythiax-theme="white"] .rhythiax-rank-history-pager span,
-body[data-rhythiax-theme="white"] .rhythiax-rank-history-note { color: #52525b; }
+body[data-rhythiax-theme="white"] .rhythiax-rank-history-note {
+  color: #475569;
+}
+
+body[data-rhythiax-theme="white"] .rhythiax-reimagined-metric-card,
 body[data-rhythiax-theme="white"] .rhythiax-rank-history-weekly-card {
-  border-color: rgba(51, 65, 85, 0.16);
-  background: #f8fafc;
+  border-color: rgba(15, 23, 42, 0.10) !important;
+  background: var(--rhythiax-inner-surface, #eaedf4) !important;
 }
+
+body[data-rhythiax-theme="white"] .rhythiax-reimagined-metric-card:hover,
+body[data-rhythiax-theme="white"] .rhythiax-rank-history-weekly-card:hover {
+  background: var(--rhythiax-surface, #ffffff) !important;
+  border-color: rgba(15, 23, 42, 0.24) !important;
+}
+
+body[data-rhythiax-theme="white"] .rhythiax-rank-history-weekly-card span {
+  color: #475569 !important;
+}
+
+body[data-rhythiax-theme="white"] .rhythiax-rank-history-weekly-card strong {
+  color: #0f172a !important;
+}
+
+body[data-rhythiax-theme="white"] .rhythiax-rank-history-weekly-card small {
+  display: inline-flex !important;
+  align-items: center !important;
+  width: fit-content !important;
+  max-width: 100% !important;
+  padding: 2.5px 8.5px !important;
+  border-radius: 9999px !important;
+  font-size: 11px !important;
+  font-weight: 700 !important;
+  margin-top: 4px !important;
+  line-height: 1.25 !important;
+}
+
+body[data-rhythiax-theme="white"] .rhythiax-rank-history-weekly-card small.neutral,
+body[data-rhythiax-theme="white"] .rhythiax-rank-history-weekly-card small.rhythiax-rank-history-delta-neutral {
+  color: #475569 !important;
+  background: rgba(15, 23, 42, 0.06) !important;
+  border: 1px solid rgba(15, 23, 42, 0.12) !important;
+}
+
 body[data-rhythiax-theme="white"] .rhythiax-rank-history-table-wrap {
-  border-color: rgba(51, 65, 85, 0.18);
+  border-color: rgba(15, 23, 42, 0.12) !important;
+  background: #ffffff !important;
 }
-body[data-rhythiax-theme="white"] .rhythiax-rank-history-table th { background: rgba(24, 24, 27, 0.05); color: #52525b; border-color: rgba(51, 65, 85, 0.12); }
-body[data-rhythiax-theme="white"] .rhythiax-rank-history-table td { color: #18181b; border-color: rgba(51, 65, 85, 0.12); }
-body[data-rhythiax-theme="white"] .rhythiax-rank-history-table tbody tr:nth-child(even) td { background: rgba(24, 24, 27, 0.025); }
-body[data-rhythiax-theme="white"] .rhythiax-rank-history-table tbody tr:hover td { background: rgba(51, 65, 85, 0.06); }
-body[data-rhythiax-theme="white"] .rhythiax-rank-history-table .rhythiax-rank-history-current td { background: rgba(24, 24, 27, 0.06); }
+
+body[data-rhythiax-theme="white"] .rhythiax-inline-rank-history .rhythiax-rank-history-table-wrap {
+  border: 0 !important;
+  background: transparent !important;
+}
+
+body[data-rhythiax-theme="white"] .rhythiax-rank-history-table th {
+  background: #f8fafc !important;
+  color: #475569 !important;
+  border-bottom-color: rgba(15, 23, 42, 0.10) !important;
+}
+
+body[data-rhythiax-theme="white"] .rhythiax-inline-rank-history .rhythiax-rank-history-table th {
+  background: transparent !important;
+}
+
+body[data-rhythiax-theme="white"] .rhythiax-rank-history-table td {
+  color: #0f172a !important;
+  border-bottom-color: rgba(15, 23, 42, 0.06) !important;
+}
+
+body[data-rhythiax-theme="white"] .rhythiax-rank-history-table td strong {
+  color: #020617 !important;
+}
+
+body[data-rhythiax-theme="white"] .rhythiax-history-date {
+  color: #334155 !important;
+}
+
+body[data-rhythiax-theme="white"] .rhythiax-kind-saved {
+  background: rgba(15, 23, 42, 0.08) !important;
+  color: #334155 !important;
+}
+
+body[data-rhythiax-theme="white"] .rhythiax-kind-live {
+  background: rgba(37, 99, 235, 0.12) !important;
+  color: #1d4ed8 !important;
+  border: 1px solid rgba(37, 99, 235, 0.3) !important;
+}
+
+body[data-rhythiax-theme="white"] .rhythiax-history-pane .rhythiax-history-table tr.rhythiax-history-item:not(.rhythiax-history-week-subrow):hover td,
+body[data-rhythiax-theme="white"] .rhythiax-rank-history-table tbody tr:not(.rhythiax-history-week-subrow):hover td {
+  background: rgba(15, 23, 42, 0.04) !important;
+}
+
+body[data-rhythiax-theme="white"] .rhythiax-rank-history-table .rhythiax-rank-history-current td {
+  background: rgba(15, 23, 42, 0.035) !important;
+}
+
+body[data-rhythiax-theme="white"] .rhythiax-history-delta-positive,
+body[data-rhythiax-theme="white"] .rhythiax-history-delta.positive,
+body[data-rhythiax-theme="white"] .rhythiax-rank-history-delta-positive,
+body[data-rhythiax-theme="white"] .rhythiax-profile-history-delta.positive,
+body[data-rhythiax-theme="white"] .rhythiax-rank-history-table td small.positive,
+body[data-rhythiax-theme="white"] .rhythiax-rank-history-table td small.rhythiax-rank-history-delta-positive,
+body[data-rhythiax-theme="white"] .rhythiax-rank-history-table .rhythiax-history-delta-positive,
+body[data-rhythiax-theme="white"] .rhythiax-history-pane .rhythiax-history-delta-positive,
+body[data-rhythiax-theme="white"] .rhythiax-history-pane .rhythiax-history-delta.positive,
+body[data-rhythiax-theme="white"] .rhythiax-inline-rank-history .rhythiax-history-delta-positive,
+body[data-rhythiax-theme="white"] .rhythiax-inline-rank-history .rhythiax-history-delta.positive,
+body[data-rhythiax-theme="white"] .rhythiax-inline-progress-history .rhythiax-history-delta-positive,
+body[data-rhythiax-theme="white"] .rhythiax-inline-progress-history .rhythiax-history-delta.positive,
+body[data-rhythiax-theme="white"] .rhythiax-rank-history-dialog .rhythiax-history-delta-positive,
+body[data-rhythiax-theme="white"] .rhythiax-rank-history-dialog .rhythiax-history-delta.positive {
+  color: #065f46 !important;
+  background: #d1fae5 !important;
+  border: 1px solid rgba(5, 150, 105, 0.4) !important;
+  font-weight: 750 !important;
+}
+
+body[data-rhythiax-theme="white"] .rhythiax-history-delta-negative,
+body[data-rhythiax-theme="white"] .rhythiax-history-delta.negative,
+body[data-rhythiax-theme="white"] .rhythiax-rank-history-delta-negative,
+body[data-rhythiax-theme="white"] .rhythiax-profile-history-delta.negative,
+body[data-rhythiax-theme="white"] .rhythiax-rank-history-table td small.negative,
+body[data-rhythiax-theme="white"] .rhythiax-rank-history-table td small.rhythiax-rank-history-delta-negative,
+body[data-rhythiax-theme="white"] .rhythiax-rank-history-table .rhythiax-history-delta-negative,
+body[data-rhythiax-theme="white"] .rhythiax-history-pane .rhythiax-history-delta-negative,
+body[data-rhythiax-theme="white"] .rhythiax-history-pane .rhythiax-history-delta.negative,
+body[data-rhythiax-theme="white"] .rhythiax-inline-rank-history .rhythiax-history-delta-negative,
+body[data-rhythiax-theme="white"] .rhythiax-inline-rank-history .rhythiax-history-delta.negative,
+body[data-rhythiax-theme="white"] .rhythiax-inline-progress-history .rhythiax-history-delta-negative,
+body[data-rhythiax-theme="white"] .rhythiax-inline-progress-history .rhythiax-history-delta.negative,
+body[data-rhythiax-theme="white"] .rhythiax-rank-history-dialog .rhythiax-history-delta-negative,
+body[data-rhythiax-theme="white"] .rhythiax-rank-history-dialog .rhythiax-history-delta.negative {
+  color: #991b1b !important;
+  background: #fee2e2 !important;
+  border: 1px solid rgba(220, 38, 38, 0.4) !important;
+  font-weight: 750 !important;
+}
+
+body[data-rhythiax-theme="white"] .rhythiax-history-delta-neutral,
+body[data-rhythiax-theme="white"] .rhythiax-history-delta.neutral,
+body[data-rhythiax-theme="white"] .rhythiax-rank-history-delta-neutral,
+body[data-rhythiax-theme="white"] .rhythiax-profile-history-delta.neutral,
+body[data-rhythiax-theme="white"] .rhythiax-rank-history-table td small.neutral,
+body[data-rhythiax-theme="white"] .rhythiax-rank-history-table td small.rhythiax-rank-history-delta-neutral,
+body[data-rhythiax-theme="white"] .rhythiax-rank-history-table .rhythiax-history-delta-neutral,
+body[data-rhythiax-theme="white"] .rhythiax-history-pane .rhythiax-history-delta-neutral,
+body[data-rhythiax-theme="white"] .rhythiax-history-pane .rhythiax-history-delta.neutral,
+body[data-rhythiax-theme="white"] .rhythiax-inline-rank-history .rhythiax-history-delta-neutral,
+body[data-rhythiax-theme="white"] .rhythiax-inline-rank-history .rhythiax-history-delta.neutral,
+body[data-rhythiax-theme="white"] .rhythiax-inline-progress-history .rhythiax-history-delta-neutral,
+body[data-rhythiax-theme="white"] .rhythiax-inline-progress-history .rhythiax-history-delta.neutral,
+body[data-rhythiax-theme="white"] .rhythiax-rank-history-dialog .rhythiax-history-delta-neutral,
+body[data-rhythiax-theme="white"] .rhythiax-rank-history-dialog .rhythiax-history-delta.neutral {
+  color: #334155 !important;
+  background: var(--rhythiax-inner-surface, #eaedf4) !important;
+  border: 1px solid rgba(15, 23, 42, 0.12) !important;
+}
+
+/* Weekly rollup tree and subrows for White Theme */
+body[data-rhythiax-theme="white"] .rhythiax-history-week-header-row .rhythiax-history-date {
+  background: var(--rhythiax-inner-surface, #eaedf4) !important;
+  color: #0f172a !important;
+  border-color: rgba(15, 23, 42, 0.14) !important;
+}
+
+body[data-rhythiax-theme="white"] .rhythiax-history-week-header-row:hover td {
+  background: rgba(15, 23, 42, 0.03) !important;
+}
+
+body[data-rhythiax-theme="white"] .rhythiax-history-week-header-row td:first-child::after,
+body[data-rhythiax-theme="white"] .rhythiax-history-week-subrow td:first-child::before,
+body[data-rhythiax-theme="white"] .rhythiax-history-week-subrow td:first-child::after {
+  background: rgba(15, 23, 42, 0.22) !important;
+}
+
+body[data-rhythiax-theme="white"] .rhythiax-history-week-subrow,
+body[data-rhythiax-theme="white"] .rhythiax-history-week-subrow td,
+body[data-rhythiax-theme="white"] .rhythiax-history-week-subrow:hover,
+body[data-rhythiax-theme="white"] .rhythiax-history-week-subrow:hover td,
+body[data-rhythiax-theme="white"] tr.rhythiax-history-week-subrow:hover td,
+body[data-rhythiax-theme="white"] table tbody tr.rhythiax-history-week-subrow:hover td {
+  background: #f8fafc !important;
+  cursor: default !important;
+}
+
+body[data-rhythiax-theme="white"] .rhythiax-history-week-subrow * {
+  cursor: default !important;
+}
+
+body[data-rhythiax-theme="white"] .rhythiax-history-week-subrow .rhythiax-history-date {
+  background: var(--rhythiax-inner-surface, #eaedf4) !important;
+  color: #475569 !important;
+  border: 1px solid rgba(15, 23, 42, 0.08) !important;
+}
+
 body[data-rhythiax-theme="white"] .rhythiax-rank-history-pager button {
-  border-color: #cbd5e1;
-  background: #f1f5f9;
+  border-color: rgba(15, 23, 42, 0.14);
+  background: var(--rhythiax-inner-surface, #eaedf4);
   color: #334155;
 }
+
 body[data-rhythiax-theme="white"] .rhythiax-rank-history-pager button:hover:not(:disabled) {
-  border-color: #94a3b8;
-  background: #e2e8f0;
-  color: #0f172a;
+  border-color: rgba(15, 23, 42, 0.26);
+  background: #dfe4ed;
+  color: #020617;
+}
+
+body[data-rhythiax-theme="white"] .rhythiax-pane-performance .rhythiax-profile-list-item,
+body[data-rhythiax-theme="white"] .rhythiax-pane-performance .rhythiax-profile-style-profile-surface .rhythiax-profile-list-item,
+body[data-rhythiax-theme="white"] .rhythiax-pane-performance .rhythiax-profile-style-pill-rows .rhythiax-profile-list-item {
+  border: 1px solid rgba(15, 23, 42, 0.10) !important;
+  border-radius: 6px !important;
+  background: var(--rhythiax-inner-surface, #eaedf4) !important;
+  box-shadow: none !important;
+}
+
+body[data-rhythiax-theme="white"] .rhythiax-pane-performance .rhythiax-profile-list-item:hover,
+body[data-rhythiax-theme="white"] .rhythiax-pane-performance .rhythiax-profile-list-item[aria-pressed="true"] {
+  border-color: color-mix(in srgb, var(--profile-color) 60%, rgba(15, 23, 42, 0.18)) !important;
+  border-left: 3px solid var(--profile-color) !important;
+  background: color-mix(in srgb, var(--profile-color) 8%, #ffffff) !important;
+}
+
+/* ═════════════════════════════════════════════════════════════
+   WHITE THEME — FOOTER
+   ═════════════════════════════════════════════════════════════ */
+
+body[data-rhythiax-theme="white"] #root :is(
+  footer,
+  div[class*="border-[#4D65C0]"],
+  div:has(> svg [id*="checker-gradient"]),
+  div:has(a[href*="github.com/Capo-Games/dmca"]),
+  div:has(img[src*="payments.png"])
+) {
+  background-color: var(--rhythiax-surface, #ffffff) !important;
+  border-top: 1px solid var(--rhythiax-border, rgba(15, 23, 42, 0.12)) !important;
+  color: var(--rhythiax-text, #0f172a) !important;
+}
+
+body[data-rhythiax-theme="white"] #root :is(footer, div[class*="border-[#4D65C0]"], div:has(a[href*="github.com/Capo-Games/dmca"])) nav a {
+  color: #334155 !important;
+}
+
+body[data-rhythiax-theme="white"] #root :is(footer, div[class*="border-[#4D65C0]"], div:has(a[href*="github.com/Capo-Games/dmca"])) nav a:hover {
+  color: var(--rhythiax-accent, #5b21b6) !important;
+}
+
+body[data-rhythiax-theme="white"] #root :is(footer, div[class*="border-[#4D65C0]"], div:has(a[href*="github.com/Capo-Games/dmca"])) nav a span[class*="bg-[#7C93E8]"] {
+  background-color: var(--rhythiax-accent, #5b21b6) !important;
+}
+
+body[data-rhythiax-theme="white"] #root :is(footer, div[class*="border-[#4D65C0]"], div:has(a[href*="github.com/Capo-Games/dmca"])) p {
+  color: #475569 !important;
+}
+
+body[data-rhythiax-theme="white"] #root :is(footer, div[class*="border-[#4D65C0]"], div:has(a[href*="github.com/Capo-Games/dmca"])) a[href*="discord.com"] {
+  background: var(--rhythiax-inner-surface, #eaedf4) !important;
+  border: 1px solid rgba(15, 23, 42, 0.12) !important;
+  color: #0f172a !important;
+}
+
+body[data-rhythiax-theme="white"] #root :is(footer, div[class*="border-[#4D65C0]"], div:has(a[href*="github.com/Capo-Games/dmca"])) a[href*="discord.com"]:hover {
+  background: #dfe4ed !important;
+  color: var(--rhythiax-accent, #5b21b6) !important;
+  border-color: rgba(15, 23, 42, 0.22) !important;
+}
+
+body[data-rhythiax-theme="white"] #root :is(footer, div[class*="border-[#4D65C0]"], div:has(a[href*="github.com/Capo-Games/dmca"])) .border-line {
+  border-color: rgba(15, 23, 42, 0.10) !important;
+}
+
+body[data-rhythiax-theme="white"] #root :is(footer, div[class*="border-[#4D65C0]"], div:has(a[href*="github.com/Capo-Games/dmca"])) [class*="text-neutral-400"] {
+  color: #64748b !important;
+}
+
+body[data-rhythiax-theme="white"] #root :is(footer, div[class*="border-[#4D65C0]"], div:has(a[href*="github.com/Capo-Games/dmca"])) a[href*="capo.games"] {
+  color: #0f172a !important;
+}
+
+body[data-rhythiax-theme="white"] #root :is(footer, div[class*="border-[#4D65C0]"], div:has(a[href*="github.com/Capo-Games/dmca"])) a[href*="capo.games"]:hover {
+  color: var(--rhythiax-accent, #5b21b6) !important;
+}
+
+/* Ensure the logo in white footer has adequate contrast */
+body[data-rhythiax-theme="white"] #root :is(footer, div[class*="border-[#4D65C0]"]) img[src*="navlogo"] {
+  filter: drop-shadow(0 1px 1px rgba(15, 23, 42, 0.55)) drop-shadow(0 0 8px rgba(15, 23, 42, 0.15));
+}
+
+/* ═════════════════════════════════════════════════════════════
+   WHITE THEME — MAPS & BEATMAP CARDS
+   ═════════════════════════════════════════════════════════════ */
+
+body[data-rhythiax-theme="white"] #root :is(
+  a[href*="/maps/"],
+  a[href*="/map/"],
+  div:has(img[src*="beatmap-previews"]),
+  div:has(img[src*="beatmap-img-"])
+) div[class*="bottom-0"] > div[class*="bg-black/"],
+body[data-rhythiax-theme="white"] #root :is(
+  a[href*="/maps/"],
+  a[href*="/map/"],
+  div:has(img[src*="beatmap-previews"]),
+  div:has(img[src*="beatmap-img-"])
+) [class*="bg-black/60"],
+body[data-rhythiax-theme="white"] #root a[href*="/maps/"] [class*="bg-black/"] {
+  background: rgba(255, 255, 255, 0.94) !important;
+  background-color: rgba(255, 255, 255, 0.94) !important;
+  border: 1px solid rgba(15, 23, 42, 0.12) !important;
+  backdrop-filter: blur(12px) !important;
+  -webkit-backdrop-filter: blur(12px) !important;
+  box-shadow: 0 2px 10px rgba(15, 23, 42, 0.08) !important;
+}
+
+body[data-rhythiax-theme="white"] #root :is(
+  a[href*="/maps/"],
+  a[href*="/map/"],
+  div:has(img[src*="beatmap-previews"]),
+  div:has(img[src*="beatmap-img-"])
+) div[class*="bottom-0"] > div[class*="bg-black/"] :is(.text-white, [class*="text-white"], .font-semibold) {
+  color: #020617 !important;
+  font-weight: 700 !important;
+}
+
+body[data-rhythiax-theme="white"] #root :is(
+  a[href*="/maps/"],
+  a[href*="/map/"],
+  div:has(img[src*="beatmap-previews"]),
+  div:has(img[src*="beatmap-img-"])
+) div[class*="bottom-0"] > div[class*="bg-black/"] a {
+  color: #475569 !important;
+}
+
+body[data-rhythiax-theme="white"] #root :is(
+  a[href*="/maps/"],
+  a[href*="/map/"],
+  div:has(img[src*="beatmap-previews"]),
+  div:has(img[src*="beatmap-img-"])
+) div[class*="bottom-0"] > div[class*="bg-black/"] a:hover {
+  color: var(--rhythiax-accent, #5b21b6) !important;
+}
+
+body[data-rhythiax-theme="white"] #root :is(
+  a[href*="/maps/"],
+  a[href*="/map/"],
+  div:has(img[src*="beatmap-previews"]),
+  div:has(img[src*="beatmap-img-"])
+) div[class*="bottom-0"] > div[class*="bg-black/"] :is([class*="text-neutral-"], span:not([style*="color"])) {
+  color: #334155 !important;
+}
+
+body[data-rhythiax-theme="white"] #root :is(
+  a[href*="/maps/"],
+  a[href*="/map/"],
+  div:has(img[src*="beatmap-previews"]),
+  div:has(img[src*="beatmap-img-"])
+) div[class*="bottom-0"] > div[class*="bg-black/"] svg {
+  color: #64748b;
+}
+
+/* ═════════════════════════════════════════════════════════════
+   WHITE THEME — CHANGELOG PAGE STYLING
+   ═════════════════════════════════════════════════════════════ */
+
+body[data-rhythiax-theme="white"] .rhythiax-changelog-intro,
+body[data-rhythiax-theme="white"] .rhythiax-changelog-release-nav,
+body[data-rhythiax-theme="white"] .rhythiax-changelog-entry {
+  background: var(--rhythiax-surface, #ffffff) !important;
+  border-color: rgba(15, 23, 42, 0.12) !important;
+  color: var(--rhythiax-text, #0f172a) !important;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.05), 0 4px 12px rgba(15, 23, 42, 0.04) !important;
+}
+
+body[data-rhythiax-theme="white"] .rhythiax-changelog-intro {
+  background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%) !important;
+}
+
+body[data-rhythiax-theme="white"] .rhythiax-changelog-intro-mark {
+  background: #f1f5f9 !important;
+  border-color: rgba(15, 23, 42, 0.12) !important;
+}
+
+body[data-rhythiax-theme="white"] .rhythiax-changelog-intro-mark span {
+  background: var(--rhythiax-accent, #5b21b6) !important;
+}
+
+body[data-rhythiax-theme="white"] .rhythiax-changelog-disclaimer {
+  color: #64748b !important;
+  background: rgba(15, 23, 42, 0.03) !important;
+  border-color: rgba(15, 23, 42, 0.08) !important;
+}
+
+body[data-rhythiax-theme="white"] .rhythiax-changelog-release-date strong {
+  color: #020617 !important;
+}
+
+body[data-rhythiax-theme="white"] .rhythiax-changelog-release-date span {
+  color: var(--rhythiax-accent, #5b21b6) !important;
+}
+
+body[data-rhythiax-theme="white"] .rhythiax-changelog-arrow {
+  color: #475569 !important;
+}
+
+body[data-rhythiax-theme="white"] .rhythiax-changelog-arrow:hover {
+  color: #020617 !important;
+  background: #eaedf4 !important;
+}
+
+body[data-rhythiax-theme="white"] .rhythiax-changelog-entry h2,
+body[data-rhythiax-theme="white"] .rhythiax-changelog-entry h3,
+body[data-rhythiax-theme="white"] .rhythiax-changelog-entry h4 {
+  color: #020617 !important;
+}
+
+body[data-rhythiax-theme="white"] .rhythiax-changelog-entry p,
+body[data-rhythiax-theme="white"] .rhythiax-changelog-entry li {
+  color: #334155 !important;
+}
+
+body[data-rhythiax-theme="white"] .rhythiax-changelog-entry code {
+  background: #edf0f5 !important;
+  color: #0f172a !important;
+  border: 1px solid rgba(15, 23, 42, 0.10) !important;
+}
+
+body[data-rhythiax-theme="white"] .rhythiax-changelog-category-heading {
+  color: #0f172a !important;
+  background: #edf1f7 !important;
+  border: 1px solid rgba(15, 23, 42, 0.08) !important;
+}
+
+body[data-rhythiax-theme="white"] [data-rhythiax-changelog-tabs] {
+  background: #eaedf4 !important;
+  border-color: rgba(15, 23, 42, 0.12) !important;
+}
+
+body[data-rhythiax-theme="white"] [data-rhythiax-changelog-tabs] > a {
+  border-radius: 6px !important;
+  transition: all 180ms ease !important;
+}
+
+/* Inactive tabs */
+body[data-rhythiax-theme="white"] [data-rhythiax-changelog-tabs] > a:not([data-rhythiax-active="true"]):not(.bg-white\/10) {
+  background: transparent !important;
+  color: #475569 !important;
+}
+
+body[data-rhythiax-theme="white"] [data-rhythiax-changelog-tabs] > a:not([data-rhythiax-active="true"]):not(.bg-white\/10) div:nth-child(2) {
+  color: #334155 !important;
+}
+
+body[data-rhythiax-theme="white"] [data-rhythiax-changelog-tabs] > a:not([data-rhythiax-active="true"]):not(.bg-white\/10) div:nth-child(3) {
+  color: #64748b !important;
+}
+
+/* Hover on inactive tabs */
+body[data-rhythiax-theme="white"] [data-rhythiax-changelog-tabs] > a:not([data-rhythiax-active="true"]):not(.bg-white\/10):hover {
+  background: rgba(255, 255, 255, 0.65) !important;
+  color: #020617 !important;
+}
+
+body[data-rhythiax-theme="white"] [data-rhythiax-changelog-tabs] > a:not([data-rhythiax-active="true"]):not(.bg-white\/10):hover div:nth-child(2) {
+  color: #020617 !important;
+}
+
+/* Active tab (whether Reimagined with data-rhythiax-active="true" or native with bg-white/10 when in official mode) */
+body[data-rhythiax-theme="white"] [data-rhythiax-changelog-tabs] > a[data-rhythiax-active="true"],
+body[data-rhythiax-theme="white"] [data-rhythiax-changelog-tabs][data-rhythiax-changelog-mode="official"] > a.bg-white\/10 {
+  background: #ffffff !important;
+  color: #020617 !important;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.1), 0 1px 2px rgba(15, 23, 42, 0.06) !important;
+}
+
+body[data-rhythiax-theme="white"] [data-rhythiax-changelog-tabs] > a[data-rhythiax-active="true"] div:nth-child(2),
+body[data-rhythiax-theme="white"] [data-rhythiax-changelog-tabs][data-rhythiax-changelog-mode="official"] > a.bg-white\/10 div:nth-child(2) {
+  color: #020617 !important;
+  font-weight: 700 !important;
+}
+
+body[data-rhythiax-theme="white"] [data-rhythiax-changelog-tabs] > a[data-rhythiax-active="true"] div:nth-child(3),
+body[data-rhythiax-theme="white"] [data-rhythiax-changelog-tabs][data-rhythiax-changelog-mode="official"] > a.bg-white\/10 div:nth-child(3) {
+  color: #475569 !important;
+  font-weight: 500 !important;
+}
+
+/* White theme score actions menu & toasts */
+body[data-rhythiax-theme="white"] .rhythiax-score-actions-menu {
+  background: #ffffff !important;
+  border: 1px solid rgba(15, 23, 42, 0.12) !important;
+  box-shadow: 0 10px 25px -5px rgba(15, 23, 42, 0.15), 0 4px 6px -4px rgba(15, 23, 42, 0.08) !important;
+}
+
+body[data-rhythiax-theme="white"] .rhythiax-score-menu-item {
+  color: #334155 !important;
+}
+
+body[data-rhythiax-theme="white"] .rhythiax-score-menu-item:hover,
+body[data-rhythiax-theme="white"] .rhythiax-score-menu-item:focus-visible {
+  background: #f1f5f9 !important;
+  color: var(--rhythiax-accent, #5b21b6) !important;
+}
+
+body[data-rhythiax-theme="white"] .rhythiax-score-menu-divider {
+  background: rgba(15, 23, 42, 0.08) !important;
+}
+
+body[data-rhythiax-theme="white"] .rhythiax-toast {
+  background: #ffffff !important;
+  color: #0f172a !important;
+  border-color: rgba(15, 23, 42, 0.14) !important;
+  box-shadow: 0 10px 25px -5px rgba(15, 23, 42, 0.12) !important;
+}
+
+/* ==========================================================================
+   Radix & Native Modals / Dialogs in White Theme (Settings, Visuals, Profile)
+   ========================================================================== */
+body[data-rhythiax-theme="white"] [role="dialog"]:not(.rhythiax-friends-quick-panel):not(.rhythiax-friends-quick-backdrop),
+body[data-rhythiax-theme="white"] [data-radix-dialog-content] {
+  background-color: #ffffff !important;
+  color: #0f172a !important;
+  border-color: rgba(15, 23, 42, 0.14) !important;
+  box-shadow: 0 25px 60px -15px rgba(15, 23, 42, 0.25) !important;
+}
+
+body[data-rhythiax-theme="white"] [role="dialog"] h2,
+body[data-rhythiax-theme="white"] [role="dialog"] h3,
+body[data-rhythiax-theme="white"] [role="dialog"] .text-white {
+  color: #0f172a !important;
+}
+
+body[data-rhythiax-theme="white"] [role="dialog"] label,
+body[data-rhythiax-theme="white"] [role="dialog"] .text-neutral-400 {
+  color: #64748b !important;
+}
+
+body[data-rhythiax-theme="white"] [role="dialog"] .border-line {
+  border-color: rgba(15, 23, 42, 0.12) !important;
+}
+
+body[data-rhythiax-theme="white"] [role="dialog"] .bg-surface {
+  background-color: #ffffff !important;
+}
+
+body[data-rhythiax-theme="white"] [role="dialog"] .bg-surface\/90 {
+  background-color: rgba(255, 255, 255, 0.92) !important;
+  color: #0f172a !important;
+}
+
+body[data-rhythiax-theme="white"] [role="dialog"] .bg-surface\/90 svg,
+body[data-rhythiax-theme="white"] [role="dialog"] .bg-surface\/90 div {
+  color: #0f172a !important;
+}
+
+body[data-rhythiax-theme="white"] [role="dialog"] .bg-raised {
+  background-color: #f8fafc !important;
+  border-color: rgba(15, 23, 42, 0.12) !important;
+}
+
+body[data-rhythiax-theme="white"] [role="dialog"] .bg-white\/5,
+body[data-rhythiax-theme="white"] [role="dialog"] [class*="bg-white/5"] {
+  background-color: #f1f5f9 !important;
+  border-color: rgba(15, 23, 42, 0.12) !important;
+  color: #334155 !important;
+}
+
+body[data-rhythiax-theme="white"] [role="dialog"] input,
+body[data-rhythiax-theme="white"] [role="dialog"] .bg-control {
+  background-color: #f1f5f9 !important;
+  border-color: rgba(15, 23, 42, 0.15) !important;
+  color: #0f172a !important;
+}
+
+body[data-rhythiax-theme="white"] [role="dialog"] input:disabled {
+  background-color: #e2e8f0 !important;
+  color: #475569 !important;
+  opacity: 0.9 !important;
+}
+
+body[data-rhythiax-theme="white"] [role="dialog"] button.bg-control,
+body[data-rhythiax-theme="white"] [role="dialog"] button.border-line {
+  background-color: #f1f5f9 !important;
+  border-color: rgba(15, 23, 42, 0.15) !important;
+  color: #0f172a !important;
+}
+
+body[data-rhythiax-theme="white"] [role="dialog"] button.bg-control:hover,
+body[data-rhythiax-theme="white"] [role="dialog"] button.border-line:hover {
+  background-color: #e2e8f0 !important;
+  color: #0f172a !important;
+}
+
+body[data-rhythiax-theme="white"] [role="dialog"] button.bg-blue-500 {
+  background-color: #2563eb !important;
+  color: #ffffff !important;
+  border-color: #1d4ed8 !important;
+}
+
+body[data-rhythiax-theme="white"] [role="dialog"] button.bg-blue-500:hover {
+  background-color: #1d4ed8 !important;
+}
+
+body[data-rhythiax-theme="white"] [role="dialog"] .text-neutral-300 {
+  color: #334155 !important;
+}
+
+body[data-rhythiax-theme="white"] [role="dialog"] button.text-neutral-400:hover {
+  background-color: rgba(15, 23, 42, 0.08) !important;
+  color: #0f172a !important;
+}
+
+/* Scores Hub & General Numbered Pagination in White Theme */
+body[data-rhythiax-theme="white"] .rhythiax-pagination-active,
+body[data-rhythiax-theme="white"] .rhythiax-pagination-page.rhythiax-pagination-active,
+html[data-rhythiax-theme="white"] .rhythiax-pagination-active,
+html[data-rhythiax-theme="white"] .rhythiax-pagination-page.rhythiax-pagination-active {
+  background: #7c3aed !important;
+  background-color: #7c3aed !important;
+  border-color: #7c3aed !important;
+  color: #ffffff !important;
+  opacity: 1 !important;
+  box-shadow: 0 2px 8px rgba(124, 58, 237, 0.35) !important;
+}
+
+body[data-rhythiax-theme="white"] .rhythiax-pagination-btn:hover:not(:disabled):not(.rhythiax-pagination-active),
+html[data-rhythiax-theme="white"] .rhythiax-pagination-btn:hover:not(:disabled):not(.rhythiax-pagination-active) {
+  border-color: #7c3aed !important;
+  color: #7c3aed !important;
 }
 
 

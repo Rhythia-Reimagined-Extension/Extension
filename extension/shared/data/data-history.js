@@ -8,23 +8,10 @@ function dataHistoryClone(value) {
   return RhythiaX.cloneDataValue ? RhythiaX.cloneDataValue(value) : JSON.parse(JSON.stringify(value));
 }
 
-function dataHistoryToday(timestamp = Date.now()) {
-  return RhythiaX.localDateKey(new Date(timestamp));
-}
-
 function dataHistoryBytes(value) {
   const serialized = JSON.stringify(value || {});
   if (typeof Blob === 'function') return new Blob([serialized]).size;
   return serialized.length;
-}
-
-function dataHistoryWhitelist(record, settings) {
-  const id = String(record?.profileId || '').trim();
-  const username = String(record?.identity?.username || '').trim().toLocaleLowerCase();
-  return (settings.whitelist || []).some(entry => (
-    (entry.id && String(entry.id) === id)
-    || (entry.username && String(entry.username).trim().toLocaleLowerCase() === username)
-  ));
 }
 
 function dataHistoryLatest(openDay) {
@@ -56,18 +43,17 @@ function dataHistoryCloseOpenDay(record) {
 
 function dataHistoryEnsureCurrentDay(record, today) {
   if (!record.history.openDay) {
-    record.history.openDay = { date: today, captures: [], limitOverride: null, lastUpdatedAt: null };
+    record.history.openDay = { date: today, captures: [], lastUpdatedAt: null };
     return true;
   }
   if (record.history.openDay.date === today) return false;
   dataHistoryCloseOpenDay(record);
-  record.history.openDay = { date: today, captures: [], limitOverride: null, lastUpdatedAt: null };
+  record.history.openDay = { date: today, captures: [], lastUpdatedAt: null };
   return true;
 }
 
 function dataHistoryEffectiveLimit(openDay, settings) {
-  const override = Number(openDay?.limitOverride);
-  return Number.isFinite(override) && override > 0 ? override : settings.maxSnapshotsPerDay;
+  return settings.maxSnapshotsPerDay;
 }
 
 function dataHistoryAppendDiagnostic(record, details) {
@@ -96,10 +82,9 @@ function dataHistoryUpdateCollection(record, snapshot) {
 }
 
 function dataHistoryPruneByAge(record, settings, now) {
-  if (dataHistoryWhitelist(record, settings) || !settings.retentionDays) return 0;
   const cutoff = new Date(now);
   cutoff.setHours(0, 0, 0, 0);
-  cutoff.setDate(cutoff.getDate() - settings.retentionDays);
+  cutoff.setDate(cutoff.getDate() - 89);
   const cutoffDate = RhythiaX.localDateKey(cutoff);
   const before = Object.keys(record.history.daily).length;
   record.history.daily = Object.fromEntries(Object.entries(record.history.daily).filter(([date]) => date >= cutoffDate));
@@ -113,8 +98,7 @@ function dataHistoryOpenBytes(records) {
 
 function dataHistoryOldestCapture(records, settings) {
   return records
-    .filter(record => !dataHistoryWhitelist(record, settings))
-    .filter(record => (record.history?.openDay?.captures?.length || 0) > 1)
+    .filter(record => (record.history?.openDay?.captures?.length || 0) > 0)
     .map(record => ({
       record,
       capture: record.history.openDay.captures[0],
@@ -124,7 +108,6 @@ function dataHistoryOldestCapture(records, settings) {
 
 function dataHistoryOldestDaily(records, settings) {
   return records
-    .filter(record => !dataHistoryWhitelist(record, settings))
     .flatMap(record => Object.values(record.history?.daily || {}).map(snapshot => ({ record, snapshot })))
     .sort((left, right) => (left.snapshot.capturedAt || 0) - (right.snapshot.capturedAt || 0))[0] || null;
 }
@@ -133,13 +116,11 @@ function dataHistoryEnforceLimits(records, settings) {
   const report = {
     removedDaily: 0,
     removedOpenCaptures: 0,
-    protectedOverflow: false,
+    storageOverflow: false,
     openDayOverflow: false,
   };
-  let openAttempts = 0;
   const openLimit = settings.openDayMaxMb * 1024 * 1024;
-  while (dataHistoryOpenBytes(records) > openLimit && openAttempts < 10000) {
-    openAttempts++;
+  while (dataHistoryOpenBytes(records) > openLimit) {
     const candidate = dataHistoryOldestCapture(records, settings);
     if (!candidate) {
       report.openDayOverflow = true;
@@ -149,10 +130,8 @@ function dataHistoryEnforceLimits(records, settings) {
     report.removedOpenCaptures++;
   }
 
-  let attempts = 0;
   const maxBytes = settings.maxStorageMb * 1024 * 1024;
-  while (dataHistoryBytes(records) > maxBytes && attempts < 10000) {
-    attempts++;
+  while (dataHistoryBytes(records) > maxBytes) {
     const dailyCandidate = dataHistoryOldestDaily(records, settings);
     if (dailyCandidate) {
       delete dailyCandidate.record.history.daily[dailyCandidate.snapshot.date];
@@ -165,11 +144,29 @@ function dataHistoryEnforceLimits(records, settings) {
       report.removedOpenCaptures++;
       continue;
     }
-    report.protectedOverflow = true;
+    const oldestRecord = records.slice().sort((a, b) => a.updatedAt - b.updatedAt)[0];
+    if (oldestRecord) {
+      records.splice(records.indexOf(oldestRecord), 1);
+      continue;
+    }
+    report.storageOverflow = true;
     break;
   }
   return report;
 }
+
+async function dataHistoryMaintain(now = Date.now()) {
+  if (RhythiaX.dataStorageReadOnly) return;
+  const settings = await RhythiaX.getDataSettings();
+  const records = await RhythiaX.listDataRecords();
+  const before = new Map(records.map(record => [record.profileId, dataHistoryClone(record)]));
+  records.forEach(record => dataHistoryPruneByAge(record, settings, now));
+  dataHistoryEnforceLimits(records, settings);
+  await Promise.all(dataHistoryChangedIds(before, records).map(record => RhythiaX.saveDataRecord(record)));
+  await Promise.all([...before.keys()].filter(id => !records.some(record => record.profileId === id)).map(id => RhythiaX.removeDataRecord(id)));
+}
+
+RhythiaX.maintainDataHistory = () => dataHistoryWrite(dataHistoryMaintain);
 
 function dataHistoryChangedIds(before, after) {
   return after.filter(record => JSON.stringify(before.get(record.profileId)) !== JSON.stringify(record));
@@ -179,12 +176,55 @@ function dataHistoryWrite(task) {
   return RhythiaX.dataCanonicalWrite(task);
 }
 
+// Repair only positively identified cross-profile captures. Three independent
+// cumulative values must match a different player's record for the same day.
+// The RP tolerance allows for the native header's integer display.
+RhythiaX.removeForeignProfileCaptures = function (record, records) {
+  const captures = record?.history?.openDay?.captures;
+  if (!captures?.length) return 0;
+  const foreign = records.filter(other => other.profileId !== record.profileId)
+    .flatMap(other => [...(other.history?.openDay?.captures || []), ...Object.values(other.history?.daily || {})]);
+  const matches = capture => foreign.some(other => {
+    const a = capture.metrics, b = other.metrics;
+    return capture.date === other.date && a && b
+      && Number(a.playCount) > 0 && Number(a.squaresHit) > 0
+      && Number(a.weightedRp) > 0 && Number(b.weightedRp) > 0
+      && a.playCount === b.playCount && a.squaresHit === b.squaresHit
+      && Math.abs(a.weightedRp - b.weightedRp) <= 1;
+  });
+  const invalid = new Set(captures.filter(matches));
+  const visits = new Set([...invalid].map(capture => capture.visitId).filter(Boolean));
+  // Recovery can start a second visit milliseconds after the bad DOM capture.
+  // Its API counters are valid, but its DOM-derived accuracy is still tainted.
+  // Keep those counters and clear only the positively associated accuracy.
+  let sanitized = 0;
+  for (const capture of captures) {
+    if (invalid.has(capture) || visits.has(capture.visitId)) continue;
+    if (!['api', 'merged'].includes(capture.source)) continue;
+    if ([...invalid].some(bad => bad.metrics.avgAccuracy != null
+      && capture.metrics.avgAccuracy === bad.metrics.avgAccuracy
+      && capture.capturedAt >= bad.capturedAt && capture.capturedAt - bad.capturedAt <= 15000)) {
+      capture.metrics.avgAccuracy = null;
+      capture.missing = [...new Set([...(capture.missing || []), 'avgAccuracy'])];
+      capture.status = 'partial';
+      sanitized++;
+    }
+  }
+  record.history.openDay.captures = captures.filter(capture => !invalid.has(capture) && !visits.has(capture.visitId));
+  return captures.length - record.history.openDay.captures.length + sanitized;
+};
+
 RhythiaX.recordProfileDataCapture = function (profileId, player, scoreSets, options = {}) {
   if (!profileId || typeof RhythiaX.collectDataSnapshot !== 'function') return Promise.resolve(null);
   return dataHistoryWrite(async () => {
+    if (options.isCurrentProfile && !options.isCurrentProfile()) return { saved: false, reason: 'stale-navigation' };
+    if (player?.id != null && String(player.id) !== String(profileId)) return { saved: false, reason: 'profile-mismatch' };
+    if (options.verifiedProfile && String(player?.userProfile?.id) !== String(profileId)) return { saved: false, reason: 'profile-mismatch' };
     const settings = await RhythiaX.getDataSettings();
+    if (settings.syncMode === 'cloud-only') return { saved: false, reason: 'cloud-only' };
     if (!settings.collectStats && !settings.collectRanking) return { saved: false, reason: 'collection-disabled' };
     const now = Number(options.capturedAt) || Date.now();
+    await dataHistoryMaintain(now);
     const snapshot = RhythiaX.collectDataSnapshot({
       player,
       scoreSets,
@@ -194,10 +234,18 @@ RhythiaX.recordProfileDataCapture = function (profileId, player, scoreSets, opti
       settings,
     });
     const records = await RhythiaX.listDataRecords();
+    if (options.isCurrentProfile && !options.isCurrentProfile()) return { saved: false, reason: 'stale-navigation' };
     const before = new Map(records.map(record => [record.profileId, dataHistoryClone(record)]));
     const key = String(profileId);
     let record = records.find(item => item.profileId === key);
     if (!record) record = RhythiaX.createDataRecord(key, player, now);
+    if (options.verifiedProfile) {
+      const repaired = RhythiaX.removeForeignProfileCaptures(record, records);
+      if (repaired) dataHistoryAppendDiagnostic(record, {
+        timestamp: now, source: 'api', status: 'partial',
+        reason: 'foreign-profile-captures-removed', code: 'profile-history-repaired', missing: [],
+      });
+    }
     record.identity = {
       username: String(player?.username || record.identity?.username || '').trim(),
       country: String(player?.country || player?.countryCode || record.identity?.country || '').trim(),
@@ -268,6 +316,7 @@ RhythiaX.recordProfileDataCapture = function (profileId, player, scoreSets, opti
     const report = dataHistoryEnforceLimits(records, settings);
     const changedRecords = dataHistoryChangedIds(before, records);
     await Promise.all(changedRecords.map(item => RhythiaX.saveDataRecord(item)));
+    await Promise.all([...before.keys()].filter(id => !records.some(item => item.profileId === id)).map(id => RhythiaX.removeDataRecord(id)));
     return {
       saved: changedRecords.some(item => item.profileId === key),
       snapshot,
@@ -282,6 +331,8 @@ RhythiaX.recordProfileDataCapture = function (profileId, player, scoreSets, opti
 RhythiaX.recordProfileDataDiagnostic = function (profileId, details = {}) {
   if (!profileId) return Promise.resolve(null);
   return dataHistoryWrite(async () => {
+    const settings = await RhythiaX.getDataSettings();
+    if (settings.syncMode === 'cloud-only') return null;
     const record = await RhythiaX.getDataRecord(profileId);
     if (!record) return null;
     const timestamp = Number(details.timestamp) || Date.now();
@@ -298,17 +349,6 @@ RhythiaX.recordProfileDataDiagnostic = function (profileId, details = {}) {
       status: details.collectionStatus || (record.collection?.status === 'complete' ? 'partial' : record.collection?.status || 'partial'),
       lastAttemptAt: timestamp,
     };
-    return RhythiaX.saveDataRecord(record);
-  });
-};
-
-RhythiaX.setDataOpenDayLimitForToday = function (profileId, limit) {
-  return dataHistoryWrite(async () => {
-    const record = await RhythiaX.getDataRecord(profileId);
-    if (!record?.history?.openDay || record.history.openDay.date !== dataHistoryToday()) return null;
-    const normalizedLimit = Number(limit);
-    if (!Number.isFinite(normalizedLimit) || normalizedLimit < 1) return record;
-    record.history.openDay.limitOverride = Math.round(normalizedLimit);
     return RhythiaX.saveDataRecord(record);
   });
 };
@@ -339,6 +379,46 @@ RhythiaX.getDataReferenceSnapshot = function (record, mode, currentSnapshot, met
 RhythiaX.getDataDailyHistory = function (record) {
   return Object.values(record?.history?.daily || {})
     .sort((left, right) => String(left.date).localeCompare(String(right.date)));
+};
+
+RhythiaX.getLatestProfileHistoryRecord = async function (profileId) {
+  if (!profileId) return null;
+  const record = await RhythiaX.getDataRecord(profileId);
+  if (!record) return null;
+  const settings = await RhythiaX.getDataSettings();
+  const current = dataHistoryLatest(record.history?.openDay);
+  const ref = RhythiaX.getDataReferenceSnapshot(record, settings.inlineRankingReference, current);
+  if (ref && ref.metrics) {
+    return {
+      ...ref.metrics,
+      rp: ref.metrics.weightedRp ?? ref.metrics.rhythmPoints,
+      date: ref.date,
+      capturedAt: ref.capturedAt,
+    };
+  }
+  const dailyHistory = RhythiaX.getDataDailyHistory(record);
+  const lastDaily = dailyHistory.length ? dailyHistory[dailyHistory.length - 1] : null;
+  if (lastDaily && lastDaily.metrics) {
+    return {
+      ...lastDaily.metrics,
+      rp: lastDaily.metrics.weightedRp ?? lastDaily.metrics.rhythmPoints,
+      date: lastDaily.date,
+      capturedAt: lastDaily.capturedAt,
+    };
+  }
+  const captures = record.history?.openDay?.captures || [];
+  if (captures.length > 1) {
+    const prevCap = captures[captures.length - 2];
+    if (prevCap && prevCap.metrics) {
+      return {
+        ...prevCap.metrics,
+        rp: prevCap.metrics.weightedRp ?? prevCap.metrics.rhythmPoints,
+        date: prevCap.date,
+        capturedAt: prevCap.capturedAt,
+      };
+    }
+  }
+  return null;
 };
 
 RhythiaX.closeDataRecordOpenDay = dataHistoryCloseOpenDay;

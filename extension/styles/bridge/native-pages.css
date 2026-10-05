@@ -26,7 +26,8 @@ body[data-rhythiax-theme] #root > div > div.mx-auto {
 }
 
 /* Map thumbnails remain fully visible across theme shifts */
-body[data-rhythiax-page="maps"] #root img[src*="static.rhythia.com/beatmap-img-"] {
+body[data-rhythiax-page="maps"] #root img[src*="static.rhythia.com/beatmap-img-"],
+body[data-rhythiax-page="maps"] #root img[src*="beatmap-previews"] {
   display: block;
   visibility: visible;
   opacity: 1;
@@ -42,7 +43,7 @@ body[data-rhythiax-theme] #root .fixed.top-0.left-0.w-full[class*="h-[60px]"] a,
 body[data-rhythiax-theme] #root .fixed.top-0.left-0.w-full[class*="h-[60px]"] button {
   color: var(--rhythiax-text) !important;
 }
-body[data-rhythiax-theme] #root .fixed.top-0.left-0.w-full[class*="h-[60px]"] a:hover,
+body[data-rhythiax-theme] #root .fixed.top-0.left-0.w-full[class*="h-[60px]"] a:not(:has(img[src*="navlogo"])):hover,
 body[data-rhythiax-theme] #root .fixed.top-0.left-0.w-full[class*="h-[60px]"] button:hover,
 body[data-rhythiax-theme] #root .fixed.top-0.left-0.w-full[class*="h-[60px]"] [class*="bg-[#2F4184"]] {
   background: var(--rhythiax-nav-hover) !important;
@@ -131,6 +132,12 @@ body[data-rhythiax-theme] #root nav a:hover,
 body[data-rhythiax-theme] #root nav button:hover {
   background-color: var(--rhythiax-accent-soft) !important;
   color: var(--rhythiax-text-strong) !important;
+}
+body[data-rhythiax-theme="white"] #root nav [aria-current="page"],
+body[data-rhythiax-theme="white"] nav[role="navigation"] [aria-current="page"] {
+  background-color: var(--rhythiax-accent, #7c3aed) !important;
+  border-color: var(--rhythiax-accent, #7c3aed) !important;
+  color: #ffffff !important;
 }
 body[data-rhythiax-theme="white"] #root > div > div:last-child {
   color: var(--rhythiax-text-muted) !important;

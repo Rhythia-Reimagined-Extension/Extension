@@ -7,11 +7,11 @@ labels: bug
 
 ## Extension Version
 
-<!-- Example: 1.0.1 or 1.1.0 -->
+<!-- Example: 1.2.0 -->
 
 ## Browser and Version
 
-<!-- Example: Google Chrome 127 on Windows 11, Opera GX, etc. -->
+<!-- Include the exact browser version, for example Chrome, Opera GX, or Firefox desktop. -->
 
 ## Where did the issue happen?
 

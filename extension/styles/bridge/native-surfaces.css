@@ -1,5 +1,7 @@
-/* Page cards and list rows. Include the variants currently emitted by the
-   site so new routes do not fall back to the old black card treatment. */
+/* Page cards and list rows. Include semantic tokens (.bg-surface, .bg-raised, .bg-control)
+   and legacy variants currently emitted by the site. */
+body[data-rhythiax-theme] #root .bg-surface,
+body[data-rhythiax-theme] #root [class*="bg-surface"],
 body[data-rhythiax-theme] #root [class*="bg-[#111214]"],
 body[data-rhythiax-theme] #root [class*="bg-[#1a1b1c]"],
 body[data-rhythiax-theme] #root [class*="bg-[#1e1f21]"],
@@ -11,6 +13,8 @@ body[data-rhythiax-theme] #root [class*="bg-neutral-950"] {
    border-color: var(--rhythiax-border) !important;
    box-shadow: var(--rhythiax-shadow);
 }
+body[data-rhythiax-theme] #root .bg-raised,
+body[data-rhythiax-theme] #root [class*="bg-raised"],
 body[data-rhythiax-theme] #root [class*="bg-white/5"],
 body[data-rhythiax-theme] #root [class*="bg-white/10"],
 body[data-rhythiax-theme] #root [class*="bg-white/[0.02]"],
@@ -22,9 +26,20 @@ body[data-rhythiax-theme] #root [class*="bg-white/[0.08]"] {
    background-color: var(--rhythiax-inner-surface) !important;
    border-color: var(--rhythiax-border) !important;
 }
+body[data-rhythiax-theme] #root .bg-control,
+body[data-rhythiax-theme] #root [class*="bg-control"] {
+   background-color: var(--rhythiax-input-surface, var(--rhythiax-inner-surface)) !important;
+   border-color: var(--rhythiax-border) !important;
+}
+body[data-rhythiax-theme] #root .border-line,
+body[data-rhythiax-theme] #root [class*="border-line"],
 body[data-rhythiax-theme] #root [class*="border-white/"],
 body[data-rhythiax-theme] #root [class*="border-neutral-"] {
    border-color: var(--rhythiax-border) !important;
+}
+body[data-rhythiax-theme] #root .border-line-strong,
+body[data-rhythiax-theme] #root [class*="border-line-strong"] {
+   border-color: var(--rhythiax-border-strong) !important;
 }
 body[data-rhythiax-theme] #root [class*="bg-gradient-to-t"][class*="from-[#111214]"],
 body[data-rhythiax-theme] #root .pointer-events-none[class*="bg-gradient-to-t"] {
@@ -47,12 +62,69 @@ body[data-rhythiax-theme] #root .fixed.top-0.left-0.w-full[class*="h-[60px]"] {
    backdrop-filter: blur(18px) saturate(130%);
 }
 body[data-rhythiax-theme] #root .fixed.top-0.left-0.w-full[class*="h-[60px]"] [class*="bg-[#2F4184]"],
-body[data-rhythiax-theme] #root .fixed.top-0.left-0.w-full[class*="h-[60px]"] [class*="bg-[#344a9e"]] {
+body[data-rhythiax-theme] #root .fixed.top-0.left-0.w-full[class*="h-[60px]"] [class*="bg-[#344a9e]"],
+body[data-rhythiax-theme] #root button[role="combobox"],
+body[data-rhythiax-theme] #root .fixed.top-0 a[href="/changelog"],
+body[data-rhythiax-theme] #root .fixed.top-0 a[aria-label="Changelog"],
+body[data-rhythiax-theme] #root button:has(img[src*="settingsicon"]),
+body[data-rhythiax-theme] #root [class*="bg-control"]:has(img[src*="settingsicon"]) {
    background-color: color-mix(in srgb, var(--rhythiax-accent) 14%, var(--rhythiax-nav-surface)) !important;
+   border: 1px solid var(--rhythiax-border-strong) !important;
+   color: var(--rhythiax-text-strong) !important;
 }
-body[data-rhythiax-theme] #root .fixed.top-0.left-0.w-full[class*="h-[60px]"] a:hover,
-body[data-rhythiax-theme] #root .fixed.top-0.left-0.w-full[class*="h-[60px]"] button:hover {
+body[data-rhythiax-theme] #root button:has(img[src*="settingsicon"]),
+body[data-rhythiax-theme] #root [class*="bg-control"]:has(img[src*="settingsicon"]),
+body[data-rhythiax-theme] #root [class*="bg-[#1e1f21]"]:has(img[src*="settingsicon"]),
+body[data-rhythiax-theme] #root button[aria-label="Settings"],
+body[data-rhythiax-theme] #root .fixed.top-0 a[href="/changelog"],
+body[data-rhythiax-theme] #root .fixed.top-0 a[aria-label="Changelog"] {
+   height: 38px !important;
+   width: 38px !important;
+   min-height: 38px !important;
+   min-width: 38px !important;
+   border-radius: 8px !important;
+   display: inline-flex !important;
+   align-items: center !important;
+   justify-content: center !important;
+   padding: 0 !important;
+   box-sizing: border-box !important;
+   transition: background-color 160ms ease, border-color 160ms ease, transform 160ms ease, box-shadow 160ms ease !important;
+}
+body[data-rhythiax-theme] #root button[role="combobox"] {
+   height: 38px !important;
+   min-height: 38px !important;
+   border-radius: 8px !important;
+   padding: 0 0.85rem !important;
+   display: inline-flex !important;
+   align-items: center !important;
+   gap: 0.5rem !important;
+   box-sizing: border-box !important;
+   transition: background-color 160ms ease, border-color 160ms ease, transform 160ms ease, box-shadow 160ms ease !important;
+}
+body[data-rhythiax-theme] #root .fixed.top-0.left-0.w-full[class*="h-[60px]"] [class*="hover:bg-[#4D65C0]"]:hover,
+body[data-rhythiax-theme] #root .fixed.top-0.left-0.w-full[class*="h-[60px]"] a:not(:has(img[src*="navlogo"])):hover,
+body[data-rhythiax-theme] #root .fixed.top-0.left-0.w-full[class*="h-[60px]"] button:hover,
+body[data-rhythiax-theme] #root button[role="combobox"]:hover,
+body[data-rhythiax-theme] #root .fixed.top-0 a[href="/changelog"]:hover,
+body[data-rhythiax-theme] #root .fixed.top-0 a[aria-label="Changelog"]:hover,
+body[data-rhythiax-theme] #root button:has(img[src*="settingsicon"]):hover,
+body[data-rhythiax-theme] #root [class*="bg-control"]:has(img[src*="settingsicon"]):hover {
    background-color: var(--rhythiax-nav-hover) !important;
+   border-color: var(--rhythiax-accent) !important;
+}
+
+/* Footer text links must never inherit navbar button geometry */
+body[data-rhythiax-theme] #root :is(footer, [class*="border-[#4D65C0]"], nav[aria-label="Community"]) a[href="/changelog"] {
+   width: auto !important;
+   height: auto !important;
+   min-width: 0 !important;
+   min-height: 0 !important;
+   border-radius: 0.125rem !important;
+   background: transparent !important;
+   border: none !important;
+   box-shadow: none !important;
+   padding: 0 !important;
+   display: inline-block !important;
 }
 
 body[data-rhythiax-theme] #root [class*="text-white"] { color: var(--rhythiax-text-strong) !important; }

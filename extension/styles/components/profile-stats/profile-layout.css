@@ -518,14 +518,23 @@
 }
 
 .rhythiax-absolute-date {
-  display: inline-block;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
   font-size: 11px;
-  color: #737373;
+  font-weight: 600;
+  line-height: 1.35;
+  color: #f1f5f9;
   margin-left: 6px;
-  padding: 1px 6px;
-  background: rgba(255, 255, 255, 0.04);
+  padding: 1.5px 7px;
+  background: rgba(10, 10, 16, 0.70);
+  border: 1px solid rgba(255, 255, 255, 0.12);
   border-radius: 4px;
   white-space: nowrap;
-  letter-spacing: 0.3px;
+  letter-spacing: 0.15px;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.85);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.35);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
 }
 

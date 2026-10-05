@@ -1,0 +1,128 @@
+/* ============================================================================
+   Rhythia Reimagined — Anti-Flicker Bridge & Skeleton Foundation
+   Loaded at document_start to prevent FOIC (Flash of Original Content) and CLS.
+   ============================================================================ */
+
+/* 1. Root Tokens Fallback before scripts execute */
+:root {
+  --rhythiax-page-bg: #151326;
+  --rhythiax-surface: #1b1a24;
+  --rhythiax-inner-surface: #252239;
+  --rhythiax-border: rgba(255, 255, 255, .12);
+  --rhythiax-border-strong: rgba(255, 255, 255, .24);
+  --rhythiax-accent: #c084fc;
+  --rhythiax-accent-soft: rgba(192, 132, 252, .18);
+  --rhythiax-radius: 14px;
+}
+
+/* 2. Skeleton Shimmer Keyframes */
+@keyframes rhythiax-shimmer {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+/* 3. Skeleton Loading Components */
+.rhythiax-skeleton {
+  position: relative;
+  overflow: hidden;
+  background-color: var(--rhythiax-inner-surface) !important;
+  border-color: var(--rhythiax-border) !important;
+}
+
+.rhythiax-skeleton::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  transform: translateX(-100%);
+  background-image: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0) 0%,
+    rgba(255, 255, 255, 0.04) 20%,
+    rgba(255, 255, 255, 0.08) 50%,
+    rgba(255, 255, 255, 0.04) 80%,
+    rgba(255, 255, 255, 0) 100%
+  );
+  animation: rhythiax-shimmer 1.8s infinite ease-in-out;
+  pointer-events: none;
+}
+
+.rhythiax-skeleton-shimmer-bar {
+  display: inline-block;
+  width: 72px;
+  height: 18px;
+  border-radius: 6px;
+  background-color: rgba(255, 255, 255, 0.08);
+  position: relative;
+  overflow: hidden;
+}
+
+.rhythiax-skeleton-shimmer-bar::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  transform: translateX(-100%);
+  background-image: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.12) 50%,
+    transparent 100%
+  );
+  animation: rhythiax-shimmer 1.5s infinite ease-in-out;
+}
+
+.rhythiax-skeleton-score-card {
+  min-height: 68px;
+  width: 100%;
+}
+
+/* 4. Hardware-Accelerated Smooth Theme Transitions (no DOM cloning) */
+html.rhythiax-theme-transitioning,
+html.rhythiax-theme-transitioning body,
+html.rhythiax-theme-transitioning #root {
+  transition: background-color 240ms cubic-bezier(.16, 1, .3, 1),
+              border-color 240ms cubic-bezier(.16, 1, .3, 1),
+              color 240ms cubic-bezier(.16, 1, .3, 1) !important;
+}
+
+/* 5. Zero-Flicker Native Section Hiding */
+.rhythiax-native-score-section-hidden {
+  display: none !important;
+}
+
+/* Zero-Flicker Native Score Section Suppression from Frame 0 (Profile pages only) */
+html:not([data-rhythiax-module-score-cards="false"]) main:has(img[src*="user-avatar"]) div.overflow-hidden.rounded-xl:has(> .space-y-2):not(.rhythiax-scores-hub):not(.rhythiax-pinned-scores-section),
+html:not([data-rhythiax-module-score-cards="false"])[data-rhythiax-page="profile"] div.overflow-hidden.rounded-xl:has(> .space-y-2):not(.rhythiax-scores-hub):not(.rhythiax-pinned-scores-section) {
+  display: none !important;
+}
+
+/* Zero-Flicker Native Stats Body Suppression (when Reimagined tab is active) */
+html:not([data-rhythiax-stats-tab="official"]) .order-1 > div:not([class*="-mx-4"]):not([class*="-mt-4"]):not(.rhythiax-reimagined-stats-body):not(.rhythiax-stats-tabs):not(.rhythiax-native-stats-body) {
+  display: none !important;
+}
+
+/* Zero-Flicker Skeleton Shimmer for Reimagined Stats while scripts mount */
+html:not([data-rhythiax-stats-tab="official"]) .order-1:not(:has(.rhythiax-reimagined-stats-body)) {
+  min-height: 220px;
+  position: relative;
+}
+
+html:not([data-rhythiax-stats-tab="official"]) .order-1:not(:has(.rhythiax-reimagined-stats-body))::after {
+  content: "";
+  position: absolute;
+  inset: 60px 16px 16px 16px;
+  border-radius: 12px;
+  background-color: var(--rhythiax-inner-surface, rgba(255, 255, 255, 0.04));
+  animation: rhythiax-shimmer 1.8s infinite ease-in-out;
+  pointer-events: none;
+}
+
+/* Ensure smooth crossfade when switching stats tabs */
+.rhythiax-reimagined-stats-body {
+  transition: opacity 160ms cubic-bezier(.16, 1, .3, 1);
+}
+
+

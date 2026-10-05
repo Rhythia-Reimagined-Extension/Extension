@@ -1,24 +1,13 @@
-# Support
+# Support — Rhythia Reimagined 1.2.0
 
-## Before reporting an issue
+Something not working? Refresh Rhythia first, then check the version shown in the extension popup. Chrome 116+ and compatible Chromium browsers are supported; the separate Firefox package requires desktop Firefox 140+.
 
-Confirm that you are using Rhythia Reimagined 1.1.0 or later and an officially
-supported browser: Google Chrome 116 or later, or the current version of Opera.
-Describe the page or feature affected and include clear reproduction steps.
+If community history is unavailable, check your Cloud & Sync settings. If you have not chosen a history mode yet, use the small online-history card on Rhythia. You can use Local Only while the service is unavailable.
 
-## Get help
+- [Report a bug](https://github.com/Rhythia-Reimagined-Extension/Extension/issues/new?template=bug_report.md) — include your browser, extension version, and steps to reproduce it.
+- [Suggest a feature](https://github.com/Rhythia-Reimagined-Extension/Extension/issues/new?template=feature_request.md).
+- [Email Shuriel](mailto:shurieldev@gmail.com) for private help, privacy requests, or [security reports](SECURITY.md).
 
-- [Report a bug](https://github.com/Rhythia-Reimagined-Extension/Extension/issues/new?template=bug_report.md)
-- [Request a feature](https://github.com/Rhythia-Reimagined-Extension/Extension/issues/new?template=feature_request.md)
-- Privacy questions: `shurieldev@gmail.com`
-- Security reports: follow the [Security Policy](SECURITY.md)
+Keep passwords, session tokens, and private login cookies out of reports and screenshots.
 
-Do not post or email session values, cookies, private messages, player IDs,
-exports, backups, or other sensitive information. Security vulnerabilities must
-not be reported in public issues.
-
-## Project scope
-
-Rhythia Reimagined is an unofficial community project and is not affiliated with
-or endorsed by Capo Games. For Rhythia account, service, or official-record
-questions, use Rhythia's official support channels.
+Rhythia Reimagined is an independent fan project. Official account bans, password resets, and game server issues should go to Rhythia's official support.

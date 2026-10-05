@@ -1,7 +1,3 @@
-// =============================================
-// Rhythia Reimagined - offline storage migrations
-// =============================================
-
 var RhythiaX = RhythiaX || {};
 
 RhythiaX.DATA_STORAGE_META_KEY = 'rhythiaxDataStorageMeta';
@@ -9,38 +5,88 @@ RhythiaX.DATA_MIGRATION_STATE_KEY = 'rhythiaxDataMigrationState';
 RhythiaX.DATA_MIGRATION_LOCK_KEY = 'rhythiaxDataMigrationLock';
 RhythiaX.DATA_QUARANTINE_PREFIX = 'rhythiaxDataQuarantine:';
 
+const LEGACY_BACKUP_STORAGE_KEYS = [
+  'rhythiaxDataBackupState',
+  'rhythiaxDataBackupPrompt',
+  'rhythiaxDataBackupOpenSettings',
+];
+
 const DATA_MIGRATION_LEASE_MS = 30000;
 const DATA_MIGRATION_WAIT_MS = 60;
 
+function isExtensionValid() {
+  return typeof chrome !== 'undefined' && Boolean(chrome.storage?.local);
+}
+
 function migrationStorageGet(keys) {
   return new Promise((resolve, reject) => {
-    chrome.storage.local.get(keys, result => {
-      const error = chrome.runtime.lastError;
-      if (error) reject(new Error(error.message));
-      else resolve(result || {});
-    });
+    if (!isExtensionValid()) return resolve({});
+    try {
+      chrome.storage.local.get(keys, result => {
+        const error = chrome.runtime?.lastError;
+        if (error) {
+          if (/Extension context invalidated/i.test(error.message)) return resolve({});
+          reject(new Error(error.message));
+        } else {
+          resolve(result || {});
+        }
+      });
+    } catch (err) {
+      if (/Extension context invalidated/i.test(err?.message)) return resolve({});
+      reject(err);
+    }
   });
 }
 
 function migrationStorageSet(values) {
   return new Promise((resolve, reject) => {
-    chrome.storage.local.set(values, () => {
-      const error = chrome.runtime.lastError;
-      if (error) reject(new Error(error.message));
-      else resolve();
-    });
+    if (!isExtensionValid()) return resolve();
+    try {
+      chrome.storage.local.set(values, () => {
+        const error = chrome.runtime?.lastError;
+        if (error) {
+          if (/Extension context invalidated/i.test(error.message)) return resolve();
+          reject(new Error(error.message));
+        } else {
+          resolve();
+        }
+      });
+    } catch (err) {
+      if (/Extension context invalidated/i.test(err?.message)) return resolve();
+      reject(err);
+    }
   });
 }
 
 function migrationStorageRemove(keys) {
   if (!keys.length) return Promise.resolve();
   return new Promise((resolve, reject) => {
-    chrome.storage.local.remove(keys, () => {
-      const error = chrome.runtime.lastError;
-      if (error) reject(new Error(error.message));
-      else resolve();
-    });
+    if (!isExtensionValid()) return resolve();
+    try {
+      chrome.storage.local.remove(keys, () => {
+        const error = chrome.runtime?.lastError;
+        if (error) {
+          if (/Extension context invalidated/i.test(error.message)) return resolve();
+          reject(new Error(error.message));
+        } else {
+          resolve();
+        }
+      });
+    } catch (err) {
+      if (/Extension context invalidated/i.test(err?.message)) return resolve();
+      reject(err);
+    }
   });
+}
+
+async function migrationRemoveLegacyBackupState(all) {
+  const keys = LEGACY_BACKUP_STORAGE_KEYS.filter(key => Object.prototype.hasOwnProperty.call(all, key));
+  if (!keys.length) return;
+  try {
+    await migrationStorageRemove(keys);
+  } catch (error) {
+    console.warn('RhythiaX: Could not remove obsolete backup state:', error);
+  }
 }
 
 function migrationAppVersion() {
@@ -76,12 +122,16 @@ function migrationRecordKey(profileId) {
 }
 
 function migrationSnapshot(all) {
+  let settings = all[RhythiaX.DATA_SETTINGS_KEY] || null;
+  if (typeof all.rhythiax_telemetry_enabled === 'boolean' && settings?.telemetryEnabled === undefined) {
+    settings = { ...(settings || {}), telemetryEnabled: all.rhythiax_telemetry_enabled };
+  }
   const records = Object.entries(all)
-    .filter(([key, value]) => key.startsWith(RhythiaX.DATA_STORAGE_ENTRY_PREFIX) && value && typeof value === 'object')
+    .filter(([key]) => key.startsWith(RhythiaX.DATA_STORAGE_ENTRY_PREFIX))
     .map(([key, value]) => ({ key, value: RhythiaX.cloneDataValue(value) || value }));
   return {
     records,
-    settings: all[RhythiaX.DATA_SETTINGS_KEY] || null,
+    settings,
     appPreferences: {
       rhythiaxModules: all.rhythiaxModules,
       rhythiaxModuleOptions: all.rhythiaxModuleOptions,
@@ -100,13 +150,15 @@ function migrationValidateSnapshot(snapshot) {
     if (!id || ids.has(id)) throw new Error('Migration produced a duplicate or empty profileId.');
     ids.add(id);
     const raw = item.value;
-    if (!raw || typeof raw !== 'object' || Array.isArray(raw) || String(raw.profileId || id) !== id) throw new Error(`Migration produced an invalid profile record: ${id}`);
+    if (!raw || typeof raw !== 'object' || Array.isArray(raw)
+      || String(raw.profileId || id) !== id || item.key !== migrationRecordKey(id)) throw new Error(`Migration produced an invalid profile record: ${id}`);
     if (!raw.history || typeof raw.history !== 'object' || Array.isArray(raw.history)) throw new Error(`Migration found a damaged history container for profile ${id}.`);
     const history = raw.history;
     if (!history.daily || typeof history.daily !== 'object' || Array.isArray(history.daily)) throw new Error(`Migration found a damaged daily history container for profile ${id}.`);
     const daily = history.daily;
     Object.entries(daily).forEach(([date, snapshotPoint]) => {
-      if (!/^\d{4}-\d{2}-\d{2}$/.test(date) || !snapshotPoint || Number(snapshotPoint.capturedAt) <= 0 || snapshotPoint.date !== date) {
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(date) || !snapshotPoint
+        || !Number.isFinite(Number(snapshotPoint.capturedAt)) || Number(snapshotPoint.capturedAt) <= 0 || snapshotPoint.date !== date) {
         throw new Error(`Migration produced an invalid daily snapshot for profile ${id}.`);
       }
     });
@@ -116,7 +168,7 @@ function migrationValidateSnapshot(snapshot) {
       }
       history.openDay.captures.forEach(capture => {
         if (!capture || typeof capture !== 'object' || Array.isArray(capture)
-          || Number(capture.capturedAt) <= 0 || capture.date !== history.openDay.date) {
+          || !Number.isFinite(Number(capture.capturedAt)) || Number(capture.capturedAt) <= 0 || capture.date !== history.openDay.date) {
           throw new Error(`Migration produced an invalid open-day capture for profile ${id}.`);
         }
       });
@@ -142,10 +194,6 @@ function migrationRegistry() {
   return RhythiaX.DATA_SCHEMA_MIGRATIONS || {};
 }
 
-function exportMigrationRegistry() {
-  return RhythiaX.DATA_EXPORT_MIGRATIONS || {};
-}
-
 RhythiaX.registerDataMigration = function (fromVersion, toVersion, migrate) {
   const from = Number(fromVersion);
   const to = Number(toVersion);
@@ -154,16 +202,6 @@ RhythiaX.registerDataMigration = function (fromVersion, toVersion, migrate) {
   }
   RhythiaX.DATA_SCHEMA_MIGRATIONS = RhythiaX.DATA_SCHEMA_MIGRATIONS || {};
   RhythiaX.DATA_SCHEMA_MIGRATIONS[from] = { from, to, migrate };
-};
-
-RhythiaX.registerDataExportMigration = function (fromVersion, toVersion, migrate) {
-  const from = Number(fromVersion);
-  const to = Number(toVersion);
-  if (!Number.isInteger(from) || !Number.isInteger(to) || to !== from + 1 || typeof migrate !== 'function') {
-    throw new Error('An export migration must move exactly one format version forward.');
-  }
-  RhythiaX.DATA_EXPORT_MIGRATIONS = RhythiaX.DATA_EXPORT_MIGRATIONS || {};
-  RhythiaX.DATA_EXPORT_MIGRATIONS[from] = { from, to, migrate };
 };
 
 async function migrationApplySteps(snapshot, fromVersion, toVersion) {
@@ -179,18 +217,6 @@ async function migrationApplySteps(snapshot, fromVersion, toVersion) {
   return next;
 }
 
-async function migrationApplyExportSteps(payload, fromVersion, toVersion) {
-  let current = Number(fromVersion);
-  let next = payload;
-  while (current < toVersion) {
-    const step = exportMigrationRegistry()[current];
-    if (!step || step.to !== current + 1) throw new Error(`No offline export migration exists for format v${current} to v${current + 1}.`);
-    next = await step.migrate(next);
-    current = step.to;
-  }
-  return next;
-}
-
 async function migrationCommitSnapshot(snapshot, schemaVersion) {
   const values = {};
   snapshot.records.forEach(item => {
@@ -198,9 +224,8 @@ async function migrationCommitSnapshot(snapshot, schemaVersion) {
     values[migrationRecordKey(id)] = item.value;
   });
   if (snapshot.settings) values[RhythiaX.DATA_SETTINGS_KEY] = snapshot.settings;
-  Object.entries(snapshot.appPreferences || {}).forEach(([key, value]) => {
-    if (value !== undefined) values[key] = value;
-  });
+  // Schema migrations do not change app preferences. Rewriting the captured
+  // values here could overwrite a newer popup choice made during migration.
   values[RhythiaX.DATA_STORAGE_META_KEY] = {
     schemaVersion,
     appVersion: migrationAppVersion(),
@@ -239,11 +264,16 @@ RhythiaX.markDataStorageHealthy = async function () {
 RhythiaX.runDataMigrations = async function () {
   if (RhythiaX.dataMigrationReady) return RhythiaX.dataMigrationReady;
   RhythiaX.dataMigrationReady = (async () => {
-    const all = await migrationStorageGet(null);
-    const storedMeta = all[RhythiaX.DATA_STORAGE_META_KEY] || {};
+    let all = await migrationStorageGet(null);
+    let storedMeta = all[RhythiaX.DATA_STORAGE_META_KEY] || {};
     const currentVersion = Number(RhythiaX.DATA_SCHEMA_VERSION) || 1;
-    const storedVersion = Number(storedMeta.schemaVersion || 0);
+    let storedVersion = Number(storedMeta.schemaVersion || 0);
+    if (!Number.isInteger(storedVersion) || storedVersion < 0) {
+      RhythiaX.dataStorageReadOnly = true;
+      throw new Error('Stored data schema version is invalid.');
+    }
     if (storedVersion > currentVersion) {
+      RhythiaX.dataStorageReadOnly = true;
       throw new Error(`Stored data schema v${storedVersion} is newer than this application supports (v${currentVersion}).`);
     }
     if (storedVersion === currentVersion && storedMeta.status !== 'failed') {
@@ -262,6 +292,7 @@ RhythiaX.runDataMigrations = async function () {
           [RhythiaX.DATA_STORAGE_META_KEY]: { ...storedMeta, schemaVersion: currentVersion, appVersion: migrationAppVersion(), status: 'ready', updatedAt: Date.now() },
         });
       }
+      await migrationRemoveLegacyBackupState(all);
       return storedMeta;
     }
     const owner = await migrationAcquireLock();
@@ -271,6 +302,19 @@ RhythiaX.runDataMigrations = async function () {
       return RhythiaX.runDataMigrations();
     }
     try {
+      // Another context may have completed an upgrade while this owner waited.
+      // Read again after acquiring the lease instead of committing stale data.
+      all = await migrationStorageGet(null);
+      storedMeta = all[RhythiaX.DATA_STORAGE_META_KEY] || {};
+      storedVersion = Number(storedMeta.schemaVersion || 0);
+      if (!Number.isInteger(storedVersion) || storedVersion < 0 || storedVersion > currentVersion) {
+        throw new Error('Stored data schema changed to an unsupported version.');
+      }
+      if (storedVersion === currentVersion && storedMeta.status === 'ready') {
+        migrationValidateSnapshot(migrationSnapshot(all));
+        await migrationRemoveLegacyBackupState(all);
+        return storedMeta;
+      }
       const migrationStarted = Date.now();
       await migrationStorageSet({
         [RhythiaX.DATA_MIGRATION_STATE_KEY]: { status: 'running', fromVersion: storedVersion, toVersion: currentVersion, owner, startedAt: migrationStarted },
@@ -284,6 +328,7 @@ RhythiaX.runDataMigrations = async function () {
         : await migrationApplySteps(snapshot, sourceVersion, currentVersion);
       migrationValidateSnapshot(migrated);
       await migrationCommitSnapshot(migrated, currentVersion);
+      await migrationRemoveLegacyBackupState(all);
       await migrationStorageSet({
         [RhythiaX.DATA_MIGRATION_STATE_KEY]: { status: 'complete', fromVersion: sourceVersion, toVersion: currentVersion, completedAt: Date.now() },
       });
@@ -303,27 +348,50 @@ RhythiaX.runDataMigrations = async function () {
   return RhythiaX.dataMigrationReady;
 };
 
-RhythiaX.migrateDataExportPayload = async function (payload) {
-  const currentExportVersion = Number(RhythiaX.DATA_EXPORT_VERSION) || 1;
-  const sourceExportVersion = Number(payload?.exportVersion || 0);
-  let prepared = payload;
-  if (!sourceExportVersion || sourceExportVersion > currentExportVersion) throw new Error('The export format is newer than this application supports.');
-  if (sourceExportVersion < currentExportVersion) prepared = await migrationApplyExportSteps(prepared, sourceExportVersion, currentExportVersion);
-  const sourceVersion = Number(prepared?.schemaVersion || 0);
-  const currentVersion = Number(RhythiaX.DATA_SCHEMA_VERSION) || 1;
-  if (!sourceVersion || sourceVersion > currentVersion) throw new Error('The data schema is newer than this application supports.');
-  if (sourceVersion === currentVersion) return prepared;
-  const snapshot = {
-    records: (Array.isArray(prepared.records) ? prepared.records : []).map(record => ({ key: migrationRecordKey(record.profileId), value: RhythiaX.cloneDataValue(record) })),
-    settings: prepared.settings || null,
-    appPreferences: prepared.appSettings || {},
-  };
-  const migrated = await migrationApplySteps(snapshot, sourceVersion, currentVersion);
+// Preserve 1.1.x records while updating the storage schema.
+RhythiaX.registerDataMigration(1, 2, async function (snapshot) {
+  const nextRecords = (snapshot.records || []).map(item => {
+    const record = RhythiaX.cloneDataValue(item.value) || item.value;
+    if (record && typeof record === 'object') {
+      record.schemaVersion = 2;
+    }
+    const id = String(record?.profileId || item.key?.slice(RhythiaX.DATA_STORAGE_ENTRY_PREFIX.length) || '').trim();
+    return {
+      key: item.key,
+      value: { ...RhythiaX.normalizeDataRecord(record, id), schemaVersion: 2 },
+    };
+  });
+
+  // Normalize legacy settings to the fixed retention policy; keep privacy choices.
+  const settings = snapshot.settings ? { ...snapshot.settings } : null;
+
   return {
-    ...prepared,
-    schemaVersion: currentVersion,
-    records: migrated.records.map(item => item.value),
-    settings: migrated.settings,
-    appSettings: migrated.appPreferences,
+    ...snapshot,
+    records: nextRecords,
+    settings: settings ? RhythiaX.normalizeDataSettings(settings) : null,
   };
-};
+});
+
+RhythiaX.registerDataMigration(2, 3, async function (snapshot) {
+  return {
+    ...snapshot,
+    records: snapshot.records.map(item => ({
+      key: item.key,
+      value: RhythiaX.normalizeDataRecord(item.value, item.value?.profileId || item.key?.slice(RhythiaX.DATA_STORAGE_ENTRY_PREFIX.length)),
+    })),
+    settings: snapshot.settings ? RhythiaX.normalizeDataSettings(snapshot.settings) : null,
+  };
+});
+
+// Upgrade both released 1.1.x data and unreleased schema-3 development data.
+// History is preserved here; maintenance applies the limits during site use.
+RhythiaX.registerDataMigration(3, 4, async function (snapshot) {
+  return {
+    ...snapshot,
+    records: snapshot.records.map(item => ({
+      key: item.key,
+      value: RhythiaX.normalizeDataRecord(item.value, item.value?.profileId),
+    })),
+    settings: snapshot.settings ? RhythiaX.normalizeDataSettings(snapshot.settings) : null,
+  };
+});

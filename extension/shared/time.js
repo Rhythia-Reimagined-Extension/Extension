@@ -26,10 +26,86 @@ RhythiaX.parseRelativeTime = function (text) {
   return d;
 };
 
-RhythiaX.formatDate = function (d) {
+RhythiaX.formatDate = function (d, customFormat) {
   if (!(d instanceof Date) || Number.isNaN(d.getTime())) return '';
   const pad = value => String(value).padStart(2, '0');
+  if (customFormat && typeof customFormat === 'string') {
+    return RhythiaX.formatDateWithPattern(d, customFormat);
+  }
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+};
+
+RhythiaX.formatDateWithPattern = function (d, pattern = 'relative') {
+  if (!d) return '';
+  let dateObj = d;
+  if (typeof dateObj === 'string') {
+    const trimmed = dateObj.trim();
+    if (/^\d+\s+\w+\s+ago$/i.test(trimmed) && pattern === 'relative') {
+      return trimmed;
+    }
+    if (/^\d+\s*(second|minute|hour|day|week|month|year)s?\s*ago/i.test(trimmed)) {
+      dateObj = RhythiaX.parseRelativeTime ? RhythiaX.parseRelativeTime(trimmed) : null;
+    } else {
+      dateObj = new Date(trimmed);
+    }
+  }
+
+  if (!(dateObj instanceof Date) || Number.isNaN(dateObj.getTime())) {
+    return String(d || '');
+  }
+
+  const p = String(pattern || 'relative').toLowerCase();
+  if (p === 'relative') {
+    return RhythiaX.formatRelativeDate ? RhythiaX.formatRelativeDate(dateObj) : '';
+  }
+
+  const pad = val => String(val).padStart(2, '0');
+  const year = dateObj.getFullYear();
+  const month = pad(dateObj.getMonth() + 1);
+  const day = pad(dateObj.getDate());
+
+  switch (p) {
+    case 'mm-dd-yyyy':
+      return `${month}-${day}-${year}`;
+    case 'dd-mm-yyyy':
+      return `${day}-${month}-${year}`;
+    case 'yyyy-mm-dd':
+      return `${year}-${month}-${day}`;
+    case 'mm/dd/yyyy':
+      return `${month}/${day}/${year}`;
+    case 'dd/mm/yyyy':
+      return `${day}/${month}/${year}`;
+    case 'yyyy/mm/dd':
+      return `${year}/${month}/${day}`;
+    default:
+      return `${year}-${month}-${day}`;
+  }
+};
+
+RhythiaX.getScoreDateTooltip = function (rawDate, currentFormatted) {
+  if (!rawDate) return '';
+  let dateObj = rawDate;
+  if (typeof dateObj === 'string') {
+    const trimmed = dateObj.trim();
+    if (/^\d+\s*(second|minute|hour|day|week|month|year)s?\s*ago/i.test(trimmed)) {
+      dateObj = RhythiaX.parseRelativeTime ? RhythiaX.parseRelativeTime(trimmed) : null;
+    } else {
+      dateObj = new Date(trimmed);
+    }
+  }
+
+  if (!(dateObj instanceof Date) || Number.isNaN(dateObj.getTime())) {
+    return '';
+  }
+
+  const relative = RhythiaX.formatRelativeDate ? RhythiaX.formatRelativeDate(dateObj) : '';
+  const pad = val => String(val).padStart(2, '0');
+  const isoWithTime = `${dateObj.getFullYear()}-${pad(dateObj.getMonth() + 1)}-${pad(dateObj.getDate())} ${pad(dateObj.getHours())}:${pad(dateObj.getMinutes())}`;
+
+  if (currentFormatted && currentFormatted.includes('ago')) {
+    return isoWithTime;
+  }
+  return relative ? `${relative} (${isoWithTime})` : isoWithTime;
 };
 
 RhythiaX.localDateKey = function (date) {
@@ -144,38 +220,30 @@ RhythiaX.weeksSince = function (date) {
 
 // ─── Here since extraction ────────────────────
 RhythiaX.extractHereSince = function () {
-  // First try: find in sidebar (profile page)
-  const sidebar = RhythiaX.qs('.lg\\:col-span-3');
-  if (sidebar) {
-    const sidebarText = sidebar.textContent;
-    const match = sidebarText.match(/Here since:\s*(.+)/i);
-    if (match) {
-      const date = new Date(match[1]);
-      if (!isNaN(date.getTime())) return date;
-    }
-  }
-  // Second try: search all div elements
-  const els = RhythiaX.qsa('div');
-  for (const el of els) {
-    const text = el.textContent.trim();
-    const match = text.match(/Here since:\s*(.+)/i);
-    if (match) {
-      const date = new Date(match[1]);
-      if (!isNaN(date.getTime())) return date;
-    }
-  }
-  // Fallback: leaf text nodes with 'Here since'
-  const allEls = RhythiaX.qsa('span, p, div');
-  for (const el of allEls) {
+  // First try: sidebar leaf elements with 'Here since'
+  const sidebar = RhythiaX.qs('.lg\\:col-span-3, [class*="sidebar"], main') || document.body;
+  const leafEls = RhythiaX.qsa('span, p, div, time', sidebar);
+  for (const el of leafEls) {
     if (el.children.length === 0) {
       const text = el.textContent.trim();
-      if (text.startsWith('Here since')) {
-        const match = text.match(/Here since:\s*(.+)/i);
-        if (match) {
-          const date = new Date(match[1]);
-          if (!isNaN(date.getTime())) return date;
-        }
+      const match = text.match(/[Hh]ere since:\s*([^\r\n<]+)/i);
+      if (match) {
+        const candidate = match[1].trim();
+        const date = new Date(candidate);
+        if (!isNaN(date.getTime())) return date;
       }
+    }
+  }
+
+  // Second try: container elements with non-greedy single-line match
+  const containers = RhythiaX.qsa('.lg\\:col-span-3, [class*="rounded"], .space-y-4', sidebar);
+  for (const container of containers) {
+    const text = container.textContent;
+    const match = text.match(/[Hh]ere since:\s*([^\r\n<]+)/i);
+    if (match) {
+      const candidate = match[1].trim();
+      const date = new Date(candidate);
+      if (!isNaN(date.getTime())) return date;
     }
   }
   return null;

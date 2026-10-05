@@ -3,13 +3,76 @@
 All notable user-facing changes are documented in this file.
 
 ---
+version: 1.2.0
+date: 2026-10-01
+title: Going Online
+listed: yes
+---
+
+## 1.2.0 - Going Online - 2026-10-01
+
+## Featured
+
+- Back in business: Adapted profiles, stats, score cards, Friends, themes, and session handling to Rhythia's updated website. Finally...
+- Going online: Added a connection to my community history server. Instead of relying only on records collected in your own browser, you can also load available ranking history for the top 1,000 players and additional discovered profiles.
+- Reimagined Score Cards: Replaced the Modern/Legacy card choices with three new designs and optional background artwork. Rebuilt the profile score browser with search and numbered pages at the top and bottom. Pick your favorite look, then actually find the score you're looking for.
+- Reimagined Playstyle: Replaced the separate Rating and Tempo profiles with a Playstyle view: a player summary, standout plays, and speed and accuracy-grade breakdowns with score counts.
+- Reimagined Title Progression: Rebuilt the progression view with a map-like layout and title milestones. More fun to look at, more Reimagined... You get the idea.
+- Reimagined Compare: Rebuilt the comparison view with clearer stat differences and a layout for 2 players. The previous version allowed 4.
+- Reimagined Popup: Replaced the old popup with a simpler layout and reorganized settings. Again... Hopefully this one gets to stay for a while.
+- Firefox joins the party: Added a separate Firefox desktop package. Reimagined isn't just a Chromium thing anymore. For now, installation is temporary; a signed Firefox store release is still to come.
+
+## Added
+
+- Added three history source choices for the new server connection: Cloud Only, Cloud + Local, and Local Only.
+- Added an online-history setup card and separate controls for using community history and reporting profile visits. Connections start after your choice; visit reporting requires a separate opt-in.
+- Added a connection log in the popup for the new history server: viewed profile, request status, and response time. It shows whether that profile's online history loaded, is missing from the server, or could not be reached.
+- Added date-format settings: YYYY-MM-DD, MM-DD-YYYY, and DD-MM-YYYY for score cards and history views.
+
+## Improved
+
+- Expanded the existing Rhythia API integration to load profile details, pinned scores, and more score collections. Added shared caching and request deduplication to avoid fetching the same data repeatedly.
+- Reworked profile navigation and loading to reduce flickering and unnecessary rebuilds, and to keep late responses and cached records attached to the correct player.
+- Reworked White theme contrast, colors, and readability across cards and pages. White theme needed some love too.
+- Polished transitions and glowing accents in Dark and Reimagined themes.
+- Improved player and mapper name detection, including profile details fetched for Compare.
+
+## Changed
+
+- Reduced the Compare limit from 4 players to 2.
+- Replaced configurable local-history retention and storage limits with fixed limits of 90 days and 25 MB. The previous default storage limit was 300 MB.
+- Reorganized profile statistics into dedicated history, ranking, and Playstyle views.
+
+## Fixed
+
+- Updated profile detection and RP/rank extraction for Rhythia's changed page layout.
+- Restored profile statistics, score-card enhancements, and Friends controls for the updated website.
+- Updated authentication handling for Rhythia's changed login system.
+
+## Removed
+
+- Removed the old backup, restore, and JSON import/export tools. Files you already exported stay where you saved them.
+- Removed the protected-profile list and its cleanup exceptions, including protection of your own profile.
+- Removed the separate saved Title Progression state used by the old progression view.
+
+## Notes
+
+- Online History & Accuracy: Going online came with a few compromises. The new server history covers ranking and RP; online accuracy history isn't ready for 1.2.0 yet. Your local accuracy history still works. I'm working on the online part, but I didn't want to keep the whole update waiting for it. Yet... is the important word here.
+- Why only 2 players in Compare? I think 2 is enough to keep the comparison useful and readable. But I'm open to suggestions if you have a reason to compare more.
+- A little Playstyle backstory: The old Rating and Tempo profiles weren't telling you as much as I wanted. I almost removed them... Then it struck me: why don't we make them actually useful? So they grew into Playstyle instead.
+- And yes, the popup got remade again: The previous versions were either too complicated, hard to read, or just didn't feel right for the extension. We'll see how long this one lasts...
+- Community history depends on the records available on the server. Opting into visit reports helps the server discover additional profiles; it doesn't guarantee history for every visited player.
+- Updates keep valid local history and privacy choices. Older local history can be cleaned up under the new limits. Clear Cache asks before removing all local profile history and cached online history.
+- Local Only disables all outgoing requests to rhythia.shuriel.com.
+
+---
 version: 1.1.0
-date: 2026-08-24
+date: 2026-08-21
 title: UI Polish & Stability
 listed: yes
 ---
 
-## 1.1.0 - UI Polish & Stability - 2026-08-24
+## 1.1.0 - UI Polish & Stability - 2026-08-21
 
 ## Featured
 
@@ -54,7 +117,7 @@ listed: yes
 ## Removed
 
 - Removed old tools from the `/scores` page since Rhythia no longer links to it from profiles (theme styling is still kept if you visit it directly).
-- Removed the old Streamslop catalog integration as it was barely used and slowed down navigation.
+- Removed the old external catalog integration as it was barely used and slowed down navigation.
 - Removed the extension badge in the bottom-right corner to keep the screen clean.
 - Removed the old changelog timeline bar for a simpler layout.
 - Removed unused background scripts and old CSS files.
@@ -133,4 +196,4 @@ listed: yes
 ## Notes
 
 - The first release of Rhythia Reimagined. The main features can be enabled or disabled from the extension popup, so the experience can stay as focused or as feature-rich as you prefer.
-- See [Installation](INSTALLATION.md) and [Data and Backups](DATA-AND-BACKUPS.md) for usage information.
+- See [Installation](INSTALLATION.md) and [Data and Sync](DATA-AND-SYNC.md) for current usage information. This 1.0.0 entry describes backup features available at that release.

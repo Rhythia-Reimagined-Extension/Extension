@@ -4,6 +4,14 @@
 
 var RhythiaX = RhythiaX || {};
 
+// Synchronously initialize active stats tab from localStorage to prevent layout flash
+try {
+  const activeStatsTab = (typeof localStorage !== 'undefined' && localStorage.getItem('rhythiax_active_stats_tab')) || 'reimagined';
+  if (typeof document !== 'undefined' && document.documentElement) {
+    document.documentElement.dataset.rhythiaxStatsTab = activeStatsTab;
+  }
+} catch (_) {}
+
 // ─── Constants ───────────────────────────────
 RhythiaX.GRADE_COLORS = {
   SS: '#FFD700', S: '#00E5FF', A: '#22C55E', B: '#84CC16',
@@ -32,7 +40,7 @@ RhythiaX.GRADE_STRIP_COLORS = {
   F: '#DC2626',
 };
 
-RhythiaX.SCORE_SELECTOR = 'div.relative.py-2';
+RhythiaX.SCORE_SELECTOR = 'div.relative.py-2, div.relative.overflow-hidden.rounded-lg.border';
 
 RhythiaX.SPEED_ORDER = ['1.45', '1.35', '1.25', '1.15', '1.00', '0.87', '0.80', '0.75'];
 RhythiaX.SPEED_COLORS = {

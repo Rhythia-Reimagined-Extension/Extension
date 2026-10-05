@@ -1,0 +1,556 @@
+/* =============================================
+   Rhythia Reimagined — Title Progression (Adventure Map)
+   ============================================= */
+
+:root {
+  --r-map-bg: radial-gradient(ellipse at 50% 30%, #161226 0%, #0c0a14 100%);
+  --r-map-grid: rgba(255, 255, 255, 0.05);
+  --r-track-base: rgba(255, 255, 255, 0.12);
+  --r-node-bg: rgba(18, 15, 28, 0.95);
+  --r-pin-bg: rgba(18, 15, 28, 0.96);
+  --r-pin-stem: rgba(255, 255, 255, 0.5);
+  --gm-white: #ffffff;
+  --gm-white-border: #f8fafc;
+  --gm-white-glow: rgba(255, 255, 255, 0.65);
+  --silver-color: #cbd5e1;
+  --silver-border: #e2e8f0;
+  --silver-text: #f1f5f9;
+}
+
+/* Host Container */
+.rhythiax-title-progression-host {
+  width: 100%;
+  display: block;
+}
+
+/* Ensure all native siblings of the Title Progression Host are hidden */
+.rhythiax-title-progression-host ~ * {
+  display: none !important;
+}
+
+[data-rhythiax-native-header="true"] {
+  display: none !important;
+}
+
+/* Fallback: when host shows native body, unhide native siblings except the native header */
+.rhythiax-title-progression-host.rhythiax-show-native-body ~ *:not([data-rhythiax-native-header="true"]) {
+  display: block !important;
+}
+
+/* Smooth view transition */
+@keyframes rhythiax-tp-fade-slide {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.rhythiax-view-fade-in {
+  animation: rhythiax-tp-fade-slide 0.28s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rhythiax-view-fade-in {
+    animation: none !important;
+  }
+}
+
+.rhythiax-title-progression-component {
+  width: 100%;
+}
+
+/* ─── Header ────────────────────────────────── */
+.rhythiax-title-progression-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+  gap: 12px;
+}
+
+.rhythiax-header-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--rhythiax-text-muted, #94a3b8);
+}
+
+.rhythiax-header-title svg {
+  color: var(--rhythiax-accent, #a855f7);
+}
+
+/* Pill Switch */
+.rhythiax-pill-switch {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  padding: 3px;
+  border-radius: 8px;
+  background: var(--rhythiax-surface, rgba(255, 255, 255, 0.04));
+  border: 1px solid var(--rhythiax-border, rgba(255, 255, 255, 0.08));
+}
+
+.rhythiax-pill-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 5px 12px;
+  border-radius: 6px;
+  border: none;
+  background: transparent;
+  color: var(--rhythiax-text-muted, #94a3b8);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.rhythiax-pill-btn:hover {
+  color: var(--rhythiax-text-strong, #ffffff);
+}
+
+.rhythiax-pill-btn.active {
+  background: rgba(255, 255, 255, 0.12);
+  color: #ffffff;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+}
+
+.rhythiax-pill-btn:active {
+  transform: scale(0.95);
+}
+
+/* ─── Map Arena ─────────────────────────────── */
+.rhythiax-title-map-container {
+  width: 100%;
+  border-radius: 10px;
+  overflow: hidden;
+  border: 1px solid var(--rhythiax-border, rgba(255, 255, 255, 0.07));
+  background: var(--r-map-bg);
+}
+
+.rhythiax-title-map-arena {
+  position: relative;
+  width: 100%;
+  max-width: 960px;
+  height: 220px;
+  margin: 0 auto;
+  background: var(--r-map-bg);
+  overflow: hidden;
+}
+
+.rhythiax-map-bg-grid {
+  position: absolute;
+  inset: 0;
+  background-image: radial-gradient(var(--r-map-grid) 1px, transparent 1px);
+  background-size: 24px 24px;
+  pointer-events: none;
+}
+
+.rhythiax-map-svg {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+/* ─── Map Waypoint Nodes & Badges ────────────── */
+.rhythiax-map-node-group {
+  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  cursor: default;
+}
+
+.rhythiax-map-node-group rect {
+  transition: all 0.2s ease;
+}
+
+/* Luminous Grandmaster emblem ONLY when unlocked */
+.rhythiax-map-node-group[data-tier="grandmaster"][data-unlocked="true"] image {
+  filter: brightness(0) invert(1) drop-shadow(0 0 6px rgba(255, 255, 255, 0.9));
+}
+
+body[data-rhythiax-theme="white"] .rhythiax-map-node-group[data-tier="grandmaster"][data-unlocked="true"] image {
+  filter: drop-shadow(0 0 3px rgba(0, 0, 0, 0.45));
+}
+
+/* Locked tier styling: no glow, muted dashed token box border, dimmed emblem */
+.rhythiax-map-node-group[data-unlocked="false"] rect {
+  stroke-dasharray: 4 3;
+  stroke: rgba(255, 255, 255, 0.16) !important;
+  filter: none !important;
+}
+
+.rhythiax-map-node-group[data-unlocked="false"] image {
+  filter: grayscale(0.7) opacity(0.32) !important;
+}
+
+.rhythiax-map-node-group[data-unlocked="false"] text {
+  opacity: 0.55;
+}
+
+/* ─── Footer Status Bar (Clean, centered Goal with modern sans typography) ─── */
+.rhythiax-title-progression-footer {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 10px 16px;
+  background: var(--rhythiax-surface, rgba(0, 0, 0, 0.22));
+  border-top: 1px solid var(--rhythiax-border, rgba(255, 255, 255, 0.05));
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Inter", "Helvetica Neue", sans-serif;
+  text-align: center;
+}
+
+.rhythiax-footer-goal-centered {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  color: var(--rhythiax-text-muted, #94a3b8);
+  font-size: 12.5px;
+  font-weight: 500;
+  letter-spacing: 0.01em;
+}
+
+.rhythiax-goal-icon {
+  color: var(--rhythiax-accent, #c084fc);
+  opacity: 0.9;
+  flex-shrink: 0;
+}
+
+.rhythiax-status-goal {
+  color: var(--rhythiax-text-strong, #f8fafc);
+  font-family: inherit;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+}
+
+/* ─── History View Container (Seamless, no double/triple outer borders) ─── */
+.rhythiax-title-history-container {
+  width: 100%;
+  border: none;
+  background: transparent;
+}
+
+.rhythiax-history-card-wrap {
+  padding: 0;
+}
+
+.rhythiax-history-top-legend {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 14px;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Inter", sans-serif;
+  font-size: 11px;
+  font-weight: 600;
+  margin-bottom: 10px;
+  color: var(--rhythiax-text-muted, #94a3b8);
+  flex-wrap: wrap;
+}
+
+.rhythiax-history-top-legend span {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.rhythiax-history-legend-dot {
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+}
+
+.rhythiax-history-chart-area {
+  position: relative;
+  height: 220px;
+  width: 100%;
+  border-radius: 10px;
+  background: var(--r-map-bg);
+  border: 1px solid var(--rhythiax-border, rgba(255, 255, 255, 0.07));
+  overflow: hidden;
+}
+
+/* Left Y-axis only */
+.rhythiax-y-axis-col {
+  position: absolute;
+  left: 12px;
+  top: 36px;
+  bottom: 28px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Inter", sans-serif;
+  font-size: 10px;
+  font-weight: 500;
+  color: var(--rhythiax-text-dim, #64748b);
+  pointer-events: none;
+  z-index: 2;
+}
+
+/* Bottom X-axis Dates */
+.rhythiax-x-axis-row {
+  position: absolute;
+  left: 50px;
+  right: 15px;
+  bottom: 6px;
+  display: flex;
+  justify-content: space-between;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Inter", sans-serif;
+  font-size: 10px;
+  font-weight: 500;
+  color: var(--rhythiax-text-dim, #64748b);
+  pointer-events: none;
+  z-index: 2;
+}
+
+/* Interactive Dot on History Chart */
+.rhythiax-history-interactive-dot {
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.rhythiax-history-interactive-dot:hover,
+.rhythiax-history-interactive-dot.active {
+  r: 6.5;
+  stroke-width: 2.5;
+}
+
+/* Hover Tooltip (Hidden by default, shown on hover/active) */
+.rhythiax-hist-tooltip-badge {
+  position: absolute;
+  transform: translate(-50%, -100%);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Inter", sans-serif;
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1.35;
+  letter-spacing: 0.01em;
+  padding: 6px 12px;
+  border-radius: 8px;
+  background: var(--r-node-bg, rgba(20, 22, 26, 0.94));
+  border: 1px solid var(--tag-color, #c084fc);
+  color: #ffffff;
+  white-space: nowrap;
+  pointer-events: none;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.55), 0 0 10px rgba(0, 0, 0, 0.2);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  margin-top: -10px;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.18s cubic-bezier(0.16, 1, 0.3, 1), transform 0.18s cubic-bezier(0.16, 1, 0.3, 1), visibility 0.18s;
+  z-index: 30;
+}
+
+.rhythiax-hist-tooltip-badge::after {
+  content: '';
+  position: absolute;
+  bottom: -5px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 0;
+  height: 0;
+  border-left: 5px solid transparent;
+  border-right: 5px solid transparent;
+  border-top: 5px solid var(--tag-color, #c084fc);
+}
+
+.rhythiax-hist-tooltip-badge.show {
+  opacity: 1;
+  visibility: visible;
+  transform: translate(-50%, -100%) scale(1);
+}
+
+/* ─── White Theme Overrides ─────────────────── */
+body[data-rhythiax-theme="white"] {
+  --r-map-bg: #f8fafc;
+  --r-map-grid: rgba(0, 0, 0, 0.05);
+  --r-track-base: rgba(0, 0, 0, 0.12);
+  --r-node-bg: #ffffff;
+  --r-pin-bg: #ffffff;
+  --r-pin-stem: #64748b;
+  --gm-white: #0f172a;
+  --gm-white-border: #475569;
+  --gm-white-glow: rgba(71, 85, 105, 0.25);
+  --silver-color: #475569;
+  --silver-border: #64748b;
+  --silver-text: #0f172a;
+}
+
+body[data-rhythiax-theme="white"] .rhythiax-title-map-container {
+  border-color: rgba(0, 0, 0, 0.08);
+  background: #f8fafc;
+}
+
+body[data-rhythiax-theme="white"] .rhythiax-title-history-container {
+  border: none;
+  background: transparent;
+}
+
+body[data-rhythiax-theme="white"] .rhythiax-history-chart-area {
+  background: #f8fafc;
+  border-color: rgba(0, 0, 0, 0.08);
+}
+
+body[data-rhythiax-theme="white"] .rhythiax-y-axis-col,
+body[data-rhythiax-theme="white"] .rhythiax-x-axis-row {
+  color: #64748b;
+}
+
+body[data-rhythiax-theme="white"] .rhythiax-hist-tooltip-badge {
+  background: #ffffff;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.15);
+}
+
+body[data-rhythiax-theme="white"] .rhythiax-header-title {
+  color: #475569;
+}
+
+body[data-rhythiax-theme="white"] .rhythiax-pill-switch {
+  background: #f1f5f9;
+  border-color: #e2e8f0;
+}
+
+body[data-rhythiax-theme="white"] .rhythiax-pill-btn {
+  color: #64748b;
+}
+
+body[data-rhythiax-theme="white"] .rhythiax-pill-btn:hover {
+  color: #0f172a;
+}
+
+body[data-rhythiax-theme="white"] .rhythiax-pill-btn.active {
+  background: #ffffff;
+  color: #0f172a;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+body[data-rhythiax-theme="white"] .rhythiax-title-progression-footer {
+  background: #f8fafc;
+  border-top-color: #e2e8f0;
+}
+
+body[data-rhythiax-theme="white"] .rhythiax-status-title {
+  color: #0f172a;
+}
+
+body[data-rhythiax-theme="white"] .rhythiax-status-goal {
+  color: #0f172a;
+}
+
+/* White Theme Waypoints & Locked Ranks Visibility */
+body[data-rhythiax-theme="white"] .rhythiax-waypoint-name {
+  fill: #0f172a !important;
+}
+
+body[data-rhythiax-theme="white"] .rhythiax-waypoint-rp {
+  fill: #64748b !important;
+}
+
+body[data-rhythiax-theme="white"] .rhythiax-title-map-arena path[stroke-dasharray="6 6"] {
+  stroke: rgba(15, 23, 42, 0.16) !important;
+}
+
+body[data-rhythiax-theme="white"] .rhythiax-map-node-group[data-unlocked="false"] rect {
+  fill: #ffffff !important;
+  stroke: rgba(15, 23, 42, 0.28) !important;
+  stroke-dasharray: 4 3 !important;
+}
+
+body[data-rhythiax-theme="white"] .rhythiax-map-node-group[data-unlocked="false"] image {
+  filter: grayscale(1) opacity(0.35) !important;
+}
+
+body[data-rhythiax-theme="white"] .rhythiax-map-node-group[data-unlocked="false"] .rhythiax-waypoint-name {
+  fill: #475569 !important;
+  opacity: 0.8 !important;
+}
+
+body[data-rhythiax-theme="white"] .rhythiax-map-node-group[data-unlocked="false"] .rhythiax-waypoint-rp {
+  fill: #94a3b8 !important;
+  opacity: 0.8 !important;
+}
+
+/* White Theme Locked Grandmaster Stencil */
+body[data-rhythiax-theme="white"] .rhythiax-map-node-group[data-tier="grandmaster"][data-unlocked="false"] rect {
+  fill: #ffffff !important;
+  stroke: rgba(15, 23, 42, 0.28) !important;
+  stroke-dasharray: 4 3 !important;
+}
+
+body[data-rhythiax-theme="white"] .rhythiax-map-node-group[data-tier="grandmaster"][data-unlocked="false"] image {
+  filter: brightness(0) opacity(0.3) !important;
+}
+
+body[data-rhythiax-theme="white"] .rhythiax-map-pin-group polygon,
+body[data-rhythiax-theme="white"] .rhythiax-map-pin-group rect {
+  fill: #ffffff !important;
+}
+
+/* ─── Dark Theme Overrides ──────────────────── */
+body[data-rhythiax-theme="dark"] {
+  --r-map-bg: #0f1013;
+  --r-map-grid: rgba(255, 255, 255, 0.04);
+  --r-node-bg: #14161a;
+  --r-pin-bg: #14161a;
+}
+
+body[data-rhythiax-theme="dark"] .rhythiax-title-history-container {
+  border: none;
+  background: transparent;
+}
+
+body[data-rhythiax-theme="dark"] .rhythiax-history-chart-area {
+  background: #0f1013;
+}
+
+/* ─── Responsive Styles ─────────────────────── */
+@media (max-width: 640px) {
+  .rhythiax-title-map-arena {
+    height: 180px;
+  }
+
+  .rhythiax-title-progression-footer {
+    padding: 8px 12px;
+    font-size: 11px;
+  }
+
+  .rhythiax-history-card-wrap {
+    padding: 12px 14px 16px;
+  }
+
+  .rhythiax-history-chart-area {
+    height: 180px;
+  }
+}
+
+/* History uses discrete tier segments and bounded, wrapping tooltips. */
+
+.rhythiax-history-chart-area { background: var(--rhythiax-surface, #101216); }
+.rhythiax-y-axis-col { top: 0; bottom: 0; width: 42px; left: 4px; }
+.rhythiax-y-axis-col span { position: absolute; right: 0; transform: translateY(-50%); }
+.rhythiax-x-axis-row { left: 5.32%; right: 1.7%; }
+.rhythiax-hist-tooltip-badge {
+  box-sizing: border-box;
+  max-width: calc(100% - 16px);
+  white-space: normal;
+  overflow-wrap: anywhere;
+  margin-top: 0;
+  transition: opacity 0.15s, visibility 0.15s;
+}
+.rhythiax-hist-tooltip-badge::after { display: none; }
+.rhythiax-history-interactive-dot:focus { outline: none; stroke-width: 3; r: 6.5; }
+body[data-rhythiax-theme="white"] .rhythiax-hist-tooltip-badge { color: #0f172a; }

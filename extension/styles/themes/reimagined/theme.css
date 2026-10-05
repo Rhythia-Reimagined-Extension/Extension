@@ -3,10 +3,51 @@
 body[data-rhythiax-theme="rhythia-reimagined"] {
   color-scheme: dark;
   --rhythiax-text-subtle: color-mix(in srgb, var(--rhythiax-text-muted) 72%, transparent);
+  --checker-from: #120b1f;
+  --checker-to: #24143d;
+  --checker-cell: rgba(255, 255, 255, 0.025);
+}
+
+/* Header bar and controls in Reimagined */
+body[data-rhythiax-theme="rhythia-reimagined"] #root .fixed.top-0.left-0.w-full[class*="h-[60px]"] {
+  border-bottom: 1px solid rgba(216, 180, 254, 0.22) !important;
+}
+
+body[data-rhythiax-theme="rhythia-reimagined"] #root .fixed.top-0.left-0.w-full[class*="h-[60px]"] [class*="bg-[#2F4184]"],
+body[data-rhythiax-theme="rhythia-reimagined"] #root .fixed.top-0.left-0.w-full[class*="h-[60px]"] [class*="bg-[#344a9e]"] {
+  background: color-mix(in srgb, var(--rhythiax-accent, #c084fc) 20%, var(--rhythiax-inner-surface, #2b1d40)) !important;
+  border: 1px solid rgba(216, 180, 254, 0.22) !important;
+  color: #faf5ff !important;
+}
+
+body[data-rhythiax-theme="rhythia-reimagined"] #root .fixed.top-0.left-0.w-full[class*="h-[60px]"] [class*="hover:bg-[#4D65C0]"]:hover {
+  background: color-mix(in srgb, var(--rhythiax-accent, #c084fc) 32%, var(--rhythiax-inner-surface, #2b1d40)) !important;
+}
+
+/* Reimagined card and score surface overrides */
+body[data-rhythiax-theme="rhythia-reimagined"] #root .bg-surface,
+body[data-rhythiax-theme="rhythia-reimagined"] #root [class*="bg-surface"] {
+  background-color: var(--rhythiax-surface, #1e142d) !important;
+  border-color: rgba(216, 180, 254, 0.18) !important;
+}
+
+body[data-rhythiax-theme="rhythia-reimagined"] #root .bg-raised,
+body[data-rhythiax-theme="rhythia-reimagined"] #root [class*="bg-raised"] {
+  background-color: var(--rhythiax-inner-surface, #2b1d40) !important;
+  border-color: rgba(216, 180, 254, 0.16) !important;
+}
+
+body[data-rhythiax-theme="rhythia-reimagined"] #root .bg-control,
+body[data-rhythiax-theme="rhythia-reimagined"] #root [class*="bg-control"] {
+  background-color: var(--rhythiax-input-surface, #160e24) !important;
+  border-color: rgba(216, 180, 254, 0.22) !important;
 }
 
 /* Reimagined keeps the artwork slightly softer against its violet-night base. */
-body[data-rhythiax-theme="rhythia-reimagined"] #root .top-\[60px\].left-0.overflow-hidden.h-64 { opacity: .68 !important; filter: saturate(.82) brightness(.9) !important; }
+body[data-rhythiax-theme="rhythia-reimagined"] #root .top-\[60px\].left-0.overflow-hidden.h-64 {
+  opacity: .68 !important;
+  filter: saturate(.82) brightness(.9) !important;
+}
 
 /* Use the Reimagined night palette instead of the native black caption veil. */
 body[data-rhythiax-theme="rhythia-reimagined"] #root [class*="from-transparent"][class*="via-\[#0a0a0a73\]"][class*="to-neutral-950"] {
@@ -18,35 +59,177 @@ body[data-rhythiax-theme="rhythia-reimagined"] #root [class*="from-transparent"]
 /* Reimagined media surfaces keep the violet preset visible without sacrificing contrast. */
 body[data-rhythiax-theme="rhythia-reimagined"] #root img[src="/discordicon.png"],
 body[data-rhythiax-theme="rhythia-reimagined"] #root img[src="/supporticon.png"],
-body[data-rhythiax-theme="rhythia-reimagined"] #root img[src="/settingsicon.png"] { display: block !important; visibility: visible !important; opacity: 1 !important; filter: none !important; mix-blend-mode: normal !important; }
-body[data-rhythiax-theme="rhythia-reimagined"] #root [class*="bg-[#141516]"] { background-color: color-mix(in srgb, #141516 70%, var(--rhythiax-surface)) !important; opacity: 1 !important; }
-body[data-rhythiax-theme="rhythia-reimagined"] #root img[src*="beatmap-img-"] ~ [class*="bg-gradient-to-t"] { background-image: linear-gradient(to top, rgba(7,9,14,.92), rgba(7,9,14,.18) 58%, transparent) !important; background-color: transparent !important; }
-body[data-rhythiax-theme="rhythia-reimagined"] #root img[src*="beatmap-img-"] ~ [class*="bg-black/35"] { background-color: rgba(7,9,14,.82) !important; }
-body[data-rhythiax-theme="rhythia-reimagined"] #root img[src*="beatmap-img-"] ~ [class*="bg-black/0"] { background-color: transparent !important; }
-body[data-rhythiax-theme="rhythia-reimagined"] #root img[src*="beatmap-img-"] ~ div[class*="bottom-0"] > div[class*="bg-black/35"] { color: #fff !important; border-color: rgba(255,255,255,.18) !important; }
-body[data-rhythiax-theme="rhythia-reimagined"] #root img[src*="beatmap-img-"] ~ div[class*="bottom-0"] > div[class*="bg-black/35"] [class*="text-white"],
-body[data-rhythiax-theme="rhythia-reimagined"] #root img[src*="beatmap-img-"] ~ div[class*="bottom-0"] > div[class*="bg-black/35"] [class*="text-neutral-"] { color: #fff !important; }
-body[data-rhythiax-theme="rhythia-reimagined"] #root img[src*="beatmap-img-"] ~ button[class*="bg-[#111214]"] { background: linear-gradient(180deg, rgba(36,39,46,.96), rgba(10,12,16,.96)) !important; color: #fff !important; border-color: rgba(255,255,255,.24) !important; }
-body[data-rhythiax-theme="rhythia-reimagined"] #root div:has(> .pointer-events-none[class*="bg-black/70"]) { color: #fff !important; }
+body[data-rhythiax-theme="rhythia-reimagined"] #root img[src="/settingsicon.png"] {
+  display: block !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  filter: none !important;
+  mix-blend-mode: normal !important;
+}
+
+body[data-rhythiax-theme="rhythia-reimagined"] #root [class*="bg-[#141516]"] {
+  background-color: color-mix(in srgb, #141516 70%, var(--rhythiax-surface)) !important;
+  opacity: 1 !important;
+}
+
+body[data-rhythiax-theme="rhythia-reimagined"] #root img[src*="beatmap-img-"]~[class*="bg-gradient-to-t"] {
+  background-image: linear-gradient(to top, rgba(7, 9, 14, .92), rgba(7, 9, 14, .18) 58%, transparent) !important;
+  background-color: transparent !important;
+}
+
+body[data-rhythiax-theme="rhythia-reimagined"] #root img[src*="beatmap-img-"]~[class*="bg-black/35"] {
+  background-color: rgba(7, 9, 14, .82) !important;
+}
+
+body[data-rhythiax-theme="rhythia-reimagined"] #root img[src*="beatmap-img-"]~[class*="bg-black/0"] {
+  background-color: transparent !important;
+}
+
+body[data-rhythiax-theme="rhythia-reimagined"] #root img[src*="beatmap-img-"]~div[class*="bottom-0"]>div[class*="bg-black/35"] {
+  color: #fff !important;
+  border-color: rgba(255, 255, 255, .18) !important;
+}
+
+body[data-rhythiax-theme="rhythia-reimagined"] #root img[src*="beatmap-img-"]~div[class*="bottom-0"]>div[class*="bg-black/35"] [class*="text-white"],
+body[data-rhythiax-theme="rhythia-reimagined"] #root img[src*="beatmap-img-"]~div[class*="bottom-0"]>div[class*="bg-black/35"] [class*="text-neutral-"] {
+  color: #fff !important;
+}
+
+body[data-rhythiax-theme="rhythia-reimagined"] #root img[src*="beatmap-img-"]~button[class*="bg-[#111214]"] {
+  background: linear-gradient(180deg, rgba(36, 39, 46, .96), rgba(10, 12, 16, .96)) !important;
+  color: #fff !important;
+  border-color: rgba(255, 255, 255, .24) !important;
+}
+
+body[data-rhythiax-theme="rhythia-reimagined"] #root div:has(> .pointer-events-none[class*="bg-black/70"]) {
+  color: #fff !important;
+}
+
 body[data-rhythiax-theme="rhythia-reimagined"] #root div:has(> .pointer-events-none[class*="bg-black/70"]) [class*="text-white"],
-body[data-rhythiax-theme="rhythia-reimagined"] #root div:has(> .pointer-events-none[class*="bg-black/70"]) [class*="text-neutral-300"] { color: #fff !important; }
-body[data-rhythiax-theme="rhythia-reimagined"] #root [class*="bg-[#1e1f21]"]:has(img[src="/settingsicon.png"]) { background: linear-gradient(135deg, var(--rhythiax-inner-surface) 0%, var(--rhythiax-surface) 100%) !important; border-color: var(--rhythiax-border) !important; color: var(--rhythiax-text-strong) !important; }
-body[data-rhythiax-theme="rhythia-reimagined"] #root [class*="rounded-xl"][class*="border-white/10"][class*="bg-[#111214]"]:has(.badge-hunt-space-cloud) { background-color: var(--rhythiax-surface) !important; }
-body[data-rhythiax-theme="rhythia-reimagined"] #root [class*="rounded-xl"][class*="border-white/10"][class*="bg-[#111214]"]:has(.badge-hunt-space-cloud) > .pointer-events-none,
-body[data-rhythiax-theme="rhythia-reimagined"] #root [class*="rounded-xl"][class*="border-white/10"][class*="bg-[#111214]"]:has(.badge-hunt-space-cloud) > .absolute.inset-0.bg-black\/25 { display: none !important; }
+body[data-rhythiax-theme="rhythia-reimagined"] #root div:has(> .pointer-events-none[class*="bg-black/70"]) [class*="text-neutral-300"] {
+  color: #fff !important;
+}
+
+body[data-rhythiax-theme="rhythia-reimagined"] #root [class*="bg-[#1e1f21]"]:has(img[src*="settingsicon"]),
+body[data-rhythiax-theme="rhythia-reimagined"] #root [class*="bg-control"]:has(img[src*="settingsicon"]),
+body[data-rhythiax-theme="rhythia-reimagined"] #root button:has(img[src*="settingsicon"]),
+body[data-rhythiax-theme="rhythia-reimagined"] #root button[aria-label="Settings"],
+body[data-rhythiax-theme="rhythia-reimagined"] #root button[role="combobox"],
+body[data-rhythiax-theme="rhythia-reimagined"] #root .fixed.top-0 a[href="/changelog"],
+body[data-rhythiax-theme="rhythia-reimagined"] #root .fixed.top-0 a[aria-label="Changelog"],
+body[data-rhythiax-theme="rhythia-reimagined"] #root .fixed.top-0 [class*="bg-[#2F4184]"] {
+  background: color-mix(in srgb, var(--rhythiax-accent) 14%, var(--rhythiax-nav-surface, var(--rhythiax-surface))) !important;
+  border: 1px solid color-mix(in srgb, var(--rhythiax-accent) 28%, var(--rhythiax-border-strong)) !important;
+  color: var(--rhythiax-text-strong) !important;
+  backdrop-filter: blur(12px) !important;
+}
+
+body[data-rhythiax-theme="rhythia-reimagined"] #root [class*="bg-[#1e1f21]"]:has(img[src*="settingsicon"]):hover,
+body[data-rhythiax-theme="rhythia-reimagined"] #root [class*="bg-control"]:has(img[src*="settingsicon"]):hover,
+body[data-rhythiax-theme="rhythia-reimagined"] #root button:has(img[src*="settingsicon"]):hover,
+body[data-rhythiax-theme="rhythia-reimagined"] #root button[aria-label="Settings"]:hover,
+body[data-rhythiax-theme="rhythia-reimagined"] #root button[role="combobox"]:hover,
+body[data-rhythiax-theme="rhythia-reimagined"] #root .fixed.top-0 a[href="/changelog"]:hover,
+body[data-rhythiax-theme="rhythia-reimagined"] #root .fixed.top-0 a[aria-label="Changelog"]:hover,
+body[data-rhythiax-theme="rhythia-reimagined"] #root .fixed.top-0 [class*="bg-[#2F4184]"]:hover {
+  background: color-mix(in srgb, var(--rhythiax-accent) 26%, var(--rhythiax-nav-surface, var(--rhythiax-surface))) !important;
+  border-color: var(--rhythiax-accent) !important;
+  color: #ffffff !important;
+  box-shadow: 0 0 14px color-mix(in srgb, var(--rhythiax-accent) 35%, transparent) !important;
+}
+
+body[data-rhythiax-theme="rhythia-reimagined"] #root button[role="combobox"] svg,
+body[data-rhythiax-theme="rhythia-reimagined"] #root .fixed.top-0 a[href="/changelog"] svg,
+body[data-rhythiax-theme="rhythia-reimagined"] #root .fixed.top-0 a[aria-label="Changelog"] svg {
+  color: #ffffff !important;
+  opacity: .95 !important;
+}
+
+body[data-rhythiax-theme="rhythia-reimagined"] .rhythiax-compare-profile-button,
+body[data-rhythiax-theme="rhythia-reimagined"] #root .rhythiax-friends-quick-trigger,
+body[data-rhythiax-theme="rhythia-reimagined"] #root div:has(> svg.lucide-users-round),
+body[data-rhythiax-theme="rhythia-reimagined"] #root button:has(svg.lucide-user-round-plus),
+body[data-rhythiax-theme="rhythia-reimagined"] #root button:has(svg.lucide-user-round-minus),
+body[data-rhythiax-theme="rhythia-reimagined"] #root button.bg-control,
+body[data-rhythiax-theme="rhythia-reimagined"] #root a.bg-control,
+body[data-rhythiax-theme="rhythia-reimagined"] #root [role="button"].bg-control {
+  background: color-mix(in srgb, var(--rhythiax-accent) 24%, var(--rhythiax-inner-surface)) !important;
+  border: 1px solid color-mix(in srgb, var(--rhythiax-accent) 42%, var(--rhythiax-border-strong)) !important;
+  color: #ffffff !important;
+  backdrop-filter: blur(12px) !important;
+  box-shadow: 0 2px 8px rgba(10, 4, 18, 0.35) !important;
+}
+
+body[data-rhythiax-theme="rhythia-reimagined"] .rhythiax-compare-profile-button:hover,
+body[data-rhythiax-theme="rhythia-reimagined"] .rhythiax-compare-profile-button.is-active,
+body[data-rhythiax-theme="rhythia-reimagined"] #root .rhythiax-friends-quick-trigger:hover,
+body[data-rhythiax-theme="rhythia-reimagined"] #root div:has(> svg.lucide-users-round):hover,
+body[data-rhythiax-theme="rhythia-reimagined"] #root button:has(svg.lucide-user-round-plus):hover,
+body[data-rhythiax-theme="rhythia-reimagined"] #root button:has(svg.lucide-user-round-minus):hover,
+body[data-rhythiax-theme="rhythia-reimagined"] #root button.bg-control:hover,
+body[data-rhythiax-theme="rhythia-reimagined"] #root a.bg-control:hover,
+body[data-rhythiax-theme="rhythia-reimagined"] #root [role="button"].bg-control:hover {
+  background: color-mix(in srgb, var(--rhythiax-accent) 36%, var(--rhythiax-inner-surface)) !important;
+  border-color: var(--rhythiax-accent) !important;
+  color: #ffffff !important;
+  box-shadow: 0 0 12px color-mix(in srgb, var(--rhythiax-accent) 35%, transparent) !important;
+}
+
+body[data-rhythiax-theme="rhythia-reimagined"] #root .rhythiax-friends-quick-trigger svg,
+body[data-rhythiax-theme="rhythia-reimagined"] #root div:has(> svg.lucide-users-round) svg,
+body[data-rhythiax-theme="rhythia-reimagined"] #root button:has(svg.lucide-user-round-plus) svg,
+body[data-rhythiax-theme="rhythia-reimagined"] #root button:has(svg.lucide-user-round-minus) svg {
+  color: #ffffff !important;
+  stroke: #ffffff !important;
+}
+
+body[data-rhythiax-theme="rhythia-reimagined"] #root [class*="rounded-xl"][class*="border-white/10"][class*="bg-[#111214]"]:has(.badge-hunt-space-cloud) {
+  background-color: var(--rhythiax-surface) !important;
+}
+
+body[data-rhythiax-theme="rhythia-reimagined"] #root [class*="rounded-xl"][class*="border-white/10"][class*="bg-[#111214]"]:has(.badge-hunt-space-cloud)>.pointer-events-none,
+body[data-rhythiax-theme="rhythia-reimagined"] #root [class*="rounded-xl"][class*="border-white/10"][class*="bg-[#111214]"]:has(.badge-hunt-space-cloud)>.absolute.inset-0.bg-black\/25 {
+  display: none !important;
+}
 
 /* Keep native dialogs aligned with the Reimagined violet-night surfaces. */
-body[data-rhythiax-theme="rhythia-reimagined"] [role="dialog"] { background: linear-gradient(180deg, var(--rhythiax-surface), var(--rhythiax-page-bg)) !important; }
+body[data-rhythiax-theme="rhythia-reimagined"] [role="dialog"]:not(.rhythiax-friends-quick-panel):not(.rhythiax-friends-quick-backdrop) {
+  background: linear-gradient(180deg, var(--rhythiax-surface), var(--rhythiax-page-bg)) !important;
+}
+
 body[data-rhythiax-theme="rhythia-reimagined"] [role="dialog"] [class*="bg-[#1a1b1c]"],
-body[data-rhythiax-theme="rhythia-reimagined"] [role="dialog"] [class*="bg-black/20"] { background: var(--rhythiax-inner-surface) !important; border-color: var(--rhythiax-border) !important; }
-body[data-rhythiax-theme="rhythia-reimagined"] [role="dialog"] [class*="text-white"] { color: var(--rhythiax-text-strong) !important; }
+body[data-rhythiax-theme="rhythia-reimagined"] [role="dialog"] [class*="bg-black/20"] {
+  background: var(--rhythiax-inner-surface) !important;
+  border-color: var(--rhythiax-border) !important;
+}
+
+body[data-rhythiax-theme="rhythia-reimagined"] [role="dialog"] [class*="text-white"] {
+  color: var(--rhythiax-text-strong) !important;
+}
 
 /* Switches use the Reimagined violet accent and a distinct muted off state. */
-body[data-rhythiax-theme="rhythia-reimagined"] #root [role="switch"][aria-checked="true"] { background: linear-gradient(180deg, #c4b5fd 0%, #7c3aed 100%) !important; box-shadow: inset 0 0 0 1px rgba(221,214,254,.45) !important; }
-body[data-rhythiax-theme="rhythia-reimagined"] #root [role="switch"][aria-checked="false"] { background: linear-gradient(180deg, #44415a 0%, #272640 100%) !important; box-shadow: inset 0 0 0 1px rgba(196,181,253,.22) !important; }
-body[data-rhythiax-theme="rhythia-reimagined"] #root [role="switch"] > span { background: #ffffff !important; box-shadow: 0 1px 2px rgba(0,0,0,.4); }
-body[data-rhythiax-theme="rhythia-reimagined"] #root [role="switch"][aria-checked="false"] > span { transform: translateX(.25rem) !important; }
-body[data-rhythiax-theme="rhythia-reimagined"] #root [role="switch"][aria-checked="true"] > span { transform: translateX(1.25rem) !important; }
+body[data-rhythiax-theme="rhythia-reimagined"] #root [role="switch"][aria-checked="true"] {
+  background: linear-gradient(180deg, #c4b5fd 0%, #7c3aed 100%) !important;
+  box-shadow: inset 0 0 0 1px rgba(221, 214, 254, .45) !important;
+}
+
+body[data-rhythiax-theme="rhythia-reimagined"] #root [role="switch"][aria-checked="false"] {
+  background: linear-gradient(180deg, #44415a 0%, #272640 100%) !important;
+  box-shadow: inset 0 0 0 1px rgba(196, 181, 253, .22) !important;
+}
+
+body[data-rhythiax-theme="rhythia-reimagined"] #root [role="switch"]>span {
+  background: #ffffff !important;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, .4);
+}
+
+body[data-rhythiax-theme="rhythia-reimagined"] #root [role="switch"][aria-checked="false"]>span {
+  transform: translateX(.25rem) !important;
+}
+
+body[data-rhythiax-theme="rhythia-reimagined"] #root [role="switch"][aria-checked="true"]>span {
+  transform: translateX(1.25rem) !important;
+}
 
 /* Open stat accordion and history container in Reimagined preset */
 body[data-rhythiax-theme="rhythia-reimagined"] .rhythiax-official-stat-row.rhythiax-stat-row-open {
@@ -57,12 +240,7 @@ body[data-rhythiax-theme="rhythia-reimagined"] .rhythiax-official-stat-row.rhyth
   border-bottom: 1px solid color-mix(in srgb, var(--rhythiax-accent, #aa92e8) 25%, rgba(255, 255, 255, 0.06)) !important;
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.16) !important;
 }
-body[data-rhythiax-theme="rhythia-reimagined"] .rhythiax-history-row {
-  background: color-mix(in srgb, var(--rhythiax-inner-surface, #252239) 90%, var(--rhythiax-accent, #aa92e8) 10%) !important;
-  border-left: 3px solid var(--rhythiax-accent, #aa92e8) !important;
-  border-right: 1px solid color-mix(in srgb, var(--rhythiax-accent, #aa92e8) 45%, transparent) !important;
-  border-bottom: 1px solid color-mix(in srgb, var(--rhythiax-accent, #aa92e8) 45%, transparent) !important;
-}
+
 
 /* Reimagined theme component surfaces */
 body[data-rhythiax-theme="rhythia-reimagined"] .rhythiax-score-card,
@@ -72,6 +250,7 @@ body[data-rhythiax-theme="rhythia-reimagined"] .rhythiax-accordion {
   background: var(--rhythiax-surface, #1b1a24) !important;
   border-color: rgba(184, 164, 235, 0.16) !important;
 }
+
 body[data-rhythiax-theme="rhythia-reimagined"] .rhythiax-score-card .rhythiax-card-stat-item,
 body[data-rhythiax-theme="rhythia-reimagined"] .rhythiax-score-card .rhythiax-card-stat-box,
 body[data-rhythiax-theme="rhythia-reimagined"] .rhythiax-score-card .rhythiax-card-rp-box,
@@ -80,4 +259,88 @@ body[data-rhythiax-theme="rhythia-reimagined"] .rhythiax-official-stat-row:not(.
   border-color: rgba(184, 164, 235, 0.10) !important;
 }
 
+/* Harmonized Progress and Rankings styling in Reimagined */
+body[data-rhythiax-theme="rhythia-reimagined"] .rhythiax-reimagined-metric-card,
+body[data-rhythiax-theme="rhythia-reimagined"] .rhythiax-rank-history-weekly-card {
+  background: var(--rhythiax-inner-surface, #221634) !important;
+  border-color: rgba(216, 180, 254, 0.12) !important;
+}
 
+body[data-rhythiax-theme="rhythia-reimagined"] .rhythiax-reimagined-metric-card:hover,
+body[data-rhythiax-theme="rhythia-reimagined"] .rhythiax-rank-history-weekly-card:hover {
+  border-color: color-mix(in srgb, var(--rhythiax-accent, #c084fc) 40%, rgba(216, 180, 254, 0.12)) !important;
+  background: color-mix(in srgb, var(--rhythiax-accent, #c084fc) 7%, var(--rhythiax-inner-surface, #221634)) !important;
+}
+
+body[data-rhythiax-theme="rhythia-reimagined"] .rhythiax-history-pane .rhythiax-history-row,
+body[data-rhythiax-theme="rhythia-reimagined"] .rhythiax-inline-rank-history .rhythiax-rank-history-table-wrap {
+  background: var(--rhythiax-inner-surface, #221634) !important;
+  border-color: rgba(216, 180, 254, 0.12) !important;
+}
+
+body[data-rhythiax-theme="rhythia-reimagined"] .rhythiax-history-pane .rhythiax-history-table tr.rhythiax-history-item:not(.rhythiax-history-week-subrow):hover td,
+body[data-rhythiax-theme="rhythia-reimagined"] .rhythiax-inline-rank-history .rhythiax-rank-history-table tbody tr:not(.rhythiax-history-week-subrow):hover td {
+  background: color-mix(in srgb, var(--rhythiax-accent, #c084fc) 8%, transparent) !important;
+}
+
+body[data-rhythiax-theme="rhythia-reimagined"] .rhythiax-inline-rank-history .rhythiax-rank-history-current td {
+  background: color-mix(in srgb, var(--rhythiax-accent, #c084fc) 5%, transparent) !important;
+}
+
+body[data-rhythiax-theme="rhythia-reimagined"] .rhythiax-history-week-subrow,
+body[data-rhythiax-theme="rhythia-reimagined"] .rhythiax-history-week-subrow td,
+body[data-rhythiax-theme="rhythia-reimagined"] .rhythiax-history-week-subrow:hover,
+body[data-rhythiax-theme="rhythia-reimagined"] .rhythiax-history-week-subrow:hover td,
+body[data-rhythiax-theme="rhythia-reimagined"] tr.rhythiax-history-week-subrow:hover td,
+body[data-rhythiax-theme="rhythia-reimagined"] table tbody tr.rhythiax-history-week-subrow:hover td {
+  background: color-mix(in srgb, var(--rhythiax-page-bg, #120b1c) 55%, transparent) !important;
+  cursor: default !important;
+}
+
+body[data-rhythiax-theme="rhythia-reimagined"] .rhythiax-history-week-subrow * {
+  cursor: default !important;
+}
+
+body[data-rhythiax-theme="rhythia-reimagined"] .rhythiax-card-date,
+body[data-rhythiax-theme="rhythia-reimagined"] .rhythiax-score-card .rhythiax-card-date,
+body[data-rhythiax-theme="rhythia-reimagined"] .rhythiax-absolute-date {
+  background: rgba(20, 14, 34, 0.75) !important;
+  border: 1px solid rgba(216, 180, 254, 0.22) !important;
+  color: #f3e8ff !important;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.85) !important;
+  box-shadow: 0 1px 4px rgba(10, 5, 20, 0.4) !important;
+}
+
+/* Reimagined theme score actions menu & toasts */
+body[data-rhythiax-theme="rhythia-reimagined"] .rhythiax-score-actions-menu {
+  background: #1a1226 !important;
+  background-color: #1a1226 !important;
+  border: 1px solid rgba(216, 180, 254, 0.22) !important;
+  box-shadow: 0 12px 30px rgba(10, 4, 18, 0.65), 0 4px 10px rgba(10, 4, 18, 0.4) !important;
+}
+
+body[data-rhythiax-theme="rhythia-reimagined"] .rhythiax-score-menu-item {
+  color: #f3e8ff !important;
+}
+
+body[data-rhythiax-theme="rhythia-reimagined"] .rhythiax-score-menu-item:hover,
+body[data-rhythiax-theme="rhythia-reimagined"] .rhythiax-score-menu-item:focus-visible {
+  background: rgba(192, 132, 252, 0.18) !important;
+  color: #c084fc !important;
+}
+
+body[data-rhythiax-theme="rhythia-reimagined"] .rhythiax-score-menu-divider {
+  background: rgba(216, 180, 254, 0.14) !important;
+}
+
+body[data-rhythiax-theme="rhythia-reimagined"] .rhythiax-toast {
+  background: #160e22 !important;
+  background-color: #160e22 !important;
+  border-color: rgba(216, 180, 254, 0.22) !important;
+  color: #faf5ff !important;
+  box-shadow: 0 12px 30px rgba(10, 4, 18, 0.65) !important;
+}
+
+body[data-rhythiax-theme="rhythia-reimagined"] .rhythiax-toast.rhythiax-toast-info {
+  border-left-color: #c084fc !important;
+}

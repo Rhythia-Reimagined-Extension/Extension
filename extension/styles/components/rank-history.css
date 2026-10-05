@@ -182,81 +182,133 @@
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 8px;
-  margin-bottom: 13px;
+  margin-bottom: 8px;
 }
 
 .rhythiax-rank-history-weekly-card {
-  padding: 10px 11px;
-  border: 1px solid color-mix(in srgb, var(--rhythiax-accent, #aa92e8) 22%, transparent);
-  border-radius: 8px;
-  background: var(--rhythiax-inner-surface, #252239);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  min-height: 68px;
+  padding: 10px 12px;
+  border: 1px solid var(--rhythiax-border, rgba(255, 255, 255, .08));
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--rhythiax-text-strong, #fff) 3%, var(--rhythiax-inner-surface, rgba(255, 255, 255, 0.03)));
+  transition: border-color 0.2s cubic-bezier(0.16, 1, 0.3, 1),
+    background-color 0.2s cubic-bezier(0.16, 1, 0.3, 1),
+    transform 0.2s cubic-bezier(0.16, 1, 0.3, 1),
+    box-shadow 0.2s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-.rhythiax-rank-history-weekly-card span,
-.rhythiax-rank-history-weekly-card small {
-  display: block;
-  color: var(--rhythiax-text-muted, #918da3);
-  font-size: 10px;
+.rhythiax-rank-history-weekly-card:hover {
+  border-color: color-mix(in srgb, var(--rhythiax-accent, #c084fc) 50%, var(--rhythiax-border, rgba(255, 255, 255, 0.12)));
+  background: color-mix(in srgb, var(--rhythiax-accent, #c084fc) 6%, var(--rhythiax-inner-surface, rgba(255, 255, 255, 0.03)));
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.14);
 }
 
 .rhythiax-rank-history-weekly-card span {
-  font-weight: 650;
-  letter-spacing: 0.15px;
+  display: block;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: .05em;
   text-transform: uppercase;
+  color: var(--rhythiax-text-muted, #94a3b8);
 }
 
 .rhythiax-rank-history-weekly-card strong {
   display: block;
-  margin: 6px 0 4px;
-  font-size: 16px;
+  margin: 4px 0 2px;
+  color: var(--rhythiax-text-strong, #fff);
+  font-size: 17px;
   font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.rhythiax-rank-history-weekly-card small {
+  display: inline-flex !important;
+  align-items: center !important;
+  width: fit-content !important;
+  max-width: 100% !important;
+  padding: 2.5px 8.5px !important;
+  border-radius: 9999px !important;
+  font-size: 11px !important;
+  font-weight: 650 !important;
+  margin-top: 4px !important;
+  line-height: 1.25 !important;
+}
+
+.rhythiax-rank-history-weekly-card small.rhythiax-rank-history-delta-positive,
+.rhythiax-rank-history-weekly-card small.positive {
+  color: #4ade80 !important;
+  background: rgba(74, 222, 128, 0.12) !important;
+  border: 1px solid rgba(74, 222, 128, 0.28) !important;
+}
+
+.rhythiax-rank-history-weekly-card small.rhythiax-rank-history-delta-negative,
+.rhythiax-rank-history-weekly-card small.negative {
+  color: #f87171 !important;
+  background: rgba(248, 113, 113, 0.12) !important;
+  border: 1px solid rgba(248, 113, 113, 0.28) !important;
+}
+
+.rhythiax-rank-history-weekly-card small.rhythiax-rank-history-delta-neutral,
+.rhythiax-rank-history-weekly-card small.neutral {
+  color: var(--rhythiax-text-muted, #94a3b8) !important;
+  background: rgba(255, 255, 255, 0.05) !important;
+  border: 1px solid rgba(255, 255, 255, 0.12) !important;
 }
 
 .rhythiax-rank-history-table-wrap {
-  overflow: hidden;
-  border: 1px solid color-mix(in srgb, var(--rhythiax-accent, #aa92e8) 32%, transparent);
-  border-radius: 9px;
+  overflow-x: auto;
+  border: 1px solid var(--rhythiax-border, rgba(255, 255, 255, .08));
+  border-radius: 10px;
+  background: var(--rhythiax-inner-surface, #1e142d);
 }
 
 .rhythiax-rank-history-table {
   width: 100%;
   border-collapse: collapse;
-  font-size: 12px;
+  font-size: 13px;
 }
 
 .rhythiax-rank-history-table th,
 .rhythiax-rank-history-table td {
-  padding: 11px 12px;
-  border-left: 1px solid color-mix(in srgb, var(--rhythiax-accent, #aa92e8) 13%, transparent);
-  border-bottom: 1px solid color-mix(in srgb, var(--rhythiax-accent, #aa92e8) 17%, transparent);
-  text-align: center;
+  padding: 8px 12px;
+  border-left: 0;
+  text-align: right;
   vertical-align: middle;
   white-space: nowrap;
 }
 
 .rhythiax-rank-history-table th:first-child,
 .rhythiax-rank-history-table td:first-child {
-  border-left: 0;
+  text-align: left;
 }
 
 .rhythiax-rank-history-table th {
-  background: rgba(18, 16, 27, 0.22);
-  color: var(--rhythiax-text-muted, #aaa3bd);
-  font-size: 10px;
-  font-weight: 650;
+  background: transparent;
+  color: var(--rhythiax-text-muted, #94a3b8);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: .05em;
+  text-transform: uppercase;
+  border-bottom: 1px solid var(--rhythiax-border, rgba(255, 255, 255, .06));
 }
 
 .rhythiax-rank-history-table td {
-  color: var(--rhythiax-text, #eeeaf7);
-  font-weight: 600;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.025);
+  color: var(--rhythiax-text-strong, #ffffff);
+  font-variant-numeric: tabular-nums;
+  font-size: 13px;
 }
 
-.rhythiax-rank-history-table tbody tr:nth-child(even) td {
-  background: rgba(255, 255, 255, 0.018);
+.rhythiax-rank-history-table tbody tr {
+  transition: background 0.14s ease;
 }
 
-.rhythiax-rank-history-table tbody tr:hover td {
-  background: color-mix(in srgb, var(--rhythiax-accent, #aa92e8) 8%, transparent);
+.rhythiax-rank-history-table tbody tr:not(.rhythiax-history-week-subrow):hover td {
+  background: color-mix(in srgb, var(--rhythiax-accent, #c084fc) 6%, transparent);
 }
 
 .rhythiax-rank-history-table tbody tr:last-child td {
@@ -264,42 +316,185 @@
 }
 
 .rhythiax-rank-history-table .rhythiax-rank-history-current td {
-  background: color-mix(in srgb, var(--rhythiax-accent, #aa92e8) 14%, transparent);
+  background: color-mix(in srgb, var(--rhythiax-accent, #c084fc) 4%, transparent);
+}
+
+.rhythiax-cell-content {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  width: 100%;
+  white-space: nowrap !important;
+}
+
+.rhythiax-metric-cell-val {
+  flex: 1;
+  min-width: 0;
+  display: inline-block;
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum";
+  text-align: right;
+  white-space: nowrap !important;
+  color: var(--rhythiax-text-strong, #ffffff);
+  font-weight: 600;
 }
 
 .rhythiax-rank-history-table td strong {
   display: inline-block;
-  font-weight: 650;
+  font-weight: 600;
+  color: var(--rhythiax-text-strong, #ffffff);
+  white-space: nowrap !important;
 }
 
-.rhythiax-rank-history-table td small {
-  margin-left: 5px;
-  font-size: 10px;
-  font-weight: 650;
+.rhythiax-rank-history-table td small,
+.rhythiax-rank-history-table .rhythiax-history-delta,
+.rhythiax-history-delta {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum";
+  padding: 2px 4px;
+  border-radius: 5px;
+  width: 58px;
+  min-width: 58px;
+  max-width: 58px;
+  box-sizing: border-box;
+  flex-shrink: 0;
+  text-align: center;
+  white-space: nowrap !important;
+  margin: 0 !important;
 }
 
-.rhythiax-rank-history-delta-positive { color: #43d69a !important; }
-.rhythiax-rank-history-delta-negative { color: #ff777d !important; }
-.rhythiax-rank-history-delta-neutral { color: var(--rhythiax-text-muted, #918da3) !important; }
+.rhythiax-rank-history-delta-positive { color: #4ade80 !important; }
+.rhythiax-rank-history-delta-negative { color: #f87171 !important; }
+.rhythiax-rank-history-delta-neutral { color: var(--rhythiax-text-muted, #94a3b8) !important; }
+
+.rhythiax-rank-history-table td small.rhythiax-rank-history-delta-positive,
+.rhythiax-rank-history-table td small.positive {
+  color: #4ade80 !important;
+  background: rgba(74, 222, 128, .12);
+  border: 1px solid rgba(74, 222, 128, .2);
+}
+
+.rhythiax-rank-history-table td small.rhythiax-rank-history-delta-negative,
+.rhythiax-rank-history-table td small.negative {
+  color: #f87171 !important;
+  background: rgba(248, 113, 113, .12);
+  border: 1px solid rgba(248, 113, 113, .2);
+}
+
+.rhythiax-rank-history-table td small.rhythiax-rank-history-delta-neutral,
+.rhythiax-rank-history-table td small.neutral {
+  color: var(--rhythiax-text-muted, #94a3b8) !important;
+  background: rgba(255, 255, 255, .04);
+}
 .rhythiax-history-edited-delta-marker { margin-left: 1px; color: currentColor; font-size: 0.72em; font-weight: 800; vertical-align: super; }
 
+.rhythiax-rank-history-table .rhythiax-history-date-cell {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.rhythiax-rank-history-table .rhythiax-history-date {
+  color: var(--rhythiax-text-strong, #f1f5f9);
+  font-weight: 500;
+  font-size: 12px;
+}
+
+.rhythiax-rank-history-table .rhythiax-history-kind-pill {
+  font-size: 10px;
+  font-weight: 700;
+  padding: 1px 6px;
+  border-radius: 4px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  display: inline-flex;
+  align-items: center;
+}
+
+.rhythiax-rank-history-table .rhythiax-kind-live {
+  background: rgba(96, 165, 250, 0.16);
+  color: #93c5fd;
+  border: 1px solid rgba(96, 165, 250, 0.25);
+}
+
+.rhythiax-rank-history-table .rhythiax-kind-cloud {
+  background: rgba(56, 189, 248, 0.15);
+  color: #38bdf8;
+  border: 1px solid rgba(56, 189, 248, 0.3);
+}
+
+.rhythiax-rank-history-table .rhythiax-kind-saved {
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--rhythiax-text-muted, #94a3b8);
+}
+
+/* Center profile history delta badges in all contexts (Global, Country, Rhythm Points, Stats) */
 .rhythiax-profile-history-delta {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  margin-left: 6px;
-  padding: 1px 5px;
+  align-self: center !important;
+  gap: 3px;
+  height: 18px;
+  min-height: 18px;
+  max-height: 18px;
+  min-width: 18px;
+  padding: 0 5px;
+  box-sizing: border-box;
   border-radius: 4px;
-  font-size: 10px;
+  font-size: 10.5px;
   font-weight: 700;
-  vertical-align: middle;
+  line-height: 1;
+  vertical-align: middle !important;
+  flex-shrink: 0;
+  margin-left: 6px;
   transition: background-color 180ms ease, color 180ms ease, border-color 180ms ease;
+}
+
+.rhythiax-profile-history-delta.neutral {
+  padding: 0;
+  width: 18px;
+}
+
+.rhythiax-profile-history-delta .rhythiax-delta-icon {
+  width: 8px;
+  height: 8px;
+  display: block;
+  flex-shrink: 0;
+}
+
+.rhythiax-profile-history-delta span {
+  display: inline-flex;
+  align-items: center;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
 }
 
 .rhythiax-profile-history-delta.positive { color: #4ade80; background: rgba(74, 222, 128, 0.12); }
 .rhythiax-profile-history-delta.negative { color: #f87171; background: rgba(248, 113, 113, 0.12); }
 .rhythiax-profile-history-delta.neutral { color: var(--rhythiax-text-muted, #a1a1aa); background: rgba(255, 255, 255, 0.05); }
 .rhythiax-stat-history-delta { font-size: 9px; font-weight: 650; }
+
+/* Normalize ranking cards (Global, Country, RP) into a clean, centered flex row with consistent spacing */
+.rhythiax-header-card-row {
+  display: flex !important;
+  align-items: center !important;
+  gap: 6px !important;
+  line-height: normal;
+}
+
+.rhythiax-header-card-row > .rhythiax-profile-history-delta,
+.rhythiax-reimagined-metric-value > .rhythiax-profile-history-delta,
+.flex > .rhythiax-profile-history-delta {
+  margin-left: 0;
+  align-self: center !important;
+}
 
 .rhythiax-rank-history-pager {
   display: flex;
@@ -352,3 +547,297 @@
   .rhythiax-rank-history-table { min-width: 540px; }
   .rhythiax-rank-history-table-wrap { overflow-x: auto; }
 }
+
+/* ─── Horizon Segmented Switcher & Header ─── */
+.rhythiax-history-header {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: 12px;
+  margin-bottom: 8px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--rhythiax-border, rgba(255, 255, 255, 0.08));
+}
+
+.rhythiax-history-header-left {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 8px;
+}
+
+.rhythiax-history-header-left .rhythiax-history-icon {
+  width: 15px;
+  height: 15px;
+  color: var(--rhythiax-text-muted, #94a3b8);
+  flex-shrink: 0;
+}
+
+.rhythiax-history-title-group {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 8px;
+}
+
+.rhythiax-history-title {
+  color: var(--rhythiax-text-strong, #ffffff);
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+.rhythiax-history-horizon-group {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  background: color-mix(in srgb, var(--rhythiax-text-strong, #fff) 4%, transparent);
+  border: 1px solid var(--rhythiax-border, rgba(255, 255, 255, 0.08));
+  border-radius: 8px;
+  padding: 2px;
+  margin-left: auto;
+}
+
+.rhythiax-history-horizon-btn {
+  border: 0;
+  background: transparent;
+  color: var(--rhythiax-text-muted, #94a3b8);
+  font-family: inherit;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 3px 9px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.16s ease;
+  user-select: none;
+  line-height: 1.3;
+  white-space: nowrap;
+}
+
+.rhythiax-history-horizon-btn:hover {
+  color: var(--rhythiax-text-strong, #fff);
+  background: color-mix(in srgb, var(--rhythiax-accent, #c084fc) 10%, transparent);
+}
+
+.rhythiax-history-horizon-btn.active {
+  background: var(--rhythiax-accent, #c084fc);
+  color: #ffffff;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.18);
+}
+
+/* Scrollable container for multi-day / 30-day mode */
+.rhythiax-history-scroll-container {
+  max-height: 330px;
+  overflow-y: auto;
+  overflow-x: auto;
+  scrollbar-width: thin;
+  scrollbar-color: var(--rhythiax-border, rgba(255, 255, 255, 0.14)) transparent;
+  border-radius: 8px;
+}
+
+.rhythiax-history-scroll-container::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+
+.rhythiax-history-scroll-container::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.rhythiax-history-scroll-container::-webkit-scrollbar-thumb {
+  background-color: var(--rhythiax-border, rgba(255, 255, 255, 0.14));
+  border-radius: 4px;
+}
+
+/* Weekly rollup rows */
+.rhythiax-history-week-header-row {
+  cursor: pointer;
+  background: color-mix(in srgb, var(--rhythiax-text-strong, #ffffff) 4%, var(--rhythiax-inner-surface, #221634)) !important;
+  font-weight: 600;
+  user-select: none;
+}
+
+.rhythiax-history-week-header-row td:first-child {
+  position: relative !important;
+  padding-left: 36px !important;
+  text-align: left !important;
+}
+
+.rhythiax-history-week-header-row:not(:first-child) td {
+  border-top: 2px solid var(--rhythiax-border-strong, rgba(255, 255, 255, 0.2)) !important;
+}
+
+.rhythiax-history-week-header-row:hover td {
+  background: color-mix(in srgb, var(--rhythiax-accent, #c084fc) 10%, transparent) !important;
+}
+
+.rhythiax-history-week-chevron {
+  position: absolute;
+  left: 14px;
+  top: 50%;
+  width: 14px;
+  height: 14px;
+  transform: translateY(-50%) rotate(0deg);
+  transform-origin: center center;
+  transition: transform 0.22s cubic-bezier(0.16, 1, 0.3, 1), color 0.15s ease;
+  fill: currentColor;
+  color: var(--rhythiax-text-muted, #94a3b8);
+  opacity: 0.85;
+}
+
+.rhythiax-history-week-header-row.is-open .rhythiax-history-week-chevron {
+  transform: translateY(-50%) rotate(90deg);
+  color: var(--rhythiax-accent, #c084fc);
+  opacity: 1;
+}
+
+/* Connecting stem line from chevron apex to row bottom */
+.rhythiax-history-week-header-row td:first-child::after {
+  content: '';
+  position: absolute;
+  left: 21px;
+  transform: translateX(-50%) scaleY(0);
+  transform-origin: top center;
+  top: calc(50% + 1px);
+  bottom: 0;
+  width: 1px;
+  background: color-mix(in srgb, var(--rhythiax-border, rgba(255, 255, 255, 0.15)) 90%, transparent);
+  opacity: 0;
+  transition: opacity 0.18s ease, transform 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.rhythiax-history-week-header-row.is-open td:first-child::after {
+  opacity: 1;
+  transform: translateX(-50%) scaleY(1);
+}
+
+.rhythiax-history-week-header-row .rhythiax-history-date {
+  display: inline-flex;
+  align-items: center;
+  background: color-mix(in srgb, var(--rhythiax-text-strong, #ffffff) 8%, transparent);
+  padding: 3px 9px;
+  border-radius: 6px;
+  font-weight: 700;
+  color: var(--rhythiax-text-strong, #ffffff) !important;
+  border: 1px solid var(--rhythiax-border, rgba(255, 255, 255, 0.12));
+  letter-spacing: 0.02em;
+}
+
+.rhythiax-history-week-count-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 2px 6px;
+  border-radius: 5px;
+  background: var(--rhythiax-accent-soft, rgba(192, 132, 252, 0.16)) !important;
+  color: var(--rhythiax-accent, #c084fc) !important;
+  border: 1px solid color-mix(in srgb, var(--rhythiax-accent, #c084fc) 35%, transparent);
+  margin-left: 6px;
+}
+
+.rhythiax-history-week-subrow,
+.rhythiax-history-week-subrow td {
+  cursor: default !important;
+  font-size: 12px !important;
+  opacity: 0.95;
+  background: color-mix(in srgb, var(--rhythiax-page-bg, #120b1c) 55%, transparent);
+}
+
+.rhythiax-history-week-subrow * {
+  cursor: default !important;
+}
+
+.rhythiax-history-week-subrow td:first-child {
+  position: relative !important;
+  padding-left: 36px !important;
+  text-align: left !important;
+}
+
+/* Tree line vertical stem */
+.rhythiax-history-week-subrow td:first-child::before {
+  content: '';
+  position: absolute;
+  left: 21px;
+  transform: translateX(-50%);
+  top: 0;
+  bottom: 0;
+  width: 1px;
+  background: color-mix(in srgb, var(--rhythiax-border, rgba(255, 255, 255, 0.15)) 90%, transparent);
+}
+
+/* Tree line horizontal branch */
+.rhythiax-history-week-subrow td:first-child::after {
+  content: '';
+  position: absolute;
+  left: 21px;
+  top: 50%;
+  width: 8px;
+  height: 1px;
+  background: color-mix(in srgb, var(--rhythiax-border, rgba(255, 255, 255, 0.15)) 90%, transparent);
+}
+
+/* Tree line corner branch termination for last day */
+.rhythiax-history-week-subrow:last-child td:first-child::before,
+.rhythiax-history-week-subrow:has(+ .rhythiax-history-week-header-row) td:first-child::before {
+  bottom: 50% !important;
+}
+
+/* Day date pill */
+.rhythiax-history-week-subrow .rhythiax-history-date {
+  display: inline-block;
+  padding: 2px 7px;
+  border-radius: 4px;
+  background: color-mix(in srgb, var(--rhythiax-text-strong, #ffffff) 4%, transparent);
+  color: var(--rhythiax-text-muted, #94a3b8) !important;
+  font-size: 11.5px;
+  font-variant-numeric: tabular-nums;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .rhythiax-history-week-subrow td {
+    animation: rhythiaxSubrowFade 0.22s cubic-bezier(0.16, 1, 0.3, 1) both;
+  }
+
+  @keyframes rhythiaxSubrowFade {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 0.95;
+    }
+  }
+
+  /* Tree line horizontal branch grows outward smoothly from vertical stem */
+  .rhythiax-history-week-subrow td:first-child::after {
+    transform-origin: left center;
+    animation: rhythiaxBranchGrow 0.24s cubic-bezier(0.16, 1, 0.3, 1) both;
+  }
+
+  @keyframes rhythiaxBranchGrow {
+    from {
+      transform: scaleX(0);
+      opacity: 0;
+    }
+    to {
+      transform: scaleX(1);
+      opacity: 1;
+    }
+  }
+
+  /* Day date pill micro-slide without affecting table layout */
+  .rhythiax-history-week-subrow .rhythiax-history-date {
+    animation: rhythiaxPillIn 0.22s cubic-bezier(0.16, 1, 0.3, 1) both;
+  }
+
+  @keyframes rhythiaxPillIn {
+    from {
+      transform: translateX(-4px);
+      opacity: 0;
+    }
+    to {
+      transform: translateX(0);
+      opacity: 1;
+    }
+  }
+}
+

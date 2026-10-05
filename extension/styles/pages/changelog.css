@@ -5,41 +5,21 @@ body[data-rhythiax-page="changelog"] #root [data-rhythiax-changelog-tabs] {
   grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
 }
 
-body[data-rhythiax-theme] #root [data-rhythiax-changelog-tab] {
+body[data-rhythiax-theme] #root [data-rhythiax-changelog-tabs] > a {
   position: relative;
   overflow: hidden;
-  border: 1px solid transparent;
-  transition: background-color 220ms ease, border-color 220ms ease, box-shadow 220ms ease, transform 220ms ease;
+  cursor: pointer !important;
+  transition: background-color 180ms ease, color 180ms ease, box-shadow 180ms ease !important;
 }
 
-body[data-rhythiax-theme] #root [data-rhythiax-changelog-tab]::after {
-  position: absolute;
-  right: 18%;
-  bottom: 0;
-  left: 18%;
-  height: 2px;
-  content: "";
-  background: var(--rhythiax-accent);
-  opacity: 0;
-  transform: scaleX(.3);
-  transition: opacity 220ms ease, transform 220ms ease;
+body[data-rhythiax-theme] #root [data-rhythiax-changelog-tabs] > a:hover {
+  background-color: rgba(255, 255, 255, 0.08) !important;
+  color: #ffffff !important;
 }
 
-body[data-rhythiax-theme] #root [data-rhythiax-changelog-tab]:hover {
-  background: var(--rhythiax-accent-soft) !important;
-  border-color: var(--rhythiax-border) !important;
-  transform: translateY(-1px);
-}
-
-body[data-rhythiax-theme] #root [data-rhythiax-changelog-tab][data-rhythiax-active="true"] {
-  background: var(--rhythiax-accent-soft) !important;
-  border-color: var(--rhythiax-border-strong) !important;
-  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--rhythiax-accent) 16%, transparent);
-}
-
-body[data-rhythiax-theme] #root [data-rhythiax-changelog-tab][data-rhythiax-active="true"]::after {
-  opacity: 1;
-  transform: scaleX(1);
+body[data-rhythiax-theme] #root [data-rhythiax-changelog-tabs] > a[data-rhythiax-active="true"] {
+  background-color: rgba(255, 255, 255, 0.1) !important;
+  color: #ffffff !important;
 }
 
 /* The native React route leaves its selected Web/Public utility classes in
@@ -51,7 +31,7 @@ body[data-rhythiax-theme] #root [data-rhythiax-changelog-tabs][data-rhythiax-cha
   border-color: transparent !important;
 }
 
-body[data-rhythiax-theme] #root:has([data-rhythiax-changelog-tabs][data-rhythiax-changelog-mode="reimagined"]) article:not(.rhythiax-changelog-entry),
+body[data-rhythiax-theme] #root:has([data-rhythiax-changelog-tabs][data-rhythiax-changelog-mode="reimagined"]) article:not(.rhythiax-changelog-entry):not([data-rhythiax-changelog-snapshot]),
 body[data-rhythiax-theme] #root article[data-rhythiax-changelog-hidden="true"] {
   display: none !important;
 }
@@ -67,25 +47,27 @@ body[data-rhythiax-theme] #root [data-rhythiax-changelog-tabs][data-rhythiax-cha
   flex-direction: column;
   gap: 14px;
   color: var(--rhythiax-text);
-  animation: rhythiax-changelog-enter 420ms cubic-bezier(.22, .8, .25, 1) both;
+  animation: rhythiax-changelog-enter 280ms cubic-bezier(.22, .8, .25, 1) both;
 }
 
 .rhythiax-changelog-intro,
 .rhythiax-changelog-release-nav,
 .rhythiax-changelog-entry {
   border: 1px solid var(--rhythiax-border);
-  background: linear-gradient(145deg, color-mix(in srgb, var(--rhythiax-surface) 96%, white), var(--rhythiax-surface));
+  background: var(--rhythiax-surface);
+  border-radius: 12px;
   box-shadow: var(--rhythiax-shadow);
 }
 
 .rhythiax-changelog-intro {
   position: relative;
   display: grid;
-  grid-template-columns: 74px minmax(0, 1fr);
-  gap: 16px;
+  grid-template-columns: 58px minmax(0, 1fr);
+  gap: 18px;
+  align-items: center;
   overflow: hidden;
-  padding: 22px;
-  border-radius: var(--rhythiax-radius);
+  padding: 20px 24px;
+  border-radius: 12px;
 }
 
 .rhythiax-changelog-intro::before {
@@ -105,25 +87,26 @@ body[data-rhythiax-theme] #root [data-rhythiax-changelog-tabs][data-rhythiax-cha
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 5px;
-  min-height: 74px;
-  border: 1px solid color-mix(in srgb, var(--rhythiax-accent) 38%, var(--rhythiax-border));
-  border-radius: 22px;
+  gap: 4px;
+  width: 58px;
+  height: 58px;
+  min-height: 58px;
+  border: 1px solid color-mix(in srgb, var(--rhythiax-accent) 28%, var(--rhythiax-border));
+  border-radius: 14px;
   background: var(--rhythiax-accent-soft);
-  transform: rotate(-4deg);
+  box-shadow: 0 2px 10px color-mix(in srgb, var(--rhythiax-accent) 14%, transparent);
 }
 
 .rhythiax-changelog-intro-mark span {
-  width: 9px;
-  height: 30px;
-  border-radius: 8px;
+  width: 6px;
+  height: 22px;
+  border-radius: 4px;
   background: var(--rhythiax-accent);
-  box-shadow: 0 0 18px color-mix(in srgb, var(--rhythiax-accent) 55%, transparent);
-  animation: rhythiax-changelog-pulse 1.8s ease-in-out infinite;
+  box-shadow: 0 0 10px color-mix(in srgb, var(--rhythiax-accent) 45%, transparent);
 }
 
-.rhythiax-changelog-intro-mark span:nth-child(2) { height: 44px; animation-delay: 120ms; }
-.rhythiax-changelog-intro-mark span:nth-child(3) { height: 22px; animation-delay: 240ms; }
+.rhythiax-changelog-intro-mark span:nth-child(2) { height: 32px; }
+.rhythiax-changelog-intro-mark span:nth-child(3) { height: 18px; }
 
 .rhythiax-changelog-kicker {
   color: var(--rhythiax-accent);
@@ -506,29 +489,24 @@ body[data-rhythiax-theme] #root [data-rhythiax-changelog-tabs][data-rhythiax-cha
 }
 
 @keyframes rhythiax-changelog-enter {
-  from { opacity: 0; transform: translateY(10px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-
-@keyframes rhythiax-changelog-content-in {
   from { opacity: 0; transform: translateY(6px); }
   to { opacity: 1; transform: translateY(0); }
 }
 
-@keyframes rhythiax-changelog-pulse {
-  0%, 100% { opacity: .62; transform: scaleY(.86); }
-  50% { opacity: 1; transform: scaleY(1); }
+@keyframes rhythiax-changelog-content-in {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
 @media (max-width: 680px) {
   body[data-rhythiax-page="changelog"] #root [data-rhythiax-changelog-tabs] { grid-template-columns: repeat(3, minmax(0, 1fr)) !important; }
   body[data-rhythiax-theme] #root [data-rhythiax-changelog-tab] { padding-right: 5px; padding-left: 5px; }
   body[data-rhythiax-theme] #root [data-rhythiax-changelog-tab] .text-base { font-size: 13px; }
-  .rhythiax-changelog-intro { grid-template-columns: 52px minmax(0, 1fr); gap: 11px; padding: 16px; }
-  .rhythiax-changelog-intro-mark { min-height: 52px; border-radius: 16px; }
-  .rhythiax-changelog-intro-mark span { width: 6px; height: 22px; }
-  .rhythiax-changelog-intro-mark span:nth-child(2) { height: 32px; }
-  .rhythiax-changelog-intro-mark span:nth-child(3) { height: 17px; }
+  .rhythiax-changelog-intro { grid-template-columns: 46px minmax(0, 1fr); gap: 12px; padding: 16px; }
+  .rhythiax-changelog-intro-mark { width: 46px; height: 46px; min-height: 46px; border-radius: 12px; }
+  .rhythiax-changelog-intro-mark span { width: 5px; height: 18px; }
+  .rhythiax-changelog-intro-mark span:nth-child(2) { height: 26px; }
+  .rhythiax-changelog-intro-mark span:nth-child(3) { height: 14px; }
   .rhythiax-changelog-intro h2 { font-size: 19px; }
   .rhythiax-changelog-intro p { font-size: 12px; }
   .rhythiax-changelog-disclaimer { grid-column: 1 / -1; }
@@ -544,4 +522,104 @@ body[data-rhythiax-theme] #root [data-rhythiax-changelog-tabs][data-rhythiax-cha
   body[data-rhythiax-theme] #root [data-rhythiax-changelog-tab],
   .rhythiax-changelog-arrow,
   .rhythiax-changelog-retry-btn { transition: none !important; }
+}
+
+/* Section layout: only the extension-owned changelog panel. */
+.rhythiax-changelog-panel { animation: none; gap: 20px; }
+.rhythiax-changelog-transition {
+  position: absolute; left: 0; right: 0; z-index: 5;
+  display: flex; flex-direction: column; gap: 16px;
+  background: var(--rhythiax-page-bg); pointer-events: none;
+}
+body[data-rhythiax-theme] #root .rhythiax-changelog-transition [data-rhythiax-changelog-snapshot] {
+  visibility: visible; animation: none;
+}
+body[data-rhythiax-theme] #root [data-rhythiax-changelog-tabs][data-rhythiax-changelog-mode="reimagined"] > a:not([data-rhythiax-changelog-tab]) {
+  color: var(--rhythiax-text-muted) !important;
+}
+.rhythiax-changelog-panel .rhythiax-changelog-intro-mark { transform: rotate(-30deg); }
+.rhythiax-changelog-panel .rhythiax-changelog-intro-mark span {
+  animation: rhythiax-changelog-mark-pulse 2.1s ease-in-out infinite;
+  transform-origin: center;
+}
+.rhythiax-changelog-panel .rhythiax-changelog-intro-mark span:nth-child(2) { animation-delay: 150ms; }
+.rhythiax-changelog-panel .rhythiax-changelog-intro-mark span:nth-child(3) { animation-delay: 300ms; }
+@keyframes rhythiax-changelog-mark-pulse {
+  0%, 100% { transform: scaleY(.8); }
+  50% { transform: scaleY(1); }
+}
+.rhythiax-changelog-panel .rhythiax-changelog-release-nav { padding: 20px; }
+.rhythiax-changelog-panel .rhythiax-changelog-release-date { min-width: 0; flex: 0 1 560px; gap: 8px; }
+.rhythiax-changelog-panel .rhythiax-changelog-release-date strong {
+  font-size: 28px; font-weight: 750; line-height: 1.3;
+}
+.rhythiax-changelog-panel .rhythiax-changelog-release-version {
+  padding: 3px 10px; border: 1px solid var(--rhythiax-border);
+  border-radius: 7px; background: var(--rhythiax-accent-soft); font-size: 12px;
+}
+.rhythiax-changelog-panel .rhythiax-changelog-release-date .rhythiax-changelog-release-meta {
+  color: var(--rhythiax-text-muted); font-size: 12px; font-weight: 400;
+}
+.rhythiax-changelog-reading-layout { display: grid; grid-template-columns: 155px minmax(0, 1fr); gap: 24px; align-items: start; }
+.rhythiax-changelog-contents { position: sticky; top: 84px; display: flex; flex-direction: column; gap: 4px; padding-top: 10px; }
+.rhythiax-changelog-contents > span {
+  margin: 0 10px 8px; color: var(--rhythiax-text-muted); font-size: 10px;
+  font-weight: 750; letter-spacing: .09em; text-transform: uppercase;
+}
+.rhythiax-changelog-panel .rhythiax-changelog-contents a {
+  display: flex; align-items: center; justify-content: space-between; gap: 8px;
+  padding: 9px 10px; border-radius: 7px; color: var(--rhythiax-text-muted);
+  font-size: 12px; font-weight: 550; text-decoration: none;
+}
+.rhythiax-changelog-section-count { font-size: 11px; font-variant-numeric: tabular-nums; }
+.rhythiax-changelog-panel .rhythiax-changelog-contents a:hover,
+.rhythiax-changelog-panel .rhythiax-changelog-contents a:focus-visible {
+  background: var(--rhythiax-accent-soft); color: var(--rhythiax-accent);
+}
+.rhythiax-changelog-panel .rhythiax-changelog-entry {
+  min-width: 0; padding: 0; border: 0; background: transparent;
+  box-shadow: none; animation: none; overflow-wrap: anywhere;
+}
+.rhythiax-changelog-section {
+  margin-bottom: 20px; padding: 24px 28px; border: 1px solid var(--rhythiax-border);
+  border-radius: 12px; background: var(--rhythiax-surface); scroll-margin-top: 84px;
+}
+.rhythiax-changelog-section:last-child { margin-bottom: 0; }
+.rhythiax-changelog-panel .rhythiax-changelog-section .rhythiax-changelog-category-heading {
+  display: flex; width: fit-content; margin: 0 0 6px; padding: 0;
+  border: 0; border-radius: 0; background: transparent; box-shadow: none;
+  font-size: 15px; font-weight: 750; transform: none; transition: none;
+}
+.rhythiax-changelog-panel .rhythiax-changelog-category-icon {
+  width: 22px; height: 22px; flex-basis: 22px; border: 0; background: transparent; box-shadow: none;
+}
+.rhythiax-changelog-panel .rhythiax-changelog-section ul,
+.rhythiax-changelog-panel .rhythiax-changelog-section ol {
+  margin: 0; padding: 0; list-style: none;
+}
+.rhythiax-changelog-panel .rhythiax-changelog-section li {
+  position: relative; margin: 0; padding: 19px 0;
+  border-top: 1px solid var(--rhythiax-border); color: var(--rhythiax-text-muted);
+  font-size: 14px; line-height: 1.75;
+}
+.rhythiax-changelog-panel .rhythiax-changelog-section li:first-child { border-top: 0; }
+.rhythiax-changelog-panel .rhythiax-changelog-section li:last-child { padding-bottom: 0; }
+.rhythiax-changelog-panel .rhythiax-changelog-section p { font-size: 14px; line-height: 1.75; }
+body[data-rhythiax-theme="white"] .rhythiax-changelog-panel .rhythiax-changelog-section li { color: #475569 !important; }
+body[data-rhythiax-theme="white"] .rhythiax-changelog-panel .rhythiax-changelog-section .rhythiax-changelog-category-heading {
+  background: transparent !important; border: 0 !important;
+}
+body[data-rhythiax-theme="white"] .rhythiax-changelog-panel .rhythiax-changelog-release-date .rhythiax-changelog-release-meta { color: #64748b !important; }
+@media (max-width: 760px) {
+  .rhythiax-changelog-reading-layout { display: block; }
+  .rhythiax-changelog-contents { position: static; flex-direction: row; flex-wrap: wrap; gap: 4px; padding: 0; margin-bottom: 16px; }
+  .rhythiax-changelog-contents > span { width: 100%; margin: 0 0 6px; }
+  .rhythiax-changelog-panel .rhythiax-changelog-contents a { padding: 7px 9px; font-size: 11px; }
+  .rhythiax-changelog-section { padding: 18px; }
+  .rhythiax-changelog-panel .rhythiax-changelog-section li { font-size: 13px; }
+  .rhythiax-changelog-panel .rhythiax-changelog-release-date strong { font-size: 23px; }
+  .rhythiax-changelog-panel .rhythiax-changelog-release-nav { padding: 16px 12px; gap: 10px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .rhythiax-changelog-panel .rhythiax-changelog-intro-mark span { animation: none !important; }
 }

@@ -1,89 +1,32 @@
-# Rhythia Reimagined
+# Rhythia Reimagined 1.2.0
 
-Rhythia Reimagined is a browser extension that adds a clearer and more useful
-way to explore Rhythia profiles, scores, progression, and performance data.
+A fresh look and more useful player profiles for [Rhythia](https://rhythia.com), made by Shuriel.
 
-## Release Status
+- Pick Reimagined, Dark, or White themes.
+- Explore player stats, playstyle, title progression, and ranking history.
+- Compare players and customize score cards.
+- Turn individual features on or off in the extension popup.
 
-Rhythia Reimagined 1.1.0 is the current public release.
+## Get started
 
-Officially supported browsers are Google Chrome 116 or later and the current
-version of Opera. Other browsers may work, but are not officially supported.
+Install from the [Chrome Web Store](https://chromewebstore.google.com/detail/rhythia-reimagined/ekjfnmfocjohkiieakohbnagjcdbfolb), then open Rhythia. Chrome 116+ and compatible Chromium browsers are supported. A separate package is available for testing on Firefox desktop 140+.
 
-Install [Rhythia Reimagined from the official Chrome Web Store listing](https://chromewebstore.google.com/detail/rhythia-reimagined/ekjfnmfocjohkiieakohbnagjcdbfolb).
-Do not install copies from unverified sources.
+This repository contains **1.2.0**. Check the store listing for the version currently available there. See [Installation](INSTALLATION.md) for manual installation and Firefox instructions, or the [changelog](changelog.md) for what's new.
 
-## What It Provides
+## Your history, your choice
 
-- Enhanced profile and score views
-- Performance statistics and score filters
-- Progression and rank tracking
-- Local history and storage management
-- Optional local automatic, manual, and recovery backups
-- Profile and score comparison tools
-- Custom themes (Reimagined, Dark, White)
+A small card on Rhythia introduces **online history**: see available community ranking history without having to track every profile yourself. Choose **Use online history** to combine it with local records, or **Keep it local**. Profile visit reports are off after this choice and can be enabled separately in the popup.
 
-## This Repository
+Community connections start after you confirm your choice. They send public player IDs to `rhythia.shuriel.com`; the service also receives your connection IP. Your Rhythia password and session are never sent there. You can change connection and reporting choices in the popup. Local profile history has fixed limits of 90 days and 25 MB, without protected profiles. Visit reports count at most once per IP and viewed profile per rolling hour; visit statistics are kept for 30 days.
 
-This is the public repository for Rhythia Reimagined. It contains:
+## Help and project information
 
-- The extension snapshot and source code for review
-- The live extension changelog (`changelog.md`)
-- User-facing documentation and installation guides
-- Privacy and security policies
-- Issue templates for bug reports and feature requests
+- [Data and Sync](DATA-AND-SYNC.md) — history settings and clearing saved records.
+- [Support](SUPPORT.md) — help and bug reports.
+- [Privacy](PRIVACY.md) — what data is used and how to request deletion.
+- [Security](SECURITY.md) — privately report a security issue.
+- [License](LICENSE.md) — reuse and attribution.
 
-**Note:** Downloadable builds or `.zip` release archives are not distributed via
-GitHub Releases. The extension is distributed exclusively through the official
-Chrome Web Store. This repository is intended solely for source inspection,
-issue tracking, and documentation.
+This repository contains the public extension source and user documentation.
 
-## Privacy & Data Handling
-
-The extension keeps its data local in the user's browser. Optional backups stay
-in a folder selected by the user and are not uploaded by the extension. See
-[Privacy](PRIVACY.md) and [Data and Backups](DATA-AND-BACKUPS.md) for details.
-
-## Documentation
-
-- [Installation](INSTALLATION.md)
-- [Data and Backups](DATA-AND-BACKUPS.md)
-- [Changelog](changelog.md)
-- [Support](SUPPORT.md)
-- [Privacy policy](PRIVACY.md)
-- [Security policy](SECURITY.md)
-- [License](LICENSE.md)
-
-## Credits
-
-Rhythia is created by [Capo Games](https://capo.games). This is an unofficial
-community project and is not affiliated with or endorsed by Capo Games.
-
-Rhythia Reimagined is maintained by [Shuriel](https://github.com/Shurielx).
-
-## Source Code and Attribution
-
-Original Rhythia: Reimagined code may be copied, modified, and redistributed
-under the terms of [`LICENSE.md`](LICENSE.md).
-
-Any public use, redistribution, or derivative work containing the original
-project code must include a clear and visible attribution to Shuriel. The
-attribution requirement is satisfied by any of the following:
-
-- `Shuriel` with a hyperlink to [the GitHub profile](https://github.com/Shurielx);
-- `Shuriel` displayed alongside a hyperlink to [the GitHub profile](https://github.com/Shurielx);
-- a direct hyperlink to [the GitHub profile](https://github.com/Shurielx).
-
-The attribution must be reasonably easy to find in a Credits, About,
-Attribution, README, documentation, project, or release page. It must not be
-hidden only in source comments, metadata, or an otherwise inaccessible legal
-notice. No specific wording beyond one of the forms above is required.
-
-This repository's license does not grant rights to Rhythia.com's code, content,
-data, design, trademarks, or other materials belonging to Capo Games. Any
-third-party materials remain subject to their applicable rights and licenses.
-
-## Support
-
-See [SUPPORT.md](SUPPORT.md) for bug reports, feature requests, privacy
-questions, and security reports.
+Rhythia Reimagined is an independent fan project. It is not affiliated with or endorsed by Capo Games or Rhythia.

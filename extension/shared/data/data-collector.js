@@ -54,7 +54,8 @@ function collectorAccuracy(scores, player) {
 }
 
 function collectorWeeksSince(player) {
-  const hereSince = RhythiaX.extractHereSince?.();
+  const hereSince = player?.created_at != null ? new Date(player.created_at)
+    : player?.id != null ? null : RhythiaX.extractHereSince?.();
   if (!hereSince || typeof RhythiaX.weeksSince !== 'function') return null;
   const weeks = RhythiaX.weeksSince(hereSince);
   return Number.isFinite(weeks) && weeks > 0 ? weeks : null;

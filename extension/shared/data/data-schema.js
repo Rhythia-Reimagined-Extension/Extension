@@ -4,33 +4,26 @@
 
 var RhythiaX = RhythiaX || {};
 
-RhythiaX.DATA_SCHEMA_VERSION = 1;
+RhythiaX.DATA_SCHEMA_VERSION = 4;
 RhythiaX.DATA_STORAGE_ENTRY_PREFIX = 'rhythiaxData:entry:';
 RhythiaX.DATA_SETTINGS_KEY = 'rhythiaxDataSettings';
-RhythiaX.DATA_BACKUP_STATE_KEY = 'rhythiaxDataBackupState';
-RhythiaX.DATA_BACKUP_PROMPT_KEY = 'rhythiaxDataBackupPrompt';
-RhythiaX.DATA_BACKUP_OPEN_SETTINGS_KEY = 'rhythiaxDataBackupOpenSettings';
+RhythiaX.COMMUNITY_CONSENT_VERSION = 1;
 
 RhythiaX.DATA_DEFAULT_SETTINGS = {
   retentionDays: 90,
-  maxStorageMb: 300,
-  openDayMaxMb: 25,
+  maxStorageMb: 25,
+  openDayMaxMb: 5,
   snapshotIntervalMinutes: 15,
   maxSnapshotsPerDay: 48,
   inlineStatsReference: 'firstSnapshotToday',
   inlineRankingReference: 'previousDayClose',
-  historyGrouping: 'daily',
+  historyGrouping: 'weekly',
   historyDisplayMode: 'latestOpenAndClosed',
   collectStats: true,
   collectRanking: true,
-  collectTitleProgression: true,
-  whitelist: [],
-  localBackupEnabled: false,
-  localBackupSchedule: '1',
-  localBackupCopyCount: 2,
-  localBackupIncludeAppSettings: false,
-  // Kept as a normalized compatibility value for older popup/controller code.
-  localBackupIntervalDays: 1,
+  syncMode: 'hybrid',
+  telemetryEnabled: true,
+  communityConsentVersion: 0,
 };
 
 RhythiaX.DATA_METRIC_KEYS = [
@@ -92,42 +85,20 @@ function dataDateKey(value) {
   return Number.isNaN(date.getTime()) ? '' : RhythiaX.localDateKey(date);
 }
 
-function dataNormalizeWhitelist(value) {
-  if (!Array.isArray(value)) return [];
-  const entries = [];
-  value.forEach(item => {
-    const source = typeof item === 'string' ? { id: item, username: item } : item;
-    if (!source || typeof source !== 'object') return;
-    const id = String(source.id || source.playerId || '').trim();
-    const username = String(source.username || source.name || '').trim();
-    if (!id && !username) return;
-    const key = `${id}\u0000${username.toLocaleLowerCase()}`;
-    if (entries.some(entry => `${entry.id}\u0000${entry.username.toLocaleLowerCase()}` === key)) return;
-    entries.push({ id, username, addedAt: dataTimestamp(source.addedAt, 0) || 0 });
-  });
-  return entries;
-}
-
 RhythiaX.normalizeDataSettings = function (settings) {
   const source = settings && typeof settings === 'object' ? settings : {};
-  const retentionOptions = [30, 60, 90, 180, 0];
-  const requestedRetention = Number(source.retentionDays);
+  const syncOptions = ['cloud-only', 'hybrid', 'local-only'];
   const requestedInterval = Number(source.snapshotIntervalMinutes);
   const requestedSnapshotLimit = Number(source.maxSnapshotsPerDay);
-  const requestedMaxMb = Number(source.maxStorageMb);
   const requestedOpenDayMb = Number(source.openDayMaxMb);
-  const requestedBackupInterval = Number(source.localBackupIntervalDays);
-  const requestedCopyCount = Number(source.localBackupCopyCount);
-  const legacySchedule = Number.isFinite(requestedBackupInterval)
-    ? String([1, 3, 7].includes(Math.round(requestedBackupInterval)) ? Math.round(requestedBackupInterval) : 1)
-    : '1';
-  const requestedSchedule = ['1', '3', '7', 'manual'].includes(String(source.localBackupSchedule))
-    ? String(source.localBackupSchedule)
-    : legacySchedule;
   return {
-    retentionDays: retentionOptions.includes(requestedRetention) ? requestedRetention : 90,
-    maxStorageMb: Number.isFinite(requestedMaxMb) ? Math.min(1024, Math.max(1, Math.round(requestedMaxMb))) : 300,
-    openDayMaxMb: Number.isFinite(requestedOpenDayMb) ? Math.min(50, Math.max(1, Math.round(requestedOpenDayMb))) : 25,
+    retentionDays: 90,
+    syncMode: syncOptions.includes(source.syncMode) ? source.syncMode : 'hybrid',
+    telemetryEnabled: source.telemetryEnabled !== false,
+    communityConsentVersion: source.communityConsentVersion === RhythiaX.COMMUNITY_CONSENT_VERSION
+      ? RhythiaX.COMMUNITY_CONSENT_VERSION : 0,
+    maxStorageMb: 25,
+    openDayMaxMb: Number.isFinite(requestedOpenDayMb) ? Math.min(50, Math.max(1, Math.round(requestedOpenDayMb))) : 5,
     snapshotIntervalMinutes: Number.isFinite(requestedInterval) ? Math.min(1440, Math.max(0, Math.round(requestedInterval))) : 15,
     maxSnapshotsPerDay: Number.isFinite(requestedSnapshotLimit) ? Math.min(10000, Math.max(1, Math.round(requestedSnapshotLimit))) : 48,
     inlineStatsReference: RhythiaX.DATA_REFERENCE_MODES.includes(source.inlineStatsReference)
@@ -144,15 +115,6 @@ RhythiaX.normalizeDataSettings = function (settings) {
       : 'latestOpenAndClosed',
     collectStats: source.collectStats !== false,
     collectRanking: source.collectRanking !== false,
-    collectTitleProgression: source.collectTitleProgression !== false,
-    whitelist: dataNormalizeWhitelist(source.whitelist),
-    localBackupEnabled: source.localBackupEnabled === true,
-    localBackupSchedule: requestedSchedule,
-    localBackupCopyCount: Number.isFinite(requestedCopyCount)
-      ? Math.min(5, Math.max(1, Math.round(requestedCopyCount)))
-      : 2,
-    localBackupIncludeAppSettings: source.localBackupIncludeAppSettings === true,
-    localBackupIntervalDays: requestedSchedule === 'manual' ? 0 : Number(requestedSchedule),
   };
 };
 
@@ -216,13 +178,6 @@ function normalizeOpenDay(openDay) {
   return {
     date,
     captures,
-    limitOverride: openDay.limitOverride !== null
-      && openDay.limitOverride !== undefined
-      && String(openDay.limitOverride).trim() !== ''
-      && Number.isFinite(Number(openDay.limitOverride))
-      && Number(openDay.limitOverride) > 0
-      ? Math.round(Number(openDay.limitOverride))
-      : null,
     lastUpdatedAt: dataTimestamp(openDay.lastUpdatedAt, captures[captures.length - 1]?.capturedAt || null),
   };
 }
@@ -298,37 +253,6 @@ function normalizeCollection(collection) {
   };
 }
 
-function normalizeTitleProgressionState(snapshot) {
-  if (!snapshot || typeof snapshot !== 'object') return null;
-  const capturedAt = dataTimestamp(snapshot.capturedAt);
-  const date = dataDateKey(snapshot.date) || dataDateKey(capturedAt);
-  if (!capturedAt || !date) return null;
-  const rp = dataFiniteNumber(snapshot.rp);
-  const globalRank = dataFiniteNumber(snapshot.globalRank);
-  const missing = Array.isArray(snapshot.missing)
-    ? [...new Set(snapshot.missing.filter(key => ['rp', 'globalRank'].includes(key)))]
-    : ['rp', 'globalRank'].filter(key => (key === 'rp' ? rp : globalRank) === null);
-  return {
-    id: String(snapshot.id || `${capturedAt}:title`),
-    visitId: String(snapshot.visitId || ''),
-    kind: 'title',
-    phase: ['initial', 'updated', 'last'].includes(String(snapshot.phase)) ? String(snapshot.phase) : 'last',
-    date,
-    capturedAt,
-    status: ['partial', 'complete'].includes(snapshot.status)
-      ? snapshot.status
-      : (missing.length ? 'partial' : 'complete'),
-    source: RhythiaX.DATA_SNAPSHOT_SOURCES.includes(snapshot.source) ? snapshot.source : 'import',
-    missing,
-    rp,
-    globalRank,
-    title: String(snapshot.title || ''),
-    unavailable: snapshot.unavailable === true,
-  };
-}
-
-RhythiaX.normalizeTitleProgressionState = normalizeTitleProgressionState;
-
 RhythiaX.normalizeDataSnapshot = normalizeSnapshot;
 
 RhythiaX.createDataRecord = function (profileId, identity = {}, now = Date.now()) {
@@ -345,9 +269,6 @@ RhythiaX.createDataRecord = function (profileId, identity = {}, now = Date.now()
     history: {
       openDay: null,
       daily: {},
-    },
-    titleProgression: {
-      last: null,
     },
   };
 };
@@ -370,11 +291,7 @@ RhythiaX.normalizeDataRecord = function (record, profileId) {
       openDay: normalizeOpenDay(history.openDay),
       daily: normalizeDailyHistory(history.daily),
     },
-    titleProgression: {
-      last: normalizeTitleProgressionState(source.titleProgression?.last) || null,
-    },
   };
-  if (normalized.titleProgression.last) normalized.titleProgression.last.kind = 'title';
   return normalized;
 };
 

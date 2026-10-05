@@ -70,11 +70,25 @@ var RhythiaX = RhythiaX || {};
     }
   }
 
+  function resolveThemePresetKey(name) {
+    if (typeof name !== 'string') return DEFAULT_THEME?.preset || 'rhythia-reimagined';
+    const clean = name.trim().toLowerCase();
+    if (clean === 'reimagined' || clean === 'purple') return 'rhythia-reimagined';
+    return clean;
+  }
+
   function normalizeTheme(theme) {
-    const source = theme && typeof theme === 'object' && !Array.isArray(theme) ? theme : {};
-    const preset = typeof source.preset === 'string' && Object.prototype.hasOwnProperty.call(THEMES, source.preset)
-      ? source.preset
-      : DEFAULT_THEME.preset;
+    let source = {};
+    if (typeof theme === 'string') {
+      const presetKey = resolveThemePresetKey(theme);
+      source = THEMES[presetKey] || { preset: presetKey };
+    } else if (theme && typeof theme === 'object' && !Array.isArray(theme)) {
+      source = theme;
+    }
+    const rawPreset = typeof source.preset === 'string' ? resolveThemePresetKey(source.preset) : DEFAULT_THEME?.preset || 'rhythia-reimagined';
+    const preset = Object.prototype.hasOwnProperty.call(THEMES, rawPreset)
+      ? rawPreset
+      : (DEFAULT_THEME?.preset || 'rhythia-reimagined');
     const normalized = { ...DEFAULT_THEME, ...THEMES[preset], preset };
     THEME_FIELDS.forEach(field => {
       const value = safeThemeValue(source[field]);
@@ -98,24 +112,20 @@ var RhythiaX = RhythiaX || {};
     if (!document.body) return null;
     const layer = document.createElement('div');
     layer.className = 'rhythiax-theme-snapshot';
-    const oldBody = document.body.cloneNode(true);
     const computedRoot = getComputedStyle(document.documentElement);
-    [
-      '--rhythiax-page-bg', '--rhythiax-surface', '--rhythiax-inner-surface',
-      '--rhythiax-accent', '--rhythiax-accent-soft', '--rhythiax-nav-surface',
-      '--rhythiax-nav-hover', '--rhythiax-input-surface', '--rhythiax-text',
-      '--rhythiax-text-muted', '--rhythiax-border', '--rhythiax-text-strong',
-      '--rhythiax-border-strong', '--rhythiax-chart-track', '--rhythiax-shadow',
-      '--rhythiax-radius', '--rhythiax-image-overlay',
-    ].forEach(name => oldBody.style.setProperty(name, computedRoot.getPropertyValue(name).trim()));
-    layer.style.backgroundColor = computedRoot.getPropertyValue('--rhythiax-page-bg').trim();
-    layer.appendChild(oldBody);
+    const bg = computedRoot.getPropertyValue('--rhythiax-page-bg').trim() || '#151326';
+    layer.style.backgroundColor = bg;
+    layer.style.position = 'fixed';
+    layer.style.inset = '0';
+    layer.style.zIndex = '2147483640';
+    layer.style.pointerEvents = 'none';
     document.documentElement.appendChild(layer);
     return layer;
   }
 
   function clearThemeTransition() {
     document.documentElement.removeAttribute('data-rhythiax-theme-transitioning');
+    document.documentElement.classList?.remove?.('rhythiax-theme-transitioning');
     if (themeSnapshot) {
       themeSnapshot.remove();
       themeSnapshot = null;
@@ -123,6 +133,7 @@ var RhythiaX = RhythiaX || {};
   }
 
   RhythiaX.applyTheme = function (theme) {
+    if (RhythiaX.isMasterActive && !RhythiaX.isMasterActive()) return;
     const next = normalizeTheme(theme);
     const hadActiveTheme = Boolean(activeTheme);
     const sameTheme = activeTheme && Object.keys(next).every(key => activeTheme[key] === next[key]);
@@ -132,11 +143,12 @@ var RhythiaX = RhythiaX || {};
       return;
     }
     const reducedMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
-    const shouldAnimate = Boolean(document.body && hadActiveTheme && !sameTheme && !reducedMotion);
+    const shouldAnimate = Boolean(themeLoaded && document.body && hadActiveTheme && !sameTheme && !reducedMotion);
     if (themeSnapshot) clearThemeTransition();
     themeSnapshot = shouldAnimate ? createThemeSnapshot() : null;
     const root = document.documentElement;
     root.setAttribute('data-rhythiax-theme-transitioning', '');
+    if (shouldAnimate) root.classList?.add?.('rhythiax-theme-transitioning');
 
     const paintTheme = () => {
       root.style.setProperty('--rhythiax-page-bg', next.pageBg);
@@ -221,7 +233,7 @@ var RhythiaX = RhythiaX || {};
   try {
     if (typeof chrome !== 'undefined') {
       chrome.runtime?.onMessage?.addListener(message => {
-        if (message && message.type === 'rhythiax-theme') {
+        if (message && (message.type === 'rhythiax-theme' || message.type === 'rhythiax-theme-changed')) {
           themeLoaded = true;
           RhythiaX.applyTheme(message.theme);
         }

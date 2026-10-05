@@ -1,0 +1,409 @@
+/* ==========================================================================
+   Rhythia Reimagined — Scores Hub & Pinned Scores Container
+   Fully theme-responsive (Reimagined, Dark, White), native pill groups,
+   crisp borders and typography.
+   ========================================================================== */
+
+.rhythiax-scores-hub {
+  position: relative;
+  background: var(--sc-bg, #180f26);
+  border: 1px solid var(--sc-border, rgba(216, 180, 254, 0.16));
+  border-radius: 14px;
+  padding: 18px 20px;
+  box-shadow: var(--sc-shadow, 0 10px 25px rgba(0, 0, 0, 0.25));
+  color: var(--sc-text);
+}
+
+.rhythiax-scores-section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid var(--sc-border, rgba(216, 180, 254, 0.16));
+  padding-bottom: 14px;
+  margin-bottom: 16px;
+}
+
+.rhythiax-scores-section-title {
+  font-size: 16px;
+  font-weight: 800;
+  color: var(--sc-text-strong, #faf5ff);
+}
+
+.rhythiax-score-report-btn {
+  color: var(--sc-text-strong, #faf5ff) !important;
+  background: var(--sc-dock-cell-bg, rgba(255, 255, 255, 0.05)) !important;
+  border-color: var(--sc-border, rgba(216, 180, 254, 0.16)) !important;
+  transition: all 0.15s ease;
+}
+
+.rhythiax-score-report-btn:hover {
+  background: var(--sc-inner-bg, rgba(255, 255, 255, 0.1)) !important;
+  border-color: var(--sc-border-strong, rgba(216, 180, 254, 0.32)) !important;
+}
+
+.rhythiax-scores-hub-header {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 16px;
+  width: 100%;
+}
+
+/* Tabs, Page Size & View Mode: Native Pill Group Containers */
+.rhythiax-scores-tabs,
+.rhythiax-page-size-group,
+.rhythiax-view-mode-group {
+  box-sizing: border-box;
+  background: var(--sc-inner-bg, rgba(255, 255, 255, 0.03));
+  border-color: var(--sc-border, rgba(216, 180, 254, 0.16));
+  height: 32px;
+}
+
+.rhythiax-scores-tab-btn,
+.rhythiax-page-size-btn,
+.rhythiax-view-mode-btn {
+  cursor: pointer;
+  user-select: none;
+  font-size: 12px;
+  font-weight: 600;
+  height: 28px;
+  color: var(--sc-text-muted, #94a3b8);
+  transition: all 0.15s ease;
+}
+
+.rhythiax-scores-tab-btn:hover,
+.rhythiax-page-size-btn:hover,
+.rhythiax-view-mode-btn:hover {
+  color: var(--sc-text-strong, #ffffff);
+}
+
+.rhythiax-scores-tab-btn.rhythiax-tab-active,
+.rhythiax-scores-tab-btn[aria-selected="true"],
+.rhythiax-page-size-btn[aria-pressed="true"],
+.rhythiax-page-size-btn.bg-white\/10,
+.rhythiax-view-mode-btn[aria-pressed="true"] {
+  color: var(--sc-text-strong, #ffffff) !important;
+  font-weight: 700;
+}
+
+.rhythiax-scores-tab-badge {
+  font-size: 10px;
+  font-weight: 800;
+  padding: 2px 6px;
+  border-radius: 9999px;
+  line-height: 1;
+}
+
+/* Search bar & Controls alignment */
+.rhythiax-scores-search-wrapper {
+  position: relative !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  height: 32px !important;
+  box-sizing: border-box !important;
+}
+
+.rhythiax-scores-search-input {
+  background: var(--sc-inner-bg, rgba(255, 255, 255, 0.03)) !important;
+  border: 1px solid var(--sc-border, rgba(216, 180, 254, 0.16)) !important;
+  color: var(--sc-text-strong, #ffffff) !important;
+  border-radius: 8px !important;
+  outline: none !important;
+  transition: border-color 0.15s ease !important;
+  height: 32px !important;
+  line-height: normal !important;
+  padding-top: 0 !important;
+  padding-bottom: 0 !important;
+  padding-left: 33px !important;
+  padding-right: 28px !important;
+  font-size: 12px !important;
+  box-sizing: border-box !important;
+  vertical-align: middle !important;
+}
+
+.rhythiax-scores-search-input::placeholder {
+  color: var(--sc-text-muted, #94a3b8) !important;
+  opacity: 0.7 !important;
+  line-height: normal !important;
+}
+
+.rhythiax-scores-search-input:focus {
+  border-color: var(--sc-accent, #c084fc) !important;
+  box-shadow: 0 0 0 2px var(--sc-accent-soft, rgba(192, 132, 252, 0.2)) !important;
+}
+
+.rhythiax-scores-search-icon {
+  position: absolute !important;
+  left: 11px !important;
+  top: 50% !important;
+  transform: translateY(-50%) !important;
+  width: 14px !important;
+  height: 14px !important;
+  color: var(--sc-text-muted, #94a3b8) !important;
+  pointer-events: none !important;
+  display: block !important;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+.rhythiax-scores-search-clear {
+  position: absolute !important;
+  right: 7px !important;
+  top: 50% !important;
+  transform: translateY(-50%) !important;
+  width: 18px !important;
+  height: 18px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  line-height: 1 !important;
+  color: var(--sc-text-muted, #94a3b8) !important;
+  cursor: pointer !important;
+  background: transparent !important;
+  border: none !important;
+  transition: color 0.15s ease !important;
+}
+
+.rhythiax-scores-search-clear:hover {
+  color: var(--sc-text-strong, #ffffff) !important;
+}
+
+.rhythiax-scores-header-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  width: 100%;
+  flex-wrap: wrap;
+}
+
+.rhythiax-scores-controls-row,
+.rhythiax-scores-controls-right {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: 10px !important;
+  width: 100% !important;
+  flex-wrap: wrap !important;
+}
+
+.rhythiax-scores-controls-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.rhythiax-scores-top-pagination {
+  margin-left: auto !important;
+  align-self: center;
+}
+
+/* Scores List: explicit flex column with 10px gap between cards */
+.rhythiax-scores-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+/* 2-Column Grid Mode for Score Cards */
+.rhythiax-scores-list.is-grid,
+.rhythiax-pinned-list.is-grid,
+[data-scores-view="grid"] .rhythiax-scores-list,
+[data-scores-view="grid"] .rhythiax-pinned-list {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+@media (max-width: 768px) {
+  .rhythiax-scores-list.is-grid,
+  .rhythiax-pinned-list.is-grid,
+  [data-scores-view="grid"] .rhythiax-scores-list,
+  [data-scores-view="grid"] .rhythiax-pinned-list {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* View Mode Switcher Pill Group */
+.rhythiax-view-mode-group {
+  box-sizing: border-box;
+  background: var(--sc-inner-bg, rgba(255, 255, 255, 0.03));
+  border-color: var(--sc-border, rgba(216, 180, 254, 0.16));
+}
+
+.rhythiax-view-mode-btn {
+  cursor: pointer;
+  user-select: none;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--sc-text-muted, #94a3b8);
+  transition: all 0.15s ease;
+}
+
+.rhythiax-view-mode-btn:hover {
+  color: var(--sc-text-strong, #ffffff);
+}
+
+.rhythiax-view-mode-btn[aria-pressed="true"],
+.rhythiax-view-mode-btn.bg-white\/10 {
+  color: var(--sc-text-strong, #ffffff) !important;
+  font-weight: 700;
+}
+
+/* Pinned Scores Section */
+.rhythiax-pinned-scores-section {
+  position: relative;
+  background: var(--sc-bg, #180f26);
+  border: 1px solid var(--sc-border-strong, rgba(216, 180, 254, 0.28));
+  border-radius: 14px;
+  padding: 16px 18px;
+  box-shadow: var(--sc-shadow, 0 10px 25px rgba(0, 0, 0, 0.25));
+  color: var(--sc-text);
+}
+
+/* Numbered Pagination Nav (Top & Bottom) */
+.rhythiax-scores-pagination-nav {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  user-select: none;
+}
+
+.rhythiax-pagination-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  background: var(--sc-dock-cell-bg, rgba(255, 255, 255, 0.05));
+  border: 1px solid var(--sc-border, rgba(216, 180, 254, 0.16));
+  color: var(--sc-text-muted, #94a3b8);
+}
+
+.rhythiax-pagination-btn:hover:not(:disabled) {
+  background: var(--sc-inner-bg, rgba(255, 255, 255, 0.12));
+  border-color: var(--sc-border-strong, rgba(216, 180, 254, 0.32));
+  color: var(--sc-text-strong, #ffffff);
+}
+
+.rhythiax-pagination-page {
+  min-width: 28px;
+  height: 28px;
+  padding: 0 6px;
+}
+
+.rhythiax-pagination-prev,
+.rhythiax-pagination-next {
+  height: 28px;
+  padding: 0 9px;
+  gap: 3px;
+}
+
+.rhythiax-pagination-btn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+.rhythiax-pagination-active,
+.rhythiax-pagination-page.rhythiax-pagination-active {
+  background: var(--sc-accent-soft, rgba(192, 132, 252, 0.25)) !important;
+  border-color: var(--sc-accent, #c084fc) !important;
+  color: #ffffff !important;
+  font-weight: 800 !important;
+  opacity: 1 !important;
+  pointer-events: none !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+[data-rhythiax-theme="white"] .rhythiax-pagination-active,
+[data-rhythiax-theme="white"] .rhythiax-pagination-page.rhythiax-pagination-active {
+  background: #7c3aed !important;
+  border-color: #7c3aed !important;
+  color: #ffffff !important;
+  opacity: 1 !important;
+  pointer-events: none !important;
+  box-shadow: 0 2px 8px rgba(124, 58, 237, 0.35) !important;
+}
+
+[data-rhythiax-theme="white"] .rhythiax-pagination-btn:hover:not(:disabled):not(.rhythiax-pagination-active) {
+  border-color: #7c3aed !important;
+  color: #7c3aed !important;
+}
+
+/* Hide native Chrome datalist dropdown arrow */
+.rhythiax-scores-search-input::-webkit-calendar-picker-indicator {
+  display: none !important;
+  -webkit-appearance: none !important;
+  opacity: 0 !important;
+  width: 0 !important;
+  height: 0 !important;
+  pointer-events: none !important;
+}
+
+.rhythiax-pagination-dots {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 20px;
+  height: 28px;
+  color: var(--sc-text-muted, #94a3b8);
+  font-size: 13px;
+  font-family: monospace;
+}
+
+@media (max-width: 640px) {
+  .rhythiax-scores-top-pagination {
+    width: 100%;
+    justify-content: flex-end;
+  }
+}
+
+/* Card entrance cascade animation */
+@keyframes rhythiax-card-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.rhythiax-score-card-anim {
+  animation: rhythiax-card-in 0.28s cubic-bezier(0.16, 1, 0.3, 1) both;
+  animation-delay: var(--card-anim-delay, 0ms);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rhythiax-score-card-anim {
+    animation: none !important;
+  }
+}
+
+/* Micro-interactions and springy button states */
+.rhythiax-scores-tab-btn,
+.rhythiax-page-size-btn,
+.rhythiax-view-mode-btn,
+.rhythiax-pagination-btn {
+  transition: all 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.rhythiax-scores-tab-btn:hover:not(.rhythiax-tab-active),
+.rhythiax-page-size-btn:hover:not([aria-pressed="true"]),
+.rhythiax-view-mode-btn:hover:not([aria-pressed="true"]),
+.rhythiax-pagination-btn:hover:not(:disabled) {
+  transform: translateY(-1px);
+}
+
+.rhythiax-scores-tab-btn:active,
+.rhythiax-page-size-btn:active,
+.rhythiax-view-mode-btn:active,
+.rhythiax-pagination-btn:active:not(:disabled) {
+  transform: scale(0.95);
+}

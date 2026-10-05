@@ -4,6 +4,7 @@ var RhythiaX = RhythiaX || {};
 RhythiaX.PageRouteContext = {
   type(path = window.location.pathname) {
     if (/^\/score\/[^/]+\/?$/.test(path)) return 'score-replay';
+    if (/^\/player\/[^/]+\/scores(?:\/|$)/.test(path)) return 'scores';
     if (/^\/player\/[^/]+\/?$/.test(path)) return 'profile';
     if (/^\/maps(?:\/|$)/.test(path)) return 'maps';
     if (/^\/changelog(?:\/|$)/.test(path)) return 'changelog';
@@ -11,7 +12,7 @@ RhythiaX.PageRouteContext = {
   },
 
   playerId(path = window.location.pathname) {
-    return path.match(/^\/player\/([^/]+)\/?$/)?.[1] || '';
+    return path.match(/^\/player\/([^/]+)/)?.[1] || '';
   },
 
   isInjectable(path = window.location.pathname) {

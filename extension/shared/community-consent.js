@@ -71,9 +71,9 @@ var RhythiaX = RhythiaX || {};
       shadow = host.attachShadow({ mode: 'closed' });
       shadow.innerHTML = `<section class="card" role="region" aria-label="Reimagined online history">
         <h2>Use online player history?</h2>
-        <p>See shared history alongside your local records.</p>
-        <p>Online history sends the viewed public player ID to Shuriel's community service at rhythia.shuriel.com. The service and Cloudflare receive your IP address to deliver history and protect the service. Your Rhythia session is never sent there.</p>
-        <p>Profile visit reports stay off. You can enable them separately in the popup to help refresh public history, or choose Local Only to stop community connections.</p>
+        <p>Load shared player history from Shuriel's community service.</p>
+        <p>Requests include the viewed player's public ID. The service and Cloudflare process your IP address to deliver and protect the connection.</p>
+        <p>Visit reports are optional and stay off.</p>
         <div class="actions"><button type="button" class="online">Use online history</button><button type="button" class="local">Keep it local</button></div>
         <div class="status" role="status" aria-live="polite"></div>
         <a href="https://github.com/Rhythia-Reimagined-Extension/Extension/blob/main/PRIVACY.md" target="_blank" rel="noreferrer">Privacy policy</a>

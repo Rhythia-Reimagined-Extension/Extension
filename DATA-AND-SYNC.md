@@ -14,6 +14,8 @@ A small card appears in the corner of Rhythia until you choose **Use online hist
 
 **Profile visit reports** tell the community service which public player you visited, helping it keep that player's public history up to date. You can switch reports off and still use cloud history. Your connection IP reaches the service; your Rhythia password and session do not. See [Privacy](PRIVACY.md) for details.
 
+The extension does not upload scores, friends, preferences, or local snapshots to the community database. A separate crawler obtains public player statistics from Rhythia's official API and runs independently of extension users. Online history requests include the requested public player ID; optional visit-report bodies contain only `playerId`. The server uses the connection IP for rate limits and a keyed IP-plus-profile digest for visit deduplication, without storing raw IPs in telemetry tables.
+
 ## Local history limits
 
 Local profile records use a fixed **90-day window** (today and the previous 89 local dates) and **25 MB budget**. There are no retention controls or protected profiles. Cleanup runs while profiles are used; older history may be removed sooner when the budget fills. Other temporary caches use separate limits.
@@ -30,6 +32,6 @@ The update automatically migrates supported player history and settings. Themes,
 - **Reset Settings** restores appearance and data defaults without immediately deleting history. It keeps your community connection and reporting choices. Later cleanup follows the restored retention and storage limits.
 - **Remove the extension** to clear its extension settings and storage. Rhythia site caches are separate; clearing site data in your browser can also sign you out of the game.
 
-Switching modes or turning reports off does not delete community records or stop the service's independent collection of public leaderboard history. For deletion or to request that collection stops for your player profile, contact [shurieldev@gmail.com](mailto:shurieldev@gmail.com).
+Switching modes or turning reports off does not delete community records or stop the service's independent collection of public leaderboard history. For deletion or an objection concerning your player profile in the community database, contact [shurieldev@gmail.com](mailto:shurieldev@gmail.com). You do not need Rhythia to delete its original records first. The existing profile block stops detailed history refreshes, but does not remove existing public history or prevent basic leaderboard updates; it is not complete erasure. See [Privacy](PRIVACY.md) for the separate records and controls.
 
 Profile reports count once per IP and viewed profile per rolling hour. Leaving a tab open does not periodically add visits. Daily visit counts cover 30 UTC dates; last-visit observations expire after 30 days. No separate extension-activity reporting is used.

@@ -7,18 +7,28 @@
 
 Rhythia Reimagined is an independent fan extension for [Rhythia](https://rhythia.com). This policy explains the data used for its themes, player statistics, score cards, comparisons, and history.
 
+## What reaches the maintainer's service
+
+The extension processes player information in your browser. It does not upload your scores, friends list, preferences, local profile history, or Rhythia session to the maintainer or the community service.
+
+Connections to `rhythia.shuriel.com` are optional and start only after you choose online history. A history request includes the public ID of the profile whose history you want. Separately enabled visit reports send a JSON body containing only that viewed public player ID (`playerId`), to help prioritize public-profile refreshes. Neither request sends your own Rhythia account as the visitor.
+
+The extension does not read your IP address or put it in the visit-report body. Network connections expose an IP address to the receiving infrastructure. The service uses the connection IP for rate limits and visit deduplication; the telemetry database stores a keyed digest of IP plus viewed profile, rather than the raw IP. Infrastructure logging is explained below.
+
+The community database is populated by a separate server-side crawler that obtains public profiles, rankings, and statistics from Rhythia's official API. It operates independently of extension users and does not depend on uploads of their scores or local records. Optional visit reports can influence which public profiles are refreshed.
+
 ## Data collection and use
 
 The extension handles data even when it stays on your device. It reads the Rhythia pages you open, requests data from the official game API, and stores the information needed for the features you use. It does not read your browser's general history or pages outside Rhythia.
 
 | Data | Source and purpose | Where it is handled |
 | --- | --- | --- |
-| Public player identity: player ID, username, profile country, and avatar URL | Rhythia pages and APIs; identify profiles, show comparisons, and display history. A profile country is game profile data, not device geolocation. | Browser caches and local records; independently collected public identities also appear in the community database. |
-| Public gameplay and website content: scores, map metadata and artwork, accuracy, play counts, rhythm points, and global/country rankings | Rhythia pages and APIs; calculate statistics and render score cards, progression, and history. | Browser memory, caches, and local history; the community database stores public player statistics and ranking history. |
+| Public player identity: player ID, username, profile country, and avatar URL | Rhythia pages and APIs; identify profiles, show comparisons, and display history. A profile country is game profile data, not device geolocation. | Browser caches and local records. The independent crawler obtains its own public player identities for the community database. |
+| Public gameplay and website content: scores, map metadata and artwork, accuracy, play counts, rhythm points, and global/country rankings | Rhythia pages and APIs; calculate statistics and render score cards, progression, and history. | Browser memory, caches, and local history. The extension does not upload these records; the independent crawler obtains public statistics and rankings for community history. |
 | Existing Rhythia session token and account-related API responses, including your friends list | Rhythia's site storage and official API; load scores and friends and perform your requested score-pinning actions. | The token is read for official API requests and is not copied into extension storage or sent to the community service. Friends are displayed in the browser. |
 | Preferences and local feature state | Your choices; remember themes, enabled features, selected views, comparison players, and history/visit-report settings. | Your browser's extension storage and Rhythia site storage; these settings are not uploaded to the community service. |
 | Viewed Rhythia player ID and request timing | Online history requests and separately enabled profile visit reports; retrieve history and prioritize public-profile refreshes. | The community service receives the viewed ID. Local diagnostics keep the latest 30 entries, including player ID/name, time, latency, and result. |
-| Connection and operational information: IP address, requested path, time, response status, and browser/referrer information when present | Requests to the community service; deliver responses, maintain logs, and prevent abuse. | Community infrastructure and Cloudflare. IP-derived visit safeguards and raw connection logs have different retention rules below. |
+| Connection information, including IP address; operational information such as requested path, time, response status, and browser/referrer information when logged | Requests to the community service; deliver responses, prevent abuse, and diagnose service problems. | Community infrastructure and Cloudflare. The community API's request logger omits raw IPs; telemetry stores an IP-derived digest. Infrastructure logs may retain connection information as explained below. |
 | Email address, correspondence, and agreed account-verification evidence | Information you send when requesting support or exercising privacy rights; answer and verify your request. | The maintainer and communication providers, as explained below. |
 
 Online history requests disclose which Rhythia profile is being viewed even when optional visit reports are off. Turning reports off stops the separate reporting request; **Local Only** stops both kinds of community request.
@@ -41,13 +51,13 @@ In a cloud mode, the extension sends the public ID of the player whose history y
 
 Like any network connection, these requests expose your connection IP to the service and its hosting providers. Your Rhythia session and password, private messages, replays, and browsing outside Rhythia player profiles are not sent to this community service.
 
-The service independently collects public leaderboard and player information, including player IDs, names, avatars, rankings, and statistics, to provide player history. Turning reports off does not stop that independent collection.
+The service's independent crawler obtains public leaderboard and player information, including player IDs, names, avatars, rankings, and statistics, from Rhythia's official API to provide player history. These are not score or profile uploads from extension users. Turning reports off or using Local Only does not stop that independent public-data collection.
 
 ## Data sharing and recipients
 
 - **Official Rhythia / Capo Games services:** `production.rhythia.com` receives the player/map identifiers and, for requests that use it, your existing game session token. Rhythia controls its own account data and processing. Loading game-hosted images or requesting replays also connects to the corresponding game resource host.
 - **Shuriel's community service:** `rhythia.shuriel.com` receives requested public player IDs, optional visit-report IDs, and connection information. The maintainer operates the service and can access its database and operational logs for the disclosed purposes.
-- **Other community-history users:** public player identities and daily player statistics/ranking history are returned by the community history API without requiring a login. They are available to other users and anyone requesting that public endpoint. Visitor IPs, IP-derived safeguards, and visit-report records are not part of the public history response.
+- **Other community-history users:** public player identities and daily player statistics/ranking history obtained by the independent crawler are returned by the community history API without requiring a login. They are available to other users and anyone requesting that public endpoint. Visitor IPs, IP-derived safeguards, and visit-report records are not part of the public history response.
 - **Cloudflare and community hosting infrastructure providers:** process network traffic and connection information to deliver and protect the service and host its database, logs, and backups. Cloudflare's separate processing is described in its [privacy policy](https://www.cloudflare.com/privacypolicy/).
 - **GitHub:** receives normal connection information, including your IP and the requested resource, when the extension downloads release notes from `raw.githubusercontent.com` or you open project/privacy links. The extension does not attach your Rhythia session, local history, or preferences to release-note requests. See [GitHub's privacy statement](https://docs.github.com/en/site-policy/privacy-policies/github-general-privacy-statement).
 - **Communication and backup delivery providers:** the maintainer's Gmail mailbox receives support and privacy correspondence. Providers delivering emailed server backups process encrypted backup attachments and delivery metadata; the maintainer receives those copies. When configured, Discord receives server maintenance notifications, which can include public player identifiers and operational error details. See [Google's privacy policy](https://policies.google.com/privacy) and [Discord's privacy policy](https://discord.com/privacy).
@@ -61,7 +71,7 @@ Data is not sold, rented, or transferred for advertising, commercial profiling, 
 - **Recent profile visit counts:** kept for 30 UTC dates including today and removed by scheduled cleanup. An outage may delay cleanup.
 - **Public player ID and latest reported visit:** removed after 30 days without an accepted visit. They help select profiles for refresh and do not contain the visitor's account or IP.
 - **IP-based abuse prevention:** each IP and viewed profile can count once per rolling hour. A keyed cryptographic digest of this pair and its last accepted timestamp are stored separately from player history. Raw IPs are not stored in that table. Expired digests are removed by hourly cleanup, normally within the following hour. These are pseudonymous safeguards, not anonymous visitor analytics. Other admission safeguards use bounded server memory.
-- **Operational logs:** the reverse proxy records connection IPs, requested paths, response status, referrers, browser information, and forwarded connection information. Logs rotate as they fill; there is no fixed retention period in days. Application log filtering does not remove IPs from proxy logs.
+- **Application and infrastructure logs:** the community API's request logger omits raw visitor IPs. Hosting and network infrastructure, including Cloudflare and a reverse proxy with access logging enabled, may retain IPs, requested paths, response status, referrers, and browser information in operational logs. Infrastructure retention depends on the deployed logging configuration and the provider's policies; the telemetry-table expiry does not govern those logs.
 
 Cloudflare processes connection information to protect and deliver the service under its own [privacy policy](https://www.cloudflare.com/privacypolicy/). Its separate retention is governed by that provider's policies. Community requests use HTTPS.
 
@@ -71,7 +81,7 @@ Encrypted server backups include database records. The community service keeps d
 
 ## Secure handling
 
-Official game API calls, community API requests, and release-note downloads use HTTPS. The community database separates public player history from internal visit safeguards. IP-derived visit keys use a keyed cryptographic digest; this does not remove raw IPs from connection logs. Server backup archives are encrypted before email delivery. Access to internal database records, logs, and backup copies is restricted to operating, securing, and maintaining the service; these records are not returned by the public history endpoint.
+Official game API calls, community API requests, and release-note downloads use HTTPS. The community database separates independently collected public player history from internal visit safeguards. IP-derived visit keys use a keyed cryptographic digest, and the community API's request logger omits raw IPs. This does not prevent network providers or a proxy with access logging enabled from processing or retaining connection IPs. Server backup archives are encrypted before email delivery. Access to internal database records, logs, and backup copies is restricted to operating, securing, and maintaining the service; these records are not returned by the public history endpoint.
 
 ## Your controls
 

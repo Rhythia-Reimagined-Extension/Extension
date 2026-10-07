@@ -14,6 +14,8 @@ A small card appears in the corner of Rhythia until you choose **Use online hist
 
 **Profile visit reports** tell the community service which public player you visited, helping it keep that player's public history up to date. You can switch reports off and still use cloud history. Your connection IP reaches the service; your Rhythia password and session do not. See [Privacy](PRIVACY.md) for details.
 
+The extension does not upload scores, friends, preferences, or local snapshots to the community database. A separate crawler obtains public player statistics from Rhythia's official API and runs independently of extension users. Online history requests include the requested public player ID; optional visit-report bodies contain only `playerId`. The server uses the connection IP for rate limits and a keyed IP-plus-profile digest for visit deduplication, without storing raw IPs in telemetry tables.
+
 ## Local history limits
 
 Local profile records use a fixed **90-day window** (today and the previous 89 local dates) and **25 MB budget**. There are no retention controls or protected profiles. Cleanup runs while profiles are used; older history may be removed sooner when the budget fills. Other temporary caches use separate limits.

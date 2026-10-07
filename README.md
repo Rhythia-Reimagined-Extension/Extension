@@ -19,6 +19,8 @@ A small card on Rhythia introduces **online history**: see available community r
 
 Community connections start after you confirm your choice. They send public player IDs to `rhythia.shuriel.com`; the service also receives your connection IP. Your Rhythia password and session are never sent there. You can change connection and reporting choices in the popup. Local profile history has fixed limits of 90 days and 25 MB, without protected profiles. Visit reports count at most once per IP and viewed profile per rolling hour; visit statistics are kept for 30 days.
 
+The extension does not upload your scores, friends list, settings, or local history to the community service. A separate crawler builds community history from Rhythia's public API, independently of extension users. Optional visit reports send only the viewed public player ID; the server uses an IP-derived digest for visit deduplication instead of storing raw IPs in telemetry tables. See [Privacy](PRIVACY.md) for infrastructure handling and retention.
+
 ## Help and project information
 
 - [Data and Sync](DATA-AND-SYNC.md) — history settings and clearing saved records.

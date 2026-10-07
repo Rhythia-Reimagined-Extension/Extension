@@ -21,6 +21,8 @@ Community connections start after you confirm your choice. They send public play
 
 The extension does not upload your scores, friends list, settings, or local history to the community service. A separate crawler builds community history from Rhythia's public API, independently of extension users. Optional visit reports send only the viewed public player ID; the server uses an IP-derived digest for visit deduplication instead of storing raw IPs in telemetry tables. See [Privacy](PRIVACY.md) for infrastructure handling and retention.
 
+Rhythia manages its original account data; Shuriel handles requests about the independent community copy. Public availability does not mean the data is automatically anonymous. You can contact us about that copy without first requesting deletion from Rhythia; see [Privacy](PRIVACY.md#requests-and-contact).
+
 ## Help and project information
 
 - [Data and Sync](DATA-AND-SYNC.md) — history settings and clearing saved records.

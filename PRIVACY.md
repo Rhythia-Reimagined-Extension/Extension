@@ -17,6 +17,8 @@ The extension does not read your IP address or put it in the visit-report body. 
 
 The community database is populated by a separate server-side crawler that obtains public profiles, rankings, and statistics from Rhythia's official API. It operates independently of extension users and does not depend on uploads of their scores or local records. Optional visit reports can influence which public profiles are refreshed.
 
+Public profiles can still contain personal data. Rhythia controls the original game accounts and records; Shuriel independently operates the community database and handles requests about that copy. The player's use of Rhythia, or another visitor's choice to enable online history, is not consent to every use of the player's information by this independent service.
+
 ## Data collection and use
 
 The extension handles data even when it stays on your device. It reads the Rhythia pages you open, requests data from the official game API, and stores the information needed for the features you use. It does not read your browser's general history or pages outside Rhythia.
@@ -29,6 +31,7 @@ The extension handles data even when it stays on your device. It reads the Rhyth
 | Preferences and local feature state | Your choices; remember themes, enabled features, selected views, comparison players, and history/visit-report settings. | Your browser's extension storage and Rhythia site storage; these settings are not uploaded to the community service. |
 | Viewed Rhythia player ID and request timing | Online history requests and separately enabled profile visit reports; retrieve history and prioritize public-profile refreshes. | The community service receives the viewed ID. Local diagnostics keep the latest 30 entries, including player ID/name, time, latency, and result. |
 | Connection information, including IP address; operational information such as requested path, time, response status, and browser/referrer information when logged | Requests to the community service; deliver responses, prevent abuse, and diagnose service problems. | Community infrastructure and Cloudflare. The community API's request logger omits raw IPs; telemetry stores an IP-derived digest. Infrastructure logs may retain connection information. When enabled, server monitoring derives salted IP hashes and aggregate traffic counts from gateway logs, as explained below. |
+| Public ban/account status and diagnostic copies of public API responses | The independent crawler checks whether profiles can be processed. Unexpected or inconsistent responses may be kept to investigate missing or incorrect history. | Private server records, retry records and diagnostic files. These can contain player IDs, public ban status and its dates, public profile responses and earlier statistics; they are not returned by the public history endpoint. |
 | Email address, correspondence, and agreed account-verification evidence | Information you send when requesting support or exercising privacy rights; answer and verify your request. | The maintainer and communication providers, as explained below. |
 
 Online history requests disclose which Rhythia profile is being viewed even when optional visit reports are off. Turning reports off stops the separate reporting request; **Local Only** stops both kinds of community request.
@@ -39,7 +42,7 @@ The extension reads player and score information on Rhythia and from its officia
 
 Your existing Rhythia session is read locally for official game features, including fetching scores, friends lists, and pinning your scores. It is sent only to the official game API at `production.rhythia.com`. It is not saved by the extension or sent to the community service. The extension does not request passwords, payment details, health information, or private messages.
 
-Browser data uses `chrome.storage.local`, Rhythia's `localStorage` and `sessionStorage`, and temporary memory caches. It does not use Chrome Storage Sync to synchronize records or preferences between devices. Session caches become invalid after five minutes; browser storage entries may remain until replaced or cleared. Some map caches and site preferences have no automatic expiry. Browser storage is protected by your browser and device controls; the extension does not add its own encryption to local records.
+Browser data uses local and session extension storage, Rhythia's `localStorage` and `sessionStorage`, and temporary memory caches. It does not use Chrome Storage Sync to synchronize records or preferences between devices. Some temporary caches become invalid after five minutes; browser storage entries may remain until replaced or cleared. Some map caches and site preferences have no automatic expiry. Browser storage is protected by your browser and device controls; the extension does not add its own encryption to local records.
 
 Local profile records use a fixed 90-day window (today and the previous 89 local dates) and a 25 MB budget. These limits cannot be changed in the popup. Cleanup runs while you use player profiles, without a background schedule. Oldest history can be removed sooner when the budget fills. Temporary caches use separate limits. The extension also keeps temporary profile, score, and public map caches, selected tabs, and recent connection diagnostics.
 
@@ -68,6 +71,7 @@ Data is not sold, rented, or transferred for advertising, commercial profiling, 
 
 - **Local preferences and records:** kept in your browser until you clear them, remove the extension, or the fixed history limits remove older records.
 - **Community player records and ranking history:** kept without automatic expiry, until manually deleted.
+- **Private crawler diagnostic and account-status records:** currently have no automatic time-based expiry. Deleting a main player record removes its linked daily history and account-status observation, but does not by itself remove every diagnostic file, retry record, visit count or operational log. These separate records must also be considered when handling a request.
 - **Recent profile visit counts:** kept for 30 UTC dates including today and removed by scheduled cleanup. An outage may delay cleanup.
 - **Public player ID and latest reported visit:** removed after 30 days without an accepted visit. They help select profiles for refresh and do not contain the visitor's account or IP.
 - **IP-based abuse prevention:** each IP and viewed profile can count once per rolling hour. A keyed cryptographic digest of this pair and its last accepted timestamp are stored separately from player history. Raw IPs are not stored in that table. Expired digests are removed by hourly cleanup, normally within the following hour. These are pseudonymous safeguards, not anonymous visitor analytics. Other admission safeguards use bounded server memory.
@@ -92,11 +96,15 @@ Use **Clear Cache** to delete all local profile history and cached community his
 
 Removing the extension clears its extension storage. Some caches are stored separately on the Rhythia site; clear that site's data through your browser to remove them. This can also sign you out of Rhythia.
 
-Changing a setting or removing the extension does not delete community history. Deleting a community player record also deletes its associated history. Collection can be stopped for a profile while retaining its existing history.
+Changing a setting or removing the extension does not delete community history. Deleting a main community player record also deletes its linked daily history. The existing profile block stops detailed history refreshes and accepted visit reports, but leaderboard updates can still refresh basic public profile information. Blocking does not remove existing history from the public API. It is not a complete erasure or exclusion mechanism. Removal of a profile at Rhythia does not automatically erase the community service's existing copy.
 
 ## Requests and contact
 
 For access, correction, deletion, or an objection concerning your player records, email [shurieldev@gmail.com](mailto:shurieldev@gmail.com) with your Rhythia profile link or public player ID and what you want done.
+
+You do not need to have Rhythia delete the original profile before contacting us about our copy. We assess requests concerning our own processing under applicable data protection law. Contact Rhythia separately for changes to its original account or game records; we cannot change those on its behalf.
+
+For a request about your own community connections or visit reports, contact the same address. Reports do not include your visitor account, and some records cannot be attributed to you from a username alone. IP-derived safeguards are pseudonymous, not automatically anonymous. We do not collect additional identity information solely to identify otherwise unidentifiable records, but will consider information you provide that allows us to locate relevant records. Automatic expiry does not replace assessment of an applicable request.
 
 To protect your records from unauthorized changes, the maintainer may ask for proportionate evidence that you control that account. A public profile link alone is not proof. Verification is arranged privately; screen sharing is not mandatory. Do not send passwords, session tokens, recovery codes, identity documents, or unrelated private information. Any agreed live verification is not recorded by the maintainer.
 

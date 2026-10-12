@@ -397,7 +397,8 @@ var RhythiaX = RhythiaX || {};
     // 4. ASYNC BACKGROUND REFINEMENT (HISTORY & MOMENTUM UP TO 30D)
     // ─────────────────────────────────────────────
     if (playerId) {
-      loader.resolvePlayerHistory(playerId, player).then(points => {
+      const historyRevision = loader.getRevision?.();
+      const applyHistoryPoints = points => {
         if (!root.isConnected || container.firstElementChild !== root) return;
         const resolvedPoints = points?.length ? points : officialHistory;
 
@@ -443,6 +444,11 @@ var RhythiaX = RhythiaX || {};
           speedSummary,
           bestMaps,
         });
+      };
+      root._rhythiaxResetHistory = () => applyHistoryPoints([]);
+      loader.resolvePlayerHistory(playerId, player).then(points => {
+        if (historyRevision !== loader.getRevision?.()) return;
+        applyHistoryPoints(points);
       }).catch(err => {
         if (typeof RhythiaX.log === 'function') {
           RhythiaX.log('Background playstyle history refinement caught:', err.message);

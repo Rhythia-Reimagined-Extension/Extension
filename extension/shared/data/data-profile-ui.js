@@ -5,13 +5,37 @@ const VPS_HISTORY_CACHE_PREFIX = 'rhythiaxVpsHistoryCache:';
 const VPS_HISTORY_CACHE_TTL_MS = 60 * 1000;
 const VPS_HISTORY_CACHE_MAX_ENTRIES = 20;
 const VPS_HISTORY_CACHE_MAX_BYTES = 400 * 1024;
+let historyCacheRevision = 0;
+
+function invalidateVisibleHistory(playerId) {
+  if (typeof document === 'undefined') return;
+  const currentId = RhythiaX.PageRouteContext?.playerId?.() || window.location?.pathname?.match(/\/player\/([^/]+)/)?.[1];
+  if (playerId && currentId && String(currentId) !== String(playerId)) return;
+  document.querySelectorAll('.rhythiax-history-row, .rhythiax-profile-history-delta, .rhythiax-rank-history-overlay').forEach(node => node.remove());
+  document.querySelectorAll('[data-rhythiax-history-rendered]').forEach(node => node.replaceChildren());
+  document.querySelectorAll('.rhythiax-stat-row-open, [data-history-key].active').forEach(node => {
+    node.classList.remove('rhythiax-stat-row-open', 'active');
+    node.setAttribute('aria-expanded', 'false');
+  });
+  document.querySelectorAll('.rhythiax-playstyle-deck').forEach(node => node._rhythiaxResetHistory?.());
+}
 
 // Clearing persisted history also invalidates cached responses in open tabs.
 if (typeof chrome !== 'undefined') chrome.storage?.onChanged?.addListener((changes, area) => {
   if (area !== 'local') return;
+  if (changes.rhythiaxDataSettings || changes.rhythiax_history_clear_generation) {
+    historyCacheRevision++;
+    RhythiaX._vpsPlayerHistoryCache.clear();
+    invalidateVisibleHistory();
+  }
   Object.entries(changes).forEach(([key, change]) => {
     if (key.startsWith(VPS_HISTORY_CACHE_PREFIX) && change.newValue === undefined) {
       RhythiaX._vpsPlayerHistoryCache.delete(Number(key.slice(VPS_HISTORY_CACHE_PREFIX.length)));
+    }
+    if (key.startsWith(VPS_HISTORY_CACHE_PREFIX) && change.newValue?.data === null) {
+      const id = Number(key.slice(VPS_HISTORY_CACHE_PREFIX.length));
+      RhythiaX.PlaystyleLoader?.invalidatePlayer?.(id);
+      invalidateVisibleHistory(id);
     }
   });
 });
@@ -57,22 +81,38 @@ function writeVpsHistoryCache(id, data, fetchedAt, lastSuccessAt) {
 async function getCachedVpsHistory(playerId) {
   const id = Number(playerId);
   if (!Number.isSafeInteger(id) || id <= 0) return null;
+  const revision = historyCacheRevision;
+  const mode = typeof RhythiaX.getVpsSyncMode === 'function' ? await RhythiaX.getVpsSyncMode()
+    : typeof RhythiaX.getDataSettings === 'function' ? (await RhythiaX.getDataSettings())?.syncMode : 'hybrid';
+  if (mode === 'local-only' || revision !== historyCacheRevision) return null;
   const existing = RhythiaX._vpsPlayerHistoryCache.get(id);
   if (existing && (existing.pending || Date.now() - existing.fetchedAt < VPS_HISTORY_CACHE_TTL_MS)) return existing.promise;
   if (typeof RhythiaX.fetchVpsPlayerHistory !== 'function') return null;
   const state = { pending: true, fetchedAt: 0, promise: null };
   const promise = (async () => {
     const cached = await readVpsHistoryCache(id);
+    if (revision !== historyCacheRevision) return null;
     if (cached && Date.now() - Number(cached.fetchedAt) < VPS_HISTORY_CACHE_TTL_MS) {
       state.fetchedAt = Number(cached.fetchedAt);
       return cached.data;
     }
-    const data = await RhythiaX.fetchVpsPlayerHistory(id);
+    const data = await RhythiaX.fetchVpsPlayerHistory(id, { withStatus: true });
+    if (revision !== historyCacheRevision) return null;
     state.fetchedAt = Date.now();
+    if (data?.unavailable) {
+      RhythiaX.PlaystyleLoader?.invalidatePlayer?.(id);
+      invalidateVisibleHistory(id);
+      await writeVpsHistoryCache(id, null, state.fetchedAt, 0);
+      return null;
+    }
     const staleData = cached?.data && Date.now() - Number(cached.lastSuccessAt || cached.fetchedAt) < VPS_HISTORY_CACHE_TTL_MS * 10
       ? cached.data : null;
     const usableData = data || staleData;
     await writeVpsHistoryCache(id, usableData, state.fetchedAt, data ? state.fetchedAt : cached?.lastSuccessAt || cached?.fetchedAt);
+    if (revision !== historyCacheRevision) {
+      if (typeof chrome !== 'undefined') chrome.storage?.local?.remove(`${VPS_HISTORY_CACHE_PREFIX}${id}`);
+      return null;
+    }
     return usableData;
   })().catch(() => {
     RhythiaX._vpsPlayerHistoryCache.delete(id);
@@ -267,16 +307,17 @@ function dataUiApplyCard(card, current, reference, key, rank) {
   dataUiAppendDelta(fallbackContainer, delta, rank);
 }
 
-function dataUiProfileIsCurrent(playerId, navigationToken) {
+function dataUiProfileIsCurrent(playerId, navigationToken, revision) {
   const routeId = RhythiaX.PageRouteContext?.playerId?.();
-  return navigationToken === RhythiaX.navigationToken
+  return (revision === undefined || revision === historyCacheRevision) && navigationToken === RhythiaX.navigationToken
     && (!routeId || String(routeId) === String(playerId));
 }
 
 RhythiaX.applyProfileHistoryIndicators = async function (playerId, livePoint) {
   if (!playerId) return;
   const navigationToken = RhythiaX.navigationToken;
-  if (!dataUiProfileIsCurrent(playerId, navigationToken)) return;
+  const revision = historyCacheRevision;
+  if (!dataUiProfileIsCurrent(playerId, navigationToken, revision)) return;
   removeNativeRankDeltas(document);
   const settings = await RhythiaX.getDataSettings();
   const record = settings?.syncMode === 'cloud-only' ? null : await RhythiaX.getDataRecord(playerId);
@@ -285,7 +326,7 @@ RhythiaX.applyProfileHistoryIndicators = async function (playerId, livePoint) {
   if (settings?.syncMode !== 'local-only') {
     cachedVps = await getCachedVpsHistory(playerId);
   }
-  if (!dataUiProfileIsCurrent(playerId, navigationToken)) return;
+  if (!dataUiProfileIsCurrent(playerId, navigationToken, revision)) return;
   const cloudHistory = settings?.syncMode === 'cloud-only'
     ? buildMergedRankHistory(cachedVps?.history, null)
     : [];
@@ -465,6 +506,7 @@ function formatHistoryDateLabel(dateStr) {
 }
 
 RhythiaX.showStatHistory = async function (row, historyKey) {
+  const revision = historyCacheRevision;
   const playerId = window.location.pathname.match(/\/player\/([^/]+)/)?.[1];
   if (!playerId || !row || !historyKey) return;
 
@@ -523,6 +565,7 @@ RhythiaX.showStatHistory = async function (row, historyKey) {
     cachedVps = await getCachedVpsHistory(playerId);
   }
 
+  if (revision !== historyCacheRevision) return;
   const key = dataUiMetricKey(historyKey);
   const rawPoints = (settings?.syncMode !== 'local-only' && cachedVps?.history?.length > 0)
     ? buildMergedRankHistory(cachedVps.history, record)
@@ -712,6 +755,7 @@ function dataUiDateMinusDays(dateText, days) {
 }
 
 RhythiaX.showRankHistory = async function (trigger = null) {
+  const revision = historyCacheRevision;
   const returnFocus = trigger || (document.activeElement instanceof HTMLElement ? document.activeElement : null);
   const existing = document.querySelector('.rhythiax-rank-history-overlay');
   if (existing) {
@@ -733,6 +777,7 @@ RhythiaX.showRankHistory = async function (trigger = null) {
       ...(latestOpen ? [{ ...latestOpen, kind: 'open' }] : []),
       ...closedHistory,
     ];
+  if (revision !== historyCacheRevision) return;
   const overlay = document.createElement('div');
   overlay.className = 'rhythiax-rank-history-overlay';
   const dialog = document.createElement('section');
@@ -1199,8 +1244,10 @@ function renderRankHistoryTable(container, history, isCloudSynced = false, could
 }
 
 RhythiaX.renderInlineRankHistory = async function (container, playerId) {
+  container.setAttribute('data-rhythiax-history-rendered', 'rank');
   if (!container) return;
   const navigationToken = RhythiaX.navigationToken;
+  const revision = historyCacheRevision;
 
   const id = playerId || window.location.pathname.match(/\/player\/([^/]+)/)?.[1];
   if (!id) {
@@ -1221,7 +1268,7 @@ RhythiaX.renderInlineRankHistory = async function (container, playerId) {
 
   // 2. Fast Path: Render local data immediately if available (0ms delay) - unless cloud-only
   const localRecord = syncMode === 'cloud-only' ? null : await RhythiaX.getDataRecord(id);
-  if (!dataUiProfileIsCurrent(id, navigationToken) || container.isConnected === false) return;
+  if (!dataUiProfileIsCurrent(id, navigationToken, revision) || container.isConnected === false) return;
   const localHistory = buildMergedRankHistory(null, localRecord);
 
   let hasRendered = false;
@@ -1243,7 +1290,7 @@ RhythiaX.renderInlineRankHistory = async function (container, playerId) {
   // 3. Background Path: Fetch authoritative cloud history from VPS
   try {
     const vpsData = await getCachedVpsHistory(id);
-    if (!dataUiProfileIsCurrent(id, navigationToken) || container.isConnected === false) return;
+    if (!dataUiProfileIsCurrent(id, navigationToken, revision) || container.isConnected === false) return;
 
     if (vpsData && Array.isArray(vpsData.history) && vpsData.history.length > 0) {
       const mergedHistory = buildMergedRankHistory(vpsData.history, syncMode === 'cloud-only' ? null : localRecord);
@@ -1517,8 +1564,10 @@ function renderProgressHistoryTable(container, history, isCloudSynced = false, c
 }
 
 RhythiaX.renderInlineProgressHistory = async function (container, playerId) {
+  container.setAttribute('data-rhythiax-history-rendered', 'progress');
   if (!container) return;
   const navigationToken = RhythiaX.navigationToken;
+  const revision = historyCacheRevision;
 
   const id = playerId || window.location.pathname.match(/\/player\/([^/]+)/)?.[1];
   if (!id) {
@@ -1541,7 +1590,7 @@ RhythiaX.renderInlineProgressHistory = async function (container, playerId) {
 
   // 2. Fast Path: Render local data immediately if available (0ms delay) - unless cloud-only
   const localRecord = syncMode === 'cloud-only' ? null : await RhythiaX.getDataRecord(id);
-  if (!dataUiProfileIsCurrent(id, navigationToken) || container.isConnected === false) return;
+  if (!dataUiProfileIsCurrent(id, navigationToken, revision) || container.isConnected === false) return;
   const localHistory = buildMergedRankHistory(null, localRecord);
 
   let hasRendered = false;
@@ -1563,7 +1612,7 @@ RhythiaX.renderInlineProgressHistory = async function (container, playerId) {
   // 3. Background Path: Fetch authoritative cloud history from VPS
   try {
     const vpsData = await getCachedVpsHistory(id);
-    if (!dataUiProfileIsCurrent(id, navigationToken) || container.isConnected === false) return;
+    if (!dataUiProfileIsCurrent(id, navigationToken, revision) || container.isConnected === false) return;
 
     if (vpsData && Array.isArray(vpsData.history) && vpsData.history.length > 0) {
       const mergedHistory = buildMergedRankHistory(vpsData.history, syncMode === 'cloud-only' ? null : localRecord);

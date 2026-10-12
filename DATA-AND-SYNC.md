@@ -32,4 +32,4 @@ Official ranking history supplied by Rhythia is independent of the community mod
 
 Supported history and settings are migrated. Themes, feature choices and explicit privacy choices are preserved. Obsolete backup configuration, protected-profile lists and custom history limits are removed. Previously exported files remain on your device. Version 1.2.0 has no backup export/import controls.
 
-For server-history requests contact [shurieldev@gmail.com](mailto:shurieldev@gmail.com). See [Support](SUPPORT.md), [Terms](TERMS.md) and [Privacy](PRIVACY.md).
+For server-history requests contact [privacy@shuriel.com](mailto:privacy@shuriel.com). See [Support](SUPPORT.md), [Terms](TERMS.md) and [Privacy](PRIVACY.md).

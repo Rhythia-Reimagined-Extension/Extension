@@ -11,6 +11,8 @@ Prepared October 12, 2026. This is a review checklist, not a store approval or l
 
 Check the live policy pages before entering the URL in either store. Chrome's policy field should use https://shuriel.com/policies/reimagined/ and the listing should reference the same notice.
 
+Dashboard metadata was updated and saved on October 12, 2026 at the maintainer's request. Chrome now uses the website privacy URL and homepage, with updated listing links, host explanations and review instructions. Firefox now uses the project contact, homepage and an updated full privacy notice with absolute policy links. This did not upload either 1.2.1 package or submit a review; the last uploaded Chrome package and listed Firefox version remain 1.2.0. Existing data-category choices and certifications were not changed or newly attested by this metadata update.
+
 ## Reviewer explanation
 
 Rhythia Reimagined improves how players read and explore Rhythia profiles, scores and progress, with local customization and optional online player history. It processes public player IDs, names, scores and page content locally. Official account features read the existing Rhythia session only to communicate with the official game API; the community service never receives it.

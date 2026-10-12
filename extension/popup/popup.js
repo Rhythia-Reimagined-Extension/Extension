@@ -663,12 +663,13 @@
       if (!confirmed) return;
 
       try {
+        await chrome.storage.local.set({ rhythiax_history_clear_generation: Date.now() });
         const all = await chrome.storage.local.get(null);
         const prefix = 'rhythiaxData:entry:';
         const keysToRemove = [];
 
         for (const [k, v] of Object.entries(all)) {
-          if (k.startsWith(prefix) || k.startsWith('rhythiaxVpsHistoryCache:')) keysToRemove.push(k);
+          if (k.startsWith(prefix) || k.startsWith('rhythiaxVpsHistoryCache:') || k.startsWith('rhythiax_ps_hist_')) keysToRemove.push(k);
         }
 
         if (keysToRemove.length > 0) {

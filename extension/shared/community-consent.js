@@ -76,7 +76,7 @@ var RhythiaX = RhythiaX || {};
         <p>Visit reports are optional and stay off.</p>
         <div class="actions"><button type="button" class="online">Use online history</button><button type="button" class="local">Keep it local</button></div>
         <div class="status" role="status" aria-live="polite"></div>
-        <a href="https://github.com/Rhythia-Reimagined-Extension/Extension/blob/main/PRIVACY.md" target="_blank" rel="noreferrer">Privacy policy</a>
+        <a href="https://shuriel.com/policies/reimagined/history/#privacy" target="_blank" rel="noreferrer">Privacy policy</a>
       </section>`;
       if (typeof CSSStyleSheet === 'function' && 'adoptedStyleSheets' in shadow) {
         const sheet = new CSSStyleSheet(); sheet.replaceSync(css); shadow.adoptedStyleSheets = [sheet];

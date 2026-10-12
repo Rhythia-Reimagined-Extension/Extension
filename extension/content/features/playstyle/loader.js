@@ -7,8 +7,49 @@ var RhythiaX = RhythiaX || {};
 
 (function () {
   const HISTORY_CACHE_TTL_MS = 15 * 60 * 1000; // 15 minutes TTL
-  const HISTORY_CACHE_VERSION = 3; // Refresh ranks changed by the old digit-prefix heuristic.
+  const HISTORY_CACHE_VERSION = 4; // Source and sync mode are required for derived history.
+  const HISTORY_CACHE_PREFIX = 'rhythiax_ps_hist_';
+  const HISTORY_CACHE_MAX_ENTRIES = 40;
+  const HISTORY_CACHE_MAX_BYTES = 400 * 1024;
   const _memoryCache = new Map();
+  let revision = 0;
+
+  function invalidatePlayer(playerId) {
+    _memoryCache.delete(Number(playerId));
+    if (typeof chrome !== 'undefined') chrome.storage?.local?.remove?.(`${HISTORY_CACHE_PREFIX}${playerId}`);
+  }
+
+  if (typeof chrome !== 'undefined') chrome.storage?.onChanged?.addListener((changes, area) => {
+    if (area !== 'local') return;
+    if (changes.rhythiaxDataSettings || changes.rhythiax_history_clear_generation) {
+      revision++;
+      _memoryCache.clear();
+    }
+    for (const [key, change] of Object.entries(changes)) {
+      if (key.startsWith(HISTORY_CACHE_PREFIX) && change.newValue === undefined) {
+        _memoryCache.delete(Number(key.slice(HISTORY_CACHE_PREFIX.length)));
+      }
+    }
+  });
+
+  function pruneStorageCache() {
+    if (typeof chrome === 'undefined') return;
+    chrome.storage?.local?.get(null, all => {
+      const entries = Object.entries(all || {}).filter(([key]) => key.startsWith(HISTORY_CACHE_PREFIX))
+        .sort(([, a], [, b]) => Number(b?.timestamp || 0) - Number(a?.timestamp || 0));
+      let bytes = 0;
+      let retained = 0;
+      const obsolete = [];
+      for (const [key, entry] of entries) {
+        const age = Date.now() - Number(entry?.timestamp || 0);
+        const size = JSON.stringify(entry || {}).length * 2;
+        if (entry?.version !== HISTORY_CACHE_VERSION || age < 0 || age >= HISTORY_CACHE_TTL_MS
+          || retained >= HISTORY_CACHE_MAX_ENTRIES || bytes + size > HISTORY_CACHE_MAX_BYTES) obsolete.push(key);
+        else { retained++; bytes += size; }
+      }
+      if (obsolete.length) chrome.storage.local.remove?.(obsolete);
+    });
+  }
 
   function historyNumber(value) {
     if (value === null || value === undefined || value === '') return null;
@@ -46,7 +87,7 @@ var RhythiaX = RhythiaX || {};
     return sanitizeHistoryPoints([...daily.values()].sort((a, b) => b.timestamp - a.timestamp), liveRank);
   }
 
-  async function getStorageCache(playerId) {
+  async function getStorageCache(playerId, mode) {
     if (typeof chrome === 'undefined' || !chrome.storage?.local) return null;
     return new Promise(resolve => {
       const key = `rhythiax_ps_hist_${playerId}`;
@@ -56,53 +97,31 @@ var RhythiaX = RhythiaX || {};
           return;
         }
         const entry = res[key];
-        if (entry.version === HISTORY_CACHE_VERSION && Date.now() - (entry.timestamp || 0) < HISTORY_CACHE_TTL_MS) {
+        if (entry.version === HISTORY_CACHE_VERSION && entry.mode === mode
+          && Date.now() - (entry.timestamp || 0) >= 0 && Date.now() - (entry.timestamp || 0) < (mode === 'local-only' ? HISTORY_CACHE_TTL_MS : 60 * 1000)) {
           resolve(entry.points || null);
         } else {
-          resolve(null); // expired
+          chrome.storage.local.remove?.(key);
+          resolve(null);
         }
       });
     });
   }
 
-  function setStorageCache(playerId, points) {
+  function setStorageCache(playerId, points, mode, sources) {
     if (typeof chrome === 'undefined' || !chrome.storage?.local || !Array.isArray(points)) return;
     const key = `rhythiax_ps_hist_${playerId}`;
     try {
       chrome.storage.local.set({
         [key]: {
           version: HISTORY_CACHE_VERSION,
+          mode,
+          sources,
           timestamp: Date.now(),
           points: points.slice(0, 45), // cap at last 45 points to save storage space
         }
-      });
+      }, pruneStorageCache);
     } catch (_) {}
-  }
-
-  function extractHistoryFromDom() {
-    if (typeof document === 'undefined') return null;
-    const rows = document.querySelectorAll('.rhythiax-rank-history-table tbody tr:not(.rhythiax-history-week-header-row)');
-    if (!rows || rows.length < 2) return null;
-    const points = [];
-    const domain = RhythiaX.PlaystyleDomain;
-    for (const tr of rows) {
-      const dateEl = tr.querySelector('.rhythiax-history-date');
-      const valEl = tr.querySelector('.rhythiax-col-globalRank .rhythiax-metric-cell-val, .rhythiax-metric-cell-val, .rhythiax-history-value strong');
-      const rpEl = tr.querySelector('.rhythiax-col-rhythmPoints .rhythiax-metric-cell-val');
-      const rawText = valEl ? (valEl.textContent || '').replace(/#/g, '').replace(/,/g, '').trim() : '';
-      const rankNum = domain ? domain.parseNumber(rawText) : parseInt(rawText.replace(/[^0-9]/g, ''), 10);
-      if (rankNum > 0) {
-        const dateStr = dateEl?.textContent?.trim() || '';
-        const rpNum = rpEl ? (domain ? domain.parseNumber(rpEl.textContent) : parseFloat(rpEl.textContent.replace(/,/g, ''))) : 0;
-        points.push({
-          date: dateStr,
-          timestamp: dateStr ? new Date(dateStr).getTime() || 0 : Date.now(),
-          rank: rankNum,
-          rp: rpNum > 0 ? rpNum : undefined
-        });
-      }
-    }
-    return points.length > 0 ? points : null;
   }
 
   function getAuthoritativeLiveRank() {
@@ -151,6 +170,11 @@ var RhythiaX = RhythiaX || {};
     if (profile.profileMode && profile.profileMode !== 'normal') return [];
     const id = parseInt(playerId, 10);
     if (!Number.isSafeInteger(id) || id <= 0) return [];
+    const startedRevision = revision;
+    const settings = typeof RhythiaX.getDataSettings === 'function' ? await RhythiaX.getDataSettings() : { syncMode: 'hybrid' };
+    const mode = settings?.syncMode || 'local-only';
+    if (startedRevision !== revision) return [];
+    pruneStorageCache();
 
     const domain = RhythiaX.PlaystyleDomain;
     const matchingProfile = !profile.id || String(profile.id) === String(id);
@@ -160,12 +184,13 @@ var RhythiaX = RhythiaX || {};
 
     // 1. In-memory session cache (0ms)
     const mem = _memoryCache.get(id);
-    if (mem && (Date.now() - mem.timestamp < HISTORY_CACHE_TTL_MS)) {
+    if (mem && mem.mode === mode && (Date.now() - mem.timestamp < (mode === 'local-only' ? HISTORY_CACHE_TTL_MS : 60 * 1000))) {
       return finish(mem.points);
     }
 
     // 2. Storage cache (0ms, persists across F5)
-    const stored = await getStorageCache(id);
+    const stored = await getStorageCache(id, mode);
+    if (startedRevision !== revision) return finish([]);
     if (stored && Array.isArray(stored) && stored.length > 0) {
       let sanitized = sanitizeHistoryPoints(stored, liveRank);
       if (liveRank && sanitized.length > 0 && sanitized[0].rank !== liveRank) {
@@ -175,19 +200,10 @@ var RhythiaX = RhythiaX || {};
           rank: liveRank
         });
       }
-      _memoryCache.set(id, { timestamp: Date.now(), points: sanitized });
+      _memoryCache.set(id, { timestamp: Date.now(), points: sanitized, mode });
       if (JSON.stringify(sanitized) !== JSON.stringify(stored)) {
-        setStorageCache(id, sanitized);
+        setStorageCache(id, sanitized, mode, ['derived']);
       }
-      return finish(sanitized);
-    }
-
-    // 3. Fast DOM fallback if page already rendered ranking history
-    const domPoints = extractHistoryFromDom();
-    if (domPoints && domPoints.length >= 2) {
-      const sanitized = sanitizeHistoryPoints(domPoints, liveRank);
-      _memoryCache.set(id, { timestamp: Date.now(), points: sanitized });
-      setStorageCache(id, sanitized);
       return finish(sanitized);
     }
 
@@ -195,16 +211,17 @@ var RhythiaX = RhythiaX || {};
     try {
       let points = [];
 
-      const localRecord = typeof RhythiaX.getDataRecord === 'function'
+      const localRecord = mode !== 'cloud-only' && typeof RhythiaX.getDataRecord === 'function'
         ? await RhythiaX.getDataRecord(id).catch(() => null)
         : null;
 
       let vpsData = null;
-      if (typeof RhythiaX.getCachedVpsHistory === 'function') {
+      if (mode !== 'local-only' && typeof RhythiaX.getCachedVpsHistory === 'function') {
         vpsData = await RhythiaX.getCachedVpsHistory(id).catch(() => null);
-      } else if (typeof RhythiaX.fetchVpsPlayerHistory === 'function') {
+      } else if (mode !== 'local-only' && typeof RhythiaX.fetchVpsPlayerHistory === 'function') {
         vpsData = await RhythiaX.fetchVpsPlayerHistory(id, { timeout: 2500 }).catch(() => null);
       }
+      if (startedRevision !== revision) return finish([]);
 
       if (typeof RhythiaX.buildMergedRankHistory === 'function') {
         const merged = RhythiaX.buildMergedRankHistory(vpsData?.history, localRecord);
@@ -267,8 +284,13 @@ var RhythiaX = RhythiaX || {};
       }
 
       if (points.length > 0) {
-        _memoryCache.set(id, { timestamp: Date.now(), points });
-        setStorageCache(id, points);
+        for (const [key, value] of _memoryCache) {
+          if (Date.now() - value.timestamp >= HISTORY_CACHE_TTL_MS) _memoryCache.delete(key);
+        }
+        _memoryCache.delete(id);
+        _memoryCache.set(id, { timestamp: Date.now(), points, mode });
+        while (_memoryCache.size > HISTORY_CACHE_MAX_ENTRIES) _memoryCache.delete(_memoryCache.keys().next().value);
+        setStorageCache(id, points, mode, [localRecord ? 'local' : null, vpsData ? 'community' : null].filter(Boolean));
       }
 
       return finish(points);
@@ -283,5 +305,7 @@ var RhythiaX = RhythiaX || {};
   RhythiaX.PlaystyleLoader = {
     resolvePlayerHistory,
     normalizeOfficialHistory,
+    invalidatePlayer,
+    getRevision: () => revision,
   };
 })();

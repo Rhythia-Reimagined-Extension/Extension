@@ -417,6 +417,26 @@ var RhythiaX = RhythiaX || {};
 All notable user-facing changes are documented in this file.
 
 ---
+version: 1.2.1
+date: 2026-10-12
+title: A little cleanup
+listed: yes
+---
+
+## 1.2.1 - A little cleanup - 2026-10-12
+
+## Featured
+
+- Clearer privacy and terms: Separate explanations for the extension and player stats history, with easier access from the popup and online-history choice.
+- Online changelog: Online release notes now take priority over the bundled copy for the same version, as intended. The offline fallback still works.
+
+## Fixes
+
+- Clear Cache also clears the saved history used by Playstyle and refreshes open history views.
+- Changing community connection or reporting choices cancels pending community requests.
+- Added limits and cleanup for local profile history and temporary community-history caches.
+
+---
 version: 1.2.0
 date: 2026-10-01
 title: Going Online

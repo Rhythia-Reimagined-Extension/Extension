@@ -9,6 +9,19 @@ var RhythiaX = RhythiaX || {};
   const TELEMETRY_ENABLED_KEY = 'rhythiax_telemetry_enabled';
   const VISIT_COOLDOWN_KEY = 'rhythiax_visit_report_cooldowns';
   const VISIT_COOLDOWN_MS = 5 * 60 * 1000;
+  let privacyRevision = 0;
+  const historyRequests = new Set();
+  const visitRequests = new Set();
+  const HISTORY_CLEAR_KEY = 'rhythiax_history_clear_generation';
+  RhythiaX.getVpsSyncMode = getSyncMode;
+  if (typeof chrome !== 'undefined') chrome.storage?.onChanged?.addListener((changes, area) => {
+    if (area !== 'local') return;
+    if (changes.rhythiaxDataSettings || changes[TELEMETRY_ENABLED_KEY] || changes[HISTORY_CLEAR_KEY]) {
+      privacyRevision++;
+      historyRequests.forEach(controller => controller.abort());
+      visitRequests.forEach(controller => controller.abort());
+    }
+  });
 
   /**
    * Append an entry to local diagnostic log (last 30 entries).
@@ -83,8 +96,9 @@ var RhythiaX = RhythiaX || {};
   RhythiaX.fetchVpsPlayerHistory = async function (playerId, options = {}) {
     const id = parseInt(playerId, 10);
     if (isNaN(id) || id <= 0) return null;
-
+    const revision = privacyRevision;
     const syncMode = await getSyncMode();
+    if (revision !== privacyRevision || options.signal?.aborted) return null;
     const nowStr = new Date().toLocaleString();
 
     if (syncMode === 'local-only') {
@@ -104,14 +118,16 @@ var RhythiaX = RhythiaX || {};
 
     const timeoutMs = options.timeout || DEFAULT_TIMEOUT_MS;
     const controller = new AbortController();
+    historyRequests.add(controller);
     let timeoutId = null;
+    const abortFromParent = () => controller.abort();
 
     if (timeoutMs > 0) {
       timeoutId = setTimeout(() => controller.abort(), timeoutMs);
     }
 
     if (options.signal) {
-      options.signal.addEventListener('abort', () => controller.abort(), { once: true });
+      options.signal.addEventListener('abort', abortFromParent, { once: true });
     }
 
     const startTime = performance.now();
@@ -131,7 +147,8 @@ var RhythiaX = RhythiaX || {};
       const elapsedMs = Math.round(performance.now() - startTime);
       const elapsedSec = (elapsedMs / 1000).toFixed(2) + 's';
 
-      if (response.status === 404) {
+      if (revision !== privacyRevision || controller.signal.aborted) return null;
+      if (response.status === 404 || response.status === 410) {
         appendDiagnosticLog({
           timestamp: Date.now(),
           date: nowStr,
@@ -141,9 +158,9 @@ var RhythiaX = RhythiaX || {};
           latencyMs: elapsedMs,
           timeToReach: elapsedSec,
           status: 'warning',
-          statusText: 'Not in DB yet'
+          statusText: 'History unavailable'
         });
-        return null;
+        return options.withStatus ? { unavailable: true } : null;
       }
 
       if (!response.ok) {
@@ -162,6 +179,7 @@ var RhythiaX = RhythiaX || {};
       }
 
       const data = await response.json();
+      if (revision !== privacyRevision || controller.signal.aborted) return null;
       if (!data || !Array.isArray(data.history)) return null;
 
       const playerLabel = data.player?.username 
@@ -186,6 +204,7 @@ var RhythiaX = RhythiaX || {};
       };
     } catch (err) {
       if (timeoutId) clearTimeout(timeoutId);
+      if (revision !== privacyRevision) return null;
       const isTimeout = err.name === 'AbortError';
       
       appendDiagnosticLog({
@@ -204,6 +223,10 @@ var RhythiaX = RhythiaX || {};
         RhythiaX.log(`VPS history fetch skipped for #${id}:`, isTimeout ? 'timeout' : err.message);
       }
       return null;
+    } finally {
+      if (timeoutId) clearTimeout(timeoutId);
+      historyRequests.delete(controller);
+      options.signal?.removeEventListener('abort', abortFromParent);
     }
   };
 
@@ -218,9 +241,9 @@ var RhythiaX = RhythiaX || {};
   RhythiaX.reportVpsPlayerVisit = async function (playerId) {
     const id = parseInt(playerId, 10);
     if (isNaN(id) || id <= 0) return;
-
+    const revision = privacyRevision;
     const enabled = await isTelemetryEnabled();
-    if (!enabled) return;
+    if (!enabled || revision !== privacyRevision) return;
 
     if (pendingVisitReports.has(id)) return;
     pendingVisitReports.add(id);
@@ -250,14 +273,16 @@ var RhythiaX = RhythiaX || {};
           chrome.storage.local.set({ [VISIT_COOLDOWN_KEY]: next }, () => resolve(!chrome.runtime?.lastError));
         } catch (_) { resolve(false); }
       });
-      if (!saved) return;
+      if (!saved || revision !== privacyRevision || !await isTelemetryEnabled() || revision !== privacyRevision) return;
       reportedVisitsThisSession.set(id, now);
-      await fetch(`${VPS_BASE_URL}/api/telemetry/visit`, {
+      const controller = new AbortController();
+      visitRequests.add(controller);
+      try { await fetch(`${VPS_BASE_URL}/api/telemetry/visit`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ playerId: id }),
-        keepalive: true
-      }).catch(() => {});
+        signal: controller.signal
+      }).catch(() => {}); } finally { visitRequests.delete(controller); }
     } finally {
       pendingVisitReports.delete(id);
     }

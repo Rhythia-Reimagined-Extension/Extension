@@ -3,6 +3,11 @@
 // =============================================
 
 var RhythiaX = RhythiaX || {};
+let dataHistoryClearRevision = 0;
+const dataRecordRevisions = new WeakMap();
+if (typeof chrome !== 'undefined') chrome.storage?.onChanged?.addListener((changes, area) => {
+  if (area === 'local' && changes.rhythiax_history_clear_generation) dataHistoryClearRevision++;
+});
 
 function isExtensionValid() {
   return typeof chrome !== 'undefined' && Boolean(chrome.storage?.local);
@@ -103,17 +108,24 @@ RhythiaX.saveDataSettings = async function (settings, options = {}) {
 };
 
 RhythiaX.getDataRecord = async function (profileId) {
+  const revision = dataHistoryClearRevision;
   await RhythiaX.dataRepositoryReady;
   const id = String(profileId || '').trim();
   if (!id) return null;
   const result = await dataStorageGet(dataEntryKey(id));
   const record = result[dataEntryKey(id)];
-  return record ? RhythiaX.normalizeDataRecord(record, id) : null;
+  if (!record || revision !== dataHistoryClearRevision) return null;
+  const normalized = RhythiaX.normalizeDataRecord(record, id);
+  dataRecordRevisions.set(normalized, revision);
+  return normalized;
 };
 
 RhythiaX.saveDataRecord = async function (record, options = {}) {
   await RhythiaX.dataRepositoryReady;
   if (RhythiaX.dataStorageReadOnly && options.allowRepair !== true) throw new Error('Local data is read-only because validation failed; contact support before modifying stored data.');
+  if (dataRecordRevisions.has(record) && dataRecordRevisions.get(record) !== dataHistoryClearRevision) {
+    throw new Error('Local history was cleared while this update was pending.');
+  }
   const normalized = RhythiaX.normalizeDataRecord(record, record?.profileId);
   if (!normalized.profileId) throw new Error('Cannot save data without profileId.');
   normalized.updatedAt = Date.now();
@@ -130,11 +142,17 @@ RhythiaX.removeDataRecord = async function (profileId, options = {}) {
 };
 
 RhythiaX.listDataRecords = async function () {
+  const revision = dataHistoryClearRevision;
   await RhythiaX.dataRepositoryReady;
   const all = await dataStorageGet(null);
+  if (revision !== dataHistoryClearRevision) return [];
   return Object.entries(all)
     .filter(([key, value]) => key.startsWith(RhythiaX.DATA_STORAGE_ENTRY_PREFIX) && value && typeof value === 'object')
-    .map(([key, value]) => RhythiaX.normalizeDataRecord(value, key.slice(RhythiaX.DATA_STORAGE_ENTRY_PREFIX.length)))
+    .map(([key, value]) => {
+      const record = RhythiaX.normalizeDataRecord(value, key.slice(RhythiaX.DATA_STORAGE_ENTRY_PREFIX.length));
+      dataRecordRevisions.set(record, revision);
+      return record;
+    })
     .filter(record => record.profileId);
 };
 

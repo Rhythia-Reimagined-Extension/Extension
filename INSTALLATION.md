@@ -1,10 +1,10 @@
-# Installation — Rhythia Reimagined 1.2.0
+# Installation — Rhythia Reimagined 1.2.1
 
 ## Chrome and compatible browsers
 
 Use the [Chrome Web Store listing](https://chromewebstore.google.com/detail/rhythia-reimagined/ekjfnmfocjohkiieakohbnagjcdbfolb) and choose **Add to Chrome**, then open [Rhythia](https://rhythia.com). Store installations receive automatic updates.
 
-Chrome 116+ is supported, along with compatible versions of Edge, Brave, Opera, and Opera GX. Check the listing for its published version; this repository contains the 1.2.0 source.
+Chrome 116+ is supported, along with compatible versions of Edge, Brave, Opera, and Opera GX. Check the listing for its published version; this repository contains the 1.2.1 source.
 
 ## Manual Chromium installation
 

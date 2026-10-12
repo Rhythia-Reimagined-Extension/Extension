@@ -1,37 +1,35 @@
-# Data and Sync — 1.2.0
+# Data and Sync — 1.2.1
 
-Open the extension popup to choose how player history is saved and displayed.
+These instructions describe the prepared source changes. Installed/store packages may use an earlier revision.
 
 ## Choose a history mode
 
-| Mode | What you get |
+| Mode | History sources |
 | --- | --- |
-| **Cloud + Local** | Community ranking history and new daily records saved on this device. |
-| **Cloud Only** | Community ranking history, without saving new local history. Existing local records are kept. |
-| **Local Only** | History saved on this device, with no connection to the community service. |
+| **Cloud + Local** | Available community history and daily observations saved on this device. |
+| **Cloud Only** | Community history; no new local captures. Previously saved local records remain stored. |
+| **Local Only** | Local observations; no new community requests. |
 
-A small card appears in the corner of Rhythia until you choose **Use online history** or **Keep it local**. Online history combines cloud and local records. Profile visit reports are off after this choice and can be enabled separately in the popup. Community connections stay off until you choose. Your existing explicit settings are preserved during an update.
+A small card asks you to choose online history or keep it local. Community connections stay off until an online choice. Visit reports start off and can be enabled separately. Updates preserve explicit choices.
 
-**Profile visit reports** tell the community service which public player you visited, helping it keep that player's public history up to date. You can switch reports off and still use cloud history. Your connection IP reaches the service; your Rhythia password and session do not. See [Privacy](PRIVACY.md) for details.
+History requests send the public ID of the requested profile. Optional reports send only the viewed player ID; neither sends your session or local history. Connections also expose an IP to receiving infrastructure. See [Privacy](PRIVACY.md).
 
-The extension does not upload scores, friends, preferences, or local snapshots to the community database. A separate crawler obtains public player statistics from Rhythia's official API and runs independently of extension users. Online history requests include the requested public player ID; optional visit-report bodies contain only `playerId`. The server uses the connection IP for rate limits and a keyed IP-plus-profile digest for visit deduplication, without storing raw IPs in telemetry tables.
+The independent service collects public data itself. Changing extension settings does not stop that collection or erase its history. Its retention and requests belong in the [service notice](HISTORY-PRIVACY.md), rather than this browser-settings guide.
 
-## Local history limits
+## Local limits and controls
 
-Local profile records use a fixed **90-day window** (today and the previous 89 local dates) and **25 MB budget**. There are no retention controls or protected profiles. Cleanup runs while profiles are used; older history may be removed sooner when the budget fills. Other temporary caches use separate limits.
+Saved local profile history has a fixed **90-day window and 25 MB budget**. Cleanup happens while profiles are used, without a background schedule. Oldest data can be removed sooner when the budget fills. Temporary caches use separate limits.
 
-Community player history has **no automatic expiry**. It is separate from the records saved in your browser.
+- **Clear Cache** removes local history, cached community history and derived Playstyle history after confirmation. It preserves preferences, report cooldowns, official scores and independent server records. Later use can collect/download new data.
+- **Reset Settings** restores defaults, preserves connection/report choices and does not immediately erase history.
+- **Remove the extension** clears extension storage. Clear Rhythia site data separately for site caches; this can sign you out.
+
+Mode changes select the appropriate source and invalidate derived history. A temporary community failure can use a short-lived cache; a permanent missing response clears cached community history. Separate local observations can still exist.
+
+Official ranking history supplied by Rhythia is independent of the community modes. Local Only blocks community connections, not the official game API.
 
 ## Updating from 1.1.0
 
-The update automatically migrates supported player history and settings. Themes, feature choices and existing privacy choices are preserved. Legacy protected-profile lists and custom retention/storage limits are removed. This also applies to unreleased 1.2.0 development builds. Valid history is migrated first; history exceeding the fixed limits may be removed during use. Old backup settings and obsolete feature state are removed. Backup files you previously exported are left alone; 1.2.0 no longer has backup export or import controls.
+Supported history and settings are migrated. Themes, feature choices and explicit privacy choices are preserved. Obsolete backup configuration, protected-profile lists and custom history limits are removed. Previously exported files remain on your device. Version 1.2.0 has no backup export/import controls.
 
-## Clear saved records
-
-- **Clear Cache** removes all local profile history and cached community history after confirmation, keeping preferences, reporting cooldowns, official scores and server history. Cached data may be downloaded again.
-- **Reset Settings** restores appearance and data defaults without immediately deleting history. It keeps your community connection and reporting choices. Later cleanup follows the restored retention and storage limits.
-- **Remove the extension** to clear its extension settings and storage. Rhythia site caches are separate; clearing site data in your browser can also sign you out of the game.
-
-Switching modes or turning reports off does not delete community records or stop the service's independent collection of public leaderboard history. For deletion or an objection concerning your player profile in the community database, contact [shurieldev@gmail.com](mailto:shurieldev@gmail.com). You do not need Rhythia to delete its original records first. The existing profile block stops detailed history refreshes, but does not remove existing public history or prevent basic leaderboard updates; it is not complete erasure. See [Privacy](PRIVACY.md) for the separate records and controls.
-
-Profile reports count once per IP and viewed profile per rolling hour. Leaving a tab open does not periodically add visits. Daily visit counts cover 30 UTC dates; last-visit observations expire after 30 days. No separate extension-activity reporting is used.
+For server-history requests contact [shurieldev@gmail.com](mailto:shurieldev@gmail.com). See [Support](SUPPORT.md), [Terms](TERMS.md) and [Privacy](PRIVACY.md).

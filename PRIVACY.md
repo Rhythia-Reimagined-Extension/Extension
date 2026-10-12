@@ -1,127 +1,78 @@
-# Privacy Policy — Rhythia Reimagined 1.2.0
+# Privacy — Rhythia Reimagined
 
-**Effective date:** October 7, 2026<br>
-**Maintainer:** Shuriel<br>
-**Contact:** [shurieldev@gmail.com](mailto:shurieldev@gmail.com)<br>
-**Project:** [Rhythia Reimagined](https://github.com/Rhythia-Reimagined-Extension/Extension)
+Updated October 12, 2026. This notice describes Rhythia Reimagined 1.2.1. Copies available in extension stores may differ while the update is under review. This describes data handling, not a completed legal assessment or store approval.
 
-Rhythia Reimagined is an independent fan extension for [Rhythia](https://rhythia.com). This policy explains the data used for its themes, player statistics, score cards, comparisons, and history.
+Maintainer: **Shuriel** · [contact@shuriel.com](mailto:contact@shuriel.com)
 
-Shuriel runs the community service as a private individual based in Poland. Its VPS is hosted by OVHcloud in Poland and uses Cloudflare for network delivery and protection. Other disclosed providers handle release notes, correspondence, notifications and encrypted backup delivery; the VPS location does not mean all provider processing takes place in Poland.
+Rhythia Reimagined is an independent fan extension. This notice covers its browser features, data saved in your browser and connections. The independent player-history service has its own [privacy notice](HISTORY-PRIVACY.md). This notice does not cover other projects.
 
-## What reaches the maintainer's service
+## How data is obtained
 
-The extension processes player information in your browser. It does not upload your scores, friends list, preferences, local profile history, or Rhythia session to the maintainer or the community service.
+While you use Rhythia, the extension reads the displayed page and requests game profiles, scores and related resources to provide its features. It reads the existing game session from Rhythia's browser storage when an official game request needs it. It also records your extension settings, feature choices and local observations of public player statistics. You do not create a separate Reimagined account.
 
-Connections to `rhythia.shuriel.com` are optional and start only after you choose online history. A history request includes the public ID of the profile whose history you want. Separately enabled visit reports send a JSON body containing only that viewed public player ID (`playerId`), to help prioritize public-profile refreshes. Neither request sends your own Rhythia account as the visitor.
+Local processing is still data handling even when nothing is sent to the maintainer. The extension handles Rhythia page content, player identifiers, authentication information and which profiles/resources you request. It does not monitor browsing on unrelated sites.
 
-The extension does not read your IP address or put it in the visit-report body. Network connections expose an IP address to the receiving infrastructure. The service uses the connection IP for rate limits and visit deduplication; the telemetry database stores a keyed digest of IP plus viewed profile, rather than the raw IP. Infrastructure logging is explained below.
+## Data used in your browser
 
-The community database is populated by a separate server-side crawler that obtains public profiles, rankings, and statistics from Rhythia's official API. It operates independently of extension users and does not depend on uploads of their scores or local records. Optional visit reports can influence which public profiles are refreshed.
+| Data | Purpose |
+| --- | --- |
+| Public player ID, name, country and avatar | Identify profiles and players in comparisons. Country is game profile information, not device location. |
+| Public scores, statistics, ranks, maps and artwork | Show score cards, history, progression, comparisons and playstyle summaries. |
+| Existing Rhythia session and account responses, including friends | Load official game features and carry out score-pinning actions you choose. |
+| Settings and saved feature state | Remember themes, enabled features, views and history choices. |
+| Local history and temporary caches | Keep daily observations and avoid repeat downloads. |
+| Recent connection results | Diagnose history problems; the latest 30 entries can include viewed player ID/name, time, delay and result. |
 
-Public profiles can still contain personal data. Rhythia controls the original game accounts and records; Shuriel independently operates the community database and handles requests about that copy. The player's use of Rhythia, or another visitor's choice to enable online history, is not consent to every use of the player's information by this independent service.
+The extension does not read general browser history or unrelated websites. It does not ask for passwords, payment information, private messages, camera, microphone or screen access. It does not sell data, add advertising trackers or upload local history, scores, friends or preferences to the maintainer.
 
-## Data collection and use
+Your existing game session is used only with the official API at `production.rhythia.com`. It is not copied into extension storage or sent to the community service, GitHub or Discord.
 
-The extension handles data even when it stays on your device. It reads the Rhythia pages you open, requests data from the official game API, and stores the information needed for the features you use. It does not read your browser's general history or pages outside Rhythia.
+If you enable debug logging, warnings and errors can also appear in your browser's developer console. These logs are not automatically uploaded. Review anything you choose to send with a support request and remove unrelated personal information.
 
-| Data | Source and purpose | Where it is handled |
-| --- | --- | --- |
-| Public player identity: player ID, username, profile country, and avatar URL | Rhythia pages and APIs; identify profiles, show comparisons, and display history. A profile country is game profile data, not device geolocation. | Browser caches and local records. The independent crawler obtains its own public player identities for the community database. |
-| Public gameplay and website content: scores, map metadata and artwork, accuracy, play counts, rhythm points, and global/country rankings | Rhythia pages and APIs; calculate statistics and render score cards, progression, and history. | Browser memory, caches, and local history. The extension does not upload these records; the independent crawler obtains public statistics and rankings for community history. |
-| Existing Rhythia session token and account-related API responses, including your friends list | Rhythia's site storage and official API; load scores and friends and perform your requested score-pinning actions. | The token is read for official API requests and is not copied into extension storage or sent to the community service. Friends are displayed in the browser. |
-| Preferences and local feature state | Your choices; remember themes, enabled features, selected views, comparison players, and history/visit-report settings. | Your browser's extension storage and Rhythia site storage; these settings are not uploaded to the community service. |
-| Viewed Rhythia player ID and request timing | Online history requests and separately enabled profile visit reports; retrieve history and prioritize public-profile refreshes. | The community service receives the viewed ID. Local diagnostics keep the latest 30 entries, including player ID/name, time, latency, and result. |
-| Connection information, including IP address; operational information such as requested path, time, response status, and browser/referrer information when logged | Requests to the community service; deliver responses, prevent abuse, and diagnose service problems. | Community infrastructure and Cloudflare. The community API's request logger omits raw IPs; telemetry stores an IP-derived digest. Infrastructure logs may retain connection information. When enabled, server monitoring derives salted IP hashes and aggregate traffic counts from gateway logs, as explained below. |
-| Public ban/account status and diagnostic copies of public API responses | The independent crawler checks whether profiles can be processed. Unexpected or inconsistent responses may be kept to investigate missing or incorrect history. | Private server records, retry records and diagnostic files. These can contain player IDs, public ban status and its dates, public profile responses and earlier statistics; they are not returned by the public history endpoint. |
-| Email address, correspondence, and agreed account-verification evidence | Information you send when requesting support or exercising privacy rights; answer and verify your request. | The maintainer and communication providers, as explained below. |
+## Connections and your choice
 
-Online history requests disclose which Rhythia profile is being viewed even when optional visit reports are off. Turning reports off stops the separate reporting request; **Local Only** stops both kinds of community request.
+Official Rhythia requests support game features. Images, artwork and requested replays can connect to resource hosts supplied by the game. GitHub receives normal connection information when release notes are downloaded; no game session or local history is attached.
 
-## Local processing and storage
+Community connections to `rhythia.shuriel.com` stay off until you choose online history. A history request includes the public ID of the profile you want to see. This reveals the requested profile even with reports off.
 
-The extension reads player and score information on Rhythia and from its official game API. It saves your preferences and, when local history is enabled, daily public player statistics in your browser.
+**Profile visit reports** are a separate choice and start off. Each report contains only the viewed public player ID. They help discover public profiles for collection, without sending your own game account as the visitor. Connections also expose an IP address to the service and its providers. See the [service notice](HISTORY-PRIVACY.md) for its handling.
 
-Your existing Rhythia session is read locally for official game features, including fetching scores, friends lists, and pinning your scores. It is sent only to the official game API at `production.rhythia.com`. It is not saved by the extension or sent to the community service. The extension does not request passwords, payment details, health information, or private messages.
+**Local Only** stops new community requests, reports and connection checks. Official game features and GitHub release notes can still use the network. Pending community requests are cancelled when connection/reporting choices change; information already sent cannot be recalled.
 
-Browser data uses local and session extension storage, Rhythia's `localStorage` and `sessionStorage`, and temporary memory caches. It does not use Chrome Storage Sync to synchronize records or preferences between devices. Some temporary caches become invalid after five minutes; browser storage entries may remain until replaced or cleared. Some map caches and site preferences have no automatic expiry. Browser storage is protected by your browser and device controls; the extension does not add its own encryption to local records.
+The connection choice is a control for this extension. It does not authorize collection on behalf of every player, or stop the independent service from obtaining public game data.
 
-Local profile records use a fixed 90-day window (today and the previous 89 local dates) and a 25 MB budget. These limits cannot be changed in the popup. Cleanup runs while you use player profiles, without a background schedule. Oldest history can be removed sooner when the budget fills. Temporary caches use separate limits. The extension also keeps temporary profile, score, and public map caches, selected tabs, and recent connection diagnostics.
+## Who receives data
 
-## Community history and profile visit reports
+| Recipient | What is sent and why |
+| --- | --- |
+| Rhythia's official API | Requested player IDs, the existing game session where needed, and actions such as pinning a score that you choose. Rhythia receives the connection information needed to serve these requests. |
+| Resource hosts provided by Rhythia | Requests for images, artwork and replays used by the features, plus normal connection information. Their addresses come from the game's resources. |
+| GitHub's raw-content service | A request for release notes and normal connection information. No game session, friends list, local history or extension settings are attached. |
+| The independent history-service operator, OVHcloud and Cloudflare | With online history enabled: the requested public player ID and connection information, including IP address. With the separate visit-report choice enabled: a report containing the viewed public player ID. The service notice explains storage, safeguards, public history and its other providers. |
+| The maintainer and email providers | Contact information, messages and attachments that you choose to email for support or privacy requests. These are not automatically collected from your browser. |
 
-A small card on Rhythia asks whether to use online player history and links to this policy. Choose **Use online history** for Cloud + Local, or **Keep it local** for Local Only. Profile visit reports are off after either choice; you can enable them separately in the popup. No community request is sent until you confirm an online choice. The card remains available until you choose, without opening an extra tab or blocking the game. You can change settings later; an update preserves existing explicit settings.
+The extension does not automatically send messages to Discord or publish your settings, friends list or local history. Public player history offered by the independent service comes from its own collection of game data, not an upload of your local history. When you open an external link, that website handles the resulting visit under its own practices.
 
-In a cloud mode, the extension sends the public ID of the player whose history you request to `rhythia.shuriel.com`. If reports are enabled, it also sends the viewed player's public ID to help prioritize updates to their public history. Reports do not identify your own Rhythia account as the visitor.
+Official API, community API and release-note requests use HTTPS. The extension does not add its own encryption to browser storage; the storage and clearing controls below describe its actual behaviour.
 
-Like any network connection, these requests expose your connection IP to the service and its hosting providers. Your Rhythia session and password, private messages, replays, and browsing outside Rhythia player profiles are not sent to this community service.
+## Storage and clearing data
 
-The service's independent crawler obtains public leaderboard and player information, including player IDs, names, avatars, rankings, and statistics, from Rhythia's official API to provide player history. These are not score or profile uploads from extension users. Turning reports off or using Local Only does not stop that independent public-data collection.
+Preferences and local history are saved in your browser. Some preferences and map caches are saved with Rhythia's site data, separately from the extension's own data. Some temporary information is kept only while the browser is running. The extension does not sync these records through Chrome Storage Sync or encrypt them separately; your browser and device controls protect them.
 
-## Data sharing and recipients
+Saved settings remain until you change or reset them or remove the relevant browser data. The latest 30 saved connection results have a count limit rather than a fixed day-based expiry. The maintainer cannot remotely read or erase your extension storage; information you email and the service's independently collected records are separate.
 
-- **Official Rhythia / Capo Games services:** `production.rhythia.com` receives the player/map identifiers and, for requests that use it, your existing game session token. Rhythia controls its own account data and processing. Loading game-hosted images or requesting replays also connects to the corresponding game resource host.
-- **Shuriel's community service:** `rhythia.shuriel.com` receives requested public player IDs, optional visit-report IDs, and connection information. The maintainer operates the service and can access its database and operational logs for the disclosed purposes.
-- **Other community-history users:** public player identities and daily player statistics/ranking history obtained by the independent crawler are returned by the community history API without requiring a login. They are available to other users and anyone requesting that public endpoint. Visitor IPs, IP-derived safeguards, and visit-report records are not part of the public history response.
-- **OVHcloud and Cloudflare:** OVHcloud hosts the community VPS in Poland, including its database, local logs and local backups. Cloudflare processes network traffic and connection information to deliver and protect the service. Cloudflare's separate processing is described in its [privacy policy](https://www.cloudflare.com/privacypolicy/).
-- **GitHub:** receives normal connection information, including your IP and the requested resource, when the extension downloads release notes from `raw.githubusercontent.com` or you open project/privacy links. The extension does not attach your Rhythia session, local history, or preferences to release-note requests. See [GitHub's privacy statement](https://docs.github.com/en/site-policy/privacy-policies/github-general-privacy-statement).
-- **Communication and backup delivery providers:** the maintainer's Gmail mailbox receives support and privacy correspondence. Providers delivering emailed server backups process encrypted backup attachments and delivery metadata; the maintainer receives those copies. When configured, Discord receives server maintenance notifications, which can include public player identifiers and operational error details, and aggregate server-monitoring reports such as request, error, and unique-IP counts. Connection-count reports do not include raw IPs or their hashes. See [Google's privacy policy](https://policies.google.com/privacy) and [Discord's privacy policy](https://discord.com/privacy).
+Local profile history covers up to **90 days** and uses at most **25 MB**. Older records are cleared while profiles are used and can disappear sooner if the available space fills. Other temporary copies have their own expiry and storage limits; the 90-day period does not cover every browser cache.
 
-Data is not sold, rented, or transferred for advertising, commercial profiling, creditworthiness, or lending. Transfers are limited to delivering the described features, operating and protecting the service, handling a request with your consent, or meeting applicable legal requirements. No separate advertising or third-party analytics SDK is included.
+**Clear Cache** removes saved local history, downloaded community history and the history used for Playstyle summaries after confirmation. It keeps preferences and the waiting periods between visit reports. It does not remove official game scores or the independent service's records. Open profiles refresh their history display; later use can save or download new data.
 
-## How long data is kept
+Changing a mode keeps saved local records but changes which sources are used. **Reset Settings** preserves connection/report choices and does not itself erase history. Removing the extension clears its extension storage. Clear Rhythia site data separately to remove site caches; this can sign you out.
 
-- **Local preferences and records:** kept in your browser until you clear them, remove the extension, or the fixed history limits remove older records.
-- **Community player records and ranking history:** kept without automatic expiry, until manually deleted.
-- **Private crawler diagnostic and account-status records:** currently have no automatic time-based expiry. Deleting a main player record removes its linked daily history and account-status observation, but does not by itself remove every diagnostic file, retry record, visit count or operational log. These separate records must also be considered when handling a request.
-- **Recent profile visit counts:** kept for 30 UTC dates including today and removed by scheduled cleanup. An outage may delay cleanup.
-- **Public player ID and latest reported visit:** removed after 30 days without an accepted visit. They help select profiles for refresh and do not contain the visitor's account or IP.
-- **IP-based abuse prevention:** each IP and viewed profile can count once per rolling hour. A keyed cryptographic digest of this pair and its last accepted timestamp are stored separately from player history. Raw IPs are not stored in that table. Expired digests are removed by hourly cleanup, normally within the following hour. These are pseudonymous safeguards, not anonymous visitor analytics. Other admission safeguards use bounded server memory.
-- **Application and infrastructure logs:** the community API's request logger omits raw visitor IPs. Hosting and network infrastructure, including Cloudflare and a reverse proxy with access logging enabled, may retain IPs, requested paths, response status, referrers, and browser information in operational logs. Infrastructure retention depends on the deployed logging configuration and the provider's policies; the telemetry-table expiry does not govern those logs.
-- **Operational traffic monitoring:** when enabled, the server monitor reads gateway API access logs and keeps salted IP hashes in minute buckets to estimate unique IPs, alongside request, byte, and error counts. Its collector removes buckets older than about 24 hours on subsequent runs; downtime may delay removal. These pseudonymous hashes are separate from visit-report deduplication and are kept in private monitoring storage. Reports expose aggregate counts, not the hashes. This cleanup does not delete the underlying gateway logs or copies of reports already delivered to a communication provider.
+## Contact and separate records
 
-Cloudflare processes connection information to protect and deliver the service under its own [privacy policy](https://www.cloudflare.com/privacypolicy/). Its separate retention is governed by that provider's policies. Community requests use HTTPS.
+Email [contact@shuriel.com](mailto:contact@shuriel.com) for questions. New project correspondence is handled through OVHcloud email. Earlier messages can remain in the former Gmail account during the transition. Generic new-mail alerts may be sent to the operator's own Gmail accounts without the original message's sender, subject, contents or attachments. Do not send passwords, sessions, recovery codes or identity documents.
 
-Data is used to provide the disclosed features, refresh public history, and protect and operate the service. It is not sold or used for advertising or commercial profiling. The extension does not send separate usage analytics or crash reports.
+Requests about independent player history, removal or exclusion are covered by the [history-service notice](HISTORY-PRIVACY.md#requests-and-contact). Official account changes belong to Rhythia; the extension cannot change the game's records or remotely erase other users' browser copies.
 
-Encrypted server backups include database records. The repository's backup schedule overwrites one daily slot each day and a second slot on every third day of the month; the latter is not an exact rolling 72-hour interval. It also keeps three rotating weekly copies and monthly copies without automatic expiry. These schedules depend on the server's installed jobs running successfully. Only weekly and monthly copies are emailed to the maintainer. Deleted records may remain in these recovery copies; restores must reapply deletion requests and telemetry cleanup before serving data. Backup retention is separate from the live database policy.
+Use of extension data is limited to the described features, related support, security and applicable legal requirements, in line with the Chrome Web Store's Limited Use requirements. This does not mean the store has approved this notice. Requested browser permissions also support features that work locally; they do not mean your session is sent to the maintainer.
 
-## Secure handling
-
-Official game API calls, community API requests, and release-note downloads use HTTPS. The community database separates independently collected public player history from internal visit safeguards. IP-derived visit keys use a keyed cryptographic digest, and the community API's request logger omits raw IPs. This does not prevent network providers or a proxy with access logging enabled from processing or retaining connection IPs. Server backup archives are encrypted before email delivery. Access to internal database records, logs, and backup copies is restricted to operating, securing, and maintaining the service; these records are not returned by the public history endpoint.
-
-## Your controls
-
-Use **Local Only** to stop all extension connections to the community service, including visit reports and connection checks. Official Rhythia features and release-note downloads from GitHub can still use the network.
-
-Use **Clear Cache** to delete all local profile history and cached community history, after an irreversible-action confirmation. It keeps preferences, visit-report cooldowns, official game scores and server history. Cached data may be downloaded again. There is no protected-profile list. **Reset Settings** keeps community connection and reporting choices and does not immediately delete history.
-
-Removing the extension clears its extension storage. Some caches are stored separately on the Rhythia site; clear that site's data through your browser to remove them. This can also sign you out of Rhythia.
-
-Changing a setting or removing the extension does not delete community history. Deleting a main community player record also deletes its linked daily history. The existing profile block stops detailed history refreshes and accepted visit reports, but leaderboard updates can still refresh basic public profile information. Blocking does not remove existing history from the public API. It is not a complete erasure or exclusion mechanism. Removal of a profile at Rhythia does not automatically erase the community service's existing copy.
-
-## Requests and contact
-
-For access, correction, deletion, or an objection concerning your player records, email [shurieldev@gmail.com](mailto:shurieldev@gmail.com) with your Rhythia profile link or public player ID and what you want done.
-
-You do not need to have Rhythia delete the original profile before contacting us about our copy. We assess requests concerning our own processing under applicable data protection law. Contact Rhythia separately for changes to its original account or game records; we cannot change those on its behalf.
-
-For a request about your own community connections or visit reports, contact the same address. Reports do not include your visitor account, and some records cannot be attributed to you from a username alone. IP-derived safeguards are pseudonymous, not automatically anonymous. We do not collect additional identity information solely to identify otherwise unidentifiable records, but will consider information you provide that allows us to locate relevant records. Automatic expiry does not replace assessment of an applicable request.
-
-To protect your records from unauthorized changes, the maintainer may ask for proportionate evidence that you control that account. A public profile link alone is not proof. Verification is arranged privately; screen sharing is not mandatory. Do not send passwords, session tokens, recovery codes, identity documents, or unrelated private information. Any agreed live verification is not recorded by the maintainer.
-
-Your email, correspondence, and necessary verification information are used only to handle the request. Verification evidence is deleted when no longer needed. A minimal record of the request and outcome may be retained as needed to document handling, resolve a dispute, or meet legal obligations. Communication providers process correspondence under their own policies.
-
-Where GDPR / RODO applies, requests are handled without undue delay and normally within one month. Any permitted extension or refusal is explained. You retain applicable data protection rights, including the right to complain to a data protection authority.
-
-## Browser permissions
-
-The extension uses storage permissions for preferences and player history. Access to Rhythia and its official API enables game-page features; access to the community service enables history and reports after your choice; GitHub access loads release notes. It does not request access to all websites, camera, microphone, or screen capture.
-
-Firefox's installation prompt describes the types of data used by these features, including official-game authentication information and public website content. These declarations do not mean your password is collected or your session is sent to the community service.
-
-## Limited Use and policy updates
-
-Use of user data follows the Chrome Web Store User Data Policy, including its Limited Use requirements. Data is used only for the disclosed features and related security and reliability. It is not used for personalized advertising, creditworthiness, or lending decisions. Human access is limited to the policy's permitted cases, such as support with consent, security investigations, legal obligations, or aggregated anonymous operational information.
-
-Changes are published here and noted in the [changelog](changelog.md).
+Material changes are described in the [changelog](changelog.md). See [Data and Sync](DATA-AND-SYNC.md) for controls and [Terms](TERMS.md) for project use.

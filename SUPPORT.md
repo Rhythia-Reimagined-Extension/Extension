@@ -6,7 +6,7 @@ If community history is unavailable, check your Cloud & Sync settings. If you ha
 
 - [Report a bug](https://github.com/Rhythia-Reimagined-Extension/Extension/issues/new?template=bug_report.md) — include your browser, extension version, and steps to reproduce it.
 - [Suggest a feature](https://github.com/Rhythia-Reimagined-Extension/Extension/issues/new?template=feature_request.md).
-- [Email Shuriel](mailto:shurieldev@gmail.com) for private help, privacy requests, or [security reports](SECURITY.md).
+- [Email Shuriel](mailto:contact@shuriel.com) for private help, privacy requests, or [security reports](SECURITY.md).
 
 Keep passwords, session tokens, and private login cookies out of reports and screenshots.
 

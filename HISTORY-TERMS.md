@@ -1,8 +1,8 @@
 # Terms — independent player-history service
 
-Draft revised October 11, 2026. Full operator identification is pending before final publication.
+Updated October 12, 2026. These terms describe the current player-history service.
 
-Project contact: Shuriel · [shurieldev@gmail.com](mailto:shurieldev@gmail.com).
+Project contact: Shuriel · [contact@shuriel.com](mailto:contact@shuriel.com).
 
 The service collects public Rhythia statistics to provide player progress history and comparisons. It is free and noncommercial. Reimagined is one client; other tools can request individual histories. Other projects hosted on the same server are outside these terms.
 

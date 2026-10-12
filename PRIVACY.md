@@ -2,7 +2,7 @@
 
 Updated October 12, 2026. This notice describes Rhythia Reimagined 1.2.1. Copies available in extension stores may differ while the update is under review. This describes data handling, not a completed legal assessment or store approval.
 
-Maintainer: **Shuriel** · [shurieldev@gmail.com](mailto:shurieldev@gmail.com)
+Maintainer: **Shuriel** · [contact@shuriel.com](mailto:contact@shuriel.com)
 
 Rhythia Reimagined is an independent fan extension. This notice covers its browser features, data saved in your browser and connections. The independent player-history service has its own [privacy notice](HISTORY-PRIVACY.md). This notice does not cover other projects.
 
@@ -49,7 +49,7 @@ The connection choice is a control for this extension. It does not authorize col
 | Resource hosts provided by Rhythia | Requests for images, artwork and replays used by the features, plus normal connection information. Their addresses come from the game's resources. |
 | GitHub's raw-content service | A request for release notes and normal connection information. No game session, friends list, local history or extension settings are attached. |
 | The independent history-service operator, OVHcloud and Cloudflare | With online history enabled: the requested public player ID and connection information, including IP address. With the separate visit-report choice enabled: a report containing the viewed public player ID. The service notice explains storage, safeguards, public history and its other providers. |
-| The maintainer and Gmail | Contact information, messages and attachments that you choose to email for support or privacy requests. These are not automatically collected from your browser. |
+| The maintainer and email providers | Contact information, messages and attachments that you choose to email for support or privacy requests. These are not automatically collected from your browser. |
 
 The extension does not automatically send messages to Discord or publish your settings, friends list or local history. Public player history offered by the independent service comes from its own collection of game data, not an upload of your local history. When you open an external link, that website handles the resulting visit under its own practices.
 
@@ -69,7 +69,7 @@ Changing a mode keeps saved local records but changes which sources are used. **
 
 ## Contact and separate records
 
-Email [shurieldev@gmail.com](mailto:shurieldev@gmail.com) for questions. Contact information and messages you send are used to handle the request through Gmail. Do not send passwords, sessions, recovery codes or identity documents.
+Email [contact@shuriel.com](mailto:contact@shuriel.com) for questions. New project correspondence is handled through OVHcloud email. Earlier messages can remain in the former Gmail account during the transition. Generic new-mail alerts may be sent to the operator's own Gmail accounts without the original message's sender, subject, contents or attachments. Do not send passwords, sessions, recovery codes or identity documents.
 
 Requests about independent player history, removal or exclusion are covered by the [history-service notice](HISTORY-PRIVACY.md#requests-and-contact). Official account changes belong to Rhythia; the extension cannot change the game's records or remotely erase other users' browser copies.
 

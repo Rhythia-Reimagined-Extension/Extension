@@ -1,8 +1,8 @@
 # Privacy — independent player-history service
 
-**Draft updated October 12, 2026.** Controls for deletion, stopping further collection and clearing older diagnostics are active and have been checked. Full identification of the person responsible, the legal basis for processing, how players are informed and provider agreements still need to be completed. This is not the final service notice.
+Updated October 12, 2026. Controls for deletion, stopping further collection and clearing older diagnostics are active and have been checked. Full identification of the person responsible, the legal basis for processing, how players are informed and provider agreements still need to be completed. This notice describes current data handling; the remaining assessments are not a certification of compliance.
 
-Project contact: **Shuriel**, a private operator based in Poland · [shurieldev@gmail.com](mailto:shurieldev@gmail.com). Full identification of the person responsible for this service remains to be completed; the project name alone does not provide it.
+Project contact: **Shuriel**, a private operator based in Poland · [contact@shuriel.com](mailto:contact@shuriel.com). Full identification of the person responsible for this service remains to be completed; the project name alone does not provide it.
 
 ## What the service does
 
@@ -32,7 +32,7 @@ Legitimate interests is being assessed as a possible legal basis for collecting 
 
 Individual player histories are public without login. The service does **not offer a bulk database download**. Measures to limit abuse cannot guarantee that recipients will not copy or combine individual histories. Visit reports, IP-related safeguards, private ban observations, diagnostics and records of privacy requests are not public history.
 
-The operator can access records for operation, security and requests. OVHcloud hosts the service; Cloudflare delivers and protects it. Gmail currently handles correspondence and encrypted backup delivery to the operator's own mailboxes. This is consumer Gmail; Google does not offer a processor agreement for that service. History-service Discord alerts use counts and general causes without player identifiers. Older notifications may still contain earlier details.
+The operator can access records for operation, security and requests. OVHcloud hosts the service; Cloudflare delivers and protects it. OVHcloud email handles new project correspondence; privacy@shuriel.com reaches the same project inbox as contact@shuriel.com. Earlier correspondence remains in Gmail during the transition. Gmail still receives encrypted backup delivery and generic new-mail alerts in the operator's own mailboxes; these alerts do not include the original sender, subject, message contents or attachments. This is consumer Gmail; Google does not offer a processor agreement for that service. History-service Discord alerts use counts and general causes without player identifiers. Older notifications may still contain earlier details.
 
 The extension sends only the requested public player ID and normal connection information for history access, and a viewed player ID if its separate visit-report option is enabled. The service does not receive the extension's local history or game session. Other clients of the public history API also expose their requested player ID and connection information.
 
@@ -59,7 +59,7 @@ New routine backups omit visit reports and diagnostic responses. They keep the i
 
 ## Requests and contact
 
-Email [shurieldev@gmail.com](mailto:shurieldev@gmail.com) with a profile link/ID and the request. You can ask about access, correction, erasure, restriction or objection, as applicable. You do not need to delete the original account first. Contact Rhythia separately for its records.
+Email [privacy@shuriel.com](mailto:privacy@shuriel.com) with a profile link/ID and the request. You can ask about access, correction, erasure, restriction or objection, as applicable. You do not need to delete the original account first. Contact Rhythia separately for its records.
 
 A public link alone does not prove account control. When there is reasonable doubt, proportionate verification is arranged privately. Screen sharing is not mandatory and is not recorded by the operator. Do not send passwords, tokens, recovery codes, identity documents or unrelated personal information.
 
@@ -69,4 +69,4 @@ For connection/visit requests, provide information that helps locate records. Re
 
 Requests are handled without undue delay, normally within one month. A permitted extension is explained within that first month; refusals include reasons and complaint information. You can complain to a data-protection authority, including [UODO](https://uodo.gov.pl/). Not every right applies to every basis; public API access is not a substitute for assessing a request.
 
-The final notice will include the completed operator identification, legal basis and provider information. For data used in your browser see [extension Privacy](PRIVACY.md); for service use see [history Terms](HISTORY-TERMS.md).
+The notice will be updated when the remaining assessments are completed. For data used in your browser see [extension Privacy](PRIVACY.md); for service use see [history Terms](HISTORY-TERMS.md).

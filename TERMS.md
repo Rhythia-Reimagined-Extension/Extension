@@ -1,8 +1,8 @@
 # Terms — Rhythia Reimagined extension
 
-Draft revised October 11, 2026. Operator identification is pending before final publication.
+Updated October 12, 2026. These terms describe the current extension service.
 
-Project contact: Shuriel · [shurieldev@gmail.com](mailto:shurieldev@gmail.com).
+Project contact: Shuriel · [contact@shuriel.com](mailto:contact@shuriel.com).
 
 Rhythia Reimagined is a free, independent fan extension. It adds browser features to Rhythia. It is not an official Capo Games product or partner.
 

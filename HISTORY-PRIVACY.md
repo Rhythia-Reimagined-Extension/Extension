@@ -42,6 +42,8 @@ Data is not sold or used for advertising, creditworthiness or lending. Later fun
 
 ## Retention
 
+Operational reports about collection progress, API structure and general failures are sent to administrative Discord channels. They do not contain raw game responses, player identifiers or game sessions. Infrastructure alerts separately describe resource usage, watched project-file metadata and SSH logins; SSH alerts may include the administrative account, source IP address and authentication method. Discord messages have separate provider retention and are not automatically deleted by the history service's 14-day diagnostic cleanup. See [Discord's privacy information](https://discord.com/privacy).
+
 | Records | How long they are kept |
 | --- | --- |
 | Player history | No automatic expiry while the service is provided. Continued need must be reviewed; history is erased when a removal request is granted. |

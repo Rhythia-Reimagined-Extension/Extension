@@ -12,7 +12,7 @@ History can have gaps, delays or errors. Last known profile values may be outdat
 
 The service offers single-player history without a bulk database download. Do not bypass rate limits or access controls, obtain private administration data, disrupt the service or use it to harass players. Discuss more extensive API use with the operator. Public availability does not remove responsibilities for data you copy or reuse.
 
-Collection can stop on upstream errors or quotas. Availability and specific update times are not guaranteed. Features may change or end, with material changes explained where practicable. These terms do not exclude obligations or liability that cannot lawfully be excluded.
+Collection is attempted on a daily schedule. Temporary failures can be retried within request limits; individual responses that fail integrity checks can be skipped without overwriting earlier history. Serious API or response-format failures and request quotas can interrupt collection. When collection resumes, it records current observations; it does not reconstruct missed historical values from later data. Availability and specific update times are not guaranteed. Features may change or end, with material changes explained where practicable. These terms do not exclude obligations or liability that cannot lawfully be excluded.
 
 See [Privacy](HISTORY-PRIVACY.md) for data, retention and requests. Using a client is not consent on behalf of tracked players. You can request removal without deleting your original game account. Contact the operator for service errors and privacy requests; official account changes belong to Rhythia.
 

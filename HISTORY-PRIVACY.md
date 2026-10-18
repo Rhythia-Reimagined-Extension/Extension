@@ -1,12 +1,12 @@
 # Privacy — independent player-history service
 
-Updated October 12, 2026. Controls for deletion, stopping further collection and clearing older diagnostics are active and have been checked. Full identification of the person responsible, the legal basis for processing, how players are informed and provider agreements still need to be completed. This notice describes current data handling; the remaining assessments are not a certification of compliance.
+Updated October 18, 2026. Controls for deletion, stopping further collection and clearing older diagnostics are active and have been checked. Full identification of the person responsible, the legal basis for processing, how players are informed and provider agreements still need to be completed. This notice describes current data handling; the remaining assessments are not a certification of compliance.
 
 Project contact: **Shuriel**, a private operator based in Poland · [contact@shuriel.com](mailto:contact@shuriel.com). Full identification of the person responsible for this service remains to be completed; the project name alone does not provide it.
 
 ## What the service does
 
-The service obtains public player data from Rhythia's official API and keeps daily statistics for progress and comparisons. Reimagined is one client; other tools can request a single player's history too. Collection runs independently of extension users. The service is free and noncommercial.
+The service obtains public player data from Rhythia's official API and keeps profile statistics and selected score observations for progress and comparisons. Reimagined is one client; other tools can request a single player's history too. Collection runs independently of extension users. The service is free and noncommercial.
 
 Rhythia controls the original game records. The operator determines the purposes and handling of this separate copy. Public data can still relate to an identifiable person. Capo Games' acceptance of the described API use does not authorize every future use or replace data-protection responsibilities.
 
@@ -16,6 +16,10 @@ Rhythia controls the original game records. The operator determines the purposes
 | --- | --- |
 | Public player ID and last known name, country and avatar | Identify profiles. Public with history; no intentional archive of name, country or avatar changes. |
 | Daily statistics and ranks | Progress/comparisons: skill points, global/country rank, play count, squares hit, average accuracy, total scores and average rhythm points where available. Public in an individual player's history. |
+| Latest observed ranking position and dates last seen within Top 1000, 3000 and 5000 | Privately choose which profiles to collect and how often. Observing a ranking entry does not itself make an individual profile history public. |
+| Selected Standard-mode scores for active Top-1000 players | Up to five results per actual UTC play date: score/player IDs, play time, map reference/title/difficulty/note count, reported rhythm points, speed, misses, pass status, mods and replay link where supplied. Private; not currently exposed by the public history API. Replay files are not downloaded for this history. |
+| Score-selection context and capture records | Privately record observed personal-Top-100 score IDs, source lists, selection reasons, previous retained best-score comparisons, estimated weighted points, capture times, available-window coverage and errors. These are bounded observations, not a complete play or replay archive. |
+| Monthly personal Top-25 snapshots | Scheduled for eligible active Top-5000 players on the last UTC day of the month. Store references to selected score details, their order, reported points and actual observation time. Private; not currently exposed by the public history API. |
 | Last observed game ban status/date and observation time | Privately diagnose availability. No public ban history; a missing profile is not automatically banned. |
 | Optional visit reports: viewed player ID, counts and last accepted visit | Discover public profiles. Private; no visitor game account in the report. |
 | Connection IP, requested resource, time and response information | Deliver requests, limit abuse and diagnose failures. A short-lived identifier generated from the IP address and viewed profile helps limit repeat reports. Visit-report records do not store the raw IP, but providers and connection logs can still process it. |
@@ -24,21 +28,29 @@ Rhythia controls the original game records. The operator determines the purposes
 
 The service does not receive your session, password, friends list or extension preferences. Cloud history reveals the requested profile even without visit reports. Players can be collected without using Reimagined.
 
-Active profiles added to the service continue to be checked daily, independently of visit counts. Errors, request limits or unavailable profiles can interrupt collection. If the game API reports that a profile is missing, earlier history is kept. This is separate from a request to remove personal data.
+Collection uses ranking groups and recent profile discovery. The current UTC schedule checks Top 1000 and a bounded group of recently visited profiles daily, positions 1001-3000 on Monday/Wednesday/Friday, and positions 3001-5000 on Tuesday/Saturday. Promotion is immediate; leaving a ranking group has a seven-day grace period. Profiles that leave Top 5000 can remain in a less frequent collection group for 60 days, checked on the first and third Sunday; afterwards collection stops until they qualify again. Previously admitted profiles with no ranking observation have a transition period. Stopping routine collection does not automatically erase existing history.
+
+On the last UTC day of the month, the schedule also attempts eligible Top-5000 monthly Top-25 captures. This feature was enabled on October 18, 2026; that does not mean a past month-end snapshot exists. Daily selected-score history remains limited to Top 1000. API windows, quotas, errors and unavailable profiles can interrupt or limit all of these observations. If the game API reports that a profile is missing, earlier history is kept. This is separate from a request to remove personal data.
 
 Legitimate interests is being assessed as a possible legal basis for collecting and sharing history: useful progress records and comparisons using limited public game data. The assessment must consider whether the use is necessary and how it affects players, including their expectations, younger players, long retention and public access. It is not complete. How to inform players who do not use Reimagined, or whether an applicable exception can be justified, also remains unresolved. A visitor's opt-in is not the collected player's consent.
 
 ## Public access and providers
 
-Individual player histories are public without login. The service does **not offer a bulk database download**. Measures to limit abuse cannot guarantee that recipients will not copy or combine individual histories. Visit reports, IP-related safeguards, private ban observations, diagnostics and records of privacy requests are not public history.
+Individual player histories are public without login. The service does **not offer a bulk database download**. Measures to limit abuse cannot guarantee that recipients will not copy or combine individual histories. Visit reports, IP-related safeguards, ranking-selection records, selected-score and monthly Top-25 records, private ban observations, diagnostics and records of privacy requests are not public history.
 
-The operator can access records for operation, security and requests. OVHcloud hosts the service; Cloudflare delivers and protects it. OVHcloud email handles new project correspondence; privacy@shuriel.com reaches the same project inbox as contact@shuriel.com. Earlier correspondence remains in Gmail during the transition. Gmail still receives encrypted backup delivery and generic new-mail alerts in the operator's own mailboxes; these alerts do not include the original sender, subject, message contents or attachments. This is consumer Gmail; Google does not offer a processor agreement for that service. History-service Discord alerts use counts and general causes without player identifiers. Older notifications may still contain earlier details.
+The operator can access records for operation, security and requests. OVHcloud hosts the service; Cloudflare delivers and protects it and stores encrypted offsite recovery copies in R2. OVHcloud email handles new project correspondence; privacy@shuriel.com reaches the same project inbox as contact@shuriel.com. Earlier correspondence remains in Gmail during the transition. Gmail still receives encrypted backup delivery and generic new-mail alerts in the operator's own mailboxes; these alerts do not include the original sender, subject, message contents or attachments. This is consumer Gmail; Google does not offer a processor agreement for that service. History-service Discord alerts use counts and general causes without player identifiers. Older notifications may still contain earlier details.
 
 The extension sends only the requested public player ID and normal connection information for history access, and a viewed player ID if its separate visit-report option is enabled. The service does not receive the extension's local history or game session. Other clients of the public history API also expose their requested player ID and connection information.
 
 Some providers process information outside Poland and the European Economic Area. The hosting location does not mean every provider processes information only in Poland. OVHcloud and Cloudflare publish processing agreements for covered customer data; those documents do not establish which terms apply to the operator's active accounts. Each provider's role, agreements and safeguards for international transfers must be verified for the final notice. Published information: [OVHcloud processing agreement](https://contract.eu.ovhapis.com/1.0/pdf/OVH_Data_Protection_Agreement-pl.pdf), [Cloudflare DPA](https://www.cloudflare.com/cloudflare-customer-dpa/), [Google consumer-service information](https://support.google.com/policies/answer/9581826?hl=en) and [Discord](https://discord.com/privacy).
 
 Data is not sold or used for advertising, creditworthiness or lending. Later functions with new purposes/data require a separate assessment and updated notice.
+
+## Automated operational summaries
+
+An isolated AI reviewer receives bounded, filtered source-code changes and extracted facts about changes to Rhythia's public website through OpenRouter to a routed model provider. The configured model is Anthropic Claude Haiku; retained production responses identify Google as the inference provider. Routing may change among endpoints meeting the required data-handling settings. It supports operational review; it does not assess players or make decisions about them. Player histories, score records, visit reports, support correspondence, raw request logs, credentials and game sessions are excluded from its intended inputs. Filtering withholds files that match sensitive-data patterns, but cannot guarantee detection of every possible sensitive value.
+
+Provider routing requires zero data retention and disallows data collection for model training. These are request-routing requirements, not proof of the operator's provider agreements or of every provider's actual handling. Local review jobs/results normally expire after 14 days; current sanitized source baselines are replaced as source changes. Published administrative summaries and Discord notices have separate retention. Provider information is available from [OpenRouter](https://openrouter.ai/docs/guides/features/zdr). This does not introduce AI processing of collected player statistics.
 
 ## Retention
 
@@ -47,6 +59,9 @@ Operational reports about collection progress, API structure and general failure
 | Records | How long they are kept |
 | --- | --- |
 | Player history | No automatic expiry while the service is provided. Continued need must be reviewed; history is erased when a removal request is granted. |
+| Selected daily scores, capture records and the latest personal-Top-100 reference | A six-calendar-month cutoff, using the UTC play/observation date and hourly cleanup. Unreferenced shared map metadata is also removed. |
+| Monthly Top-25 snapshots and referenced score details | Snapshots are removed when their month is earlier than the UTC calendar month twelve months before the current month. Score details remain while referenced by a retained monthly snapshot; unreferenced details are cleaned up. This can retain an older play that remains in a later personal top list. |
+| Ranking-selection records | Until their last Top-5000 observation is more than 365 days old, with hourly cleanup; also erased for a granted removal request. |
 | Last private ban observation | Kept with the player record and removed when that record is erased. |
 | Visit counts and last-visit observations | Counts cover the current and previous 13 days, measured in UTC; last-visit observations are kept for 14 days. Automatic cleanup applies to these records, separately from provider and connection logs. |
 | Identifier used to limit repeat visit reports | Used for a rolling hour, then normally removed within the following hour. |
@@ -57,7 +72,9 @@ Operational reports about collection progress, API structure and general failure
 
 A specific dispute or legal requirement can justify a limited, documented and reviewed exception. An open case is not a reason to keep correspondence forever. Retention of connection logs and records held by providers remains unresolved separately; the service's 14-day diagnostic period does not cover every infrastructure log.
 
-New routine backups omit visit reports and diagnostic responses. They keep the information needed to protect history and respect requests to stop collection. **Existing recovery archives, copies made before service updates and emailed backups can still contain older records; their retention remains unresolved.** Encryption protects these copies but does not erase them. If a backup is recovered, current removal requests and cleanup must be applied before records become available again. Copies held by other tools or browsers cannot be remotely recalled.
+New routine backups omit visit reports and diagnostic responses. They keep profile history, retained score/monthly/ranking records and the information needed to respect requests to stop collection. Local routine rotation keeps two daily copies, two copies from the every-three-days schedule, three weekly copies and three monthly copies. Manual and older recovery copies have separate handling.
+
+Encrypted recovery copies are also uploaded to Cloudflare R2. Weekly/monthly encrypted copies can additionally be delivered to the operator's Gmail accounts. Remote copies have separate retention and can be protected against deletion; local rotation does not delete R2 objects or email attachments. An end-to-end expiry limit for those copies has not yet been verified. **Existing recovery archives, copies made before service updates and emailed backups can still contain older records; their retention remains unresolved.** Encryption protects these copies but does not erase them. If a backup is recovered, current removal requests and cleanup must be applied before records become available again. Copies held by other tools or browsers cannot be remotely recalled.
 
 ## Requests and contact
 
@@ -65,7 +82,7 @@ Email [privacy@shuriel.com](mailto:privacy@shuriel.com) with a profile link/ID a
 
 A public link alone does not prove account control. When there is reasonable doubt, proportionate verification is arranged privately. Screen sharing is not mandatory and is not recorded by the operator. Do not send passwords, tokens, recovery codes, identity documents or unrelated personal information.
 
-The erasure process first stops further collection, then removes the service's active player, history and diagnostic records and records the result. If cleanup is incomplete, the request remains unfinished. A later verified return request starts new history from zero. Blocking a profile because of an operational problem is separate and does not itself erase history. History responses ask browsers and other clients not to keep temporary cached copies. Previously cached responses and other copies are assessed separately; this cannot remotely delete copies already obtained by others.
+The erasure process first stops further collection, then removes the service's active player, profile history, selected-score/monthly records, ranking-selection records and diagnostics and records the result. If cleanup is incomplete, the request remains unfinished. A later verified return request starts new history from zero. Blocking a profile because of an operational problem is separate and does not itself erase history. History responses ask browsers and other clients not to keep temporary cached copies. Previously cached responses and other copies are assessed separately; this cannot remotely delete copies already obtained by others.
 
 For connection/visit requests, provide information that helps locate records. Reports do not include your account and cannot necessarily be found by nickname. We do not collect additional identity information solely to identify otherwise unidentifiable records.
 

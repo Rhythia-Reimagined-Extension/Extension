@@ -6,7 +6,7 @@ Project contact: Shuriel · [contact@shuriel.com](mailto:contact@shuriel.com).
 
 The service collects public Rhythia profile statistics and selected score observations to provide player progress history and comparisons. It is free and noncommercial. Reimagined is one client; other tools can request individual histories. Other projects hosted on the same server are outside these terms.
 
-Capo Games previously accepted a described API use subject to conditions. That is not blanket approval of later collection-scope changes, which still need to be assessed against the applicable conditions. This does not make the service an official partner or endorsed client. Rhythia controls the original game records; the operator handles this separate copy.
+The operator confirms that Capo Games continues to permit this project. Rhythia's [Terms](https://www.rhythia.com/terms) and the [official policy repository](https://github.com/Capo-Games/terms-privacy) were reviewed on October 18, 2026. Permission remains subject to its applicable scope and conditions; it does not replace players' data-protection rights. This does not make the service an official partner or endorsed client. Rhythia controls the original game records; the operator handles this separate copy.
 
 History can have gaps, delays or errors. Selected results and monthly snapshots reflect bounded API responses at their observation time; they are not a complete record of every play. Estimated weighted points and comparisons with retained results are not proof of actual account gains, first-ever personal bests or current ranked eligibility. Last known profile values may be outdated. Missing profiles are not automatically banned. Summaries and comparisons are informational, not official judgements.
 

@@ -3,6 +3,79 @@
 All notable user-facing changes are documented in this file.
 
 ---
+version: 1.3.0
+date: 2026-10-20
+title: Exodus
+listed: yes
+---
+
+## 1.3.0 - Exodus - 2026-10-20
+
+## Added
+
+- Exodus, a second look for Reimagined (experimental, off by default). Choose the look at the top of the popup.
+- A switch to turn off the Friends list.
+- A one-time notice in Classic about the Exodus look, with "Try it out!" and "No thanks".
+
+## Changed
+
+- Rhythia Reimagined is now called Reimagined for Rhythia.
+- New popup with Features, Appearance and Data tabs. The Classic/Exodus switch is in the header, and each look shows only its own settings.
+- Variants such as card styles, Statistics and the Exodus layouts are chosen from small drawings of each one. Parts of a feature are turned on and off with checkboxes under it.
+- Recent profile visits are in the Data tab. With Exodus, Data also shows the space its saved pages take, with a separate Clear button that keeps history.
+- "Clear Cache" is now called "Clear history".
+- The online history choices are now called This device, Both and Community.
+- Release notes are downloaded from the Reimagined server instead of GitHub, and only when online history is on. Otherwise the changelog shows the notes included with the extension.
+- The changelog lists the changes for each look separately.
+- Notices in the bottom-right corner, such as the online history choice, match the look and theme you use. Several notices stack one above another.
+
+# Exodus
+
+## Added
+
+- Own pages for home, profiles, scores, leaderboards (also by country), maps, skins, clans, collections, wiki, changelog and support, built from Rhythia's data.
+- Choose in the popup which pages Exodus replaces.
+- Lines or Floating style, a list or grid for scores, and a switch for the moving background on Home.
+- Pages you've already visited open from a saved copy and update in the background.
+- Edit your bio and links, pin and unpin scores, and set your showcase (Supporters) on your own profile. Add friends from their profile and remove maps from your collections.
+- Search for players, maps and clans with Ctrl+K.
+- Settings (the gear at the top) on any page: username, flag, about me, links, privacy and login. Changing the avatar or banner, buying a name change and changing login open Rhythia's own Settings.
+- With online history on, leaderboards show how rank and RP moved over 7 and 30 days.
+- In Compare, each shared map goes to the player who got more RP from it.
+- Playstyle has a Month in review: plays per day, breaks and how you came back, pace against the month before, new top plays, and which map types you played (streams, jumps, varied or quantum).
+
+## Notes
+
+- Exodus is experimental. If something breaks, switch back to Classic in the popup and let me know.
+- Exodus does not send profile visit reports, so that switch is shown only for Classic.
+
+# Classic
+
+## Added
+
+- Statistics variant in the popup: A keeps the history tables, B (new default) shows one value at a time with a chart.
+- In variant B, Progress and Rankings show how each value changed over 7 days, 30 days, 3 months or all time. Click a value to see it in the chart.
+- In variant B, the weeks under the chart are listed one month at a time, with older months a click away.
+- In variant B, the Playstyle summary says what happened in the last 14 and 30 days from ranked plays and history: how many plays, breaks, the busiest week and why the rank moved.
+- In variant B, Playstyle shows speeds and grades as two thin bars, and Best maps with their map art. The mods row is not shown in B; the Speed bar shows the same.
+- Card styles D, E and F for score cards: D is a row like Rhythia's own with map art, E puts the map art behind the row, F is a table with one line per score.
+
+## Changed
+
+- Statistics, Rankings and Playstyle look closer to Rhythia's own Statistics card: plain numbers instead of tiles, and an easier-to-read history table.
+- Scores show 10 per page by default. Choose 10, 20, 50 or All.
+- Card style E is the new default. A style you chose before stays.
+- The Reimagined changelog looks like Rhythia's own entries: one card with plain lists instead of a box around every line.
+
+## Fixed
+
+- The changelog tabs no longer flicker when the changelog opens.
+- The Playstyle note no longer calls a couple of plays "recent play".
+- Rhythia's cookie banner no longer covers the page until it's answered.
+- "View progression" shows the Reimagined progression map again, not Rhythia's bars.
+- The score tabs no longer make the profile wider than the screen on phones.
+
+---
 version: 1.2.1
 date: 2026-10-12
 title: A little cleanup

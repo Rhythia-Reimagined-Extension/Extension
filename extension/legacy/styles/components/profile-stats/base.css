@@ -1,0 +1,354 @@
+/* =============================================
+   Reigning Scores — Gold Crown Accent
+   ============================================= */
+.rhythiax-reigning {
+  border-color: rgba(234, 179, 8, 0.28) !important;
+  box-shadow: inset 3px 0 0 rgba(234, 179, 8, 0.75) !important;
+}
+
+.rhythiax-reigning:hover {
+  border-color: rgba(234, 179, 8, 0.50) !important;
+  box-shadow: inset 3px 0 0 rgba(234, 179, 8, 0.9), 0 5px 16px rgba(0, 0, 0, 0.16) !important;
+}
+
+/* =============================================
+   Grade Breakdown Grid
+   ============================================= */
+
+
+.rhythiax-grade-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 76px;
+  padding: 9px 5px 8px;
+  border-radius: 9px;
+  background: rgba(255, 255, 255, 0.035);
+  border: 1px solid rgba(255, 255, 255, 0.10);
+  cursor: pointer;
+  transition: background 0.18s ease, border-color 0.18s ease, transform 0.18s ease, opacity 0.18s ease;
+  opacity: 0.62;
+  gap: 3px;
+}
+
+.rhythiax-grade-item.active {
+  opacity: 1;
+  border-color: color-mix(in srgb, var(--grade-color) 45%, rgba(255, 255, 255, .12));
+  background: color-mix(in srgb, var(--grade-color) 8%, rgba(255, 255, 255, .035));
+}
+
+.rhythiax-grade-item:hover {
+  opacity: 1;
+  transform: translateY(-2px);
+}
+
+
+
+.rhythiax-grade-s.active {
+  box-shadow: none;
+  border-color: rgba(34, 211, 238, 0.50) !important;
+}
+
+.rhythiax-grade-label {
+  font-size: 14px;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+  line-height: 1;
+}
+
+.rhythiax-grade-count {
+  font-size: 18px;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.85);
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+}
+
+.rhythiax-grade-share {
+  color: color-mix(in srgb, var(--grade-color) 75%, white 25%);
+  font-size: 10px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  opacity: .78;
+}
+
+/* =============================================
+   Stats panel
+   ============================================= */
+.rhythiax-stats-panel {
+  background: var(--rhythiax-surface, #18181c);
+  border: 1px solid #262626;
+  border-radius: 12px;
+  padding: 16px;
+  margin-top: 0;
+}
+
+.rhythiax-stats-panel h3 {
+  font-size: 12px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.4);
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  margin-bottom: 12px;
+}
+
+.rhythiax-stat-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 6px 0;
+  font-size: 13px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+.rhythiax-stat-row:last-of-type {
+  border-bottom: none;
+}
+
+.rhythiax-stat-label {
+  color: rgba(255, 255, 255, 0.45);
+}
+
+.rhythiax-stat-value {
+  color: rgba(255, 255, 255, 0.9);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+/* =============================================
+   Statistics Sub-Tabs & Reimagined View
+   ============================================= */
+@keyframes rhythiax-tab-fade-slide {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.rhythiax-tab-pane-in {
+  animation: rhythiax-tab-fade-slide 240ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rhythiax-tab-pane-in {
+    animation: none !important;
+  }
+}
+
+.rhythiax-stats-tabs {
+  display: inline-flex;
+  align-items: center;
+  height: 40px;
+  gap: 2px;
+  border-radius: 8px;
+  border: 1px solid var(--rhythiax-border, rgba(255, 255, 255, 0.1));
+  background: var(--rhythiax-surface, rgba(255, 255, 255, 0.04));
+  padding: 4px;
+  margin-left: auto;
+}
+
+.rhythiax-stats-tab-btn {
+  display: inline-flex;
+  height: 100%;
+  min-width: 0;
+  align-items: center;
+  justify-content: center;
+  white-space: nowrap;
+  border-radius: 4px;
+  padding: 0 12px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--rhythiax-text-muted, #a3a3a3);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  transition: all 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+  user-select: none;
+}
+
+.rhythiax-stats-tab-btn:hover {
+  color: var(--rhythiax-text-strong, #ffffff);
+}
+
+.rhythiax-stats-tab-btn:active {
+  transform: scale(0.95);
+}
+
+.rhythiax-stats-tab-btn.active {
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.1);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25);
+}
+
+.rhythiax-reimagined-stats-body {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-top: 14px;
+}
+
+/* Sub-navigation inside Reimagined */
+.rhythiax-subtabs {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  border-bottom: 1px solid var(--rhythiax-border, rgba(255, 255, 255, 0.08));
+}
+
+.rhythiax-subtab-btn {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 36px;
+  padding: 6px 12px 9px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--rhythiax-text-muted, #a1a1aa);
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+  transition: color 0.15s ease;
+  user-select: none;
+}
+
+.rhythiax-subtab-btn::after {
+  position: absolute;
+  right: 12px;
+  bottom: -1px;
+  left: 12px;
+  height: 2px;
+  background: var(--rhythiax-text-strong, #fff);
+  content: '';
+  opacity: 0;
+}
+
+.rhythiax-subtab-btn:hover,
+.rhythiax-subtab-btn.active {
+  color: var(--rhythiax-text-strong, #ffffff);
+}
+
+.rhythiax-subtab-btn.active::after {
+  opacity: 1;
+}
+
+.rhythiax-subtab-btn:focus-visible {
+  outline: 2px solid var(--rhythiax-accent, #c084fc);
+  outline-offset: -2px;
+}
+
+.rhythiax-pane-stats {
+  display: grid;
+  gap: 20px;
+}
+
+/* Metric row: label over value, like Rhythia's own Statistics card */
+.rhythiax-reimagined-metrics-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px 48px;
+}
+
+.rhythiax-reimagined-metric-card {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  border-radius: 4px;
+}
+
+.rhythiax-reimagined-metric-card.rhythiax-history-enabled {
+  cursor: pointer;
+}
+
+.rhythiax-reimagined-metric-card:focus-visible {
+  outline: 2px solid var(--rhythiax-accent, #c084fc);
+  outline-offset: 4px;
+}
+
+.rhythiax-reimagined-metric-label {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--rhythiax-text-muted, #a3a3a3);
+  transition: color 0.15s ease;
+}
+
+.rhythiax-reimagined-metric-card.rhythiax-history-enabled:hover .rhythiax-reimagined-metric-label {
+  color: var(--rhythiax-text, #f8fafc);
+}
+
+.rhythiax-reimagined-metric-card.active .rhythiax-reimagined-metric-label {
+  color: var(--rhythiax-accent, #c084fc);
+}
+
+.rhythiax-reimagined-metric-value {
+  margin-top: 2px;
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  font-size: 18px;
+  font-weight: 700;
+  line-height: 1.4;
+  font-variant-numeric: tabular-nums;
+  color: var(--rhythiax-text-strong, #ffffff);
+}
+
+@media (max-width: 640px) {
+  .rhythiax-reimagined-metrics-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px 16px;
+  }
+}
+
+/* History pane under the metrics */
+.rhythiax-history-pane {
+  width: 100%;
+  display: none;
+}
+
+.rhythiax-history-pane.open {
+  display: block;
+}
+
+.rhythiax-inline-rank-history,
+.rhythiax-inline-progress-history {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  width: 100%;
+}
+
+/* The short Date / Value / Change table of a single metric */
+.rhythiax-history-pane .rhythiax-history-table:not(.rhythiax-progress-history-table):not(.rhythiax-rank-history-table) th:first-child,
+.rhythiax-history-pane .rhythiax-history-table:not(.rhythiax-progress-history-table):not(.rhythiax-rank-history-table) td:first-child {
+  width: 48%;
+}
+
+/* Hide native rank indicator from DOM/display safety */
+span[title*="Dropped" i]:not(.rhythiax-profile-history-delta),
+span[title*="Climbed" i]:not(.rhythiax-profile-history-delta) {
+  display: none !important;
+}
+
+@media (max-width: 560px) {
+  .rhythiax-subtabs {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .rhythiax-subtab-btn {
+    min-width: 0;
+    padding-inline: 6px;
+    font-size: 12px;
+  }
+
+}
+

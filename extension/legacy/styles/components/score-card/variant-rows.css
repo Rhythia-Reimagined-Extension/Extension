@@ -1,0 +1,447 @@
+/* ==========================================================================
+   Reimagined for Rhythia — Score Card: Variants D (Row), E (Art), F (Table)
+   (templates/template-rows.js). Sized like Rhythia's own score rows;
+   numbers carry a small label instead of a box. Narrow cards (phone, Grid)
+   switch to a compact layout through the container query, which is why
+   D and E put their content in .rhythiax-sc-row-body (a query cannot
+   restyle the card it measures).
+   ========================================================================== */
+
+.rhythiax-sc-row {
+  container-type: inline-size;
+  align-items: stretch;
+  border-radius: 8px;
+  box-shadow: none;
+  --sc-row-label: color-mix(in srgb, var(--sc-text-muted) 80%, transparent);
+  --sc-row-rp: #60a5fa;
+}
+
+body[data-rhythiax-theme="white"] .rhythiax-sc-row { --sc-row-rp: #2563eb; }
+
+.rhythiax-sc-row:hover { border-color: var(--sc-border-strong); }
+
+.rhythiax-sc-row-body {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: stretch;
+}
+
+.rhythiax-sc-row .rhythiax-sc-title {
+  display: block;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.rhythiax-sc-row .rhythiax-sc-meta-line {
+  display: block;
+  margin-top: 1px;
+  font-size: 12px;
+}
+
+.rhythiax-sc-row .rhythiax-sc-meta-line strong { font-weight: 600; }
+
+.rhythiax-sc-row .rhythiax-sc-meta-sep { margin: 0 4px; }
+
+.rhythiax-sc-row-main {
+  flex: 1;
+  min-width: 0;
+  align-self: center;
+}
+
+.rhythiax-sc-row-controls {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  flex: none;
+}
+
+.rhythiax-sc-row-mods {
+  flex-wrap: nowrap;
+  gap: 4px;
+}
+
+.rhythiax-sc-row-mods:empty { display: none; }
+
+.rhythiax-sc-row .rhythiax-sc-action-btn {
+  width: 28px;
+  height: 28px;
+  margin-left: -8px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  box-shadow: none;
+}
+
+.rhythiax-sc-row .rhythiax-sc-action-btn:hover {
+  background: color-mix(in srgb, var(--sc-text-strong) 8%, transparent);
+  transform: none;
+}
+
+.rhythiax-sc-row .rhythiax-sc-miss { color: var(--miss-color, #f87171); }
+.rhythiax-sc-row .rhythiax-sc-fc { color: var(--fc-color, #4ade80); }
+
+/* Map art square (D, F) */
+.rhythiax-sc-row-thumb {
+  flex: none;
+  align-self: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 6px;
+  background: var(--sc-inner-bg) var(--card-art-url, none) center / cover no-repeat;
+}
+
+/* Label over value */
+.rhythiax-sc-row-stat {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.rhythiax-sc-row-label {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+  color: var(--sc-row-label);
+}
+
+.rhythiax-sc-row-value {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--sc-text-strong);
+}
+
+.rhythiax-sc-row-total,
+.rhythiax-sc-row-sub {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--sc-text-muted);
+}
+
+.rhythiax-sc-row-sub { font-size: 11px; }
+
+/* Rows sit 8px apart like Rhythia's list (and drop the page's space-y margin). */
+.rhythiax-scores-list.rhythiax-scores-list > .rhythiax-sc-row:not([hidden]),
+.rhythiax-pinned-list.rhythiax-pinned-list > .rhythiax-sc-row:not([hidden]) { margin-top: 0; }
+
+.rhythiax-scores-list:not(.is-grid):has(> .rhythiax-sc-row-d, > .rhythiax-sc-row-e),
+.rhythiax-pinned-list:not(.is-grid):has(> .rhythiax-sc-row-d, > .rhythiax-sc-row-e) { gap: 8px; }
+
+/* ---------- D: row ---------- */
+.rhythiax-sc-row-d { contain-intrinsic-size: 64px; }
+
+.rhythiax-sc-row-d .rhythiax-sc-row-body {
+  gap: 12px;
+  min-height: 64px;
+  padding-right: 8px;
+}
+
+.rhythiax-sc-row-d .rhythiax-sc-row-grade {
+  flex: 0 0 112px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding-left: 14px;
+  border-left: 4px solid var(--grade-color);
+  border-right: 1px solid var(--sc-border);
+  background: var(--sc-inner-bg);
+}
+
+.rhythiax-sc-row-d .rhythiax-sc-row-grade b {
+  font-size: 19px;
+  font-weight: 800;
+  color: var(--grade-color);
+}
+
+.rhythiax-sc-row-d .rhythiax-sc-row-grade .rhythiax-sc-acc {
+  font-size: 17px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--sc-text-strong);
+}
+
+.rhythiax-sc-row-d .is-rp { min-width: 128px; }
+.rhythiax-sc-row-d .is-rp .rhythiax-sc-row-value { color: var(--sc-row-rp); }
+
+@container (max-width: 720px) {
+  .rhythiax-sc-row-d .is-hits { display: none; }
+}
+
+@container (max-width: 560px) {
+  .rhythiax-sc-row-d .rhythiax-sc-row-body { flex-wrap: wrap; gap: 4px 10px; padding: 10px 6px 10px 0; }
+  .rhythiax-sc-row-d .rhythiax-sc-row-grade { flex: 0 0 auto; flex-direction: column; align-items: flex-start; gap: 0; padding: 0 0 0 10px; border-right: 0; background: none; }
+  .rhythiax-sc-row-d .rhythiax-sc-row-grade b { font-size: 15px; line-height: 1.1; }
+  .rhythiax-sc-row-d .rhythiax-sc-row-grade .rhythiax-sc-acc { font-size: 14px; }
+  .rhythiax-sc-row-d .rhythiax-sc-row-thumb { display: none; }
+  .rhythiax-sc-row-d .rhythiax-sc-row-controls { width: 100%; padding-left: 14px; gap: 16px; }
+  .rhythiax-sc-row-d .rhythiax-sc-row-stat { align-items: flex-start; }
+  .rhythiax-sc-row-d .is-rp { min-width: 0; margin-right: auto; }
+}
+
+/* ---------- E: art ---------- */
+.rhythiax-sc-row-e {
+  isolation: isolate;
+  contain-intrinsic-size: 76px;
+}
+
+.rhythiax-sc-row-e .rhythiax-sc-row-body {
+  gap: 14px;
+  min-height: 76px;
+  padding: 10px 8px 10px 0;
+}
+
+.rhythiax-sc-row-backdrop {
+  position: absolute;
+  inset: 0 0 0 38%;
+  z-index: -2;
+  background: var(--card-art-url, none) center 30% / cover no-repeat;
+}
+
+/* The text never sits on bare art: solid on the left, a dark fade over the rest. */
+.rhythiax-sc-row-e::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background: linear-gradient(90deg,
+    var(--sc-bg) 38%,
+    color-mix(in srgb, var(--sc-bg) 86%, transparent) 58%,
+    color-mix(in srgb, var(--sc-bg) 62%, transparent) 78%,
+    color-mix(in srgb, var(--sc-bg) 86%, transparent) 100%);
+}
+
+.rhythiax-sc-row-e .rhythiax-sc-row-grade {
+  flex: 0 0 64px;
+  display: grid;
+  place-items: center;
+  margin: -10px 0;
+  border-left: 4px solid var(--grade-color);
+}
+
+.rhythiax-sc-row-e .rhythiax-sc-row-grade b {
+  font-size: 26px;
+  font-weight: 800;
+  color: var(--grade-color);
+}
+
+.rhythiax-sc-row-e .rhythiax-sc-title { font-size: 15px; }
+
+.rhythiax-sc-row-line {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px 14px;
+  margin-top: 4px;
+  font-size: 13px;
+  color: var(--sc-text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.rhythiax-sc-row-line b { font-weight: 700; }
+.rhythiax-sc-row-line .rhythiax-sc-acc { font-size: 14px; color: var(--grade-color); }
+.rhythiax-sc-row-line .is-rp-inline { display: none; }
+.rhythiax-sc-row-line .is-rp-inline b { color: var(--sc-row-rp); }
+
+.rhythiax-sc-row-rp {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.rhythiax-sc-row-rp b {
+  font-size: 17px;
+  font-weight: 800;
+  color: var(--sc-text-strong);
+}
+
+.rhythiax-sc-row-rp small {
+  font-size: 12px;
+  color: var(--sc-text);
+  opacity: .85;
+}
+
+@container (max-width: 560px) {
+  .rhythiax-sc-row-e .rhythiax-sc-row-body { gap: 10px; }
+  .rhythiax-sc-row-backdrop { left: 0; }
+  .rhythiax-sc-row-e::after {
+    background: linear-gradient(90deg, var(--sc-bg) 30%, color-mix(in srgb, var(--sc-bg) 88%, transparent) 70%, color-mix(in srgb, var(--sc-bg) 76%, transparent));
+  }
+  .rhythiax-sc-row-e .rhythiax-sc-row-grade { flex-basis: 40px; }
+  .rhythiax-sc-row-e .rhythiax-sc-row-grade b { font-size: 19px; }
+  .rhythiax-sc-row-e .rhythiax-sc-row-rp,
+  .rhythiax-sc-row-e .rhythiax-sc-row-mods,
+  .rhythiax-sc-row-line .is-hits { display: none; }
+  .rhythiax-sc-row-line .is-rp-inline { display: inline; }
+}
+
+/* ---------- F: table ---------- */
+.rhythiax-sc-row-f {
+  flex-direction: column;
+  border-width: 0 0 1px;
+  border-radius: 0;
+  background: transparent;
+  contain-intrinsic-size: 48px;
+}
+
+.rhythiax-sc-row-f:hover { background: color-mix(in srgb, var(--sc-text-strong) 3%, transparent); }
+
+/* The list becomes one panel: rows touch, the panel carries the frame. */
+.rhythiax-scores-list:has(> .rhythiax-sc-row-f),
+.rhythiax-pinned-list:has(> .rhythiax-sc-row-f) {
+  gap: 0;
+  padding: 0 12px 4px;
+  border: 1px solid var(--sc-border);
+  border-radius: 12px;
+  background: var(--sc-bg);
+}
+
+.rhythiax-scores-list > .rhythiax-sc-row-f:last-child,
+.rhythiax-pinned-list > .rhythiax-sc-row-f:last-child { border-bottom: 0; }
+
+.rhythiax-sc-table-head,
+.rhythiax-sc-table-row {
+  display: grid;
+  grid-template-columns: 26px minmax(0, 1fr) 100px 56px 66px 60px 52px 92px 28px;
+  align-items: center;
+  gap: 12px;
+  padding: 0 4px;
+}
+
+.rhythiax-sc-table-row { min-height: 52px; }
+
+.rhythiax-sc-table-head {
+  display: none;
+  min-height: 36px;
+  border-bottom: 1px solid var(--sc-border);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+  color: var(--sc-row-label);
+}
+
+.rhythiax-scores-list > .rhythiax-sc-row-f:first-child .rhythiax-sc-table-head,
+.rhythiax-pinned-list > .rhythiax-sc-row-f:first-child .rhythiax-sc-table-head { display: grid; }
+
+.rhythiax-sc-table-head > :first-child,
+.rhythiax-sc-table-head > :nth-child(n+4):nth-child(-n+8) { text-align: right; }
+.rhythiax-sc-table-head > :nth-child(3) { padding-left: 22px; }
+.rhythiax-sc-table-head > :nth-child(5) { min-width: 28px; text-align: center; }
+
+.rhythiax-sc-table-rank {
+  font-size: 12px;
+  text-align: right;
+  color: var(--sc-row-label);
+  font-variant-numeric: tabular-nums;
+}
+
+.rhythiax-sc-table-map {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.rhythiax-sc-table-map .rhythiax-sc-row-thumb { width: 32px; height: 32px; border-radius: 5px; }
+.rhythiax-sc-table-map .rhythiax-sc-meta-line { font-size: 11.5px; }
+
+.rhythiax-sc-table-acc {
+  font-size: 14px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.rhythiax-sc-table-acc b {
+  display: inline-block;
+  width: 22px;
+  font-weight: 800;
+  color: var(--grade-color);
+}
+
+.rhythiax-sc-table-num {
+  font-size: 13px;
+  text-align: right;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+.rhythiax-sc-table-num.is-hits { color: var(--sc-text-muted); }
+.rhythiax-sc-table-num.is-rp b { font-size: 14px; color: var(--sc-row-rp); }
+.rhythiax-sc-table-num.is-weighted small { font-size: 11px; color: var(--sc-row-label); }
+
+/* Fixed width so every row lines up; two mods fit side by side, more wrap. */
+.rhythiax-sc-row-f .rhythiax-sc-row-mods { justify-content: center; flex-wrap: wrap; min-width: 0; }
+.rhythiax-sc-row-f .rhythiax-sc-row-mods:empty { display: flex; }
+.rhythiax-sc-row-f .rhythiax-sc-mod-pill.has-icon.icon-only,
+.rhythiax-sc-row-f .rhythiax-sc-mod-pill.has-icon.icon-only .rhythiax-sc-mod-icon { width: 24px; height: 24px; }
+.rhythiax-sc-row-f .rhythiax-sc-row-controls { gap: 0; }
+.rhythiax-sc-row-f .rhythiax-sc-action-btn { margin-left: 0; }
+
+@container (max-width: 640px) {
+  .rhythiax-sc-table-head,
+  .rhythiax-sc-table-row { grid-template-columns: minmax(0, 1fr) 76px 34px 40px 24px; gap: 8px; padding: 0; }
+  .rhythiax-sc-table-head > :nth-child(1), .rhythiax-sc-table-head > :nth-child(5),
+  .rhythiax-sc-table-head > :nth-child(6), .rhythiax-sc-table-head > :nth-child(8),
+  .rhythiax-sc-table-rank, .rhythiax-sc-row-f .rhythiax-sc-row-mods.rhythiax-sc-row-mods,
+  .rhythiax-sc-table-map .rhythiax-sc-meta-line,
+  .rhythiax-sc-table-num.is-hits, .rhythiax-sc-table-num.is-weighted,
+  .rhythiax-sc-table-map .rhythiax-sc-row-thumb { display: none; }
+  .rhythiax-sc-table-head > :nth-child(3) { padding-left: 18px; }
+  .rhythiax-sc-table-map .rhythiax-sc-title { white-space: normal; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; font-size: 13px; line-height: 1.3; }
+  .rhythiax-sc-table-acc { font-size: 13px; }
+  .rhythiax-sc-table-acc b { width: 18px; }
+}
+
+/* Grid view: F has no table to line up with, so each score is a small panel. */
+.is-grid > .rhythiax-sc-row-f,
+[data-scores-view="grid"] .rhythiax-sc-row-f {
+  border-width: 1px;
+  border-radius: 8px;
+  background: var(--sc-bg);
+  padding: 0 10px;
+}
+
+.rhythiax-scores-list.is-grid:has(> .rhythiax-sc-row-f),
+.rhythiax-pinned-list.is-grid:has(> .rhythiax-sc-row-f) {
+  gap: 12px;
+  padding: 0;
+  border: 0;
+  background: none;
+}
+
+.is-grid > .rhythiax-sc-row-f .rhythiax-sc-table-head { display: none !important; }
+
+/* "Map art behind cards" off */
+html[data-rhythiax-card-art="off"] .rhythiax-sc-row-backdrop,
+html[data-rhythiax-card-art="off"] .rhythiax-sc-row-e::after { display: none; }
+html[data-rhythiax-card-art="off"] .rhythiax-sc-row-thumb { display: none; }
+
+/* White: darker grade colours so letters and accuracy read on white, plain ⋮ button */
+body[data-rhythiax-theme="white"] .rhythiax-sc-row {
+  --grade-ss: #0284c7;
+  --grade-s: #0891b2;
+  --grade-a: #16a34a;
+  --grade-b: #9333ea;
+  --grade-c: #ca8a04;
+  --grade-d: #ea580c;
+  --grade-f: #dc2626;
+  --miss-color: #dc2626;
+  --fc-color: #16a34a;
+}
+
+/* white/theme.css boxes every .rhythiax-card-btn with !important */
+body[data-rhythiax-theme="white"] .rhythiax-sc-row .rhythiax-card-btn.rhythiax-card-btn {
+  background: transparent !important;
+  border-color: transparent !important;
+  box-shadow: none;
+}
+
+body[data-rhythiax-theme="white"] .rhythiax-sc-row .rhythiax-card-btn.rhythiax-card-btn:hover {
+  background: rgba(15, 23, 42, .06) !important;
+}

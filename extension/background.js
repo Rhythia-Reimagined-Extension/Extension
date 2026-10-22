@@ -3,8 +3,9 @@ if (typeof importScripts === 'function') importScripts(
   'shared/data/data-schema.js',
   'shared/data/data-migrations.js',
   'shared/data/data-repository.js',
-  'core/bridges/storage-mutation-bridge.js',
-  'core/data/storage-mutation-authority.js',
+  'shared/data/storage-mutation-bridge.js',
+  'shared/data/storage-mutation-authority.js',
+  'engines.js',
 );
 
 const RHYTHIAX_COMPARE_SESSION_KEY = 'rhythiaxComparePlayersSession';
@@ -38,7 +39,46 @@ chrome.runtime.onStartup?.addListener(() => {
 
 Promise.resolve(RhythiaX.runDataMigrations?.()).catch(() => {});
 
+RhythiaX.Engines.start();
+
+// Release notes: the changelog.md packaged with this version, and the online copy. Loaded from a folder
+// (a development install) the local file is all there is, so drafts can be previewed before publishing.
+// The online copy comes from the history server (tools/publish-changelog.js), only once the player has allowed
+// connections to it: Local Only, or no choice yet, means no request to rhythia.shuriel.com, so the packaged copy.
+const RELEASES_ONLINE = 'https://rhythia.shuriel.com/api/changelog';
+const RELEASES_KEEP_MS = 5 * 60 * 1000;
+let releasesOnline = null;
+async function releaseNotes() {
+  const local = await fetch(chrome.runtime.getURL('changelog.md')).then(r => r.text());
+  let dev = false;
+  try { dev = (await chrome.management.getSelf()).installType === 'development'; } catch (_) {}
+  if (dev) return { dev, local, online: null };
+  const { rhythiaxDataSettings: ds } = await chrome.storage.local.get('rhythiaxDataSettings');
+  if (ds?.communityConsentVersion !== 1 || !['cloud-only', 'hybrid'].includes(ds?.syncMode)) return { dev, local, online: null };
+  if (!releasesOnline || Date.now() - releasesOnline.at > RELEASES_KEEP_MS) {
+    // The server sends max-age and an ETag, so the browser's own cache keeps repeat opens off the network.
+    const text = await fetch(RELEASES_ONLINE)
+      .then(r => (r.ok ? r.text() : null)).catch(() => null);
+    releasesOnline = { at: text ? Date.now() : 0, text };
+  }
+  return { dev, local, online: releasesOnline.text };
+}
+
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+  // This extension's release notes for both changelogs (shared/releases.js).
+  if (message?.type === 'rhythiax-releases') {
+    if (sender?.id !== chrome.runtime.id) return false;
+    releaseNotes().then(sendResponse, error => sendResponse({ local: '', error: String(error?.message || error) }));
+    return true;
+  }
+  // Exodus does not take this page: Legacy runs in the tab instead (engines.js).
+  if (message?.type === 'rhythiax-page-free') {
+    if (!isRhythiaContentScript(sender)) return false;
+    RhythiaX.Engines.inject(sender.tab.id, 'legacy')
+      .then(added => sendResponse({ ok: true, added }))
+      .catch(error => sendResponse({ ok: false, error: String(error?.message || error) }));
+    return true;
+  }
   if (message?.type === 'rhythiax-community-consent') {
     if (!isInternalPage(sender, 'popup/popup.html') && !isRhythiaContentScript(sender)) {
       sendResponse({ ok: false, error: 'Community choices require the extension popup or its Rhythia notification.' });

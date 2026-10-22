@@ -1,10 +1,18 @@
-# Rhythia: Reimagined Attribution License v1.0
+# Reimagined for Rhythia Attribution License v1.1
 
 Copyright (c) 2026 Shuriel
 
+## Versions
+
+Version 1.1 (October 2026) follows the project's rename from Rhythia:
+Reimagined (also written Rhythia Reimagined) to Reimagined for Rhythia and uses
+the new name. The terms are otherwise the same as in version 1.0. Material
+released under version 1.0 stays available under version 1.0, where "Rhythia:
+Reimagined" names the same project.
+
 ## Covered materials
 
-This license applies to original Rhythia: Reimagined source code and original
+This license applies to original Reimagined for Rhythia source code and original
 documentation created by or properly licensed to Shuriel. It also applies to
 original project design material only when that material is clearly identified
 as part of the project.
@@ -16,14 +24,14 @@ third-party libraries, third-party assets, or other external parties.
 ## Permission
 
 Permission is granted, free of charge, to any person obtaining a copy of
-covered Rhythia: Reimagined code or documentation to use, copy, modify, merge,
+covered Reimagined for Rhythia code or documentation to use, copy, modify, merge,
 publish, distribute, sublicense, and use it in other projects, subject to the
 conditions below.
 
 ## Conditions
 
 1. Any public use, publication, distribution, modification, or derivative work
-   containing covered Rhythia: Reimagined material must include clear and
+   containing covered Reimagined for Rhythia material must include clear and
    visible attribution to Shuriel. The requirement is satisfied by any one of
    these forms:
 
@@ -41,7 +49,7 @@ conditions below.
    the covered materials.
 
 4. Modified versions must clearly indicate that changes were made and must not
-   imply that the modified version is an official Rhythia: Reimagined release
+   imply that the modified version is an official Reimagined for Rhythia release
    or that it was created by Shuriel.
 
 5. Separately licensed third-party code, libraries, assets, data, and content

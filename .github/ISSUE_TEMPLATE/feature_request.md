@@ -1,6 +1,6 @@
 ---
 name: Feature request
-about: Suggest an idea or improvement for Rhythia Reimagined
+about: Suggest an idea or improvement for Reimagined for Rhythia
 title: "[Suggestion] "
 labels: enhancement
 ---

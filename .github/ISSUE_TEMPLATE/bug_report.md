@@ -1,6 +1,6 @@
 ---
 name: Bug report
-about: Report a problem with Rhythia Reimagined
+about: Report a problem with Reimagined for Rhythia
 title: "[Bug] "
 labels: bug
 ---

@@ -1,0 +1,444 @@
+/* =============================================
+   Reimagined for Rhythia — Playstyle
+   Same build as Progress and Rankings: label over value, plain sections divided by lines.
+   ============================================= */
+
+:root {
+  --rhythiax-status-win: #4ade80;
+  --rhythiax-status-loss: #f87171;
+  --rhythiax-status-elite: #c084fc;
+  --rhythiax-status-steady: #2dd4bf;
+  --rhythiax-status-alert: #facc15;
+}
+
+/* Darker shades that stay readable on white */
+body[data-rhythiax-theme="white"] {
+  --rhythiax-status-win: #15803d;
+  --rhythiax-status-loss: #b91c1c;
+  --rhythiax-status-elite: #7e22ce;
+  --rhythiax-status-steady: #0f766e;
+  --rhythiax-status-alert: #a16207;
+}
+
+.rhythiax-playstyle-deck {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  width: 100%;
+  min-width: 0;
+}
+
+.rhythiax-text-win {
+  color: var(--rhythiax-status-win) !important;
+  font-weight: 700;
+}
+
+.rhythiax-text-loss {
+  color: var(--rhythiax-status-loss) !important;
+  font-weight: 700;
+}
+
+/* Section label, as Rhythia writes "TITLE PROGRESSION" */
+.rhythiax-m4-label,
+.rhythiax-summary-title,
+.rhythiax-mods-label,
+.rhythiax-breakdown-title,
+.rhythiax-best-maps-title,
+.rhythiax-best-map-kind,
+.rhythiax-faq-heading {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: .05em;
+  text-transform: uppercase;
+  color: var(--rhythiax-text-muted, #9ca3af);
+}
+
+/* ─── Top metrics ─── */
+.rhythiax-m4-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px 48px;
+}
+
+.rhythiax-m4-card {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.rhythiax-m4-value {
+  margin-top: 2px;
+  font-size: 18px;
+  font-weight: 700;
+  line-height: 1.4;
+  font-variant-numeric: tabular-nums;
+  color: var(--rhythiax-text-strong, #fff);
+  white-space: nowrap;
+}
+
+.rhythiax-m4-card[data-tone="win"] .rhythiax-m4-value { color: var(--rhythiax-status-win); }
+.rhythiax-m4-card[data-tone="loss"] .rhythiax-m4-value { color: var(--rhythiax-status-loss); }
+.rhythiax-m4-card[data-tone="elite"] .rhythiax-m4-value { color: var(--rhythiax-status-elite); }
+.rhythiax-m4-card[data-tone="steady"] .rhythiax-m4-value { color: var(--rhythiax-status-steady); }
+.rhythiax-m4-card[data-tone="alert"] .rhythiax-m4-value { color: var(--rhythiax-status-alert); }
+
+.rhythiax-m4-sub {
+  font-size: 12px;
+  color: var(--rhythiax-text-muted, #9ca3af);
+  white-space: nowrap;
+}
+
+/* ─── Summary ─── */
+.rhythiax-summary-card,
+.rhythiax-bottom-row {
+  padding-top: 16px;
+  border-top: 1px solid var(--rhythiax-border, rgba(255, 255, 255, 0.1));
+}
+
+.rhythiax-summary-card {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-width: 0;
+}
+
+.rhythiax-summary-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px 12px;
+}
+
+.rhythiax-summary-header-left {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.rhythiax-status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--rhythiax-text, #f1f5f9);
+}
+
+.rhythiax-badge-icon {
+  display: inline-flex;
+  flex-shrink: 0;
+}
+
+.rhythiax-status-badge.win { color: var(--rhythiax-status-win); }
+.rhythiax-status-badge.loss { color: var(--rhythiax-status-loss); }
+.rhythiax-status-badge.elite { color: var(--rhythiax-status-elite); }
+.rhythiax-status-badge.steady { color: var(--rhythiax-status-steady); }
+.rhythiax-status-badge.alert { color: var(--rhythiax-status-alert); }
+
+.rhythiax-faq-btn {
+  padding: 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--rhythiax-text-muted, #9ca3af);
+  cursor: pointer;
+}
+
+.rhythiax-faq-btn:hover,
+.rhythiax-faq-btn.active {
+  color: var(--rhythiax-text-strong, #fff);
+  text-decoration: underline;
+}
+
+.rhythiax-faq-btn:focus-visible {
+  outline: 2px solid var(--rhythiax-accent, #c084fc);
+  outline-offset: 2px;
+}
+
+.rhythiax-faq-popover {
+  padding: 12px 14px;
+  border: 1px solid var(--rhythiax-border, rgba(255, 255, 255, 0.1));
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--rhythiax-text-strong, #fff) 3%, var(--rhythiax-surface, #18181b));
+}
+
+.rhythiax-faq-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+
+.rhythiax-faq-close {
+  padding: 0 4px;
+  border: 0;
+  background: none;
+  font-size: 18px;
+  line-height: 1;
+  color: var(--rhythiax-text-muted, #9ca3af);
+  cursor: pointer;
+}
+
+.rhythiax-faq-close:hover {
+  color: var(--rhythiax-text-strong, #fff);
+}
+
+.rhythiax-faq-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px 16px;
+}
+
+.rhythiax-faq-item {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.rhythiax-faq-item p {
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.45;
+  color: var(--rhythiax-text-muted, #9ca3af);
+}
+
+.rhythiax-faq-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.rhythiax-faq-tag.win { color: var(--rhythiax-status-win); }
+.rhythiax-faq-tag.loss { color: var(--rhythiax-status-loss); }
+.rhythiax-faq-tag.elite { color: var(--rhythiax-status-elite); }
+.rhythiax-faq-tag.steady { color: var(--rhythiax-status-steady); }
+.rhythiax-faq-tag.alert { color: var(--rhythiax-status-alert); }
+
+.rhythiax-summary-text {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--rhythiax-text, #f1f5f9);
+}
+
+.rhythiax-summary-text p {
+  margin: 0;
+}
+
+.rhythiax-summary-text strong {
+  font-weight: 700;
+  color: var(--rhythiax-text-strong, #fff);
+}
+
+.rhythiax-summary-text a {
+  font-weight: 700;
+  color: var(--rhythiax-accent, #c084fc);
+  text-decoration: none;
+  overflow-wrap: anywhere;
+}
+
+.rhythiax-summary-text a:hover,
+.rhythiax-summary-text a:focus-visible {
+  text-decoration: underline;
+}
+
+.rhythiax-momentum-note,
+.rhythiax-faq-note {
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--rhythiax-text-muted, #9ca3af);
+  overflow-wrap: anywhere;
+}
+
+.rhythiax-faq-note {
+  margin-top: 10px;
+}
+
+.rhythiax-mods-bar {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 6px 16px;
+}
+
+.rhythiax-mod-chip {
+  font-size: 13px;
+  color: var(--rhythiax-text-muted, #9ca3af);
+}
+
+.rhythiax-mod-chip strong {
+  font-weight: 600;
+  color: var(--rhythiax-text-strong, #fff);
+}
+
+.rhythiax-mods-none {
+  font-size: 13px;
+  color: var(--rhythiax-text-muted, #9ca3af);
+}
+
+/* ─── Breakdown and best maps ─── */
+.rhythiax-bottom-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr);
+  gap: 24px;
+  min-width: 0;
+}
+
+.rhythiax-bottom-row.is-single-column {
+  grid-template-columns: 1fr;
+}
+
+.rhythiax-breakdown-panel,
+.rhythiax-best-maps-box {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-width: 0;
+}
+
+.rhythiax-breakdown-panel {
+  container-type: inline-size;
+}
+
+.rhythiax-breakdown-header,
+.rhythiax-best-maps-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 4px 12px;
+}
+
+.rhythiax-breakdown-hint,
+.rhythiax-best-maps-hint {
+  font-size: 12px;
+  color: var(--rhythiax-text-muted, #9ca3af);
+}
+
+.rhythiax-breakdown-sections {
+  display: grid;
+  gap: 12px;
+}
+
+.rhythiax-breakdown-section {
+  min-width: 0;
+}
+
+.rhythiax-breakdown-sublabel {
+  margin: 0 0 6px;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--rhythiax-text-muted, #9ca3af);
+}
+
+/* One row of columns, like a small table */
+.rhythiax-breakdown-grid {
+  display: grid;
+  overflow: hidden;
+  border: 1px solid var(--rhythiax-border, rgba(255, 255, 255, 0.1));
+  border-radius: 8px;
+}
+
+.rhythiax-breakdown-grid.is-speed { grid-template-columns: repeat(8, minmax(0, 1fr)); }
+.rhythiax-breakdown-grid.is-grade { grid-template-columns: repeat(6, minmax(0, 1fr)); }
+
+.rhythiax-breakdown-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 7px 2px;
+  font-variant-numeric: tabular-nums;
+}
+
+.rhythiax-breakdown-item + .rhythiax-breakdown-item {
+  border-left: 1px solid var(--rhythiax-border, rgba(255, 255, 255, 0.1));
+}
+
+.rhythiax-breakdown-label {
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1.3;
+  color: color-mix(in srgb, var(--breakdown-color) 70%, var(--rhythiax-text-strong, #fff));
+}
+
+.rhythiax-breakdown-count {
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.3;
+  color: var(--rhythiax-text-strong, #fff);
+}
+
+.rhythiax-breakdown-item.is-zero .rhythiax-breakdown-label,
+.rhythiax-breakdown-item.is-zero .rhythiax-breakdown-count {
+  opacity: .45;
+}
+
+@container (max-width: 420px) {
+  .rhythiax-breakdown-grid.is-speed { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  .rhythiax-breakdown-grid.is-grade { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .rhythiax-breakdown-grid .rhythiax-breakdown-item { border-top: 1px solid var(--rhythiax-border, rgba(255, 255, 255, 0.1)); }
+}
+
+.rhythiax-best-map-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-width: 0;
+  padding: 9px 0;
+  border-bottom: 1px solid color-mix(in srgb, var(--rhythiax-border, rgba(255, 255, 255, 0.1)) 70%, transparent);
+}
+
+.rhythiax-best-map-item:last-child {
+  border-bottom: 0;
+}
+
+.rhythiax-best-map-left {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1 1 0%;
+  min-width: 0;
+}
+
+.rhythiax-best-map-name {
+  overflow: hidden;
+  font-size: 13px;
+  font-weight: 600;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  color: var(--rhythiax-text-strong, #fff);
+}
+
+.rhythiax-best-map-pill {
+  flex-shrink: 0;
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+  color: var(--rhythiax-text, #f1f5f9);
+}
+
+@media (max-width: 768px) {
+  .rhythiax-bottom-row { grid-template-columns: 1fr; }
+  .rhythiax-faq-grid { grid-template-columns: minmax(0, 1fr); }
+}
+
+@media (max-width: 640px) {
+  .rhythiax-m4-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px 16px;
+  }
+}

@@ -264,6 +264,11 @@ RhythiaX.markDataStorageHealthy = async function () {
 RhythiaX.runDataMigrations = async function () {
   if (RhythiaX.dataMigrationReady) return RhythiaX.dataMigrationReady;
   RhythiaX.dataMigrationReady = (async () => {
+    // Already checked for this version: only the small meta key is read. Reading and validating
+    // all of storage (up to the history limit) on every service-worker wake-up and every tab
+    // made the popup wait; the full check runs once per release, and whenever the meta is not ready.
+    const quick = (await migrationStorageGet(RhythiaX.DATA_STORAGE_META_KEY))[RhythiaX.DATA_STORAGE_META_KEY] || {};
+    if (Number(quick.schemaVersion) === (Number(RhythiaX.DATA_SCHEMA_VERSION) || 1) && quick.status === 'ready' && quick.appVersion === migrationAppVersion()) return quick;
     let all = await migrationStorageGet(null);
     let storedMeta = all[RhythiaX.DATA_STORAGE_META_KEY] || {};
     const currentVersion = Number(RhythiaX.DATA_SCHEMA_VERSION) || 1;

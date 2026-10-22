@@ -1,0 +1,336 @@
+/* =============================================
+   Reimagined for Rhythia - Player Compare: Base
+   ============================================= */
+
+/* Preserved injected profile section styles */
+.rhythiax-injected-stats-section {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  margin: 0 !important;
+  animation: rhythiax-injected-stats-enter 300ms cubic-bezier(.16, 1, .3, 1) both;
+}
+
+@keyframes rhythiax-injected-stats-enter {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.rhythiax-injected-grade-row {
+  margin-top: 14px;
+}
+
+.rhythiax-injected-stats-section .rhythiax-speed-chart {
+  margin-bottom: 6px;
+}
+
+.rhythiax-history-enabled {
+  cursor: pointer;
+}
+
+/* =============================================
+   Profile Header "Compare" Action Button
+   ============================================= */
+.rhythiax-compare-profile-button {
+  display: inline-flex;
+  order: -1;
+  width: auto;
+  min-height: 36px;
+  height: 36px;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  margin: 0;
+  padding: 0 14px;
+  border: 1px solid var(--rhythiax-border-strong, rgba(255, 255, 255, .24));
+  border-radius: 9px;
+  color: var(--rhythiax-text, #f8fafc);
+  background: var(--rhythiax-surface, #1b1a24);
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  box-sizing: border-box;
+  transition: all 160ms ease;
+  user-select: none;
+}
+
+.rhythiax-compare-profile-button:hover {
+  border-color: var(--rhythiax-accent, #c084fc);
+  background: color-mix(in srgb, var(--rhythiax-accent, #c084fc) 16%, var(--rhythiax-surface, #1b1a24));
+}
+
+.rhythiax-compare-profile-button.is-active {
+  border-color: var(--rhythiax-accent, #c084fc);
+  color: #ffffff;
+  background: var(--rhythiax-accent, #c084fc);
+  box-shadow: 0 4px 14px rgba(192, 132, 252, 0.3);
+}
+
+.rhythiax-compare-profile-button:focus-visible {
+  outline: 2px solid var(--rhythiax-accent, #c084fc);
+  outline-offset: 2px;
+}
+
+.rhythiax-compare-profile-button svg {
+  width: 16px;
+  height: 16px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2.2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+/* =============================================
+   Bottom-Right Tray (Proposal B: Segmented Command Bar)
+   ============================================= */
+.rhythiax-compare-tray {
+  position: fixed;
+  right: clamp(16px, 3vw, 32px);
+  bottom: clamp(16px, 3vw, 32px);
+  z-index: 99998;
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 14px;
+  border-radius: 14px;
+  background: var(--rhythiax-surface, #150f20);
+  border: 1.5px solid var(--rhythiax-border-strong, rgba(255, 255, 255, .26));
+  box-shadow: 0 16px 40px rgba(0, 0, 0, .45), 0 0 0 1px var(--rhythiax-border, rgba(255, 255, 255, .1));
+  color: var(--rhythiax-text, #f8fafc);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  animation: rhythiax-tray-slide-in 240ms cubic-bezier(.16, 1, .3, 1) both;
+  box-sizing: border-box;
+}
+
+.rhythiax-compare-tray.is-closing {
+  animation: rhythiax-tray-slide-out 180ms ease-in forwards;
+  pointer-events: none;
+}
+
+.rhythiax-compare-tray[hidden] {
+  display: none !important;
+}
+
+@keyframes rhythiax-tray-slide-in {
+  from {
+    opacity: 0;
+    transform: translateY(16px) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes rhythiax-tray-slide-out {
+  from {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(16px) scale(0.96);
+  }
+}
+
+/* Counter badge */
+.rhythiax-tray-counter {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px 10px;
+  border-radius: 8px;
+  background: var(--rhythiax-accent-soft, rgba(192, 132, 252, 0.16));
+  border: 1px solid var(--rhythiax-border-strong, rgba(255, 255, 255, .26));
+  color: var(--rhythiax-accent, #c084fc);
+  font-size: 13px;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  flex-shrink: 0;
+}
+
+/* Chips list */
+.rhythiax-tray-chips {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.rhythiax-tray-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 5px 10px 5px 7px;
+  border-radius: 10px;
+  background: var(--rhythiax-inner-surface, #252239);
+  border: 1px solid var(--rhythiax-border-strong, rgba(255, 255, 255, .26));
+  color: var(--rhythiax-text, #f8fafc);
+  white-space: nowrap;
+  transition: border-color 140ms ease;
+}
+
+.rhythiax-tray-chip:hover {
+  border-color: var(--rhythiax-accent, #c084fc);
+}
+
+.rhythiax-tray-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 7px;
+  overflow: hidden;
+  flex-shrink: 0;
+  background: var(--rhythiax-surface, #1b1a24);
+  border: 1px solid var(--rhythiax-border-strong, rgba(255, 255, 255, .24));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.rhythiax-tray-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.rhythiax-tray-avatar svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.rhythiax-tray-meta {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.15;
+}
+
+.rhythiax-tray-name {
+  font-size: 13px;
+  font-weight: 800;
+  max-width: 110px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.rhythiax-tray-rank {
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--rhythiax-text-muted, #9ca3af);
+}
+
+/* Roomy 26px round dismiss button - No missclicks */
+.rhythiax-tray-dismiss-btn {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: var(--rhythiax-surface, #1b1a24);
+  border: 1.5px solid var(--rhythiax-border-strong, rgba(255, 255, 255, .24));
+  color: var(--rhythiax-text-muted, #9ca3af);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  padding: 0;
+  margin-left: 2px;
+  flex-shrink: 0;
+  transition: all 140ms ease;
+}
+
+.rhythiax-tray-dismiss-btn:hover {
+  background: #ef4444;
+  border-color: #ef4444;
+  color: #ffffff;
+  transform: scale(1.12);
+}
+
+.rhythiax-tray-dismiss-btn svg {
+  width: 12px;
+  height: 12px;
+  stroke: currentColor;
+  stroke-width: 2.8;
+  stroke-linecap: round;
+  fill: none;
+}
+
+/* Compare launch button */
+.rhythiax-tray-launch-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 9px 18px;
+  border-radius: 9px;
+  background: var(--rhythiax-accent, #c084fc);
+  border: 0;
+  color: #ffffff;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 800;
+  cursor: pointer;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, .25);
+  transition: filter 140ms ease, transform 140ms ease;
+  white-space: nowrap;
+}
+
+.rhythiax-tray-launch-btn:hover {
+  filter: brightness(1.12);
+}
+
+.rhythiax-tray-launch-btn:disabled,
+.rhythiax-tray-launch-btn.is-disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  filter: grayscale(0.4);
+  box-shadow: none;
+  pointer-events: none;
+}
+
+.rhythiax-tray-launch-btn svg {
+  width: 14px;
+  height: 14px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  flex-shrink: 0;
+}
+
+/* Side controls */
+.rhythiax-tray-close-btn {
+  width: 26px;
+  height: 26px;
+  border-radius: 6px;
+  background: transparent;
+  border: 0;
+  color: var(--rhythiax-text-muted, #9ca3af);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  padding: 0;
+  transition: all 120ms ease;
+}
+
+.rhythiax-tray-close-btn:hover {
+  color: var(--rhythiax-text, #f8fafc);
+  background: var(--rhythiax-border, rgba(255, 255, 255, .12));
+}
+
+.rhythiax-tray-close-btn svg {
+  width: 14px;
+  height: 14px;
+  stroke: currentColor;
+  stroke-width: 2.5;
+  stroke-linecap: round;
+  fill: none;
+}

@@ -1,0 +1,416 @@
+/* Statistics variant B (statistics/history-view.js): value row with changes, one chart, weeks by month */
+
+.rhythiax-hv2 {
+  --rhythiax-history-line: #60a5fa; /* the blue of Rhythia's own rank chart */
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  min-width: 0;
+}
+
+body[data-rhythiax-theme="white"] .rhythiax-hv2 {
+  --rhythiax-history-line: #2563eb;
+}
+
+/* Value row: a card is a button that picks the chart */
+.rhythiax-metrics-v2 {
+  gap: 4px 8px;
+  margin: 0 -10px;
+}
+
+.rhythiax-metrics-v2 .rhythiax-reimagined-metric-card {
+  padding: 8px 10px 10px;
+  border-radius: 8px;
+  transition: background-color 0.15s ease;
+}
+
+.rhythiax-metrics-v2 .rhythiax-reimagined-metric-card:hover {
+  background: color-mix(in srgb, var(--rhythiax-text-strong, #fff) 4%, transparent);
+}
+
+.rhythiax-metrics-v2 .rhythiax-reimagined-metric-card.active {
+  background: color-mix(in srgb, var(--rhythiax-text-strong, #fff) 9%, transparent);
+}
+
+.rhythiax-metrics-v2 .rhythiax-reimagined-metric-card.active .rhythiax-reimagined-metric-label {
+  color: var(--rhythiax-text-muted, #a3a3a3);
+}
+
+.rhythiax-metrics-v2 .rhythiax-reimagined-metric-card:focus-visible {
+  outline-offset: 0;
+}
+
+.rhythiax-metric-change {
+  margin-top: 1px;
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+.rhythiax-metric-change-value.positive,
+.rhythiax-hv2 .positive { color: var(--rhythiax-up, #4ade80); }
+.rhythiax-metric-change-value.negative,
+.rhythiax-hv2 .negative { color: var(--rhythiax-down, #f87171); }
+.rhythiax-metric-change-value.neutral,
+.rhythiax-hv2 .neutral { color: var(--rhythiax-text-muted, #a3a3a3); }
+
+.rhythiax-metric-change-per,
+.rhythiax-hv2-per {
+  font-weight: 500;
+  color: var(--rhythiax-text-muted, #a3a3a3);
+}
+
+/* Title and range */
+.rhythiax-hv2-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px 12px;
+  margin-bottom: 10px;
+}
+
+.rhythiax-inline-rank-history.rhythiax-hv2 .rhythiax-hv2-head {
+  margin-top: 20px;
+}
+
+.rhythiax-hv2-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--rhythiax-text-strong, #fff);
+}
+
+.rhythiax-hv2-title svg {
+  width: 15px;
+  height: 15px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  flex: none;
+}
+
+.rhythiax-hv2-title small {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--rhythiax-text-muted, #a3a3a3);
+}
+
+.rhythiax-hv2-cloud {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--rhythiax-down, #f87171);
+}
+
+/* Chart */
+.rhythiax-hv2-chart {
+  position: relative;
+  height: 200px;
+}
+
+.rhythiax-hv2-chart svg {
+  display: block;
+  width: 100%;
+  height: 200px;
+  overflow: visible;
+}
+
+.rhythiax-hv2-grid {
+  stroke: color-mix(in srgb, var(--rhythiax-text-strong, #fff) 7%, transparent);
+}
+
+.rhythiax-hv2-axis {
+  fill: var(--rhythiax-text-muted, #a3a3a3);
+  font-size: 11px;
+}
+
+.rhythiax-hv2-line {
+  fill: none;
+  stroke: var(--rhythiax-history-line);
+  stroke-width: 2;
+  stroke-linejoin: round;
+}
+
+.rhythiax-hv2-fill-top { stop-color: var(--rhythiax-history-line); stop-opacity: .4; }
+.rhythiax-hv2-fill-bottom { stop-color: var(--rhythiax-history-line); stop-opacity: 0; }
+
+.rhythiax-hv2-cross {
+  stroke: color-mix(in srgb, var(--rhythiax-text-strong, #fff) 25%, transparent);
+}
+
+.rhythiax-hv2-dot {
+  fill: var(--rhythiax-history-line);
+  stroke: var(--rhythiax-surface, #111214);
+  stroke-width: 2;
+}
+
+.rhythiax-hv2-tip {
+  position: absolute;
+  z-index: 2;
+  display: none;
+  margin-top: -10px;
+  padding: 6px 9px;
+  border: 1px solid var(--rhythiax-border, rgba(255, 255, 255, .12));
+  border-radius: 8px;
+  background: var(--rhythiax-inner-surface, #1c1d20);
+  color: var(--rhythiax-text-strong, #fff);
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  pointer-events: none;
+  transform: translate(-50%, -100%);
+}
+
+.rhythiax-hv2-tip.is-visible { display: block; }
+
+.rhythiax-hv2-tip-date {
+  display: block;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: .03em;
+  text-transform: uppercase;
+  color: var(--rhythiax-text-muted, #a3a3a3);
+}
+
+/* Weeks, one month at a time */
+.rhythiax-hv2-months {
+  margin-top: 16px;
+}
+
+.rhythiax-hv2-month {
+  border-top: 1px solid var(--rhythiax-border, rgba(255, 255, 255, .12));
+}
+
+.rhythiax-hv2-month-head {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  padding: 12px 4px 6px;
+  font-size: 12px;
+}
+
+.rhythiax-hv2-month-name {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--rhythiax-text-strong, #fff);
+}
+
+.rhythiax-hv2-month-sum {
+  margin-left: auto;
+  font-size: 13px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.rhythiax-hv2-week {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto 76px;
+  align-items: center;
+  gap: 16px;
+  padding: 8px 4px;
+  border-top: 1px solid color-mix(in srgb, var(--rhythiax-border, rgba(255, 255, 255, .12)) 55%, transparent);
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+  color: var(--rhythiax-text, #f8fafc);
+}
+
+.rhythiax-hv2-when {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--rhythiax-text-muted, #a3a3a3);
+}
+
+.rhythiax-hv2-when b {
+  margin-right: 6px;
+  font-weight: 600;
+  color: var(--rhythiax-text-strong, #fff);
+}
+
+.rhythiax-hv2-change {
+  text-align: right;
+  font-weight: 600;
+}
+
+.rhythiax-hv2-change.neutral { visibility: hidden; }
+
+.rhythiax-hv2-week.is-quiet .rhythiax-hv2-when b,
+.rhythiax-hv2-week.is-quiet .rhythiax-hv2-value {
+  color: var(--rhythiax-text-muted, #a3a3a3);
+}
+
+.rhythiax-hv2-more {
+  display: flex;
+  justify-content: center;
+  width: 100%;
+  margin-top: 4px;
+  padding: 10px 0 2px;
+  border: 0;
+  border-top: 1px solid var(--rhythiax-border, rgba(255, 255, 255, .12));
+  background: none;
+  color: var(--rhythiax-text-muted, #a3a3a3);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.rhythiax-hv2-more:hover { color: var(--rhythiax-text-strong, #fff); }
+
+.rhythiax-hv2-more:focus-visible {
+  outline: 2px solid var(--rhythiax-accent, #c084fc);
+  outline-offset: 2px;
+  border-radius: 6px;
+}
+
+@media (max-width: 640px) {
+  .rhythiax-metrics-v2 {
+    margin: 0 -6px;
+  }
+
+  .rhythiax-metrics-v2 .rhythiax-reimagined-metric-card {
+    padding: 6px 6px 8px;
+  }
+
+  .rhythiax-hv2-week {
+    grid-template-columns: minmax(0, 1fr) auto 64px;
+    gap: 10px;
+  }
+}
+
+/* Playstyle summary in variant B (playstyle/scout.js buildStory) */
+.rhythiax-summary-text.rhythiax-summary-story p {
+  margin: 0 0 10px;
+  max-width: 92ch;
+  line-height: 1.65;
+  color: var(--rhythiax-text-muted, #a3a3a3);
+}
+
+.rhythiax-summary-text.rhythiax-summary-story p:last-child { margin-bottom: 0; }
+
+.rhythiax-summary-text.rhythiax-summary-story em {
+  font-style: normal;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--rhythiax-text-strong, #fff);
+}
+
+.rhythiax-story-lead {
+  font-weight: 700;
+  color: var(--rhythiax-text-strong, #fff);
+}
+
+.rhythiax-story-lead.positive { color: var(--rhythiax-up, #4ade80); }
+.rhythiax-story-lead.negative { color: var(--rhythiax-down, #f87171); }
+
+/* Playstyle in variant B (playstyle/view.js): thin Breakdown bars, Best maps with map art */
+.rhythiax-playstyle-v2 .rhythiax-bottom-row {
+  grid-template-columns: 1fr;
+  gap: 20px;
+}
+
+.rhythiax-playstyle-v2 .rhythiax-breakdown-sections {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px 32px;
+}
+
+.rhythiax-ps2-stack { min-width: 0; }
+
+.rhythiax-ps2-sublabel {
+  display: block;
+  margin-bottom: 6px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: .05em;
+  text-transform: uppercase;
+  color: var(--rhythiax-text-muted, #a3a3a3);
+}
+
+.rhythiax-ps2-bar {
+  display: flex;
+  gap: 2px;
+  height: 10px;
+}
+
+.rhythiax-ps2-bar span {
+  min-width: 3px;
+  border-radius: 3px;
+}
+
+.rhythiax-ps2-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 12px;
+  margin-top: 8px;
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  color: var(--rhythiax-text-muted, #a3a3a3);
+}
+
+.rhythiax-ps2-legend b {
+  margin-right: 3px;
+  font-weight: 700;
+}
+
+.rhythiax-ps2-legend .is-zero { opacity: .6; }
+
+.rhythiax-playstyle-v2 .rhythiax-best-maps-box {
+  padding-top: 16px;
+  border-top: 1px solid var(--rhythiax-border, rgba(255, 255, 255, .1));
+}
+
+.rhythiax-best-maps-box.rhythiax-ps2-maps {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px 16px;
+}
+
+.rhythiax-ps2-maps .rhythiax-best-maps-header { grid-column: 1 / -1; }
+
+.rhythiax-ps2-maps .rhythiax-best-map-item.rhythiax-best-map-item {
+  display: grid;
+  grid-template-columns: 48px minmax(0, 1fr);
+  grid-template-rows: auto auto;
+  align-items: center;
+  column-gap: 12px;
+  padding: 0;
+  border: 0;
+}
+
+.rhythiax-ps2-art {
+  grid-row: 1 / 3;
+  width: 48px;
+  height: 48px;
+  overflow: hidden;
+  border-radius: 6px;
+  background: var(--rhythiax-inner-surface, rgba(255, 255, 255, .06));
+}
+
+.rhythiax-ps2-art img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.rhythiax-ps2-maps .rhythiax-best-map-left { align-self: end; }
+
+.rhythiax-ps2-maps .rhythiax-best-map-pill {
+  align-self: start;
+  font-weight: 500;
+  color: var(--rhythiax-text-muted, #a3a3a3);
+}
+
+@media (max-width: 640px) {
+  .rhythiax-playstyle-v2 .rhythiax-breakdown-sections,
+  .rhythiax-best-maps-box.rhythiax-ps2-maps {
+    grid-template-columns: 1fr;
+  }
+}

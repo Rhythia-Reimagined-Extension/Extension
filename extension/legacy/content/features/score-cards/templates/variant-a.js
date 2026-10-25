@@ -1,5 +1,5 @@
 // ============================================================================
-// Reimagined for Rhythia — Score Card Template: Variant A (Flagship Dual-Stage)
+// Reimagined for Rhythia — Score card style A, "Big grade" (variant_a; styles in variant-a.css)
 // ============================================================================
 
 var RhythiaX = RhythiaX || {};
@@ -32,7 +32,8 @@ RhythiaX.ScoreCardTemplates = RhythiaX.ScoreCardTemplates || {};
     card.style.setProperty('--grade-color', gradeColor);
     card.style.setProperty('--grade-glow', gradeGlow);
     if (scoreData.previewUrl) {
-      card.style.setProperty('--card-art-url', `url('${scoreData.previewUrl}')`);
+      // A quoted string, so a quote or bracket in the address cannot end the url().
+      card.style.setProperty('--card-art-url', `url(${JSON.stringify(String(scoreData.previewUrl))})`);
     }
 
     // 1. Seamless Background Stage (Zero Line / Zero Seam)
@@ -91,10 +92,10 @@ RhythiaX.ScoreCardTemplates = RhythiaX.ScoreCardTemplates || {};
 
     const metaParts = [];
     if (mapper) {
-      metaParts.push(`<span class="rhythiax-sc-meta-mapper">mapped by <strong>${escapeHtml(mapper)}</strong></span>`);
+      metaParts.push(`<span class="rhythiax-sc-meta-mapper">mapped by <strong>${RhythiaX.escapeHtml(mapper)}</strong></span>`);
     }
     if (formattedDate) {
-      metaParts.push(`<span class="rhythiax-sc-meta-date"${dateTooltip ? ` title="${escapeHtml(dateTooltip)}"` : ''}>${escapeHtml(formattedDate)}</span>`);
+      metaParts.push(`<span class="rhythiax-sc-meta-date"${dateTooltip ? ` title="${RhythiaX.escapeHtml(dateTooltip)}"` : ''}>${RhythiaX.escapeHtml(formattedDate)}</span>`);
     }
     metaLine.innerHTML = metaParts.join('<span class="rhythiax-sc-meta-sep">•</span>');
     titleBox.appendChild(metaLine);
@@ -103,8 +104,8 @@ RhythiaX.ScoreCardTemplates = RhythiaX.ScoreCardTemplates || {};
     const topControls = document.createElement('div');
     topControls.className = 'rhythiax-sc-top-controls';
 
-    const showIcons = RhythiaX.isScoreCardModIconsEnabled ? RhythiaX.isScoreCardModIconsEnabled() : (RhythiaX.isModuleOptionEnabled ? RhythiaX.isModuleOptionEnabled('scoreCards', 'showModIcons') : true);
-    const showText = RhythiaX.isScoreCardModTextEnabled ? RhythiaX.isScoreCardModTextEnabled() : (RhythiaX.isModuleOptionEnabled ? RhythiaX.isModuleOptionEnabled('scoreCards', 'showModText') : true);
+    const showIcons = RhythiaX.isScoreCardModIconsEnabled();
+    const showText = RhythiaX.isScoreCardModTextEnabled();
 
     const scoreMods = (showIcons || showText) && domain.getScoreMods ? domain.getScoreMods(scoreData) : [];
     if (scoreMods.length > 0) {
@@ -123,7 +124,8 @@ RhythiaX.ScoreCardTemplates = RhythiaX.ScoreCardTemplates || {};
           icon.onerror = () => domain.handleModIconError(icon, mod.label);
           pill.appendChild(icon);
         }
-        if (showText) {
+        // A mod without a picture (score-cards/domain.js getModIconUrl) shows its name.
+        if (showText || !hasIcon) {
           const labelSpan = document.createElement('span');
           labelSpan.className = 'rhythiax-sc-mod-name';
           labelSpan.textContent = mod.label;
@@ -170,13 +172,7 @@ RhythiaX.ScoreCardTemplates = RhythiaX.ScoreCardTemplates || {};
     const dock = document.createElement('div');
     dock.className = 'rhythiax-sc-dock';
 
-    function formatAccuracy(acc) {
-      if (acc == null || acc === '' || acc === '—' || /nan/i.test(String(acc))) return '—%';
-      const cleaned = String(acc).replace('%', '').trim();
-      const num = parseFloat(cleaned);
-      return Number.isFinite(num) ? `${num.toFixed(2)}%` : '—%';
-    }
-    const accVal = formatAccuracy(scoreData.accuracy);
+    const accVal = domain.formatAccuracy(scoreData.accuracy);
     const hitsVal = hitsInfo.total && hitsInfo.total !== '--'
       ? `${hitsInfo.hits} <span class="rhythiax-sc-dock-sub">/ ${hitsInfo.total}</span>`
       : hitsInfo.hits;
@@ -185,16 +181,16 @@ RhythiaX.ScoreCardTemplates = RhythiaX.ScoreCardTemplates || {};
     if (isFc) {
       missesMarkup = `<span class="rhythiax-sc-dock-val rhythiax-sc-fc">Full Combo</span>`;
     } else {
-      missesMarkup = `<span class="rhythiax-sc-dock-val rhythiax-sc-miss">${formatNum(scoreData.misses || 0)}</span>`;
+      missesMarkup = `<span class="rhythiax-sc-dock-val rhythiax-sc-miss">${domain.formatNum(scoreData.misses || 0)}</span>`;
     }
 
     let rpLabel = 'Weighted RP';
-    let rpVal = scoreData.weightedRp != null ? `${formatNum(scoreData.weightedRp)} WRP` : `${formatNum(scoreData.rpEarned || 0)} RP`;
+    let rpVal = scoreData.weightedRp != null ? `${domain.formatNum(scoreData.weightedRp)} WRP` : `${domain.formatNum(scoreData.rpEarned || 0)} RP`;
     let rpSub = scoreData.weightPercent != null ? ` <span class="rhythiax-sc-dock-sub">(${scoreData.weightPercent}%)</span>` : '';
 
     if (isReign) {
       rpLabel = 'Rating';
-      rpVal = `${formatNum(scoreData.rpEarned || scoreData.weightedRp || 0)} RP`;
+      rpVal = `${domain.formatNum(scoreData.rpEarned || scoreData.weightedRp || 0)} RP`;
       rpSub = '';
     }
 
@@ -225,18 +221,6 @@ RhythiaX.ScoreCardTemplates = RhythiaX.ScoreCardTemplates || {};
 
     domain.placeModsBelowMapper(card);
     return card;
-  }
-
-  function escapeHtml(str) {
-    return String(str || '').replace(/[&<>"']/g, m => ({
-      '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
-    })[m]);
-  }
-
-  function formatNum(num) {
-    if (RhythiaX.formatNumber) return RhythiaX.formatNumber(num);
-    const n = Number(num);
-    return Number.isFinite(n) ? n.toLocaleString('en-US') : String(num ?? '');
   }
 
   RhythiaX.ScoreCardTemplates.variant_a = { render };

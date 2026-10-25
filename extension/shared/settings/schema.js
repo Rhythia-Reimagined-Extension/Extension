@@ -2,7 +2,7 @@
 // Reimagined for Rhythia — settings schema
 // =============================================
 // Every setting the popup shows, where it is saved, and which look uses it.
-// The popup builds itself from SETTINGS; Exodus and the 1.2.x scripts read the same keys.
+// The popup builds itself from SETTINGS; Exodus and Classic read the same keys.
 //
 // Keys and where they live in chrome.storage.local:
 //   theme, popupSize, look, exodus.style   own keys, see ROOT
@@ -31,9 +31,9 @@ RhythiaX.SettingsSchema = (function () {
 
   const SETTINGS = [
     // Features
-    { key: 'modules.playerCompare', tab: 'features', group: 'Profiles', type: 'switch', icon: 'cmp', looks: BOTH, default: true,
+    { key: 'modules.playerCompare', tab: 'features', group: 'Profiles', type: 'switch', looks: BOTH, default: true,
       title: 'Player Compare', desc: 'Two players side by side: duel, radar and shared maps.' },
-    { key: 'modules.statHistory', tab: 'features', group: 'Profiles', type: 'switch', icon: 'clock', looks: BOTH, default: true,
+    { key: 'modules.statHistory', tab: 'features', group: 'Profiles', type: 'switch', looks: BOTH, default: true,
       title: 'Rank and stat history', desc: 'Daily rank, RP and plays, with how they changed.',
       children: [
         { key: 'options.statHistory.layout', type: 'tiles', looks: CLASSIC, default: 'variant_b', title: 'Statistics',
@@ -41,23 +41,23 @@ RhythiaX.SettingsSchema = (function () {
         { key: 'data.inlineRankingReference', type: 'pills', looks: CLASSIC, default: 'previousDayClose', title: 'Changes since',
           options: [['previousDayClose', 'Yesterday'], ['firstSnapshotToday', 'Today’s start']] },
       ] },
-    { key: 'modules.titleProgression', tab: 'features', group: 'Profiles', type: 'switch', icon: 'star', looks: BOTH, default: true,
+    { key: 'modules.titleProgression', tab: 'features', group: 'Profiles', type: 'switch', looks: BOTH, default: true,
       title: 'Title progression', desc: 'Rank milestones and how close the next title is.',
       children: [
         { key: 'options.titleProgression.showProgression', type: 'switch', looks: CLASSIC, default: true, title: 'Progression map' },
         { key: 'options.titleProgression.showHistory', type: 'switch', looks: CLASSIC, default: true, title: 'Progression history' },
       ] },
-    { key: 'modules.advancedStats', tab: 'features', group: 'Profiles', type: 'switch', icon: 'chart', looks: BOTH, default: true,
-      title: 'Statistics and playstyle', desc: 'What a player’s top plays say: speed, accuracy and standout maps.',
+    { key: 'modules.advancedStats', tab: 'features', group: 'Profiles', type: 'switch', looks: BOTH, default: true,
+      title: 'Statistics and playstyle', desc: 'Speed, accuracy and best maps from a player’s top plays.',
       children: [
         { key: 'options.advancedStats.playstyleTab', type: 'switch', looks: CLASSIC, default: true, title: 'Playstyle tab' },
         { key: 'options.advancedStats.scoutingSummary', type: 'switch', looks: CLASSIC, default: true, title: 'Summary card' },
         { key: 'options.advancedStats.performanceBreakdown', type: 'switch', looks: CLASSIC, default: true, title: 'Speed and grades' },
         { key: 'options.advancedStats.bestMaps', type: 'switch', looks: CLASSIC, default: true, title: 'Best maps' },
       ] },
-    { key: 'modules.friendsList', tab: 'features', group: 'Profiles', type: 'switch', icon: 'users', looks: BOTH, default: true,
-      title: 'Friends list', desc: 'Open your friends from your own profile, who is playing first.' },
-    { key: 'modules.scoreCards', tab: 'features', group: 'Scores', type: 'switch', icon: 'card', looks: CLASSIC, default: true,
+    { key: 'modules.friendsList', tab: 'features', group: 'Profiles', type: 'switch', looks: BOTH, default: true,
+      title: 'Friends list', desc: 'On your own profile, online friends first.' },
+    { key: 'modules.scoreCards', tab: 'features', group: 'Scores', type: 'switch', looks: CLASSIC, default: true,
       title: 'Score cards', desc: 'Score rows with RP weighting, grades and map art.',
       children: [
         { key: 'options.scoreCards.cardLayout', type: 'tiles', looks: CLASSIC, default: 'variant_e', title: 'Card style',
@@ -67,43 +67,40 @@ RhythiaX.SettingsSchema = (function () {
         { key: 'options.scoreCards.modDisplay', type: 'pills', looks: CLASSIC, default: 'icons', title: 'Mods as', options: [['icons', 'Icons'], ['labels', 'Labels']] },
         { key: 'options.scoreCards.cardBackgrounds', type: 'switch', looks: CLASSIC, default: true, title: 'Map art behind cards' },
       ] },
-    { key: 'exodus.scoresView', tab: 'features', group: 'Scores', type: 'tiles', icon: 'card', looks: EXODUS, default: 'list',
-      title: 'Scores layout', desc: 'How a profile lists its plays at first.', options: [['list', 'List', '', 'exoList'], ['grid', 'Grid', '', 'exoGrid']] },
-    { key: 'exodus.pages', tab: 'features', group: 'Pages', type: 'checks', icon: 'layout', looks: EXODUS, default: PAGES.map(p => p[0]),
+    { key: 'exodus.scoresView', tab: 'features', group: 'Scores', type: 'tiles', looks: EXODUS, default: 'list',
+      title: 'Scores layout', desc: 'How a profile shows its scores first.', options: [['list', 'List', '', 'exoList'], ['grid', 'Grid', '', 'exoGrid']] },
+    { key: 'exodus.pages', tab: 'features', group: 'Pages', type: 'checks', looks: EXODUS, default: PAGES.map(p => p[0]),
       title: 'Pages Exodus takes over', desc: 'Off keeps Rhythia’s own version of that page.', options: PAGES },
-    { key: 'exodus.search', tab: 'features', group: 'Pages', type: 'switch', icon: 'search', looks: EXODUS, default: true,
+    { key: 'exodus.search', tab: 'features', group: 'Pages', type: 'switch', looks: EXODUS, default: true,
       title: 'Search with Ctrl K', desc: 'Players, maps and clans from any page.' },
-    { key: 'modules.easterEggs', tab: 'features', group: 'Extras', type: 'switch', icon: 'smile', looks: CLASSIC, default: true,
-      title: 'Easter eggs', desc: 'Small surprises on some profiles.',
-      children: [
-        { key: 'options.easterEggs.visuals', type: 'switch', looks: CLASSIC, default: true, title: 'Profile visuals' },
-        { key: 'options.easterEggs.numbers', type: 'switch', looks: CLASSIC, default: true, title: 'Other effects' },
-      ] },
+    { key: 'modules.easterEggs', tab: 'features', group: 'Extras', type: 'switch', looks: CLASSIC, default: true,
+      title: 'Easter eggs', desc: 'Small surprises on some profiles.' },
 
     // Appearance
-    { key: 'theme', tab: 'look', group: 'Colours', type: 'themes', icon: 'palette', looks: BOTH, default: 'reimagined', wide: true,
-      title: 'Theme', desc: 'Used on Rhythia and in this popup.', options: [['reimagined', 'Reimagined'], ['dark', 'Dark'], ['white', 'White']] },
-    { key: 'exodus.style', tab: 'look', group: 'Colours', type: 'tiles', icon: 'lines', looks: EXODUS, default: 'lines',
+    { key: 'theme', tab: 'look', group: 'Colours', type: 'themes', looks: BOTH, default: 'reimagined',
+      title: 'Theme', options: [['reimagined', 'Reimagined'], ['dark', 'Dark'], ['white', 'White']] },
+    { key: 'exodus.style', tab: 'look', group: 'Colours', type: 'tiles', looks: EXODUS, default: 'lines',
       title: 'Exodus style', options: [['lines', 'Lines', 'Flat, calm', 'lines'], ['float', 'Floating', 'Raised panels', 'float']] },
-    { key: 'exodus.homeVideo', tab: 'look', group: 'Motion', type: 'switch', icon: 'play', looks: EXODUS, default: true,
+    { key: 'exodus.homeVideo', tab: 'look', group: 'Motion', type: 'switch', looks: EXODUS, default: true,
       title: 'Moving background on Home', desc: 'Off saves battery and data.' },
-    { key: 'options.appearance.dateFormat', tab: 'look', group: 'Formats', type: 'dates', icon: 'cal', looks: CLASSIC, default: 'yyyy-mm-dd',
-      title: 'Date format', desc: 'Dates in history and scores.', options: [['yyyy-mm-dd', 'YYYY-MM-DD'], ['dd-mm-yyyy', 'DD-MM-YYYY'], ['mm-dd-yyyy', 'MM-DD-YYYY']] },
-    { key: 'popupSize', tab: 'look', group: 'Formats', type: 'pills', icon: 'size', looks: BOTH, default: 'default',
+    { key: 'options.appearance.dateFormat', tab: 'look', group: 'Formats', type: 'dates', looks: CLASSIC, default: 'yyyy-mm-dd',
+      title: 'Date format', options: [['yyyy-mm-dd', 'YYYY-MM-DD'], ['dd-mm-yyyy', 'DD-MM-YYYY'], ['mm-dd-yyyy', 'MM-DD-YYYY']] },
+    { key: 'popupSize', tab: 'look', group: 'Formats', type: 'pills', looks: BOTH, default: 'default',
       title: 'Popup size', options: [['default', 'Compact'], ['large', 'Spacious']] },
 
     // Privacy and data
-    { key: 'data.syncMode', tab: 'data', group: 'Community history', type: 'source', icon: 'cloud', looks: BOTH, default: 'hybrid',
+    { key: 'data.syncMode', tab: 'data', group: 'Community history', type: 'source', looks: BOTH, default: 'hybrid',
       title: 'Where history comes from', options: [['local-only', 'This device', 'device'], ['hybrid', 'Both', 'both'], ['cloud-only', 'Community', 'cloud']],
       notes: {
         'local-only': 'Only what this browser saw. Nothing is sent to the community service.',
-        hybrid: 'Shared public history plus what this browser saw. The viewed player’s public ID is sent to Shuriel’s service.',
-        'cloud-only': 'Shared public history only. Nothing new is saved on this device.',
+        hybrid: 'Shared public history plus what this browser saw. The viewed player’s public ID and an anonymous key for this installation are sent to Shuriel’s service (rhythia.shuriel.com).',
+        'cloud-only': 'Shared public history only. Nothing new is saved on this device. The viewed player’s public ID and an anonymous key for this installation are sent to Shuriel’s service (rhythia.shuriel.com).',
       } },
-    { key: 'data.telemetryEnabled', tab: 'data', group: 'Community history', type: 'switch', icon: 'pulse', looks: CLASSIC, default: false,
+    { key: 'data.telemetryEnabled', tab: 'data', group: 'Community history', type: 'switch', looks: CLASSIC, default: false,
       title: 'Report profile visits', desc: 'Sends the public ID of profiles you open, so their history starts being kept. Your IP address is processed to prevent abuse.' },
     { key: 'storage', tab: 'data', group: 'On this device', type: 'storage', looks: BOTH, title: 'Storage' },
-    { key: 'visits', tab: 'data', group: 'Recent profile visits', type: 'visits', looks: BOTH, title: 'Recent profile visits' },
+    // Only Classic records these visits (rhythiax_connection_logs).
+    { key: 'visits', tab: 'data', group: 'Recent profile visits', type: 'visits', looks: CLASSIC, title: 'Recent profile visits' },
   ];
 
   const EXODUS_DEFAULTS = { pages: PAGES.map(p => p[0]), search: true, homeVideo: true, scoresView: 'list' };
@@ -149,5 +146,5 @@ RhythiaX.SettingsSchema = (function () {
   // Exodus options with defaults filled in.
   const exodusOptions = store => Object.fromEntries(Object.keys(EXODUS_DEFAULTS).map(k => [k, read(store, `exodus.${k}`)]));
 
-  return { BOTH, ROOT, EXODUS_KEY, PAGES, SETTINGS, EXODUS_DEFAULTS, walk, find, read, exodusOptions };
+  return { ROOT, EXODUS_KEY, SETTINGS, EXODUS_DEFAULTS, walk, find, read, exodusOptions };
 })();

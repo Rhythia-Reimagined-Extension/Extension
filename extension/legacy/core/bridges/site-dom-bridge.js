@@ -8,15 +8,6 @@ RhythiaX.SiteDomBridge = {
   queryAll(...args) {
     return RhythiaX.qsa(...args);
   },
-  findScoreCards(...args) {
-    return RhythiaX.findScoreCards(...args);
-  },
-  findReplayLink(...args) {
-    return RhythiaX.findReplayLink(...args);
-  },
-  findExpandedPanel(...args) {
-    return RhythiaX.findExpandedPanel(...args);
-  },
   findOfficialStatsContainer(...args) {
     return RhythiaX.findOfficialStatsContainer(...args);
   },

@@ -104,9 +104,9 @@ var RhythiaX = RhythiaX || {};
     if (!RhythiaX.isModuleEnabled) return false;
     if (!RhythiaX.isModuleEnabled('scoreCards')) return true;
     if (RhythiaX.isModuleOptionEnabled?.('scoreCards', 'customCards') === false) return true;
-    // On profile pages, ScoresHub manages all score cards cleanly in its own container.
-    // In-place native redesign is ONLY for the global /scores leaderboard page.
-    if (RhythiaX.PageRouteContext?.type?.() === 'profile') return;
+    // In-place native redesign is ONLY for a player's /scores page. On profile pages, ScoresHub manages all
+    // score cards cleanly in its own container; any other page, or a page Exodus shows, keeps Rhythia's rows.
+    if (RhythiaX.PageRouteContext?.type?.() !== 'scores' || RhythiaX.ClassicIdle?.isSuspended?.()) return false;
 
     const cards = RhythiaX.findScoreCards ? RhythiaX.findScoreCards() : [];
     cards.forEach((card, idx) => {
@@ -140,6 +140,8 @@ var RhythiaX = RhythiaX || {};
    * Re-renders all enhanced cards when user switches variant in the popup.
    */
   function reRenderAllCards() {
+    // While Exodus shows the page the cards wait; the page is built again when it is handed back.
+    if (RhythiaX.ClassicIdle?.isSuspended?.()) return;
     const cards = document.querySelectorAll('.rhythiax-sc-card');
     cards.forEach(card => {
       const data = card._rhythiaxScoreData;
@@ -170,19 +172,31 @@ var RhythiaX = RhythiaX || {};
     enhance,
     unenhance,
     reRenderAllCards,
-    findNativeActionsButton: (card, data) => RhythiaX.ScoreCardActions?.findNativeActionsButton?.(card, data),
-    attachNativeActionsButton: (card, data) => RhythiaX.ScoreCardActions?.attachNativeActionsButton?.(card, data),
-    syncNativeScoreActions: (hub) => RhythiaX.ScoreCardActions?.syncNativeScoreActions?.(hub),
-    openScoreActionsMenu: (btn, card, data) => RhythiaX.ScoreCardActions?.openActionMenu?.(btn, card, data),
-    closeScoreActionsMenu: () => RhythiaX.ScoreCardActions?.closeActiveMenu?.(),
-    isScorePinned: (scoreId, card) => RhythiaX.ScoreCardActions?.isScorePinned?.(scoreId, card),
-    toggleScorePin: (scoreId, card) => RhythiaX.ScoreCardActions?.toggleScorePin?.(scoreId, card),
-    showScoreToast: (msg, type) => RhythiaX.ScoreCardStore?.showToast?.(msg, type),
   };
 
-  // Backwards compatibility mappings for composition.js and route-observer.js
+  // enhanceScoreCards is what the page lifecycle calls (content/bootstrap/lifecycle.js, route-observer.js,
+  // core/modules.js); createCardFromScore is the card renderer under a global name.
   RhythiaX.enhanceScoreCards = enhance;
-  RhythiaX.syncNativeScoreActions = (hub) => RhythiaX.ScoreCardActions?.syncNativeScoreActions?.(hub);
-  RhythiaX.isScorePinned = (scoreId, card) => RhythiaX.ScoreCardActions?.isScorePinned?.(scoreId, card);
-  RhythiaX.toggleScorePin = (scoreId, card) => RhythiaX.ScoreCardActions?.toggleScorePin?.(scoreId, card);
+  RhythiaX.createCardFromScore = createCardFromScore;
 })();
+
+// Which list a score card of Rhythia's own page belongs to (reign, top, recent or pinned), from its mark or the
+// heading above it; core/score-parse.js reads it when it parses a card.
+RhythiaX.getProfileScoreType = function (card) {
+  if (!card) return '';
+  const explicit = card.getAttribute?.('data-rhythiax-score-type') || card.dataset?.rhythiaxScoreType;
+  if (explicit) return explicit;
+  let p = card.parentElement;
+  while (p && p !== document.body) {
+    const heading = p.querySelector?.(':scope > h1, :scope > h2, :scope > h3, :scope > h4, :scope > div > h1, :scope > div > h2, :scope > div > h3, :scope > div > h4');
+    if (heading) {
+      const txt = heading.textContent.toLowerCase();
+      if (txt.includes('reign')) return 'reign';
+      if (txt.includes('top')) return 'top';
+      if (txt.includes('recent')) return 'recent';
+      if (txt.includes('pinned')) return 'pinned';
+    }
+    p = p.parentElement;
+  }
+  return '';
+};

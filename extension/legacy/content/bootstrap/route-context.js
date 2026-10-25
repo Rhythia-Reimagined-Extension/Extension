@@ -3,12 +3,12 @@ var RhythiaX = RhythiaX || {};
 
 RhythiaX.PageRouteContext = {
   type(path = window.location.pathname) {
-    if (/^\/score\/[^/]+\/?$/.test(path)) return RhythiaX.Exodus?.owns?.() ? 'exodus' : 'score-replay';
-    // Exodus renders these pages itself (a score, a profile and its scores); the 1.2.x pipeline stays out.
-    if (/^\/player\/[^/]+\/scores(?:\/|$)/.test(path)) return RhythiaX.Exodus?.owns?.() ? 'exodus' : 'scores';
-    if (/^\/player\/[^/]+\/?$/.test(path)) return RhythiaX.Exodus?.owns?.() ? 'exodus' : 'profile';
+    // While Exodus shows the page (a score, a profile and its scores, the changelog) Classic stays out.
+    if (/^\/score\/[^/]+\/?$/.test(path)) return RhythiaX.exodusShowing?.() ? 'exodus' : 'score-replay';
+    if (/^\/player\/[^/]+\/scores(?:\/|$)/.test(path)) return RhythiaX.exodusShowing?.() ? 'exodus' : 'scores';
+    if (/^\/player\/[^/]+\/?$/.test(path)) return RhythiaX.exodusShowing?.() ? 'exodus' : 'profile';
     if (/^\/maps(?:\/|$)/.test(path)) return 'maps';
-    if (/^\/changelog(?:\/|$)/.test(path)) return RhythiaX.Exodus?.owns?.() ? 'exodus' : 'changelog';
+    if (/^\/changelog(?:\/|$)/.test(path)) return RhythiaX.exodusShowing?.() ? 'exodus' : 'changelog';
     return 'unknown';
   },
 
@@ -18,7 +18,7 @@ RhythiaX.PageRouteContext = {
 
   isInjectable(path = window.location.pathname) {
     const type = this.type(path);
-    // A page Exodus draws itself needs nothing from the 1.2.x pipeline underneath it.
+    // A page Exodus draws itself needs nothing from Classic underneath it.
     return type !== 'unknown' && type !== 'maps' && type !== 'exodus';
   },
 };

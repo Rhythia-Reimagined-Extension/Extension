@@ -39,30 +39,6 @@ var RhythiaX = RhythiaX || {};
     } });
   }
 
-  async function setVariant(variant, broadcast = true) {
-    currentVariant = normalizeVariant(variant);
-    try {
-      if (typeof chrome !== 'undefined' && chrome?.storage?.local) {
-        await saveCardPreference('cardLayout', currentVariant);
-      } else if (typeof localStorage !== 'undefined') {
-        localStorage.setItem(STORAGE_KEY_VARIANT, currentVariant);
-      }
-    } catch (_) {
-      try {
-        if (typeof localStorage !== 'undefined') {
-          localStorage.setItem(STORAGE_KEY_VARIANT, currentVariant);
-        }
-      } catch (__) {}
-    }
-
-    if (broadcast && typeof window !== 'undefined') {
-      window.dispatchEvent(new CustomEvent('rhythiax:scorecard-variant-changed', {
-        detail: { variant: currentVariant }
-      }));
-    }
-    return currentVariant;
-  }
-
   // --------------------------------------------------------------------------
   // View Mode Management (List / Grid)
   // --------------------------------------------------------------------------
@@ -84,11 +60,8 @@ var RhythiaX = RhythiaX || {};
         localStorage.setItem(STORAGE_KEY_VIEWMODE, currentViewMode);
       }
     } catch (_) {
-      try {
-        if (typeof localStorage !== 'undefined') {
-          localStorage.setItem(STORAGE_KEY_VIEWMODE, currentViewMode);
-        }
-      } catch (__) {}
+      // The extension's storage refused the write (after an update under this tab, say): the choice holds in this
+      // tab until it reloads.
     }
 
     if (broadcast && typeof window !== 'undefined') {
@@ -119,13 +92,15 @@ var RhythiaX = RhythiaX || {};
         const options = res?.rhythiaxModuleOptions?.scoreCards;
         currentVariant = normalizeVariant(options?.cardLayout);
         currentViewMode = normalizeViewMode(options?.playerView);
-        await chrome.storage.local.remove(STORAGE_KEY_PINNED);
-        if (chrome.storage.sync?.remove) await chrome.storage.sync.remove(STORAGE_KEY_PINNED);
       } else if (typeof localStorage !== 'undefined') {
         currentVariant = normalizeVariant(localStorage.getItem(STORAGE_KEY_VARIANT));
         currentViewMode = normalizeViewMode(localStorage.getItem(STORAGE_KEY_VIEWMODE));
       }
-      if (typeof localStorage !== 'undefined') localStorage.removeItem(STORAGE_KEY_PINNED);
+      // Pins the browser kept before 1.2.0. The background removes the extension's copies once; the copy in the
+      // site's own storage (www.rhythia.com and rhythia.com each have one) only the page can reach.
+      if (typeof localStorage !== 'undefined' && localStorage.getItem(STORAGE_KEY_PINNED) !== null) {
+        localStorage.removeItem(STORAGE_KEY_PINNED);
+      }
     } catch (error) {
       console.warn('RhythiaX: Could not load score card preferences:', error);
     }
@@ -152,12 +127,10 @@ var RhythiaX = RhythiaX || {};
     const playerId = profileContext?.playerId || RhythiaX.ProfilePageAdapter?.playerId?.();
 
     // Call Rhythia official backend API to persist pin to player account
-    const sessionToken = typeof RhythiaX.getRhythiaAuthToken === 'function'
-      ? RhythiaX.getRhythiaAuthToken()
-      : ((typeof localStorage !== 'undefined' ? localStorage.getItem('rhythia_auth_session_v1') : '') || '');
+    const sessionToken = RhythiaX.getRhythiaAuthToken?.() || '';
 
     if (!sessionToken) {
-      showToast('Please sign in to Rhythia to pin scores to your profile', 'error');
+      showToast('Sign in to Rhythia to pin scores', 'error');
       return previousPinned;
     }
 
@@ -196,7 +169,7 @@ var RhythiaX = RhythiaX || {};
     if (RhythiaX.profileHistoryContext?.scoreSets) {
       RhythiaX.profileHistoryContext.scoreSets.pinnedScores = pinnedScores;
     }
-    showToast(willPin ? 'Score pinned to profile!' : 'Score unpinned from profile', willPin ? 'success' : 'info');
+    showToast(willPin ? 'Score pinned' : 'Score unpinned', willPin ? 'success' : 'info');
 
     if (typeof window !== 'undefined') {
       window.dispatchEvent(new CustomEvent('rhythiax:pinned-changed', {
@@ -258,35 +231,27 @@ var RhythiaX = RhythiaX || {};
   if (typeof chrome !== 'undefined' && chrome?.storage?.onChanged) {
     chrome.storage.onChanged.addListener((changes, area) => {
       if (area === 'local') {
+        // While Exodus shows the page only the choice is kept: the cards and the hub are drawn again, with it,
+        // when the page is handed back.
+        const redraw = !RhythiaX.ClassicIdle?.isSuspended?.();
         if (changes.rhythiaxModuleOptions?.newValue?.scoreCards?.cardLayout) {
           const next = normalizeVariant(changes.rhythiaxModuleOptions.newValue.scoreCards.cardLayout);
           if (next !== currentVariant) {
             currentVariant = next;
-            if (typeof window !== 'undefined') {
+            if (redraw && typeof window !== 'undefined') {
               window.dispatchEvent(new CustomEvent('rhythiax:scorecard-variant-changed', {
                 detail: { variant: currentVariant }
               }));
             }
           }
         }
-        const oldDateFormat = changes.rhythiaxModuleOptions?.oldValue?.appearance?.dateFormat || changes.rhythiaxModuleOptions?.oldValue?.scoreCards?.dateFormat;
-        const newDateFormat = changes.rhythiaxModuleOptions?.newValue?.appearance?.dateFormat || changes.rhythiaxModuleOptions?.newValue?.scoreCards?.dateFormat;
-        const oldModIcons = changes.rhythiaxModuleOptions?.oldValue?.scoreCards?.showModIcons;
-        const newModIcons = changes.rhythiaxModuleOptions?.newValue?.scoreCards?.showModIcons;
-        const oldModText = changes.rhythiaxModuleOptions?.oldValue?.scoreCards?.showModText;
-        const newModText = changes.rhythiaxModuleOptions?.newValue?.scoreCards?.showModText;
-        if (newDateFormat !== oldDateFormat || newModIcons !== oldModIcons || newModText !== oldModText) {
-          if (typeof window !== 'undefined') {
-            window.dispatchEvent(new CustomEvent('rhythiax:scorecard-variant-changed', {
-              detail: { variant: currentVariant }
-            }));
-          }
-        }
+        // A changed date format or mod display needs no event here: core/modules.js draws the cards again for
+        // every options change other than playerView (applyLiveUpdates).
         if (changes.rhythiaxModuleOptions?.newValue?.scoreCards?.playerView) {
           const next = normalizeViewMode(changes.rhythiaxModuleOptions.newValue.scoreCards.playerView);
           if (next !== currentViewMode) {
             currentViewMode = next;
-            if (typeof window !== 'undefined') {
+            if (redraw && typeof window !== 'undefined') {
               window.dispatchEvent(new CustomEvent('rhythiax:scorecard-viewmode-changed', {
                 detail: { viewMode: currentViewMode }
               }));
@@ -303,14 +268,12 @@ var RhythiaX = RhythiaX || {};
 
   RhythiaX.ScoreCardStore = {
     getVariant,
-    setVariant,
     getViewMode,
     setViewMode,
     isPinned,
     getPinnedScores,
     togglePin,
     loadPreferences,
-    loadPinnedScores: loadPreferences,
     ready,
     showToast,
   };

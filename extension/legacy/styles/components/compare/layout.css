@@ -175,7 +175,8 @@
   padding: 2.5px 7px;
   border-radius: 5px;
   background: var(--rhythiax-accent, #c084fc);
-  color: #ffffff;
+  /* Set only by an own theme: the text colour that reads on its accent. */
+  color: var(--rhythiax-on-accent, #ffffff);
   white-space: nowrap;
 }
 

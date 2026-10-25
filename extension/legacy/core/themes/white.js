@@ -19,5 +19,4 @@ RhythiaX.themePresets.white = {
   chartTrack: 'rgba(15,23,42,.14)',
   shadow: '0 1px 3px rgba(15,23,42,.05), 0 6px 16px rgba(15,23,42,.05)',
   radius: '14px',
-  backgroundImage: '',
 };

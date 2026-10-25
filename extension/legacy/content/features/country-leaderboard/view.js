@@ -141,6 +141,8 @@ var RhythiaX = RhythiaX || {};
   }
 
   document.addEventListener('click', event => {
+    // While Exodus shows the page, a click is Exodus' own.
+    if (RhythiaX.ClassicIdle?.isSuspended?.()) return;
     const target = event.target instanceof Element ? event.target : null;
     if (!target) return;
 
@@ -179,4 +181,6 @@ var RhythiaX = RhythiaX || {};
   window.addEventListener('resize', positionPopover);
   window.addEventListener('scroll', positionPopover, true);
   window.addEventListener('popstate', closePopover);
+  // Exodus took the page: an open popover closes with it.
+  RhythiaX.ClassicIdle?.onSuspend?.(closePopover);
 })();

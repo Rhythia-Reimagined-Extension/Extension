@@ -1,5 +1,6 @@
 // =============================================
-// Rhythia X — Profile Page Enhancements
+// Reimagined for Rhythia — Classic's profile page: the player read from the API, then its Statistics, Scores
+// Hub, title progression and profile extras built on Rhythia's page
 // =============================================
 
 var RhythiaX = RhythiaX || {};
@@ -179,7 +180,7 @@ RhythiaX.extractPlayerData = function () {
     // Old layout row fallback (.space-y-3 > div)
     if (!playCount || !squaresHit) {
       RhythiaX.qsa('.space-y-3 > div', statsBox).forEach(row => {
-        if (row.classList.contains('rhythiax-injected-stats-section') || row.classList.contains('rhythiax-history-row')) return;
+        if (row.classList.contains('rhythiax-history-row')) return;
         const label = row.children[0]?.textContent?.trim().toLowerCase();
         const valueEl = row.children[row.children.length - 1];
         if (!rp && (label === 'rhythm points' || label === 'weighted rp')) rp = profileDisplayNumber(valueEl);
@@ -407,12 +408,41 @@ RhythiaX.profileScoreSetsForMode = function (sets, mode) {
     topScoreCount: topScores.length, isLoading: false };
 };
 
+// ─── Rhythia's own sections while Classic builds ─
+// styles/bridge/anti-flicker.css hides Rhythia's score list and Statistics body from the first frame, until
+// the Scores hub and the Statistics panel take their place. When a profile load ends, each part Classic did
+// not build (no answer, no stats container, no column for the hub, module off) gets a mark on <html> that
+// gives Rhythia's section back; a part it built keeps the hiding, so Rhythia's re-renders of it stay out of
+// sight. content/bootstrap/changelog-early.js sets the same marks for a page opened on /player/.
+const PROFILE_SECTION_RELEASES = {
+  rhythiaxScoresReleased: '.rhythiax-scores-hub',
+  rhythiaxStatsReleased: '.rhythiax-reimagined-stats-body',
+};
+let profileSectionsHiddenFor = null;
+
+function releaseNativeProfileSections() {
+  const marks = document.documentElement?.dataset;
+  if (!marks) return;
+  Object.entries(PROFILE_SECTION_RELEASES).forEach(([mark, built]) => {
+    if (document.querySelector(built)) delete marks[mark];
+    else marks[mark] = 'true';
+  });
+}
+
+// Another profile (or mode) hides Rhythia's sections again; a retry for the same one keeps what was decided.
+function hideNativeProfileSectionsAgain() {
+  if (profileSectionsHiddenFor === RhythiaX.navigationToken) return;
+  profileSectionsHiddenFor = RhythiaX.navigationToken;
+  const marks = document.documentElement?.dataset;
+  if (marks) Object.keys(PROFILE_SECTION_RELEASES).forEach(mark => delete marks[mark]);
+}
+
 // ─── Full injection for profile page ─────────
 RhythiaX.injectProfile = function () {
-  (RhythiaX.dataCanonicalWrite ? RhythiaX.maintainDataHistory?.() : Promise.resolve())?.catch(error => console.warn("RhythiaX: History maintenance failed:", error));
   if (RhythiaX.injected) {
     return;
   }
+  hideNativeProfileSectionsAgain();
 
   const officialStats = RhythiaX.ProfilePageAdapter.officialStats();
   const headerArea = RhythiaX.ProfilePageAdapter.headerRankArea();
@@ -424,15 +454,14 @@ RhythiaX.injectProfile = function () {
     return false;
   }
 
+  // Once the page is ready, not on every attempt before it: each run reads the stored history records.
+  (RhythiaX.dataCanonicalWrite ? RhythiaX.maintainDataHistory?.() : Promise.resolve())?.catch(error => console.warn("RhythiaX: History maintenance failed:", error));
+
   // Clean up any stale injected elements before re-rendering
   RhythiaX.cleanupStaleElements();
 
   RhythiaX.log('=== INJECTING PROFILE ===');
   const playerId = RhythiaX.ProfilePageAdapter.playerId();
-  const player = {};
-  // Native score cards can also be left over from the previous route.
-  const scores = [];
-  RhythiaX.log('Profile page data parsed', { scoreCount: scores.length });
 
   const navigationToken = RhythiaX.navigationToken;
   const profileSearch = window.location.search;
@@ -446,41 +475,36 @@ RhythiaX.injectProfile = function () {
 
   // keep: the page already shows exactly this data (painted from the cache), so the panels stay as they
   // are and only the work that needs the fresh answer runs (history capture, indicators, history panes).
-  const renderProfile = (scoreSets, renderMode, renderPlayer = player, keep = false) => {
-    if (!isCurrentProfile() || String(renderPlayer.id) !== String(playerId)) return false;
+  const renderProfile = (scoreSets, renderMode, renderPlayer, keep = false) => {
+    if (!isCurrentProfile() || String(renderPlayer?.id) !== String(playerId)) return false;
     scoreSets = RhythiaX.profileScoreSetsForMode(scoreSets, profileMode);
     const hasApiData = scoreSets && (scoreSets.scores?.length > 0 || !isNormalProfile);
-    const isInitialRender = renderMode === 'initial';
     const isCacheRender = renderMode === 'cache';
-    if (!isInitialRender && !keep) RhythiaX.cleanupStaleElements(true);
-    const initialScores = scores || [];
-    const initialTopScores = initialScores.filter(s => s.scoreType === 'top' || !s.scoreType);
-    const initialReignScores = initialScores.filter(s => s.scoreType === 'reign');
-    const initialRecentScores = initialScores.filter(s => s.scoreType === 'recent');
+    if (!keep) RhythiaX.cleanupStaleElements(true);
+    // A profile whose answer has no scores: an empty, finished list rather than loading placeholders.
     const data = hasApiData
-      ? (isCacheRender ? scoreSets : RhythiaX.mergeWeightedRp(scoreSets, scores))
+      ? scoreSets
       : {
-          isLoading: !initialScores.length,
-          scores: initialScores,
-          ratingScores: initialScores,
-          topScores: initialTopScores,
-          reignScores: initialReignScores,
-          recentScores: initialRecentScores
+          isLoading: false,
+          scores: [],
+          ratingScores: [],
+          topScores: [],
+          reignScores: [],
+          recentScores: []
         };
     const accuracy = RhythiaX.StatisticsDomain.averageAccuracy(data.scores || [], { avgAccuracy: '' });
     renderPlayer.avgAccuracy = accuracy === '—' ? '' : Number(accuracy);
     RhythiaX.profileHistoryContext = { playerId, player: renderPlayer, scoreSets: data };
     const renderScores = data.scores || [];
     RhythiaX.log('Rendering profile with', renderScores.length, 'scores, mode:', renderMode);
-    if (!keep && !RhythiaX.buildStatsPanel(renderPlayer, renderScores, renderPlayer.rp, 'profile', data.ratingScores, { deferProfiles: isInitialRender })) {
+    if (!keep && !RhythiaX.buildStatsPanel(renderPlayer, renderScores, renderPlayer.rp, 'profile', data.ratingScores)) {
       RhythiaX.error('Profile stats were not ready after data loading');
-      RhythiaX.clearLoadingState();
       return false;
     }
     const dataCapture = (isNormalProfile && !isCacheRender && hasApiData)
       ? Promise.resolve(RhythiaX.recordProfileDataCapture?.(playerId, renderPlayer, data, {
           visitId: dataVisitId,
-          source: isInitialRender ? 'dom' : 'api',
+          source: 'api',
           isCurrentProfile,
           verifiedProfile: true,
         }))
@@ -489,7 +513,7 @@ RhythiaX.injectProfile = function () {
       if (navigationToken === RhythiaX.navigationToken) RhythiaX.captureError(error, 'New profile data capture failed');
     });
 
-    if (isInitialRender || isCacheRender) {
+    if (isCacheRender) {
       const enhanceInitialView = () => {
         if (!isCurrentProfile()) {
           return;
@@ -546,6 +570,7 @@ RhythiaX.injectProfile = function () {
 
   if (!playerId) {
     RhythiaX.log('=== PROFILE INJECTION COMPLETE ===');
+    releaseNativeProfileSections();
     return Boolean(rendered);
   }
 
@@ -586,6 +611,8 @@ RhythiaX.injectProfile = function () {
   }).finally(() => {
     if (RhythiaX.apiAbortController === controller) RhythiaX.apiAbortController = null;
     if (RhythiaX.profileRequestContext === pendingProfile) RhythiaX.profileRequestContext = null;
+    // The load is over (drawn, no answer, or an error); a request cut short by leaving the page is not.
+    if (isCurrentProfile()) releaseNativeProfileSections();
   });
   RhythiaX.log('=== PROFILE DATA LOADING ===');
   return true;

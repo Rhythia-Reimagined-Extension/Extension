@@ -1,11 +1,11 @@
 // =============================================
-// Reimagined for Rhythia — Exodus (experimental profile page)
+// Reimagined for Rhythia — Exodus shell
 // =============================================
 // Runs at document_start. On the home page, the leaderboards, the maps, a map, a score, the skins, the clans, a clan, the collections, a collection, the wiki, the changelog, /player/:id and /player/:id/scores, while the experimental switch is on,
 // Exodus takes the page over: Rhythia's React root is hidden by CSS before it
 // ever paints, and Exodus renders its own page in a shadow root that sits next
 // to #root, outside React's tree, so Rhythia's re-renders cannot touch it.
-// Leaving the profile hands the page straight back to Rhythia.
+// Leaving those pages hands the page straight back to Rhythia.
 
 var RhythiaX = RhythiaX || {};
 
@@ -15,6 +15,8 @@ RhythiaX.Exodus = (function () {
   const MIRROR_KEY = 'rhythiax_exodus';
   const LOOK_KEY = 'rhythiax_exodus_look';
   const PAGES_KEY = 'rhythiax_exodus_pages';
+  // An own theme's page colour, so the first paint already has it.
+  const PAGE_KEY = 'rhythiax_exodus_page';
   const ON_CLASS = 'rhythiax-exodus';
   const HOST_ID = 'rhythiax-exodus-root';
   const RETURN_ID = 'rhythiax-exodus-return';
@@ -34,6 +36,11 @@ RhythiaX.Exodus = (function () {
   let app = null;
   let shownFor = '';
   let loading = null;
+  // Everything the page on screen still has running (its load, map art, a late history, a refresh); leaving
+  // the page aborts it.
+  let viewAc = null;
+  // The profile on screen: the data it was drawn from and whether it was drawn for its owner.
+  let drawn = null;
   // Pages shown in this tab, capped like the data layer's memory: past 20 the oldest one goes.
   const cache = new Map();
   const remember = (key, value) => { cache.delete(key); cache.set(key, value); if (cache.size > 20) cache.delete(cache.keys().next().value); };
@@ -47,54 +54,31 @@ RhythiaX.Exodus = (function () {
     if (saved !== null) pages = saved ? saved.split(',') : [];
   } catch (_) {}
   html.dataset.rhythiaxExodusTheme = look.theme;
+  try { const page = localStorage.getItem(PAGE_KEY); if (/^#[0-9a-f]{6}$/.test(page || '')) html.style.setProperty('--rhythiax-exodus-page', page); } catch (_) {}
 
-  const esc = value => String(value ?? '').replace(/[&<>"']/g, ch => (
-    { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch]));
-  const profileId = (path = location.pathname) => path.match(/^\/player\/(\d+)(?:\/scores)?\/?$/)?.[1] || '';
-  const pageOf = (path = location.pathname) => (/\/scores\/?$/.test(path) ? 'scores' : 'profile');
-  const HOME = 'home';
-  const BOARD = 'board';
-  const isBoard = (path = location.pathname) => /^\/leaderboards(?:\/[A-Za-z]{2})?\/?$/.test(path);
-  // Views that load their own data: a score, a map, a clan, a collection ('s', 'm', 'c', 'k' + id) and the pages
-  // 'maps', 'skins', 'clans', 'collections', 'collections-own', 'wiki', 'changelog' (all of its addresses) and 'support'.
-  const viewKey = (path = location.pathname) => {
-    const m = path.match(/^\/(score|maps|clans|collections)\/(\d+)\/?$/);
-    if (m) return { score: 's', maps: 'm', clans: 'c', collections: 'k' }[m[1]] + m[2];
-    if (/^\/collections\/own\/?$/.test(path)) return 'collections-own';
-    // Paynet comes back to /support?paynet=…; Rhythia checks that payment itself.
-    if (/^\/support\/?$/.test(path)) return new URLSearchParams(location.search).has('paynet') ? '' : 'support';
-    if (/^\/changelog(?:\/(?:public|web)(?:\/\d{4}-\d{2}-\d{2})?)?\/?$/.test(path)) return 'changelog';
-    return /^\/(maps|skins|clans|collections|wiki)\/?$/.test(path) ? path.replace(/\//g, '') : '';
-  };
-  // What Exodus shows at an address: a player (profile or scores), the home page, the leaderboards or a view.
-  const routeKey = (path = location.pathname) => (profileId(path) ? 'p' + profileId(path) : path === '/' ? HOME : isBoard(path) ? BOARD : viewKey(path));
+  // Text made safe for markup, the same in every Exodus view (core/kit.js).
+  const esc = value => RhythiaX.ExodusKit.esc(value);
+  // A complete url("…") token, safe inside a style attribute (core/kit.js).
+  const cssUrl = x => RhythiaX.ExodusKit.cssUrl(x);
+  // What Exodus shows at an address, and which "Pages Exodus takes over" entry it belongs to (core/routes.js).
+  const { profileId, pageOf, HOME, BOARD, isBoard, viewKey, routeKey, pageGroup } = RhythiaX.ExodusRoutes;
   const shownKey = () => (/^\d+$/.test(shownFor) ? 'p' + shownFor : shownFor);
-  // Which "Pages Exodus takes over" entry an address belongs to.
-  const pageGroup = key => {
-    if (!key) return '';
-    if (key === HOME) return 'home';
-    if (key === BOARD) return 'leaderboards';
-    if (/^p\d/.test(key)) return 'profiles';
-    if (/^[sm]\d/.test(key) || key === 'maps') return 'maps';
-    if (/^c\d/.test(key) || key === 'clans') return 'clans';
-    if (/^k\d/.test(key) || key.startsWith('collections')) return 'collections';
-    return key;
-  };
   const allowed = key => !pages || pages.includes(pageGroup(key));
   const active = () => enabled && Boolean(routeKey()) && allowed(routeKey()) && nativeFor !== location.pathname;
 
   // ─── Shell ──────────────────────
   function shellMarkup() {
     const A = RhythiaX.ExodusAssets;
-    return `<style>${A.css}</style><style>${RhythiaX.ExodusApp?.css || ''}${RhythiaX.ExodusHome?.css || ''}${RhythiaX.ExodusBoard?.css || ''}${RhythiaX.ExodusKit?.css || ''}${RhythiaX.ExodusMarkdown?.css || ''}${RhythiaX.ExodusAccount?.css || ''}
+    return `<style>${A.css}</style><style>${RhythiaX.ExodusApp?.css || ''}${RhythiaX.ExodusCompare?.css || ''}${RhythiaX.ExodusHome?.css || ''}${RhythiaX.ExodusBoard?.css || ''}${RhythiaX.ExodusKit?.css || ''}${RhythiaX.ExodusMarkdown?.css || ''}${RhythiaX.ExodusAccount?.css || ''}
       .exo{min-height:100vh}
+      .exo[data-editing],.exo[data-editing] *,.exo[data-editing] *::before,.exo[data-editing] *::after{transition:none!important}
       .site .me{display:flex;align-items:center;gap:8px;flex:none}
       .site .me .av{width:30px;height:30px;border-radius:50%;background:center/cover var(--panel-2);box-shadow:0 0 0 1px var(--line-2)}
-      .site .native{flex:none}
       .brand .re{margin-top:-5px;background-image:linear-gradient(90deg,rgba(var(--ink),.62) 0 42%,rgba(var(--ink),1) 50%,rgba(var(--ink),.62) 58% 100%)}
       @media (max-width:640px){.site .search .lbl,.site .search kbd{display:none}.site .search{padding:0 10px}}</style>
       <style id="variant" media="${look.style === 'lines' ? 'all' : 'not all'}">${A.linesCss}</style>
       <style>.exo[data-search="off"] .site .search{display:none}</style>
+      <style id="owntheme"></style><style id="ownpic"></style>
       <div class="exo" data-theme="${look.theme}" data-variant="${look.style}" data-search="${RhythiaX.ExodusPrefs?.exodus?.search === false ? 'off' : 'on'}">
       ${A.sprite}
       <header class="site"><div class="container">
@@ -122,33 +106,37 @@ RhythiaX.Exodus = (function () {
       root.innerHTML = shellMarkup();
       root.addEventListener('click', onShellClick);
       root.addEventListener('input', onShellInput);
+      // The settings (and an own theme) can be read before the shell exists: paint them into it now.
+      applyLook();
     }
     if (host.parentNode !== document.body) document.body.appendChild(host);
     return true;
   }
 
-  function applyLook() {
-    html.dataset.rhythiaxExodusTheme = look.theme;
-    if (!root) return;
-    const exo = root.querySelector('.exo');
-    exo.dataset.theme = look.theme;
-    exo.dataset.variant = look.style;
-    exo.dataset.search = RhythiaX.ExodusPrefs?.exodus?.search === false ? 'off' : 'on';
-    root.getElementById('variant').media = look.style === 'lines' ? 'all' : 'not all';
-    app?.relayout();
-  }
+  // ─── Own themes (core/own-theme.js) ──────────────────────
+  // The theme in use, its background picture or video, and the theme editor. The shell's own state reaches it
+  // through getters, read each time it is needed.
+  const { applyLook, markOwn, readOwnTheme, openEditor, pictureChanged } = RhythiaX.ExodusOwnTheme.create({
+    html, root: () => root, host: () => host, app: () => app, look: () => look, meId: () => meId, profileId, pageKey: PAGE_KEY,
+  });
 
   const GEAR = '<svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>';
   let meId = '';
+  // me: the signed-in player, null when signed out, undefined while that is not known yet (nothing is drawn).
   function renderMe(me) {
     const slot = root?.getElementById('me');
     if (!slot) return;
-    // Signed in: account settings (core/account.js) and the profile. Signed out: Rhythia's sign-in.
-    slot.innerHTML = me
-      ? `<button class="iconbtn" type="button" data-account aria-label="Account settings" data-tip="<b>Settings</b><small>Username, flag, about me, privacy and login</small>">${GEAR}</button>
-         <a class="av" href="/player/${esc(me.id)}" aria-label="Your profile" data-tip="<b>${esc(me.username)}</b><small>Your profile</small>" style="background-image:url('${esc(me.avatar_url)}')"></a>`
-      : me === null ? '<button class="btn" type="button" data-signin>Sign in</button>' : '';
+    const who = me ? `${me.id}|${me.username}|${me.avatar_url}` : String(me);
+    if (slot.dataset.who !== who) {
+      slot.dataset.who = who;
+      // Signed in: account settings (core/account.js) and the profile. Signed out: Rhythia's sign-in.
+      slot.innerHTML = me
+        ? `<button class="iconbtn" type="button" data-account aria-label="Account settings" data-tip="Settings">${GEAR}</button>
+         <a class="av" href="/player/${esc(me.id)}" aria-label="Your profile" data-tip="<b>${esc(me.username)}</b>" style="background-image:${cssUrl(me.avatar_url)}"></a>`
+        : me === null ? '<button class="btn" type="button" data-signin>Sign in</button>' : '';
+    }
     meId = me?.id || '';
+    markOwn();
   }
 
   // ─── Navigation ──────────────────────
@@ -174,14 +162,16 @@ RhythiaX.Exodus = (function () {
   function navigate(href) {
     root?.querySelectorAll('dialog[open]').forEach(dl => dl.close());
     const path = href.split(/[?#]/)[0];
-    // Only Rhythia's own links: ones the 1.2.x features add are plain anchors and would reload the page.
+    // Only Rhythia's own links: ones the Classic features add are plain anchors and would reload the page.
     const native = [...document.querySelectorAll('#root a[href]')].find(a => a.getAttribute('href') === href && !a.closest('[class*="rhythiax"]'));
+    // Read before the address changes: the route listeners can show the next page during the push itself.
+    const was = shownKey();
     if (enabled && profileId(path) && allowed(routeKey(path)) && nativeFor !== path) { push(href); nativeBehind = true; }
     else if (native) { nativeBehind = false; native.click(); }
     else { nativeBehind = false; push(href); tellRhythia(); }
     // Another page starts at the top; a player's profile and scores keep the scroll.
-    const key = routeKey(href.split(/[?#]/)[0]);
-    if (key && key !== shownKey()) scrollTo(0, 0);
+    const key = routeKey(path);
+    if (key && key !== was) scrollTo(0, 0);
     sync();
   }
 
@@ -213,9 +203,9 @@ RhythiaX.Exodus = (function () {
   }
 
   // ─── Site search (Ctrl K), part of the header on every Exodus page ──────────────────────
-  const fmt = n => Number(n || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  const fmt = n => RhythiaX.ExodusKit.fmt(n, 2);
   const mark = (v, q) => { const s = String(v || ''), i = s.toLowerCase().indexOf(q); return i < 0 ? esc(s) : esc(s.slice(0, i)) + '<mark>' + esc(s.slice(i, i + q.length)) + '</mark>' + esc(s.slice(i + q.length)); };
-  const FIND_HINT = '<p class="cap" style="margin:12px 8px">Type at least two letters. Results come live from Rhythia.</p>';
+  const FIND_HINT = '<p class="cap" style="margin:12px 8px">Type at least two letters.</p>';
   let findTimer = 0, findSeq = 0;
   function openFind() {
     const dlg = root?.getElementById('find');
@@ -235,9 +225,9 @@ RhythiaX.Exodus = (function () {
       const r = await RhythiaX.ExodusData.post('enhancedSearch', { text: q.trim(), limit: 5 });
       if (seq !== findSeq) return;
       const lq = q.trim().toLowerCase(), hl = v => mark(v, lq), site = 'https://www.rhythia.com';
-      const users = (r.users || []).map(u => `<a href="/player/${esc(u.id)}"><i class="round" style="background-image:url('${esc(u.avatar_url)}')"></i><span>${hl(u.username)}<small>Player${u.flag ? ` · <img src="${site}/flags/${esc(u.flag)}.svg" alt="" style="width:14px;vertical-align:-1px"> ${esc(u.flag)}` : ''}</small></span><em>Profile →</em></a>`).join('');
-      const maps = (r.beatmaps || []).map(b => `<a href="/maps/${esc(b.id)}"><i style="background-image:url('${esc(b.previewImage?.small || b.image)}')"></i><span>${hl(b.title)}<small>by ${esc(b.ownerUsername)} · ★ ${fmt(b.starRating)}</small></span><em>${esc(String(b.status || '').toLowerCase())}</em></a>`).join('');
-      const clans = (r.clans || []).map(c => `<a href="/clans/${esc(c.id)}"><i style="background-image:url('${esc(c.avatar_url)}')"></i><span>${hl(c.name)}<small>Clan · [${esc(c.acronym)}]</small></span><em>Clan →</em></a>`).join('');
+      const users = (r.users || []).map(u => `<a href="/player/${esc(u.id)}"><i class="round" style="background-image:${cssUrl(u.avatar_url)}"></i><span>${hl(u.username)}<small>Player${u.flag ? ` · <img src="${site}/flags/${esc(u.flag)}.svg" alt="" style="width:14px;vertical-align:-1px"> ${esc(u.flag)}` : ''}</small></span><em>Profile →</em></a>`).join('');
+      const maps = (r.beatmaps || []).map(b => `<a href="/maps/${esc(b.id)}"><i style="background-image:${cssUrl(b.previewImage?.small || b.image)}"></i><span>${hl(b.title)}<small>by ${esc(b.ownerUsername)} · ★ ${fmt(b.starRating)}</small></span><em>${esc(String(b.status || '').toLowerCase())}</em></a>`).join('');
+      const clans = (r.clans || []).map(c => `<a href="/clans/${esc(c.id)}"><i style="background-image:${cssUrl(c.avatar_url)}"></i><span>${hl(c.name)}<small>Clan · [${esc(c.acronym)}]</small></span><em>Clan →</em></a>`).join('');
       box.innerHTML = (users ? `<h4>Players</h4>${users}` : '') + (maps ? `<h4>Maps</h4>${maps}` : '') + (clans ? `<h4>Clans</h4>${clans}` : '') || '<p class="cap" style="margin:12px 8px">Nothing found.</p>';
     } catch (e) {
       if (seq === findSeq) box.innerHTML = `<p class="cap" style="margin:12px 8px">Search failed (${esc(e.message)}).</p>`;
@@ -263,14 +253,16 @@ RhythiaX.Exodus = (function () {
     if (!btn) return false;
     btn.click();
     // When the dialog closes, read the profile again: avatar, banner, flag or name may have changed.
+    // The later pass catches a picture Rhythia finishes late, on the same profile only.
     let seen = false;
     const watch = new MutationObserver(() => {
       const open = [...document.querySelectorAll('body > [role="dialog"], body > div [role="dialog"]')].some(d => !d.closest('#root'));
       if (open) { seen = true; return; }
       if (!seen) return;
       watch.disconnect();
+      const id = shownFor;
       refresh();
-      setTimeout(refresh, 20000);
+      setTimeout(() => { if (shownFor === id) refresh(); }, 20000);
     });
     watch.observe(document.body, { childList: true, subtree: true });
     setTimeout(() => { if (!seen) watch.disconnect(); }, 5000);
@@ -279,15 +271,15 @@ RhythiaX.Exodus = (function () {
 
   // Exodus's own Settings window (core/account.js): it opens at once and saves like Rhythia's.
   const HANDOFF = {
-    banner: 'Rhythia’s Settings is opening. Click the banner there to change it.',
-    avatar: 'Rhythia’s Settings is opening. Click your avatar there to change it.',
-    name: 'Rhythia’s Settings is opening. The name change purchase is under Username.',
-    login: 'Rhythia’s Settings is opening. Login is at the bottom.',
+    banner: 'Opening Rhythia’s Settings. Click the banner to change it.',
+    avatar: 'Opening Rhythia’s Settings. Click your avatar to change it.',
+    name: 'Opening Rhythia’s Settings. Name changes are under Username.',
+    login: 'Opening Rhythia’s Settings. Login is at the bottom.',
   };
   function accountSettings() {
     const dlg = root?.getElementById('acct'), A = RhythiaX.ExodusAccount;
     if (!dlg || !meId || !A) { rhythiaSettings(); return; }
-    const forgetMe = () => { cache.delete(String(meId)); return RhythiaX.ExodusData.forget(String(meId)); };
+    const mine = String(meId), forgetMe = () => { cache.delete(mine); return RhythiaX.ExodusData.forget(mine); };
     A.open({
       dlg,
       me: RhythiaX.ExodusData.cachedSelf(),
@@ -297,7 +289,7 @@ RhythiaX.Exodus = (function () {
       onSaved: async () => {
         await forgetMe();
         RhythiaX.ExodusData.signedIn().then(renderMe).catch(() => {});
-        if (shownFor === String(meId)) refresh();
+        if (shownFor === mine) refresh();
       },
     });
   }
@@ -311,24 +303,21 @@ RhythiaX.Exodus = (function () {
     const t0 = Date.now();
     const poll = setInterval(() => { if (openSettings() || Date.now() - t0 > 8000) clearInterval(poll); }, 250);
   }
-  function toast(m) {
-    const t = root?.getElementById('toast'); if (!t) return;
-    t.textContent = m; t.classList.add('on'); clearTimeout(toast.t); toast.t = setTimeout(() => t.classList.remove('on'), 2600);
-  }
+  // The shell's #toast, with one timer for it whoever shows it (core/kit.js).
+  function toast(m) { if (root) RhythiaX.ExodusKit.toast(root, m); }
 
-  // Fresh data for the profile on screen, swapped in quietly where the viewer is.
+  // Fresh data for the profile on screen, swapped in quietly where the viewer is (once the page is idle). It
+  // stops when the page is left; a community history read in this tab in the last three hours is reused.
   async function refresh() {
-    const id = shownFor;
-    if (!/^\d+$/.test(id) || !app) return;
+    // After a change on this page the copy on screen predates it, so it is no fallback (null: none at all).
+    const id = shownFor, view = viewAc, prev = drawn?.changed ? null : drawn?.data;
+    if (!/^\d+$/.test(id) || !app || !view) return;
     cache.delete(id);
     RhythiaX.ExodusData.forget(id);
     let res;
-    try { res = await RhythiaX.ExodusData.load(id); } catch (_) { return; }
-    if (shownFor !== id || !app || !app.idle()) return;
-    remember(id, { at: Date.now(), data: res.data });
-    const y = scrollY, state = app.state();
-    mount(res.data, { quiet: true, state });
-    scrollTo(0, y);
+    try { res = await loadFresh(id, view, prev); } catch (_) { return; }
+    if (view.signal.aborted || shownFor !== id || !app) return;
+    settle(id, res, view);
   }
 
   function showNative() {
@@ -369,25 +358,48 @@ RhythiaX.Exodus = (function () {
     root.querySelector('.empty [data-native]').addEventListener('click', showNative);
   }
 
-  // After a change on Rhythia the kept copies of this profile are out of date.
-  function forgetting(fn) {
+  // After a change on Rhythia the kept copies of this profile (id: the profile the action was for, read before
+  // waiting) are out of date.
+  // The page on screen then holds the change only in its own state, so it is not redrawn from its data again.
+  function forgetting(fn, id) {
     return async (...args) => {
       const res = await fn(...args);
-      cache.delete(shownFor);
-      RhythiaX.ExodusData.forget(shownFor);
+      cache.delete(id);
+      RhythiaX.ExodusData.forget(id);
+      if (drawn && String(drawn.data.profile?.id) === id) drawn.changed = true;
       return res;
     };
   }
+  // An owner's action goes out only while the session is still that owner's (an account switch since the
+  // page was drawn would otherwise write to the new account).
+  function asOwner(fn, id) {
+    return async (...args) => {
+      const me = await RhythiaX.ExodusData.signedIn();
+      if (me === null) throw new Error('Sign in to Rhythia first');
+      if (!me) throw new Error('Could not check who is signed in. Try again.');
+      if (String(me.id) !== id) throw new Error('You are signed in as another player now. Reload the page.');
+      return fn(...args);
+    };
+  }
 
-  function context(D) {
-    const a = RhythiaX.ExodusData.actions;
+  // Who is signed in comes from the session, never from saved data: a copy saved for one account must not
+  // show another account's own tools. Unknown while this tab has not read the session yet (owner tools then
+  // appear once it has).
+  const viewer = D => {
+    const me = RhythiaX.ExodusData.knownSelf();
+    return { me, owner: Boolean(me && D.profile && String(me.id) === String(D.profile.id)) };
+  };
+
+  function context(D, v) {
+    const a = RhythiaX.ExodusData.actions, id = String(D.profile?.id ?? ''), view = viewAc;
+    const mine = fn => forgetting(asOwner(fn, id), id);
     return {
-      owner: D.owner,
-      signedIn: D.signedIn,
-      actions: { saveAbout: forgetting(a.saveAbout), setPinned: forgetting(a.setPinned), addFriend: forgetting(a.addFriend), setShowcase: forgetting(a.setShowcase), searchShowcase: RhythiaX.ExodusData.searchShowcase },
+      owner: v.owner,
+      signedIn: v.me,
+      actions: { saveAbout: mine(a.saveAbout), setPinned: mine(a.setPinned), addFriend: forgetting(a.addFriend, id), setShowcase: mine(a.setShowcase), searchShowcase: RhythiaX.ExodusData.searchShowcase },
+      // Map art for lists shown later (Spin, VR); it also goes into the data this tab keeps.
+      moreMeta: ids => RhythiaX.ExodusData.mapMetaFor(ids, view?.signal).then(meta => { Object.assign(D.meta, meta); return meta; }),
       showNative,
-      // Rhythia's Settings button may not be drawn yet (its page catches up first); rhythiaSettings waits for it.
-      openSettings: () => { if (!meId) return openSettings(); rhythiaSettings(); return true; },
       go: navigate,
     };
   }
@@ -395,9 +407,11 @@ RhythiaX.Exodus = (function () {
   function mount(D, opts = {}) {
     app?.destroy();
     app = null;
-    renderMe(D.signedIn);
+    const v = viewer(D);
+    renderMe(v.me);
+    drawn = { data: D, owner: v.owner };
     try {
-      app = RhythiaX.ExodusApp(host, structuredClone(D), { ...context(D), page: pageOf(), ...opts });
+      app = RhythiaX.ExodusApp(host, structuredClone(D), { ...context(D, v), page: pageOf(), ...opts });
     } catch (err) {
       console.error('Exodus render failed', err);
       failed(err, shownFor);
@@ -409,27 +423,95 @@ RhythiaX.Exodus = (function () {
     return Boolean(a && b) && strip(a) === strip(b);
   };
 
+  // Fresh data drawn quietly in place of what is on screen, as soon as the page is idle (nothing open or
+  // half-done); only the newest waiting one is drawn, and none once the page is left or once the player has
+  // changed something its requests predate (startedAt).
+  let swapWant = null, swapTimer = 0;
+  function stopSwap() { clearInterval(swapTimer); swapTimer = 0; swapWant = null; }
+  function swapIn(key, data, draw, startedAt) {
+    swapWant = { key, data, draw, startedAt };
+    const tick = () => {
+      const want = swapWant;
+      if (!want || shownFor !== want.key || !app || (want.startedAt && RhythiaX.ExodusData.stale(want.key, want.startedAt))) { stopSwap(); return; }
+      if (!app.idle()) return;
+      stopSwap();
+      const y = scrollY, state = app.state();
+      want.draw(want.data, { quiet: true, state });
+      scrollTo(0, y);
+    };
+    tick();
+    if (swapWant && !swapTimer) swapTimer = setInterval(tick, 400);
+  }
+
+  // A profile load, asked again when the player changed something while it ran (its answers may predate it).
+  async function loadFresh(id, view, prev) {
+    for (let i = 0; ; i++) {
+      const res = await RhythiaX.ExodusData.load(id, view.signal, prev);
+      // The map-art waves reject when the page is left; nothing may be listening by then.
+      res.metaFirst?.catch(() => {}); res.metaPending?.catch(() => {});
+      if (i >= 2 || !RhythiaX.ExodusData.stale(id, res.startedAt)) return res;
+    }
+  }
+
+  // Fresh profile data in: kept for this tab, drawn (quietly, when the page on screen differs or was drawn for
+  // another viewer), then map art in two waves and a late community history fill it in.
+  function settle(id, res, view) {
+    // Still older than a change the player made (they kept changing things): drawn only if nothing is.
+    const outdated = RhythiaX.ExodusData.stale(id, res.startedAt);
+    if (!outdated) remember(id, { at: Date.now(), data: res.data });
+    // The session has been read by now: the header follows it at once, the page waits for its swap.
+    if (app) renderMe(RhythiaX.ExodusData.knownSelf());
+    if (!app) mount(res.data);
+    else if (outdated) return;
+    else if (!sameData(drawn?.data, res.data) || viewer(res.data).owner !== drawn?.owner) swapIn(id, res.data, mount, res.startedAt);
+    else { stopSwap(); drawn.data = res.data; renderMe(RhythiaX.ExodusData.knownSelf()); }
+    const live = () => !view.signal.aborted && shownFor === id && app;
+    res.historyLate?.then(hist => {
+      if (!hist || !live()) return;
+      res.data.history = hist;
+      app.updateHistory?.(hist);
+    }, () => {});
+    (async () => {
+      for (const wave of [res.metaFirst, res.metaPending]) {
+        if (!wave) continue;
+        const meta = await wave.catch(() => null);
+        if (!live()) return;
+        if (!meta || !Object.keys(meta).length) continue;
+        Object.assign(res.data.meta, meta);
+        app.updateMeta(meta);
+      }
+    })();
+  }
+
   // Paint at once from memory or the saved snapshot, then swap fresh data in quietly.
   async function show(id) {
     if (shownFor === id && (app || loading)) { app?.page(pageOf()); return; }
     unmountApp();
     shownFor = id;
+    const view = new AbortController();
+    viewAc = view;
+    const current = () => viewAc === view && shownFor === id;
     const hit = cache.get(id);
-    if (hit && Date.now() - hit.at < CACHE_MS) { mount(hit.data); return; }
-    const controller = new AbortController();
-    loading = controller;
-    const current = () => loading === controller && shownFor === id;
+    if (hit && Date.now() - hit.at < CACHE_MS) {
+      mount(hit.data);
+      // Drawn for whoever this tab knew; once the session is read, a different owner state draws it again.
+      RhythiaX.ExodusData.signedIn(view.signal).then(() => {
+        if (!current() || !app || !drawn) return;
+        renderMe(RhythiaX.ExodusData.knownSelf());
+        if (viewer(drawn.data).owner !== drawn.owner) { if (drawn.changed) reshow(); else swapIn(id, drawn.data, mount); }
+      }, () => {});
+      return;
+    }
+    loading = view;
     // A short grace period, so a snapshot that arrives quickly never shows the skeleton first.
     const skel = setTimeout(() => { if (current() && !app) skeleton(); }, 350);
-    const fresh = RhythiaX.ExodusData.load(id, controller.signal);
+    const fresh = loadFresh(id, view);
     fresh.catch(() => {});
     const snap = await RhythiaX.ExodusData.snapshot(id).catch(() => null);
     if (snap && current() && !app) mount(snap);
     let res;
     try {
       res = await fresh;
-      // The map-art waves reject when the page is left; nothing may be listening by then.
-      res.metaFirst?.catch(() => {}); res.metaPending?.catch(() => {});
     } catch (err) {
       clearTimeout(skel);
       if (!current()) return;
@@ -440,23 +522,7 @@ RhythiaX.Exodus = (function () {
     clearTimeout(skel);
     if (!current()) return;
     loading = null;
-    remember(id, { at: Date.now(), data: res.data });
-    if (!app) mount(res.data);
-    else if (!sameData(snap, res.data) && app.idle()) {
-      const y = scrollY, state = app.state();
-      mount(res.data, { quiet: true, state });
-      scrollTo(0, y);
-    }
-    // Map art arrives in two waves: what is on screen first, then everything else.
-    const mounted = app;
-    for (const wave of [res.metaFirst, res.metaPending]) {
-      if (!wave) continue;
-      const meta = await wave.catch(() => null);
-      if (app !== mounted) return;
-      if (!meta || !Object.keys(meta).length) continue;
-      Object.assign(res.data.meta, meta);
-      mounted.updateMeta(meta);
-    }
+    settle(id, res, view);
   }
 
   // ─── Home page ──────────────────────
@@ -473,7 +539,8 @@ RhythiaX.Exodus = (function () {
     video?.remove();
     app?.destroy();
     app = null;
-    renderMe(D.me ? { id: D.me.id, username: D.me.username, avatar_url: D.me.avatar } : null);
+    // D.me is undefined while who is signed in is not known for this copy (core/data.js homeSnapshot).
+    renderMe(D.me ? { id: D.me.id, username: D.me.username, avatar_url: D.me.avatar } : D.me);
     try {
       app = RhythiaX.ExodusHome(host, structuredClone(D), { leaderboard: RhythiaX.ExodusData.leaderboard, clickNative, video, ...opts });
     } catch (err) {
@@ -487,11 +554,13 @@ RhythiaX.Exodus = (function () {
     if (shownFor === HOME && (app || loading)) return;
     unmountApp();
     shownFor = HOME;
+    // The kept page holds the signed-in player's parts: it is used only by the same account.
     const hit = cache.get(HOME);
-    if (hit && Date.now() - hit.at < CACHE_MS) { mountHome(hit.data); return; }
+    if (hit && Date.now() - hit.at < CACHE_MS && hit.data.meTag === RhythiaX.ExodusData.viewerTag()) { mountHome(hit.data); return; }
     const controller = new AbortController();
     loading = controller;
-    const current = () => loading === controller && shownFor === HOME;
+    viewAc = controller;
+    const current = () => viewAc === controller && shownFor === HOME;
     const skel = setTimeout(() => { if (current() && !app) homeSkeleton(); }, 350);
     const fresh = RhythiaX.ExodusData.loadHome(controller.signal);
     fresh.catch(() => {});
@@ -513,13 +582,12 @@ RhythiaX.Exodus = (function () {
     loading = null;
     remember(HOME, { at: Date.now(), data });
     if (!app) { mountHome(data); return; }
-    // A copy from the last two minutes is fresh enough; an older one is swapped once the entrance has played.
-    if (snap && Date.now() - Date.parse(snap.fetchedAt) < 120000) return;
+    // A copy from the last two minutes is fresh enough (unless it left out the signed-in parts); an older one
+    // is swapped once the entrance has played and the page is idle.
+    if (snap && Date.now() - Date.parse(snap.fetchedAt) < 120000 && snap.me !== undefined) return;
     await new Promise(r => setTimeout(r, Math.max(0, mountedAt + 1600 - Date.now())));
-    if (shownFor !== HOME || !app || !app.idle()) return;
-    const y = scrollY, state = app.state();
-    mountHome(data, { quiet: true, state });
-    scrollTo(0, y);
+    if (!current() || !app) return;
+    swapIn(HOME, data, mountHome);
   }
 
   // ─── Leaderboards: the view loads its own pages as the address changes ──────
@@ -553,72 +621,21 @@ RhythiaX.Exodus = (function () {
     }
   }
 
-  // ─── Rhythia's own players inside Exodus ──────
-  // The map preview and the score replay stay Rhythia's: its page keeps running under Exodus,
-  // unseen, and only the player is shown, laid over a slot in the Exodus page (exodus/boot.css).
-  const DOCK = 'rhythiax-exodus-dock';
-  let dockSlot = null, dockEl = null, dockFrame = 0, dockTimer = 0, dockAt = '';
-  const queueDock = () => { if (!dockFrame) dockFrame = requestAnimationFrame(() => { dockFrame = 0; placeDock(); }); };
-  const dockMo = new MutationObserver(queueDock);
-  const dockRo = new ResizeObserver(queueDock);
-  const findPlayer = () => document.querySelector('#root [aria-label="Playback position"]')?.closest('.rounded-xl') || null;
-  function setDockEl(el) {
-    if (el === dockEl) return;
-    if (dockEl) { dockRo.unobserve(dockEl); dockEl.removeAttribute('data-rhythiax-dock'); }
-    document.querySelectorAll('[data-rhythiax-dock-chain]').forEach(n => n.removeAttribute('data-rhythiax-dock-chain'));
-    dockEl = el;
-    if (!el) return;
-    el.setAttribute('data-rhythiax-dock', '');
-    for (let p = el.parentElement; p && p.id !== 'root'; p = p.parentElement) p.setAttribute('data-rhythiax-dock-chain', '');
-    dockRo.observe(el);
-  }
-  function placeDock() {
-    if (!dockSlot?.isConnected) return;
-    setDockEl(findPlayer());
-    dockSlot.classList.toggle('docked', Boolean(dockEl));
-    if (!dockEl) return;
-    const r = dockSlot.getBoundingClientRect(), at = `${r.left + scrollX}|${r.top + scrollY}|${r.width}`;
-    if (at !== dockAt) {
-      dockAt = at;
-      html.style.setProperty('--rx-dock-x', `${r.left + scrollX}px`);
-      html.style.setProperty('--rx-dock-y', `${r.top + scrollY}px`);
-      html.style.setProperty('--rx-dock-w', `${r.width}px`);
-    }
-    const h = dockEl.offsetHeight;
-    if (h && Math.abs(dockSlot.offsetHeight - h) > 1) dockSlot.style.height = `${h}px`;
-  }
-  function dock(slot) {
-    undock();
-    dockSlot = slot;
-    html.classList.add(DOCK);
-    dockMo.observe(document.getElementById('root') || document.body, { childList: true, subtree: true, attributes: true, attributeFilter: ['class'] });
-    dockRo.observe(slot);
-    dockRo.observe(root.getElementById('app'));
-    addEventListener('resize', queueDock);
-    // Layout can also shift without any size change Exodus can observe; a cheap check covers that.
-    dockTimer = setInterval(queueDock, 400);
-    placeDock();
-    return { release: undock, refresh: queueDock, player: () => dockEl };
-  }
-  function undock() {
-    if (!dockSlot) return;
-    dockMo.disconnect();
-    dockRo.disconnect();
-    removeEventListener('resize', queueDock);
-    clearInterval(dockTimer);
-    setDockEl(null);
-    dockSlot = null;
-    html.classList.remove(DOCK);
-    dockAt = '';
-    for (const k of ['x', 'y', 'w']) html.style.removeProperty(`--rx-dock-${k}`);
-  }
+  // ─── Rhythia's own players inside Exodus (core/dock.js) ──────
+  // A page lays Rhythia's player over a slot of its own (ctx.dock); leaving the page releases it.
+  function dock(slot) { return RhythiaX.ExodusDock.dock(slot, root.getElementById('app')); }
+  function undock() { RhythiaX.ExodusDock.undock(); }
 
   function unmountApp() {
     undock();
+    stopSwap();
     loading?.abort();
     loading = null;
+    viewAc?.abort();
+    viewAc = null;
     app?.destroy();
     app = null;
+    drawn = null;
     shownFor = '';
   }
 
@@ -631,7 +648,10 @@ RhythiaX.Exodus = (function () {
     if (on) {
       if (!ensureHost()) return;
       if (profileId()) show(profileId()); else if (isBoard()) showBoard(); else if (viewKey()) showView(viewKey()); else showHome();
+      markOwn();
     } else {
+      // Leaving Exodus closes the theme editor without saving.
+      RhythiaX.ExodusThemeEditor?.close();
       if (app || loading) unmountApp();
       catchUp();
       freePage();
@@ -639,12 +659,15 @@ RhythiaX.Exodus = (function () {
   }
 
   // With Exodus on, the background loads only Exodus (engines.js). Once the settings are known and this
-  // page is not Exodus's, the background is told once, and the other look runs in this tab.
-  let settled = false, freed = false;
+  // page is not Exodus's, the background is told, and the other look runs in this tab. It is told once; a
+  // hand-off it could not do is asked again on the next change of page.
+  let settled = false, freed = false, freeing = false;
   function freePage() {
-    if (!settled || freed) return;
-    freed = true;
-    try { Promise.resolve(chrome.runtime.sendMessage({ type: 'rhythiax-page-free' })).catch(() => {}); } catch (_) {}
+    if (!settled || freed || freeing) return;
+    freeing = true;
+    let ask;
+    try { ask = Promise.resolve(chrome.runtime.sendMessage({ type: 'rhythiax-page-free' })); } catch (_) { ask = Promise.resolve(null); }
+    ask.then(reply => { if (reply?.ok) freed = true; }, () => {}).finally(() => { freeing = false; });
   }
 
   let queued = false;
@@ -674,7 +697,7 @@ RhythiaX.Exodus = (function () {
   // ─── Settings ──────────────────────
   function readSettings(result) {
     const X = RhythiaX.SettingsSchema;
-    enabled = result.rhythiaxExodus === true && result.rhythiaxMasterActive !== false;
+    enabled = result.rhythiaxExodus === true;
     const theme = THEMES.includes(result.rhythiaxTheme) ? result.rhythiaxTheme : 'reimagined';
     look = { theme, style: result.rhythiaxExodusStyle === 'float' ? 'float' : 'lines' };
     const prefs = {
@@ -683,6 +706,7 @@ RhythiaX.Exodus = (function () {
     };
     RhythiaX.ExodusPrefs = prefs;
     pages = prefs.exodus.pages;
+    readOwnTheme(result);
     settled = true;
     try {
       localStorage.setItem(MIRROR_KEY, enabled ? '1' : '0');
@@ -694,36 +718,59 @@ RhythiaX.Exodus = (function () {
     const seen = JSON.stringify(prefs);
     const changed = prefsSeen && seen !== prefsSeen;
     prefsSeen = seen;
-    if (changed && app) {
-      const y = scrollY;
-      unmountApp();
-      sync();
-      requestAnimationFrame(() => scrollTo(0, y));
-      return;
-    }
+    if (changed && app) { reshow(); return; }
     sync();
   }
 
-  // After the online-history choice, the page on screen is drawn again with (or without) community history.
-  RhythiaX.CommunityConsentNotice?.onChoice(() => {
-    cache.clear();
+  // The page on screen drawn again from the start, where the viewer was.
+  function reshow() {
     if (!app) return;
     const y = scrollY;
     unmountApp();
     sync();
     requestAnimationFrame(() => scrollTo(0, y));
+  }
+
+  // After the online-history choice, the page on screen is drawn again with (or without) community history.
+  RhythiaX.CommunityConsentNotice?.onChoice(() => {
+    cache.clear();
+    reshow();
+  });
+  // The popup's Clear history, or a switch to This device: nothing kept in this tab brings the community
+  // history back. A profile on screen is drawn again in place without it (no request); a page still loading,
+  // or another page, is drawn again from the start.
+  RhythiaX.ExodusData.onHistoryChange?.(() => {
+    cache.clear();
+    if (!app) return;
+    if (/^\d+$/.test(shownFor) && drawn && !drawn.changed && !loading) {
+      const data = { ...drawn.data, history: (drawn.data.history || []).slice(-1) };
+      swapIn(shownFor, data, mount);
+      return;
+    }
+    reshow();
   });
 
-  const KEYS = { rhythiaxExodus: false, rhythiaxExodusStyle: 'lines', rhythiaxTheme: 'reimagined', rhythiaxMasterActive: true, rhythiaxModules: {}, rhythiaxExodusOptions: {} };
+  const KEYS = { rhythiaxExodus: false, rhythiaxExodusStyle: 'lines', rhythiaxTheme: 'reimagined', rhythiaxModules: {}, rhythiaxExodusOptions: {},
+    [RhythiaX.ExodusThemes.LIST_KEY]: [], [RhythiaX.ExodusThemes.ACTIVE_KEY]: '' };
   if (typeof chrome !== 'undefined' && chrome.storage?.local) {
     chrome.storage.local.get(KEYS, readSettings);
     chrome.storage.onChanged.addListener((changes, area) => {
       if (area !== 'local') return;
+      // The active theme's picture replaced from another tab (core/own-theme.js).
+      pictureChanged(changes);
       if (!Object.keys(KEYS).some(k => k in changes)) return;
       chrome.storage.local.get(KEYS, readSettings);
     });
+    // The popup asks the tab in front to open the theme editor; it answers whether it could.
+    chrome.runtime.onMessage.addListener((message, _sender, reply) => {
+      if (message?.type !== 'rhythiax-theme-editor') return undefined;
+      if (!active() || !root) { reply({ ok: false }); return undefined; }
+      openEditor(typeof message.id === 'string' ? message.id : '').then(ok => reply({ ok: Boolean(ok) }), () => reply({ ok: false }));
+      return true;
+    });
   }
 
-  // True while Exodus owns the page on screen; other scripts stay out of it while it does.
-  return { owns: () => html.classList.contains(ON_CLASS) };
+  // RhythiaX.Exodus only says that Exodus is loaded in this tab. Whether it owns the page on screen is the
+  // html.rhythiax-exodus mark (ON_CLASS), which other scripts read from the page themselves.
+  return {};
 })();

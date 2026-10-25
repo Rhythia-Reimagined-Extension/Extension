@@ -1,9 +1,11 @@
 // =============================================
 // Reimagined for Rhythia — Exodus kit
 // =============================================
-// What the Exodus pages share: formatting, Rhythia's difficulty and status names, mod art,
-// the tooltip/toast shell, the map-file summary, one score row, a pager, and morph(),
-// which brings a part of the page up to date in place instead of drawing it again.
+// What the Exodus pages share: formatting, Rhythia's difficulty and status names, grades, titles and
+// the social-link rule, mod art, the tooltip/toast shell, the watch on Rhythia's own dialogs, the
+// map-file summary, one score row, a pager, and morph(), which brings a part of the page up to date in
+// place instead of drawing it again. Its CSS holds the rules several pages draw with (page head,
+// switch, map tiles, dialogs, the side list).
 // Pages register themselves with page(name, view, css); the shell reads them from
 // RhythiaX.ExodusPages and puts every page's CSS into its shadow root.
 
@@ -34,8 +36,32 @@ const DIFF = {0: ['N/A', 'var(--muted)'], 1: ['Easy', '#3bbf7d'], 2: ['Medium', 
 const diff = n => DIFF[n] || ['Logic', '#a26bdc'];
 const STATUS = {RANKED: ['Ranked', '#60a5fa'], QUALIFIED: ['Qualified', '#a78bfa'], UNRANKED: ['Unranked', 'var(--muted)']};
 const status = m => STATUS[m?.qualified && m.status !== 'RANKED' ? 'QUALIFIED' : m?.status] || STATUS.UNRANKED;
-const grade = (acc, misses) => misses === 0 && acc >= 100 ? 'SS' : acc >= 98 ? 'S' : acc >= 95 ? 'A' : acc >= 93 ? 'B' : acc >= 90 ? 'C' : 'D';
-const GRADE_C = {SS: '#fbbf24', S: '#fcd34d', A: '#86efac', B: '#60a5fa', C: '#c084fc', D: '#f87171'};
+// A score's grade by the rule both looks share (shared/grades.js): Rhythia's own letter when it sent one,
+// F for a play marked as failed, otherwise the letter for the accuracy and misses.
+const grade = (acc, misses, letter, failed) => RhythiaX.Grades.of({letter, accuracy: Number(acc), misses, failed});
+const GRADE_C = {SS: '#fbbf24', S: '#fcd34d', A: '#86efac', B: '#60a5fa', C: '#c084fc', D: '#b45309', F: '#f87171'};
+// Rhythia's titles (art in /titles/), lowest first: the RP each one needs, its colour, a shorter name where
+// space is tight. Grandmaster needs a place in the top 30 as well.
+const TITLES = [
+  {id:'novice', name:'Novice', rp:0, c:'#7ED54F'}, {id:'expert', name:'Expert', rp:1500, c:'#04A0B6'},
+  {id:'candidate_master', name:'Candidate Master', short:'Cand. Master', rp:2500, c:'#C26F38'}, {id:'master', name:'Master', rp:5000, c:'#B6463A'},
+  {id:'candidate_grandmaster', name:'Candidate Grandmaster', short:'Cand. GM', rp:10000, c:'#A35BC0'}, {id:'grandmaster', name:'Grandmaster', rp:10000, c:'#A3ABB9', top:30},
+];
+// The title Rhythia shows next to a name: Grandmaster for 10,000 RP and a place from 1 to 30, otherwise the
+// highest of the others the RP reaches (undefined for an RP below 0 or not a number).
+const titleOf = (rp, position) => (rp >= 10000 && position >= 1 && position <= 30 ? TITLES[5] : TITLES.slice(0, 5).filter(t => rp >= t.rp).pop());
+// Rhythia accepts social links to these sites only, over https.
+const SOCIAL_HOSTS = Object.freeze(['discord.com', 'discord.gg', 't.me', 'telegram.me', 'youtube.com', 'youtu.be', 'twitch.tv', 'x.com', 'twitter.com', 'github.com', 'instagram.com', 'tiktok.com', 'facebook.com', 'steamcommunity.com']);
+// A typed social link as it is saved: '' for a blank one, null when it is not an https link to one of
+// SOCIAL_HOSTS (www. left out, subdomains allowed), otherwise the link written out in full.
+const socialLink = value => {
+  const t = String(value || '').trim();
+  if (!t) return '';
+  try {
+    const u = new URL(t), h = u.hostname.toLowerCase().replace(/^www\./, '');
+    return u.protocol === 'https:' && SOCIAL_HOSTS.some(d => h === d || h.endsWith(`.${d}`)) ? u.toString() : null;
+  } catch (_) { return null; }
+};
 const MODES = {normal: ['Lock', 'lock.png'], spin: ['Spin', 'spincam.png'], vr: ['VR', 'vr.png']};
 // Rhythia's mod art (as on its score pages). Pitch lock has no art there and is left out as well.
 const MOD_ART = {mod_hardrock: ['hardrock', 'Hard Rock'], mod_nofail: ['nofail', 'No Fail'], mod_sudden_death: ['suddendeath', 'Sudden Death'], mod_auto_restart: ['aurorestart', 'Auto Restart'],
@@ -54,7 +80,11 @@ function mods(s) {
   return out.length ? `<span class="mods">${out.join('')}</span>` : '<span class="cap">—</span>';
 }
 const flag = c => c ? `<img class="v-flag" src="${SITE}/flags/${esc(c)}.svg" alt="${esc(c)}">` : '';
-const av = (url, cls = 'v-av') => `<i class="${cls}" style="background-image:url('${esc(url || '')}')"></i>`;
+// A picture's address as a whole CSS url("…") token for a style attribute: escaped for a double-quoted
+// CSS string first (backslash, quote, line breaks and other control characters), then for the attribute,
+// so no address can close the string and add declarations of its own.
+const cssUrl = v => esc(`url("${String(v ?? '').replace(/[\\"]/g, c => '\\' + c).replace(/[\u0000-\u001F\u007F]/g, c => `\\${c.charCodeAt(0).toString(16)} `)}")`);
+const av = (url, cls = 'v-av') => `<i class="${cls}" style="background-image:${cssUrl(url || '')}"></i>`;
 const accTxt = a => a == null ? '—' : `${fmt(a, 2)}%`;
 
 // Tooltips: data-tip holds <b>…</b><small>…</small>. The browser decodes the attribute, so text that was
@@ -70,8 +100,8 @@ function fillTip(el, html) {
   copy(new DOMParser().parseFromString(String(html ?? ''), 'text/html').body, el);
 }
 
-// Tooltip, toast and Rhythia's own links/buttons, the same in every view.
-function shell(R, sig, ctx) {
+// Tooltips: shown over anything with data-tip in the shadow root (above it, or below it near the top), gone on scroll.
+function tips(R, sig) {
   const tip = R.getElementById('tip');
   const show = t => {
     fillTip(tip, t.dataset.tip); tip.classList.add('on');
@@ -82,7 +112,20 @@ function shell(R, sig, ctx) {
   const hide = () => tip.classList.remove('on');
   R.addEventListener('pointerover', e => { const t = e.target.closest?.('[data-tip]'); t ? show(t) : hide(); }, sig);
   addEventListener('scroll', hide, {passive: true, ...sig});
-  const toast = m => { const t = R.getElementById('toast'); t.textContent = m; t.classList.add('on'); clearTimeout(toast.t); toast.t = setTimeout(() => t.classList.remove('on'), 2600); };
+  return {hide};
+}
+// A short message in the shell's #toast. The timer belongs to the toast element, so a message from one part
+// of the page is never hidden early by another part's older one.
+const toastTimers = new WeakMap();
+function toast(R, m) {
+  const t = R.getElementById('toast'); t.textContent = m; t.classList.add('on');
+  clearTimeout(toastTimers.get(t)); toastTimers.set(t, setTimeout(() => t.classList.remove('on'), 2600));
+}
+
+// Tooltip, toast and Rhythia's own links/buttons, the same in every view.
+function shell(R, sig) {
+  const {hide} = tips(R, sig);
+  const say = m => toast(R, m);
   // Rhythia's Download is a link and its Copyright Report a button; both open Rhythia's own flow.
   const native = label => {
     const el = [...document.querySelectorAll('#root a, #root button')].find(b => (b.getAttribute('aria-label') || b.textContent || '').trim() === label);
@@ -91,37 +134,62 @@ function shell(R, sig, ctx) {
   };
   R.addEventListener('click', e => {
     const b = e.target.closest?.('[data-native-click]');
-    if (b && !native(b.dataset.nativeClick)) toast('Rhythia is still loading. Try again in a moment.');
+    if (b && !native(b.dataset.nativeClick)) say('Rhythia is still loading. Try again in a moment.');
   }, sig);
-  return {hide, toast, native};
+  return {hide, toast: say, native};
+}
+
+// After Rhythia's own dialog (invite, edit, leave, remove) closes over a page, reload() reads the page again
+// if the address is still path. start() when a button opens that dialog (a new start replaces the last one),
+// stop() when the page goes; the watch gives up after ten minutes.
+function watchDialog(path, reload) {
+  let watch = 0;
+  function start() {
+    clearInterval(watch);
+    let seen = false, ticks = 0;
+    watch = setInterval(() => {
+      const open = [...document.querySelectorAll('[role="dialog"],[role="alertdialog"]')].some(x => !x.closest('#root'));
+      if (open) seen = true;
+      if ((seen && !open) || ++ticks > 1200) { clearInterval(watch); if (seen && location.pathname === path) reload(); }
+    }, 500);
+  }
+  return {start, stop: () => clearInterval(watch)};
 }
 
 // The slot Rhythia's player is laid over, with a note until it is there.
 const slot = (label = 'Loading Rhythia’s player…') => `<div class="v-dock" id="v-dock"><span class="cap">${label}</span></div>`;
 
 // What the map file says about the map: tags, the share of each kind, the density line.
-const KIND = {Stream: ['Streams', 'Runs of six or more fast notes (150 ms apart or closer at 1×) with an even rhythm'], Jump: ['Jumps', 'Slower notes that move a cell or more'], Other: ['Other', 'Slower notes with small moves']};
+const KIND = {Jump: ['Jumps', 'Long moves across the grid, spins included'], Stream: ['Streams', 'Short moves at an even speed'], Tech: ['Techs', 'Short moves at a changing speed']};
+// Whole percentages that add up to 100: the parts left over by rounding go to the largest remainders.
+function wholes(parts) {
+  const total = parts.reduce((t, v) => t + v, 0) || 1, raw = parts.map(v => v / total * 100), out = raw.map(Math.floor);
+  raw.map((v, i) => [v - out[i], i]).sort((x, y) => y[0] - x[0]).slice(0, 100 - out.reduce((t, v) => t + v, 0)).forEach(([, i]) => out[i]++);
+  return out;
+}
 function playsHtml(a, speed = 1) {
   if (!a) return '';
   const s = a.share, tags = Kit().style(a), kinds = Object.keys(KIND).filter(k => s[k] > .005);
-  const bar = kinds.map(k => `<i class="k-${k.toLowerCase()}" style="flex:${s[k]}" data-tip="<b>${KIND[k][0]} · ${pct(s[k])} of the notes</b><small>${KIND[k][1]}</small>"></i>`).join('');
+  const p = Object.fromEntries(wholes(kinds.map(k => s[k])).map((v, i) => [kinds[i], `${v}%`]));
+  const bar = kinds.map(k => `<i class="k-${k.toLowerCase()}" style="flex:${s[k]}" data-tip="<b>${KIND[k][0]} · ${p[k]} of the notes</b><small>${KIND[k][1]}</small>"></i>`).join('');
   const at = speed !== 1 ? ` at ${fmt(speed, 2)}×` : '';
   const facts = [
-    ['Notes per second' + at, fmt(a.avgNps * speed, 1), 'Average over the whole map'],
-    ['Busiest second' + at, `${fmt(a.peakNps * speed, 0)} notes`, 'Most notes inside any one second'],
-    ['Fastest stream' + at, a.fastestStream ? `${fmt(a.fastestStream * speed, 1)} notes/s` : '—', 'The quickest stream section, in notes per second'],
-    ['Longest stream', a.longestStream ? `${fmt((a.longestStream.end - a.longestStream.start) / 1000 / speed, 1)} s` : '—', 'The longest unbroken stream section'],
+    ['Notes per second' + at, fmt(a.avgNps * speed, 1), ''],
+    ['Busiest second' + at, `${fmt(a.peakNps * speed, 0)} notes`, 'Most notes in any one second'],
+    ['Fastest stream' + at, a.fastestStream ? `${fmt(a.fastestStream * speed, 1)} notes/s` : '—', ''],
+    ['Longest stream', a.longestStream ? `${fmt((a.longestStream.end - a.longestStream.start) / 1000 / speed, 1)} s` : '—', ''],
+    ['Off-grid notes', pct(a.offGrid), 'Notes away from the 3×3 grid'],
   ];
   return `<div class="v-plays">
     <div class="v-tags">${tags.map(t => `<span class="v-tag k-${t.k}" data-tip="<b>${esc(t.label)}</b><small>${esc(t.tip)}</small>">${esc(t.label)}</span>`).join('')}</div>
-    <div class="v-share" aria-label="${kinds.map(k => `${KIND[k][0]} ${pct(s[k])}`).join(', ')}">${bar}</div>
-    <div class="v-legend">${kinds.map(k => `<span data-tip="<b>${KIND[k][0]}</b><small>${KIND[k][1]}</small>"><i class="k-${k.toLowerCase()}"></i>${KIND[k][0]} ${pct(s[k])}</span>`).join('')}${a.offGrid >= .005 ? `<span class="v-off" data-tip="<b>Off-grid notes</b><small>Notes away from the positions this map uses for its grid</small>">Off-grid notes ${pct(a.offGrid)}</span>` : ''}</div>
-    <div class="v-facts">${facts.map(([l, v, t]) => `<div data-tip="<b>${esc(l)}</b><small>${esc(t)}</small>"><small>${esc(l)}</small><b class="num">${v}</b></div>`).join('')}</div>
+    <div class="v-share" aria-label="${kinds.map(k => `${KIND[k][0]} ${p[k]}`).join(', ')}">${bar}</div>
+    <div class="v-legend">${kinds.map(k => `<span data-tip="<b>${KIND[k][0]}</b><small>${KIND[k][1]}</small>"><i class="k-${k.toLowerCase()}"></i>${KIND[k][0]} ${p[k]}</span>`).join('')}</div>
+    <div class="v-facts">${facts.map(([l, v, t]) => `<div ${t ? `data-tip="<b>${esc(l)}</b><small>${esc(t)}</small>"` : ''}><small>${esc(l)}</small><b class="num">${v}</b></div>`).join('')}</div>
   </div>`;
 }
-const playsNote = 'Read from the map file. Shares count notes; hover a part for how it is decided.';
+const playsNote = 'Shares are by note count.';
 
-// Rhythia's map preview, reached through the page-world bridge (exodus-bridge.js).
+// Rhythia's map preview, reached through the page-world bridge (core/bridge.js).
 const PREVIEW_SPEEDS = [.25, .5, .75, 1, 1.25, 1.5, 1.75, 2];
 function ask(op, value, extra = {}) {
   return new Promise(done => {
@@ -148,11 +216,18 @@ function row(x, place, me = false) {
 }
 
 const slugify = t => String(t).toLowerCase().replace(/[^a-z0-9\s-]/g, '').trim().replace(/\s+/g, '-');
+// Markdown flattened to plain words, for search (the wiki and the changelog).
+const plainText = t => String(t).replace(/!\[([^\]]*)\]\([^)]*\)/g, '$1').replace(/\[([^\]]+)\]\([^)]*\)/g, '$1').replace(/<[^>]+>/g, ' ').replace(/[#>*_`~|:-]/g, ' ').replace(/\s+/g, ' ').trim();
 
-const pager = (p, pages, label) => {
+// Page numbers under a list. range ({perPage, total, noun}) names the rows shown instead of the page, as the
+// leaderboard, maps, clans and skins do: "51–100 of 1,234 maps".
+const pager = (p, pages, label, range) => {
   if (pages <= 1) return '';
   const nums = [...new Set([1, 2, p - 1, p, p + 1, pages - 1, pages])].filter(n => n >= 1 && n <= pages).sort((a, b) => a - b);
-  return `<div class="pager"><span class="num">Page ${fmt(p)} of ${fmt(pages)}${label ? ` · ${label}` : ''}</span><div class="pages">
+  const shown = range
+    ? `${fmt((p - 1) * range.perPage + 1)}–${fmt(Math.min(p * range.perPage, range.total))} of ${fmt(range.total)}${range.noun ? ` ${esc(range.noun)}` : ''}`
+    : `Page ${fmt(p)} of ${fmt(pages)}${label ? ` · ${label}` : ''}`;
+  return `<div class="pager"><span class="num">${shown}</span><div class="pages">
     <button type="button" data-page="${p - 1}" ${p === 1 ? 'disabled' : ''} aria-label="Previous page">‹</button>
     ${nums.map((n, i) => `${i && n - nums[i - 1] > 1 ? '<span>…</span>' : ''}<button type="button" data-page="${n}" ${n === p ? 'aria-current="page"' : ''}>${fmt(n)}</button>`).join('')}
     <button type="button" data-page="${p + 1}" ${p === pages ? 'disabled' : ''} aria-label="Next page">›</button></div></div>`;
@@ -187,7 +262,6 @@ function morphChildren(from, to) {
 }
 function morphNode(a, b) {
   if (a.nodeType !== 1) { if (a.nodeValue !== b.nodeValue) a.nodeValue = b.nodeValue; return; }
-  if (a.hasAttribute('data-keep')) return;
   for (const {name, value} of [...b.attributes]) {
     let v = value;
     if (name === 'class') { const kept = KEEP_CLASSES.filter(c => a.classList.contains(c) && !b.classList.contains(c)); if (kept.length) v = `${value} ${kept.join(' ')}`; }
@@ -229,6 +303,48 @@ const styles = [];
 const page = (name, view, css) => { pages[name] = view; if (css) styles.push(css); };
 
 const css = `
+/* Shared by the list pages: the map tiles (home, maps, collections), the page head and switch (leaderboard,
+   maps, clans, skins, collections, wiki, changelog), the dialogs and the side list (wiki, changelog). */
+.h-maps{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:16px}
+.h-map{position:relative;display:block;aspect-ratio:4/3.2;border-radius:16px;overflow:hidden;background:var(--panel-2);isolation:isolate;box-shadow:inset 0 0 0 1px var(--line);content-visibility:auto;contain-intrinsic-size:auto 240px}
+.h-map .art{position:absolute;inset:0;z-index:-1;background:center/cover;transition:transform .7s var(--ease)}
+.h-map:hover .art{transform:scale(1.06)}
+.h-map .chips{position:absolute;top:10px;left:10px;right:10px;display:flex;justify-content:space-between;gap:6px}
+.h-diff,.h-star{display:inline-flex;align-items:center;height:24px;padding:0 9px;border-radius:7px;font-size:12px;font-weight:700;background:rgba(10,11,14,.84);color:#f4f5f7}
+.h-diff{color:var(--c);box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--c) 45%,transparent)}
+.h-map .plate{position:absolute;left:8px;right:8px;bottom:8px;display:flex;flex-direction:column;gap:3px;padding:10px 12px;border-radius:11px;background:rgba(10,11,14,.8);color:#f4f5f7}
+.h-map .plate b{font-size:14.5px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.h-map .plate small{display:flex;gap:10px;font-size:12px;color:#b8c0cc;white-space:nowrap}
+.h-map .plate small span:first-child{min-width:0;overflow:hidden;text-overflow:ellipsis}
+@media (max-width:1000px){.h-maps{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media (max-width:560px){.h-maps{grid-template-columns:1fr}}
+@keyframes hRise{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+.b-head{display:flex;align-items:flex-end;justify-content:space-between;gap:24px;flex-wrap:wrap;padding-top:48px}
+.b-title{display:flex;align-items:center;gap:22px;min-width:0}
+.b-mascot{width:96px;height:96px;object-fit:contain;flex:none}
+.b-title h1{margin:4px 0 0;font-size:clamp(28px,3.4vw,40px);line-height:1.1;font-weight:800;letter-spacing:-.03em}
+.b-title p{margin:8px 0 0;font-size:15px;color:var(--muted)}
+.b-switch{display:inline-flex;align-items:center;gap:10px;margin-left:auto;font-weight:600;color:var(--text-2);cursor:pointer;user-select:none}
+.b-switch input{position:absolute;opacity:0;pointer-events:none}
+.b-switch i{position:relative;width:38px;height:22px;border-radius:999px;background:var(--panel-3);box-shadow:inset 0 0 0 1px var(--line-2);transition:background-color .2s}
+.b-switch i::after{content:"";position:absolute;top:3px;left:3px;width:16px;height:16px;border-radius:50%;background:var(--text);transition:transform .25s var(--ease)}
+.b-switch input:checked + i{background:var(--accent)}
+.b-switch input:checked + i::after{transform:translateX(16px);background:#fff}
+.b-switch input:focus-visible + i{outline:2px solid var(--accent);outline-offset:2px}
+.b-page.enter .b-head{animation:exoEnter .6s var(--ease) both}
+@media (max-width:900px){.b-switch{margin-left:0}}
+@media (max-width:560px){.b-mascot{display:none}}
+@media (prefers-reduced-motion:reduce){.b-page.enter *{animation:none!important}}
+.cmp-head{flex:none}
+.cmp-body{flex:1 1 auto;min-height:0;max-height:none;overscroll-behavior:contain}
+.cmp-body .radar{justify-content:center}
+.w-gt{display:block;margin:0 0 6px 10px;font-size:11.5px;font-weight:750;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.w-toc{position:sticky;top:84px;display:flex;flex-direction:column;gap:2px;max-height:calc(100vh - 100px);overflow:auto}
+.w-toc a{display:flex;align-items:center;gap:8px;padding:5px 10px;border-radius:7px;font-size:13px;color:var(--text-2)}
+.w-toc a:hover{color:var(--text);background:var(--panel-2)}
+/* A failed play's grade (the base sheet has no F) and a brown D, so D does not read as the red of F. */
+.exo{--g-F:var(--bad);--g-D:#c2814d}
+.exo[data-theme="white"]{--g-D:#9a5b2e}
 .brand .re{animation-iteration-count:3}
 .v-hero{position:relative;padding:56px 0 0;isolation:isolate;overflow:hidden}
 .v-banner{position:absolute;inset:0 0 auto;height:340px;z-index:-1;background:center/cover;opacity:.32;filter:blur(18px) saturate(1.1);transform:scale(1.08);-webkit-mask:linear-gradient(#000 30%,transparent);mask:linear-gradient(#000 30%,transparent)}
@@ -296,13 +412,12 @@ const css = `
 .v-plays{display:flex;flex-direction:column;gap:14px}
 .v-tags{display:flex;flex-wrap:wrap;gap:6px}
 .v-tag{display:inline-flex;align-items:center;height:28px;padding:0 12px;border-radius:9px;font-size:13px;font-weight:700;color:var(--c,var(--text-2));background:color-mix(in srgb,var(--c,var(--text-2)) 12%,transparent);box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--c,var(--text-2)) 38%,transparent)}
-.k-jump{--c:#f59e0b}.k-stream{--c:#38bdf8}.k-other{--c:#a78bfa}.k-quantum{--c:#34d399}.k-stamina{--c:#fb7185}
-.v-off{color:var(--muted)}
+.k-jump{--c:#f59e0b}.k-stream{--c:#38bdf8}.k-tech{--c:#f472b6}.k-other{--c:#a78bfa}.k-quantum{--c:#34d399}.k-stamina{--c:#fb7185}
 .v-pbar{display:flex;align-items:center;flex-wrap:wrap;gap:8px 14px;margin-top:14px}
 .v-pbar[hidden]{display:none}
 .v-pbar .pills{height:40px;padding:3px;align-items:stretch;flex-wrap:wrap}
 .v-pbar .pills button{height:auto;padding:0 11px}
-[data-theme="white"] .k-jump{--c:#d97706}[data-theme="white"] .k-stream{--c:#0284c7}[data-theme="white"] .k-other{--c:#7c3aed}[data-theme="white"] .k-quantum{--c:#059669}
+[data-theme="white"] .k-jump{--c:#d97706}[data-theme="white"] .k-stream{--c:#0284c7}[data-theme="white"] .k-tech{--c:#db2777}[data-theme="white"] .k-other{--c:#7c3aed}[data-theme="white"] .k-quantum{--c:#059669}
 .v-share{display:flex;gap:3px;height:12px;border-radius:6px;overflow:hidden}
 .v-share i{display:block;background:var(--c);min-width:3px}
 .v-legend{display:flex;flex-wrap:wrap;gap:6px 18px;font-size:13px;font-weight:600;color:var(--text-2)}
@@ -414,5 +529,5 @@ const css = `
 @media (prefers-reduced-motion:reduce){.v-hero.enter *,.v-page.enter *,.v-mgrid.anim .h-map{animation:none!important}}
 `;
 
-return {SITE, Data, Kit, esc, fillTip, fmt, pct, REDUCED, when, ago, fullDate, mmss, DIFF, diff, STATUS, status, grade, GRADE_C, MODES, MOD_ART, SPEED_ART, SPEED_C, mods, flag, av, accTxt, shell, slot, KIND, playsHtml, playsNote, PREVIEW_SPEEDS, ask, row, slugify, pager, starC, spreadHtml, hoursMin, dropBroken, avgStars, morph, page, get css() { return css + styles.join(''); }};
+return {SITE, Data, Kit, esc, cssUrl, fillTip, fmt, pct, REDUCED, when, ago, fullDate, mmss, diff, status, grade, GRADE_C, TITLES, titleOf, SOCIAL_HOSTS, socialLink, MODES, mods, flag, av, accTxt, tips, toast, shell, watchDialog, slot, playsHtml, playsNote, PREVIEW_SPEEDS, ask, row, slugify, plainText, pager, spreadHtml, hoursMin, dropBroken, avgStars, morph, page, get css() { return css + styles.join(''); }};
 })();

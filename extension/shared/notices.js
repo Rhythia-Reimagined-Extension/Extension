@@ -1,7 +1,9 @@
 // Notifications in the bottom-right corner of Rhythia, with either look. Each one is a card in one stack:
 // the first shown sits at the bottom, later ones above it. The stack follows the look on screen: Exodus
 // cards when Exodus owns the page (html.rhythiax-exodus, in its theme), Classic cards otherwise (Classic's
-// palette, which legacy/core/theme.js writes on the root element).
+// theme from html[data-rhythiax-theme]). Each look's colours are its skin, a string of rules it registers
+// in RhythiaX.NoticeSkins before this file runs (legacy/core/notice-skin.js, exodus/core/notice-skin.js);
+// a look without one gets plain system colours.
 //   RhythiaX.Notices.show({ id, label, title, body: [paragraphs], actions: [{ text, kind, run(event) }], link })
 //   returns { setStatus(text), setBusy(on), close() }; actions run only on trusted clicks.
 var RhythiaX = RhythiaX || {};
@@ -11,7 +13,7 @@ var RhythiaX = RhythiaX || {};
   if (window.top && window.top !== window) return;
 
   const html = document.documentElement;
-  let host = null, shadow = null, stack = null, observer = null;
+  let host = null, shadow = null, stack = null, observer = null, sheet = null, built = null;
   const cards = new Map();
   const css = `
     :host { all: initial; position: fixed; right: 18px; bottom: 18px; z-index: 2147483646; width: min(320px, calc(100vw - 36px)); }
@@ -34,70 +36,44 @@ var RhythiaX = RhythiaX || {};
     a:hover { text-decoration: underline; }
     .status { margin-top: 8px; }
     .status:empty { display: none; }
-
-    /* Classic: the active Classic theme's colours, with the Reimagined preset as fallback. */
-    :host([data-look="classic"]) { color-scheme: dark; }
-    :host([data-look="classic"][data-theme="white"]) { color-scheme: light; }
-    :host([data-look="classic"]) .note {
-      background: var(--rhythiax-surface, #1a1226); color: var(--rhythiax-text, #faf5ff);
-      border: 1.5px solid var(--rhythiax-border-strong, rgba(216,180,254,.22)); border-radius: var(--rhythiax-radius, 16px);
-      box-shadow: 0 16px 40px rgba(0,0,0,.45); font: 13px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif;
-    }
-    :host([data-look="classic"][data-theme="white"]) .note { box-shadow: 0 8px 28px rgba(15,23,42,.14); }
-    :host([data-look="classic"]) .label { color: var(--rhythiax-accent, #c084fc); }
-    :host([data-look="classic"]) p { color: var(--rhythiax-text-muted, #c4b5d8); }
-    :host([data-look="classic"]) h2 { color: var(--rhythiax-text-strong, #faf5ff); }
-    :host([data-look="classic"]) .act { border-radius: 9px; border: 1.5px solid var(--rhythiax-border-strong, rgba(216,180,254,.22)); background: var(--rhythiax-inner-surface, #221634); color: var(--rhythiax-text, #faf5ff); }
-    :host([data-look="classic"]) .act.primary { border-color: transparent; background: var(--rhythiax-accent, #c084fc); color: var(--rhythiax-page-bg, #120b1c); }
-    :host([data-look="classic"][data-theme="white"]) .act.primary { background: #6d28d9; color: #fff; }
-    :host([data-look="classic"]) .act:hover:not(:disabled) { filter: brightness(1.12); }
-    :host([data-look="classic"]) a { color: var(--rhythiax-accent, #c084fc); }
-    :host([data-look="classic"][data-theme="white"]) a { color: #6d28d9; }
-    :host([data-look="classic"]) .status { color: var(--rhythiax-danger, #ef4444); }
-    :host([data-look="classic"]) :focus-visible { outline: 2px solid var(--rhythiax-accent, #c084fc); outline-offset: 2px; }
-
-    /* Exodus: the same palette as exodus/core/assets.js for each theme. */
-    :host([data-look="exodus"]) {
-      color-scheme: dark; --panel: #111318; --panel-2: #171a20; --panel-3: #1d2028; --line-2: rgba(255,255,255,.12);
-      --text: #f4f5f7; --text-2: #c5cad3; --muted: #8a929f; --accent: #60a5fa; --accent-2: #93c5fd; --on-accent: #06121f; --bad: #f87171; --sh: rgba(0,0,0,.5);
-    }
-    :host([data-look="exodus"][data-theme="reimagined"]) {
-      --panel: #151021; --panel-2: #1c162b; --panel-3: #251e38; --line-2: rgba(205,180,255,.16);
-      --text: #f6f2fd; --text-2: #d0c7e2; --muted: #968aad; --accent: #c084fc; --accent-2: #d8b4fe; --on-accent: #1d0b33;
-    }
-    :host([data-look="exodus"][data-theme="white"]) {
-      color-scheme: light; --panel: #fff; --panel-2: #f2f4f7; --panel-3: #e8ebf0; --line-2: rgba(15,23,42,.15);
-      --text: #0f172a; --text-2: #334155; --muted: #64748b; --accent: #2563eb; --accent-2: #1d4ed8; --on-accent: #fff; --bad: #dc2626; --sh: rgba(15,23,42,.16);
-    }
-    :host([data-look="exodus"]) .note {
-      background: var(--panel); color: var(--text); border: 1px solid var(--line-2); border-radius: 14px;
-      box-shadow: 0 12px 32px var(--sh); font: 400 13px/1.5 "Inter", "Segoe UI Variable Text", "Segoe UI", system-ui, -apple-system, sans-serif;
-      -webkit-font-smoothing: antialiased;
-    }
-    :host([data-look="exodus"]) .label { color: var(--muted); }
-    :host([data-look="exodus"]) h2 { font-weight: 600; letter-spacing: -.01em; }
-    :host([data-look="exodus"]) p { color: var(--text-2); }
-    :host([data-look="exodus"]) .act { border: 0; border-radius: 10px; background: var(--panel-2); color: var(--text); transition: background-color .15s; }
-    :host([data-look="exodus"]) .act:hover:not(:disabled) { background: var(--panel-3); }
-    :host([data-look="exodus"]) .act.primary { background: var(--accent); color: var(--on-accent); }
-    :host([data-look="exodus"]) .act.primary:hover:not(:disabled) { background: var(--accent-2); }
-    :host([data-look="exodus"]) a { color: var(--accent); }
-    :host([data-look="exodus"]) .status { color: var(--bad); }
-    :host([data-look="exodus"]) :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
   `;
+  const LOOKS = ['classic', 'exodus'];
+  // Readable in either colour scheme without a palette of its own.
+  const plain = look => `
+    :host([data-look="${look}"]) { color-scheme: light dark; }
+    :host([data-look="${look}"]) .note { background: Canvas; color: CanvasText; border: 1px solid GrayText; border-radius: 12px; font: 13px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif; }
+    :host([data-look="${look}"]) .label { color: GrayText; }
+    :host([data-look="${look}"]) .act { border: 1px solid ButtonBorder; border-radius: 8px; background: ButtonFace; color: ButtonText; }
+    :host([data-look="${look}"]) .act.primary { border-color: Highlight; background: Highlight; color: HighlightText; }
+    :host([data-look="${look}"]) a { color: LinkText; }
+    :host([data-look="${look}"]) :focus-visible { outline: 2px solid Highlight; outline-offset: 2px; }
+  `;
+  const skinOf = look => { const s = RhythiaX.NoticeSkins?.[look]; return typeof s === 'string' ? s : ''; };
+
+  // The stack's rules: the base, then each look's skin. A skin that registers after the stack was made
+  // (Classic added to a tab whose page Exodus gave back) is taken in the next time this runs.
+  function restyle() {
+    const key = LOOKS.map(look => (skinOf(look) ? look : '')).join();
+    if (!sheet || key === built) return;
+    built = key;
+    const text = css + LOOKS.map(look => skinOf(look) || plain(look)).join('');
+    if (typeof sheet.replaceSync === 'function') sheet.replaceSync(text); else sheet.textContent = text;
+  }
 
   // Which look and theme the stack wears: read from the page each time either changes.
   function paint() {
     if (!host) return;
+    restyle();
     const exodus = html.classList.contains('rhythiax-exodus');
     host.dataset.look = exodus ? 'exodus' : 'classic';
     const theme = exodus ? html.dataset.rhythiaxExodusTheme : html.getAttribute('data-rhythiax-theme');
     host.dataset.theme = theme === 'white' || theme === 'dark' ? theme : 'reimagined';
   }
 
-  // Rhythia redraws parts of the body; the stack goes back if it was taken out.
+  // Rhythia redraws parts of the body; the stack goes back if it was taken out, unless the extension was
+  // reloaded or removed under this page (its runtime has no id then).
   function attach() {
-    if (!host || !cards.size || !document.body || RhythiaX.extensionContextInvalidated) return;
+    if (!host || !cards.size || !document.body || typeof chrome === 'undefined' || !chrome.runtime?.id) return;
     if (!host.isConnected) document.body.appendChild(host);
     if (!observer && typeof MutationObserver === 'function') {
       observer = new MutationObserver(records => {
@@ -117,9 +93,9 @@ var RhythiaX = RhythiaX || {};
     host.id = 'rhythiax-notices';
     shadow = host.attachShadow({ mode: 'closed' });
     if (typeof CSSStyleSheet === 'function' && 'adoptedStyleSheets' in shadow) {
-      const sheet = new CSSStyleSheet(); sheet.replaceSync(css); shadow.adoptedStyleSheets = [sheet];
+      sheet = new CSSStyleSheet(); restyle(); shadow.adoptedStyleSheets = [sheet];
     } else {
-      const style = document.createElement('style'); style.textContent = css; shadow.appendChild(style);
+      sheet = document.createElement('style'); restyle(); shadow.appendChild(sheet);
     }
     stack = document.createElement('div');
     stack.className = 'stack';
@@ -155,6 +131,7 @@ var RhythiaX = RhythiaX || {};
     if (cards.has(id)) return cards.get(id).handle;
     // Without Shadow DOM there is nowhere to draw it safely, and nothing is shown.
     if (!ensureHost()) return { setStatus() {}, setBusy() {}, close() {} };
+    restyle();
     const card = el('section', 'note');
     card.setAttribute('role', 'region');
     card.setAttribute('aria-label', spec.title);
@@ -195,5 +172,5 @@ var RhythiaX = RhythiaX || {};
     return handle;
   }
 
-  RhythiaX.Notices = { show, close, has: id => cards.has(String(id)) };
+  RhythiaX.Notices = { show };
 })();

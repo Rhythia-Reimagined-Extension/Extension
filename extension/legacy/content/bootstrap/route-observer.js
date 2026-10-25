@@ -1,4 +1,4 @@
-// SPA route observation and startup retain the former legacy/main.js timing contract.
+// SPA route observation and startup. Injection is retried on Rhythia's own DOM changes, never on a timer.
 var RhythiaX = RhythiaX || {};
 
 RhythiaX.ContentBootstrap = (function () {
@@ -6,6 +6,8 @@ RhythiaX.ContentBootstrap = (function () {
   let lastPath = window.location.pathname;
   let navigationTimer = null;
   let started = false;
+  // True while Exodus shows the page (RhythiaX.ClassicIdle): Classic follows no route and builds nothing.
+  let suspended = false;
   let mutationTimer = null;
   let scoresChanged = false;
   const SCORE_SELECTOR = 'div.relative.py-2:not(.rhythiax-redesigned), ' +
@@ -58,7 +60,6 @@ RhythiaX.ContentBootstrap = (function () {
       const needsScores = scoresChanged;
       scoresChanged = false;
       if (RhythiaX.extensionContextInvalidated) return stop();
-      if (RhythiaX.isMasterActive && !RhythiaX.isMasterActive()) return;
       if (path !== window.location.pathname || search !== window.location.search || navigationTimer) return;
       processMutations(needsScores);
     }, 50);
@@ -138,7 +139,7 @@ RhythiaX.ContentBootstrap = (function () {
       } else {
         RhythiaX.ScoreCardView?.unenhance?.();
       }
-      if (RhythiaX.isModuleEnabled?.('playerCompare') === false || (RhythiaX.isMasterActive && !RhythiaX.isMasterActive())) {
+      if (RhythiaX.isModuleEnabled?.('playerCompare') === false) {
         RhythiaX.CompareView?.cleanup?.();
         document.querySelectorAll('.rhythiax-compare-profile-button, .rhythiax-compare-tray, .rhythiax-compare-modal').forEach(btn => btn.remove());
       } else if (!document.querySelector('.rhythiax-compare-profile-button')) {
@@ -148,7 +149,7 @@ RhythiaX.ContentBootstrap = (function () {
         }
       }
     }
-    if (RhythiaX.PageRouteContext.type() !== 'profile' && (RhythiaX.isModuleEnabled?.('playerCompare') === false || (RhythiaX.isMasterActive && !RhythiaX.isMasterActive()))) {
+    if (RhythiaX.PageRouteContext.type() !== 'profile' && RhythiaX.isModuleEnabled?.('playerCompare') === false) {
       RhythiaX.CompareView?.cleanup?.();
       document.querySelectorAll('.rhythiax-compare-tray, .rhythiax-compare-modal').forEach(el => el.remove());
     }
@@ -156,7 +157,6 @@ RhythiaX.ContentBootstrap = (function () {
       if (RhythiaX.isModuleEnabled?.('scoreCards') && RhythiaX.isModuleOptionEnabled?.('scoreCards', 'customCards')) {
         if (needsScores) {
           RhythiaX.enhanceScoreCards?.();
-          RhythiaX.applyScoreFilter?.();
         }
       } else {
         RhythiaX.ScoreCardView?.unenhance?.();
@@ -164,6 +164,9 @@ RhythiaX.ContentBootstrap = (function () {
     }
     if (!RhythiaX.injected) RhythiaX.ContentLifecycle.queueInject(100);
   }
+
+  // A move Exodus makes, or Rhythia's page changing under Exodus, is not Classic's to follow.
+  const idle = () => suspended || RhythiaX.exodusShowing?.() === true;
 
   function startObserver() {
     clearMutationBatch();
@@ -174,12 +177,11 @@ RhythiaX.ContentBootstrap = (function () {
     }
     observer = new MutationObserver(records => {
       if (RhythiaX.extensionContextInvalidated) return stop();
+      // Under Exodus, Rhythia's page keeps rendering unseen; there is nothing to follow or enhance in it.
+      if (idle()) return;
       checkUrlChange();
-      // Under Exodus, Rhythia's page keeps rendering unseen; there is nothing to enhance in it.
-      if (RhythiaX.Exodus?.owns?.()) return;
       queueMutations(records);
     });
-    watchExodus();
     // Observe the parent too: React may replace #root during SPA recovery.
     observer.observe(document.body || document.getElementById('root'), {
       childList: true, subtree: true, characterData: true,
@@ -187,123 +189,102 @@ RhythiaX.ContentBootstrap = (function () {
     });
   }
 
-  // When Exodus hands a page back (Rhythia's own page, or Exodus switched off), enhance it as usual.
+  // Exodus takes the page by setting html.rhythiax-exodus and gives it back by removing the class (Rhythia's
+  // own page, or Exodus switched off).
   let exodusWatch = null;
   function watchExodus() {
     if (exodusWatch || typeof MutationObserver === 'undefined') return;
-    let owned = Boolean(RhythiaX.Exodus?.owns?.());
     exodusWatch = new MutationObserver(() => {
-      const now = Boolean(RhythiaX.Exodus?.owns?.());
-      if (now === owned) return;
-      owned = now;
-      if (RhythiaX.extensionContextInvalidated || !observer) return;
-      // Exodus took the page: stop retrying here. Exodus gave it back: build it as on a fresh visit.
-      if (now) { clearMutationBatch(); RhythiaX.ContentLifecycle.clearTimers(); } else RhythiaX.ContentLifecycle.handleNavigation();
+      if (RhythiaX.extensionContextInvalidated) return;
+      if (RhythiaX.exodusShowing?.()) suspend(); else resume();
     });
     exodusWatch.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
   }
 
-  function deactivate() {
+  // Exodus took the page: everything Classic was doing stops. Its parts stop their own work through
+  // RhythiaX.ClassicIdle (legacy/core/state.js); the theme and the page attributes stay with legacy/core/theme.js.
+  function suspend() {
+    if (suspended) return;
+    suspended = true;
     clearMutationBatch();
-    document.documentElement.dataset.rhythiaxMasterActive = 'false';
-    observer?.disconnect();
-    observer = null;
     if (navigationTimer) clearTimeout(navigationTimer);
     navigationTimer = null;
+    observer?.disconnect();
+    observer = null;
     RhythiaX.ContentLifecycle.clearTimers();
-    RhythiaX.ChangelogPageComposition?.stop?.();
     RhythiaX.apiAbortController?.abort();
     RhythiaX.apiAbortController = null;
-    RhythiaX.injected = false;
-    RhythiaX.CompareView?.cleanup?.();
-
-    // 1. Unmount Title Progression and restore native progression cards/headers
-    const titleCard = RhythiaX.ProfilePageAdapter?.titleProgressionCard?.() || RhythiaX.TitleProgression?.Service?.findNativeTitleCard?.(document);
-    if (titleCard) RhythiaX.TitleProgression?.Service?.unmount?.(titleCard);
-    RhythiaX.TitleProgression?.Service?.cleanup?.();
-    document.querySelectorAll('.rhythiax-title-progression-host').forEach(el => el.remove());
-    document.querySelectorAll('[data-rhythiax-native-hidden="true"]').forEach(el => {
-      el.removeAttribute('data-rhythiax-native-hidden');
-      el.style.display = '';
-      el.style.removeProperty?.('display');
-    });
-    document.querySelectorAll('[data-rhythiax-native-header="true"]').forEach(el => {
-      el.removeAttribute('data-rhythiax-native-header');
-      el.style.display = '';
-      el.style.removeProperty?.('display');
-    });
-
-    // 2. Unenhance score cards back to native look
-    RhythiaX.ScoreCardView?.unenhance?.();
-
-    // 3. Clear stale elements
-    RhythiaX.cleanupStaleElements?.(false);
-
-    // 4. Remove all injected containers and badges
-    document.querySelectorAll(
-      '.rhythiax-injected-stats-section, .rhythiax-profile-box, .rhythiax-reimagined-stats-body, ' +
-      '.rhythiax-score-replay-fullscreen-button, [data-rhythiax-changelog-tab], ' +
-      '.rhythiax-compare-profile-button, .rhythiax-compare-tray, .rhythiax-compare-modal, ' +
-      '.rhythiax-creator-badge, .rhythiax-profile-crown, .rhythiax-profile-avatar-effect'
-    ).forEach(el => el.remove());
-    document.querySelectorAll('.rhythiax-profile-avatar-effect-host').forEach(el => el.classList.remove('rhythiax-profile-avatar-effect-host'));
-
-    // 5. Restore native stats body
-    document.querySelectorAll('.rhythiax-native-stats-body').forEach(el => {
-      while (el.firstChild) el.parentElement?.insertBefore(el.firstChild, el);
-      el.remove();
-    });
-
-    // 6. Remove theme & page attributes
-    document.documentElement.removeAttribute('data-rhythiax-theme');
-    document.body?.removeAttribute('data-rhythiax-theme');
-    document.documentElement.removeAttribute('data-rhythiax-page');
-    document.body?.removeAttribute('data-rhythiax-page');
+    // Should Exodus leave the page to one Classic does not build, Rhythia's score list and Statistics body
+    // must not stay hidden (styles/bridge/anti-flicker.css). resume() takes these marks off again.
+    const marks = document.documentElement?.dataset;
+    if (marks) {
+      marks.rhythiaxScoresReleased = 'true';
+      marks.rhythiaxStatsReleased = 'true';
+    }
+    RhythiaX.ClassicIdle?.set?.(true);
   }
 
-  function activate() {
-    document.documentElement.dataset.rhythiaxMasterActive = 'true';
-    if (started) {
-      RhythiaX.loadTheme?.();
-      startObserver();
-      if (RhythiaX.PageRouteContext.type() !== 'maps') {
-        RhythiaX.ContentLifecycle.scheduleRetries();
-        RhythiaX.ContentLifecycle.startReadinessPoll();
-      }
-    } else {
-      start();
+  // Exodus gave the page back: Classic builds it as on a fresh visit, with one reset. A profile load hides and
+  // gives back Rhythia's sections itself (pages/profile/composition.js).
+  function resume() {
+    if (!suspended) return;
+    suspended = false;
+    const marks = document.documentElement?.dataset;
+    if (marks) {
+      delete marks.rhythiaxScoresReleased;
+      delete marks.rhythiaxStatsReleased;
     }
+    if (navigationTimer) clearTimeout(navigationTimer);
+    navigationTimer = null;
+    lastPath = window.location.pathname;
+    lastSearch = window.location.search;
+    RhythiaX.ClassicIdle?.set?.(false);
+    startObserver();
+    resumeNavigated = true;
+    setTimeout(() => { resumeNavigated = false; }, 0);
+    handleNavigation();
+  }
+
+  // Set from a hand-back's build until the next task. Back or Forward from an Exodus page hands the page back
+  // inside the same popstate (Exodus' listener runs first and removes the class), so the resume has already
+  // built the page that popstate leads to.
+  let resumeNavigated = false;
+
+  // Back and forward. Exodus tells Rhythia's router about its own moves with a popstate it dispatches itself;
+  // Classic follows only the browser's, and none while Exodus shows the page.
+  function onPopState(event) {
+    if (event?.isTrusted === false || idle() || resumeNavigated) return;
+    handleNavigation();
   }
 
   function start() {
     if (started) return;
     started = true;
     RhythiaX.onExtensionContextInvalidated = stop;
-    window.addEventListener('popstate', handleNavigation);
+    window.addEventListener('popstate', onPopState);
     ['pushState', 'replaceState'].forEach(method => {
       const original = history[method];
       history[method] = function () {
         const result = original.apply(this, arguments);
-        checkUrlChange();
+        // Exodus moves through history as well; while it shows the page, Classic does not follow.
+        if (!idle()) checkUrlChange();
         return result;
       };
     });
-    if (RhythiaX.isMasterActive && !RhythiaX.isMasterActive()) return;
+    watchExodus();
+    // Classic added to a tab where Exodus already shows the page waits until the page is handed back.
+    if (RhythiaX.exodusShowing?.()) return suspend();
     startObserver();
-    if (RhythiaX.PageRouteContext.type() !== 'maps') {
-      RhythiaX.ContentLifecycle.scheduleRetries();
-      RhythiaX.ContentLifecycle.startReadinessPoll();
-    }
-    window.addEventListener('load', () => {
-      if (RhythiaX.isMasterActive && !RhythiaX.isMasterActive()) return;
-      if (RhythiaX.PageRouteContext.type() !== 'maps' && !RhythiaX.injected) {
-        RhythiaX.ContentLifecycle.scheduleRetries();
-        RhythiaX.ContentLifecycle.startReadinessPoll();
-      }
-    }, { once: true });
+    if (RhythiaX.PageRouteContext.type() !== 'maps') RhythiaX.ContentLifecycle.wake();
   }
 
-  return { start, stop, activate, deactivate };
+  // The module settings arrived (core/modules.js). <html> is not watched, so try once more here.
+  function settingsReady() {
+    if (!observer || suspended || RhythiaX.extensionContextInvalidated) return;
+    if (RhythiaX.PageRouteContext.type() !== 'maps') RhythiaX.ContentLifecycle.wake();
+  }
+
+  return { start, stop, suspend, resume, settingsReady };
 })();
 
 // Preserve the pre-DOM-ready invalidation handler installed by the old entrypoint.

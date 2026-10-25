@@ -91,13 +91,5 @@ var RhythiaX = RhythiaX || {};
         return item;
       }));
     },
-    clearLegacyStorage() {
-      try {
-        chrome.storage?.local?.remove?.(['rhythiaxComparePlayers', 'rhythiaxComparePlayers:fallback']);
-      } catch (_) {}
-      try {
-        localStorage.removeItem('rhythiaxComparePlayers:fallback');
-      } catch (_) {}
-    },
   };
 })();

@@ -7,8 +7,8 @@
   position: absolute;
   z-index: 999999;
   min-width: 195px;
-  background: var(--card-bg, #180f26);
-  border: 1px solid var(--border-strong, rgba(216, 180, 254, 0.28));
+  background: var(--rhythiax-surface, #180f26);
+  border: 1px solid var(--rhythiax-border-strong, rgba(216, 180, 254, 0.28));
   border-radius: 12px;
   padding: 6px;
   box-shadow: 0 16px 38px rgba(0, 0, 0, 0.55), 0 0 0 1px rgba(255, 255, 255, 0.05);
@@ -40,7 +40,7 @@
   border-radius: 8px;
   background: transparent;
   border: none;
-  color: var(--text-normal, #e2d9f3);
+  color: var(--rhythiax-text, #e2d9f3);
   font-size: 12.5px;
   font-weight: 600;
   text-align: left;
@@ -50,20 +50,20 @@
 }
 
 .rhythiax-sc-menu-item:hover {
-  background: var(--accent-soft, rgba(192, 132, 252, 0.15));
-  color: var(--text-strong, #faf5ff);
+  background: var(--rhythiax-accent-soft, rgba(192, 132, 252, 0.15));
+  color: var(--rhythiax-text-strong, #faf5ff);
 }
 
 .rhythiax-sc-menu-icon {
   display: flex;
   align-items: center;
   justify-content: center;
-  color: var(--text-muted, #a797be);
+  color: var(--rhythiax-text-muted, #a797be);
   flex-shrink: 0;
 }
 
 .rhythiax-sc-menu-item:hover .rhythiax-sc-menu-icon {
-  color: var(--accent, #c084fc);
+  color: var(--rhythiax-accent, #c084fc);
 }
 
 /* Toast Notifications */
@@ -83,11 +83,11 @@
   align-items: center;
   gap: 10px;
   padding: 10px 16px;
-  background: var(--card-bg, #180f26);
-  border: 1px solid var(--border-strong, rgba(216, 180, 254, 0.28));
+  background: var(--rhythiax-surface, #180f26);
+  border: 1px solid var(--rhythiax-border-strong, rgba(216, 180, 254, 0.28));
   border-radius: 10px;
   box-shadow: 0 10px 28px rgba(0, 0, 0, 0.45);
-  color: var(--text-strong, #faf5ff);
+  color: var(--rhythiax-text-strong, #faf5ff);
   font-size: 13px;
   font-weight: 600;
   opacity: 0;

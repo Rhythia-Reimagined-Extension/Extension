@@ -1,5 +1,5 @@
 // =============================================
-// Rhythia X — Playstyle Feature: History & Data Loader
+// Reimagined for Rhythia — Playstyle Feature: History & Data Loader
 // Zero-spam cache layer for cloud & local history (up to 30d)
 // =============================================
 
@@ -11,8 +11,11 @@ var RhythiaX = RhythiaX || {};
   const HISTORY_CACHE_PREFIX = 'rhythiax_ps_hist_';
   const HISTORY_CACHE_MAX_ENTRIES = 40;
   const HISTORY_CACHE_MAX_BYTES = 400 * 1024;
+  // A lookup prunes the stored copies at most this often; a write always prunes after it.
+  const HISTORY_CACHE_PRUNE_MS = 5 * 60 * 1000;
   const _memoryCache = new Map();
   let revision = 0;
+  let prunedAt = 0;
 
   function invalidatePlayer(playerId) {
     _memoryCache.delete(Number(playerId));
@@ -32,9 +35,13 @@ var RhythiaX = RhythiaX || {};
     }
   });
 
-  function pruneStorageCache() {
-    if (typeof chrome === 'undefined') return;
-    chrome.storage?.local?.get(null, all => {
+  // Removes stored copies that expired, are from an older cache version, or go over the entry and size budget.
+  function pruneStorageCache(afterWrite = false) {
+    if (typeof chrome === 'undefined' || !chrome.storage?.local) return;
+    const since = Date.now() - prunedAt;
+    if (!afterWrite && since >= 0 && since < HISTORY_CACHE_PRUNE_MS) return;
+    prunedAt = Date.now();
+    const prune = all => {
       const entries = Object.entries(all || {}).filter(([key]) => key.startsWith(HISTORY_CACHE_PREFIX))
         .sort(([, a], [, b]) => Number(b?.timestamp || 0) - Number(a?.timestamp || 0));
       let bytes = 0;
@@ -48,7 +55,10 @@ var RhythiaX = RhythiaX || {};
         else { retained++; bytes += size; }
       }
       if (obsolete.length) chrome.storage.local.remove?.(obsolete);
-    });
+    };
+    // Only this cache's keys are read where the browser can list key names (shared/data/data-repository.js).
+    if (typeof RhythiaX.dataStorageGetPrefixed === 'function') RhythiaX.dataStorageGetPrefixed(HISTORY_CACHE_PREFIX).then(prune).catch(() => {});
+    else chrome.storage.local.get(null, prune);
   }
 
   function historyNumber(value) {
@@ -120,7 +130,7 @@ var RhythiaX = RhythiaX || {};
           timestamp: Date.now(),
           points: points.slice(0, 45), // cap at last 45 points to save storage space
         }
-      }, pruneStorageCache);
+      }, () => pruneStorageCache(true));
     } catch (_) {}
   }
 
@@ -207,7 +217,7 @@ var RhythiaX = RhythiaX || {};
       return finish(sanitized);
     }
 
-    // 4. Resolve via data-profile-ui merged rank history & cached VPS
+    // 4. Resolve via the merged rank history & cached VPS (core/data/vps-history-cache.js)
     try {
       let points = [];
 
@@ -290,7 +300,8 @@ var RhythiaX = RhythiaX || {};
         _memoryCache.delete(id);
         _memoryCache.set(id, { timestamp: Date.now(), points, mode });
         while (_memoryCache.size > HISTORY_CACHE_MAX_ENTRIES) _memoryCache.delete(_memoryCache.keys().next().value);
-        setStorageCache(id, points, mode, [localRecord ? 'local' : null, vpsData ? 'community' : null].filter(Boolean));
+        // Points made from a short online answer (recentOnly, the last days only) are not saved for other tabs.
+        if (!vpsData?.recentOnly) setStorageCache(id, points, mode, [localRecord ? 'local' : null, vpsData ? 'community' : null].filter(Boolean));
       }
 
       return finish(points);

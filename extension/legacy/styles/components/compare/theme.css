@@ -2,35 +2,7 @@
    Reimagined for Rhythia - Player Compare: Theme Overrides
    ============================================= */
 
-/* Theme 1: Reimagined for Rhythia (Signature Violet) */
-body[data-rhythiax-theme="reimagined"] .rhythiax-compare-tray,
-body:not([data-rhythiax-theme]) .rhythiax-compare-tray {
-  background: rgba(21, 15, 32, 0.96);
-  border-color: rgba(221, 190, 255, 0.28);
-}
-body[data-rhythiax-theme="reimagined"] .rhythiax-tray-chip,
-body:not([data-rhythiax-theme]) .rhythiax-tray-chip {
-  background: rgba(38, 27, 54, 0.95);
-  border-color: rgba(221, 190, 255, 0.24);
-}
-body[data-rhythiax-theme="reimagined"] .rhythiax-compare-dialog,
-body:not([data-rhythiax-theme]) .rhythiax-compare-dialog {
-  background: #150f20;
-  border-color: rgba(221, 190, 255, 0.24);
-}
-body[data-rhythiax-theme="reimagined"] .rhythiax-duel-card,
-body[data-rhythiax-theme="reimagined"] .rhythiax-radar-box,
-body[data-rhythiax-theme="reimagined"] .rhythiax-bento-card,
-body[data-rhythiax-theme="reimagined"] .rhythiax-battle-card,
-body[data-rhythiax-theme="reimagined"] .rhythiax-clashes-toolbar,
-body:not([data-rhythiax-theme]) .rhythiax-duel-card,
-body:not([data-rhythiax-theme]) .rhythiax-radar-box,
-body:not([data-rhythiax-theme]) .rhythiax-bento-card,
-body:not([data-rhythiax-theme]) .rhythiax-battle-card,
-body:not([data-rhythiax-theme]) .rhythiax-clashes-toolbar {
-  background: rgba(26, 18, 38, 0.88);
-  border-color: rgba(221, 190, 255, 0.16);
-}
+/* The Reimagined look uses the base compare colours (base.css, layout.css). */
 
 /* Theme 2: Dark Obsidian */
 body[data-rhythiax-theme="dark"] .rhythiax-compare-tray {
@@ -86,7 +58,10 @@ body[data-rhythiax-theme="white"] .rhythiax-compare-tray {
   color: #0f172a;
   box-shadow: 0 16px 40px rgba(15, 23, 42, 0.16);
 }
-body[data-rhythiax-theme="white"] .rhythiax-tray-counter {
+/* White's violet counter, launch button and winner card are built-in White's. An own theme built on the
+   white stylesheet (theme.js marks <html> with data-rhythiax-own-theme) gets its accent from base.css and
+   the winner rule below. :where() adds no specificity, so built-in White is unchanged. */
+:where(html:not([data-rhythiax-own-theme])) body[data-rhythiax-theme="white"] .rhythiax-tray-counter {
   background: rgba(91, 33, 182, 0.1);
   border-color: rgba(91, 33, 182, 0.25);
   color: #6d28d9;
@@ -112,7 +87,7 @@ body[data-rhythiax-theme="white"] .rhythiax-tray-dismiss-btn:hover {
   border-color: #ef4444;
   color: #ffffff;
 }
-body[data-rhythiax-theme="white"] .rhythiax-tray-launch-btn {
+:where(html:not([data-rhythiax-own-theme])) body[data-rhythiax-theme="white"] .rhythiax-tray-launch-btn {
   background: #6d28d9;
   color: #ffffff;
 }
@@ -153,9 +128,13 @@ body[data-rhythiax-theme="white"] .rhythiax-clashes-toolbar {
   border-color: rgba(15, 23, 42, 0.12);
   box-shadow: 0 2px 8px rgba(15, 23, 42, 0.04);
 }
-body[data-rhythiax-theme="white"] .rhythiax-duel-card.is-winner {
+:where(html:not([data-rhythiax-own-theme])) body[data-rhythiax-theme="white"] .rhythiax-duel-card.is-winner {
   background: linear-gradient(135deg, rgba(91, 33, 182, 0.08), #ffffff);
   border-color: #6d28d9;
+}
+:where(html[data-rhythiax-own-theme]) body[data-rhythiax-theme="white"] .rhythiax-duel-card.is-winner {
+  background: linear-gradient(135deg, color-mix(in srgb, var(--rhythiax-accent) 8%, transparent), var(--rhythiax-surface));
+  border-color: var(--rhythiax-accent);
 }
 body[data-rhythiax-theme="white"] .rhythiax-card-avatar {
   background: #f1f5f9;

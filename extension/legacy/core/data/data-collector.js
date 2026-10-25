@@ -1,5 +1,5 @@
 // =============================================
-// Rhythia X - Stats and ranking data collector
+// Reimagined for Rhythia — Stats and ranking data collector
 // =============================================
 
 var RhythiaX = RhythiaX || {};

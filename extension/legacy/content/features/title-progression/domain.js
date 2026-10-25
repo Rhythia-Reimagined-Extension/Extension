@@ -414,7 +414,7 @@ RhythiaX.TitleProgression = RhythiaX.TitleProgression || {};
     return `${months[d.getMonth()]} ${d.getDate()}`;
   }
 
-  function generateHistoryData(playerData, scoreSets) {
+  function generateHistoryData(playerData) {
     const rp = parseRp(playerData?.rp);
     const rank = parseRank(playerData?.globalRank);
     const formattedRp = (RhythiaX.formatNumber ? RhythiaX.formatNumber(Math.round(rp)) : Math.round(rp).toLocaleString('en-US')) + ' RP';
@@ -469,8 +469,8 @@ RhythiaX.TitleProgression = RhythiaX.TitleProgression || {};
           y: m.y,
           dateStr,
           tooltipText: m.threshold === 0
-            ? `${dateStr}: Started journey as Novice (0 RP)`
-            : `${dateStr}: Promoted to ${m.title} (${(m.threshold).toLocaleString('en-US')} RP)`
+            ? `${dateStr}: Started as Novice (0 RP)`
+            : `${dateStr}: Reached ${m.title} (${(m.threshold).toLocaleString('en-US')} RP)`
         };
         milestones.push(mObj);
         curvePoints.push({ x: mObj.x, y: mObj.y });

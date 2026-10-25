@@ -1,5 +1,5 @@
 // =============================================
-// Rhythia X — DOM helpers
+// Reimagined for Rhythia — Classic's DOM helpers and finders for Rhythia's own elements
 // =============================================
 
 var RhythiaX = RhythiaX || {};
@@ -7,87 +7,23 @@ var RhythiaX = RhythiaX || {};
 // ─── DOM helpers ─────────────────────────────
 RhythiaX.qs = (sel, ctx) => (ctx || document).querySelector(sel);
 RhythiaX.qsa = (sel, ctx) => [...(ctx || document).querySelectorAll(sel)];
-RhythiaX.debug = false;
-RhythiaX.developerMode = false;
 
-// Keep production diagnostics useful without exposing profile data, tokens or
-// the implementation details that are only useful during development.
+// Diagnostics stay silent in every build. log/warn/error/captureError remain so
+// callers need no guards; only a lost extension context is acted on.
 (function installLogger() {
-  const SENSITIVE_KEY = /auth|token|cookie|session|password|secret|credential|email|username|playerid/i;
-  const SENSITIVE_TEXT = /(bearer\s+)[^\s]+|rhythia_auth_session_v1\s*[=:]\s*[^\s,;]+/ig;
-  const areaFromUrl = () => {
-    const path = String(window.location?.pathname || '');
-    if (/\/player\//.test(path)) return 'profile';
-    if (/\/maps/.test(path)) return 'maps';
-    return 'app';
-  };
-  const clean = (value, key = '') => {
-    if (SENSITIVE_KEY.test(key)) return '[redacted]';
-    if (value instanceof Error) return { name: value.name, message: clean(value.message), stack: value.stack || '[no stack]' };
-    if (typeof value === 'string') return value.replace(SENSITIVE_TEXT, '$1[redacted]');
-    if (Array.isArray(value)) return value.slice(0, 20).map(item => clean(item));
-    if (value && typeof value === 'object') {
-      const output = {};
-      Object.entries(value).slice(0, 40).forEach(([entryKey, entryValue]) => { output[entryKey] = clean(entryValue, entryKey); });
-      return output;
-    }
-    return value;
-  };
   const isExtensionContextInvalidated = error => /extension context invalidated|context invalidated/i.test(String(error?.message || error));
-  const context = message => {
-    const text = String(message || '').toLowerCase();
-    if (/score|rp|replay/.test(text)) return 'scores';
-    if (/profile|player|stat/.test(text)) return 'profile';
-    if (/api|fetch|rest|request/.test(text)) return 'api';
-    if (/theme|preset/.test(text)) return 'theme';
-    return areaFromUrl();
-  };
   RhythiaX.isExtensionContextInvalidated = isExtensionContextInvalidated;
-  const write = (level, args) => {
-    const tag = context(args[0]);
-    const prefix = `[RhythiaX][${level}][${tag}]`;
-    const output = args.map(value => clean(value));
-    if (RhythiaX.developerMode) output.push({ trace: clean(new Error().stack || '[no stack]') });
-    const method = level === 'ERROR' ? console.error : level === 'WARN' ? console.warn : console.info;
-    method.call(console, prefix, ...output);
+  RhythiaX.log = () => {};
+  RhythiaX.warn = () => {};
+  RhythiaX.error = () => {};
+  RhythiaX.captureError = error => {
+    if (!isExtensionContextInvalidated(error)) return;
+    RhythiaX.extensionContextInvalidated = true;
+    RhythiaX.onExtensionContextInvalidated?.();
   };
-
-  // INFO is intentionally reserved for the private developer build. User
-  // diagnostics should stay focused on actionable warnings and errors.
-  RhythiaX.log = (...args) => { if (RhythiaX.developerMode) write('INFO', args); };
-  RhythiaX.warn = (...args) => { if (RhythiaX.debug || RhythiaX.developerMode) write('WARN', args); };
-  RhythiaX.error = (...args) => {
-    if (RhythiaX.debug || RhythiaX.developerMode) write('ERROR', args);
-  };
-  RhythiaX.captureError = (error, ...contextArgs) => {
-    if (isExtensionContextInvalidated(error)) {
-      RhythiaX.extensionContextInvalidated = true;
-      RhythiaX.onExtensionContextInvalidated?.();
-      return;
-    }
-    const source = error instanceof Error ? error : new Error(String(error));
-    if (RhythiaX.debug || RhythiaX.developerMode) write('ERROR', [...contextArgs, source]);
-  };
-  RhythiaX.setDebugLogging = enabled => { RhythiaX.debug = enabled === true; };
-  RhythiaX.setDeveloperMode = enabled => { RhythiaX.developerMode = enabled === true; };
-
-  const storage = typeof chrome !== 'undefined' ? chrome.storage?.local : null;
-  storage?.get?.({ rhythiaxDebugLogs: false }, result => {
-    RhythiaX.setDebugLogging(result?.rhythiaxDebugLogs);
-  });
-  // DEV_ONLY_START
-  storage?.get?.({ rhythiaxDeveloperMode: false }, result => {
-    RhythiaX.setDeveloperMode(result?.rhythiaxDeveloperMode);
-  });
-  // DEV_ONLY_END
-  window.addEventListener('error', event => {
-    RhythiaX.captureError(event.error || new Error(event.message || 'Unhandled window error'), 'Unhandled window error', { file: event.filename, line: event.lineno, column: event.colno });
-  });
-  window.addEventListener('unhandledrejection', event => RhythiaX.captureError(event.reason, 'Unhandled promise rejection'));
+  window.addEventListener('error', event => RhythiaX.captureError(event.error || event.message));
+  window.addEventListener('unhandledrejection', event => RhythiaX.captureError(event.reason));
 })();
-RhythiaX.clearLoadingState = function () {
-  document.querySelector('.rhythiax-loading-indicator')?.remove();
-};
 
 RhythiaX.isOwnProfile = function () {
   if (typeof window === 'undefined' || !window.location?.pathname?.startsWith('/player/')) return false;
@@ -197,43 +133,6 @@ RhythiaX.findHeaderRankArea = function () {
       || globalLabel.parentElement?.parentElement;
   }
   return null;
-};
-
-RhythiaX.ensureProfilesGrid = function (statsContainer) {
-  const target = statsContainer || RhythiaX.findOfficialStatsContainer();
-  if (!target) return null;
-
-  if (target.classList?.contains('rhythiax-reimagined-profiles-container')
-      || target.classList?.contains('rhythiax-reimagined-stats-body')
-      || target.classList?.contains('rhythiax-subtab-pane')
-      || target.classList?.contains('rhythiax-pane-tempo')
-      || target.classList?.contains('rhythiax-pane-rating')) {
-    let grid = target.querySelector('.rhythiax-profiles-grid');
-    if (!grid) {
-      grid = document.createElement('div');
-      grid.className = 'rhythiax-profiles-grid rhythiax-profile-page-grid';
-      target.appendChild(grid);
-    }
-    return grid;
-  }
-
-  let profilesGrid = target.querySelector('.rhythiax-profiles-grid')
-    || (target.parentElement && Array.from(target.parentElement.children).find(element => element.classList?.contains('rhythiax-profiles-grid')))
-    || document.querySelector('.rhythiax-profiles-grid');
-
-  if (!profilesGrid) {
-    profilesGrid = document.createElement('div');
-    profilesGrid.className = 'rhythiax-profiles-grid rhythiax-profile-page-grid';
-    if (!target.parentElement) {
-      target.appendChild(profilesGrid);
-    } else {
-      target.after(profilesGrid);
-    }
-  } else {
-    profilesGrid.classList.add('rhythiax-profile-page-grid');
-  }
-
-  return profilesGrid;
 };
 
 // ─── Modal Accessibility / Focus Trap Helpers ──

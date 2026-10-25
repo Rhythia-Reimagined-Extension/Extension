@@ -34,9 +34,6 @@ body[data-rhythiax-theme] #root [class*="text-white"],
 body[data-rhythiax-theme] #root [class*="text-neutral-"],
 body[data-rhythiax-theme] #root [class*="text-blue-"],
 body[data-rhythiax-theme] .rhythiax-card-title,
-body[data-rhythiax-theme] .rhythiax-card-stat-value,
-body[data-rhythiax-theme] .rhythiax-official-stat-label,
-body[data-rhythiax-theme] .rhythiax-official-stat-value,
 body[data-rhythiax-theme] .rhythiax-profile-box-title,
 body[data-rhythiax-theme] .rhythiax-profile-list-item {
   transition: color 280ms ease, fill 280ms ease, stroke 280ms ease !important;
@@ -47,7 +44,12 @@ body[data-rhythiax-theme] .rhythiax-profile-list-item {
 html[data-rhythiax-theme-transitioning] body[data-rhythiax-theme],
 html[data-rhythiax-theme-transitioning] body[data-rhythiax-theme] *,
 html[data-rhythiax-theme-transitioning] body[data-rhythiax-theme] *::before,
-html[data-rhythiax-theme-transitioning] body[data-rhythiax-theme] *::after {
+html[data-rhythiax-theme-transitioning] body[data-rhythiax-theme] *::after,
+/* The theme editor paints on every move of a slider or the colour picker: no fades then either. */
+html[data-rhythiax-theme-editing] body[data-rhythiax-theme],
+html[data-rhythiax-theme-editing] body[data-rhythiax-theme] *,
+html[data-rhythiax-theme-editing] body[data-rhythiax-theme] *::before,
+html[data-rhythiax-theme-editing] body[data-rhythiax-theme] *::after {
   transition: none !important;
 }
 

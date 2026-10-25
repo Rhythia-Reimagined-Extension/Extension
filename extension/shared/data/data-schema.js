@@ -1,5 +1,5 @@
 // =============================================
-// Rhythia X - Canonical local data schema
+// Reimagined for Rhythia — Canonical local data schema
 // =============================================
 
 var RhythiaX = RhythiaX || {};
@@ -7,6 +7,9 @@ var RhythiaX = RhythiaX || {};
 RhythiaX.DATA_SCHEMA_VERSION = 4;
 RhythiaX.DATA_STORAGE_ENTRY_PREFIX = 'rhythiaxData:entry:';
 RhythiaX.DATA_SETTINGS_KEY = 'rhythiaxDataSettings';
+// The community notice version a stored choice carries (communityConsentVersion), for the data code here, in
+// data-repository.js and in the background's settings writer. Must equal RhythiaX.Consent.VERSION
+// (shared/consent.js), the rule every context asks.
 RhythiaX.COMMUNITY_CONSENT_VERSION = 1;
 
 RhythiaX.DATA_DEFAULT_SETTINGS = {
@@ -22,7 +25,7 @@ RhythiaX.DATA_DEFAULT_SETTINGS = {
   collectStats: true,
   collectRanking: true,
   syncMode: 'hybrid',
-  telemetryEnabled: true,
+  telemetryEnabled: false,
   communityConsentVersion: 0,
 };
 
@@ -44,6 +47,12 @@ RhythiaX.DATA_SNAPSHOT_STATUSES = ['partial', 'complete'];
 RhythiaX.DATA_SNAPSHOT_SOURCES = ['dom', 'api', 'merged', 'profile', 'import'];
 RhythiaX.DATA_REFERENCE_MODES = ['firstSnapshotToday', 'previousCapture', 'previousDayClose'];
 RhythiaX.DATA_HISTORY_DISPLAY_MODES = ['latestOpenAndClosed', 'closedOnly', 'allSnapshots', 'firstSnapshotAndClosed'];
+
+// Whether extension storage can be reached. Used by data-migrations.js and data-repository.js, which load after
+// this file in every context.
+function isExtensionValid() {
+  return typeof chrome !== 'undefined' && Boolean(chrome.storage?.local);
+}
 
 function dataClone(value) {
   try {
@@ -77,12 +86,19 @@ function dataTimestamp(value, fallback = null) {
   return Number.isFinite(timestamp) && timestamp > 0 ? timestamp : fallback;
 }
 
+// The local calendar day of a date, YYYY-MM-DD: the same key as Classic's RhythiaX.localDateKey
+// (legacy/core/time.js), kept here so the background needs no Classic file.
+function dataLocalDateKey(date) {
+  const pad = value => String(value).padStart(2, '0');
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
+}
+
 function dataDateKey(value) {
   if (typeof value === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(value)) return value;
   const timestamp = dataTimestamp(value);
   if (!timestamp) return '';
   const date = new Date(timestamp);
-  return Number.isNaN(date.getTime()) ? '' : RhythiaX.localDateKey(date);
+  return Number.isNaN(date.getTime()) ? '' : dataLocalDateKey(date);
 }
 
 RhythiaX.normalizeDataSettings = function (settings) {
@@ -94,7 +110,8 @@ RhythiaX.normalizeDataSettings = function (settings) {
   return {
     retentionDays: 90,
     syncMode: syncOptions.includes(source.syncMode) ? source.syncMode : 'hybrid',
-    telemetryEnabled: source.telemetryEnabled !== false,
+    // Profile visit reports stay off unless the player turned them on.
+    telemetryEnabled: source.telemetryEnabled === true,
     communityConsentVersion: source.communityConsentVersion === RhythiaX.COMMUNITY_CONSENT_VERSION
       ? RhythiaX.COMMUNITY_CONSENT_VERSION : 0,
     maxStorageMb: 25,
@@ -113,6 +130,8 @@ RhythiaX.normalizeDataSettings = function (settings) {
     historyDisplayMode: RhythiaX.DATA_HISTORY_DISPLAY_MODES.includes(source.historyDisplayMode)
       ? source.historyDisplayMode
       : 'latestOpenAndClosed',
+    // What one capture records. A capture fills both in from the module switches statHistory and rankingHistory
+    // (legacy/core/data/data-history.js), so the stored values, a 1.1 leftover, no longer decide anything.
     collectStats: source.collectStats !== false,
     collectRanking: source.collectRanking !== false,
   };
@@ -193,35 +212,6 @@ function normalizeDailyHistory(daily) {
   }, {});
 }
 
-function rollRecordOpenDay(record, referenceDateOrNow = Date.now()) {
-  if (!record || typeof record !== 'object' || !record.history || !record.history.openDay) return false;
-  const today = typeof referenceDateOrNow === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(referenceDateOrNow)
-    ? referenceDateOrNow
-    : dataDateKey(referenceDateOrNow);
-  const openDay = record.history.openDay;
-  if (!openDay || !openDay.date) return false;
-  if (today && openDay.date >= today) return false;
-  const captures = Array.isArray(openDay.captures) ? openDay.captures : [];
-  const latest = captures.length > 0 ? captures[captures.length - 1] : null;
-  if (latest) {
-    const dailySnapshot = normalizeSnapshot({
-      ...dataClone(latest),
-      id: `${openDay.date}:daily`,
-      kind: 'daily',
-      date: openDay.date,
-    }, openDay.date);
-    if (dailySnapshot) {
-      dailySnapshot.kind = 'daily';
-      record.history.daily = record.history.daily || {};
-      record.history.daily[openDay.date] = dailySnapshot;
-    }
-  }
-  record.history.openDay = null;
-  return true;
-}
-
-RhythiaX.rollRecordOpenDay = rollRecordOpenDay;
-
 function normalizeCollection(collection) {
   const source = collection && typeof collection === 'object' ? collection : {};
   const status = ['empty', 'partial', 'complete', 'error'].includes(source.status) ? source.status : 'empty';
@@ -294,5 +284,3 @@ RhythiaX.normalizeDataRecord = function (record, profileId) {
   };
   return normalized;
 };
-
-RhythiaX.cloneDataValue = dataClone;

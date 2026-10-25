@@ -1,6 +1,6 @@
 /* ==========================================================================
    Reimagined for Rhythia — Score Card: Variants D (Row), E (Art), F (Table)
-   (templates/template-rows.js). Sized like Rhythia's own score rows;
+   (templates/variant-rows.js). Sized like Rhythia's own score rows;
    numbers carry a small label instead of a box. Narrow cards (phone, Grid)
    switch to a compact layout through the container query, which is why
    D and E put their content in .rhythiax-sc-row-body (a query cannot
@@ -17,6 +17,8 @@
 }
 
 body[data-rhythiax-theme="white"] .rhythiax-sc-row { --sc-row-rp: #2563eb; }
+/* An own theme's RP values take its accent. */
+html[data-rhythiax-own-theme] body[data-rhythiax-theme] .rhythiax-sc-row { --sc-row-rp: var(--rhythiax-accent); }
 
 .rhythiax-sc-row:hover { border-color: var(--sc-border-strong); }
 
@@ -200,7 +202,8 @@ body[data-rhythiax-theme="white"] .rhythiax-sc-row { --sc-row-rp: #2563eb; }
   background: var(--card-art-url, none) center 30% / cover no-repeat;
 }
 
-/* The text never sits on bare art: solid on the left, a dark fade over the rest. */
+/* The text never sits on bare art: solid on the left, a dark fade over the rest. The fade needs an opaque
+   colour: --sc-art-bg, set only by an own theme (score-card/base.css), whose panels may be see-through. */
 .rhythiax-sc-row-e::after {
   content: "";
   position: absolute;
@@ -208,10 +211,10 @@ body[data-rhythiax-theme="white"] .rhythiax-sc-row { --sc-row-rp: #2563eb; }
   z-index: -1;
   pointer-events: none;
   background: linear-gradient(90deg,
-    var(--sc-bg) 38%,
-    color-mix(in srgb, var(--sc-bg) 86%, transparent) 58%,
-    color-mix(in srgb, var(--sc-bg) 62%, transparent) 78%,
-    color-mix(in srgb, var(--sc-bg) 86%, transparent) 100%);
+    var(--sc-art-bg, var(--sc-bg)) 38%,
+    color-mix(in srgb, var(--sc-art-bg, var(--sc-bg)) 86%, transparent) 58%,
+    color-mix(in srgb, var(--sc-art-bg, var(--sc-bg)) 62%, transparent) 78%,
+    color-mix(in srgb, var(--sc-art-bg, var(--sc-bg)) 86%, transparent) 100%);
 }
 
 .rhythiax-sc-row-e .rhythiax-sc-row-grade {
@@ -269,7 +272,7 @@ body[data-rhythiax-theme="white"] .rhythiax-sc-row { --sc-row-rp: #2563eb; }
   .rhythiax-sc-row-e .rhythiax-sc-row-body { gap: 10px; }
   .rhythiax-sc-row-backdrop { left: 0; }
   .rhythiax-sc-row-e::after {
-    background: linear-gradient(90deg, var(--sc-bg) 30%, color-mix(in srgb, var(--sc-bg) 88%, transparent) 70%, color-mix(in srgb, var(--sc-bg) 76%, transparent));
+    background: linear-gradient(90deg, var(--sc-art-bg, var(--sc-bg)) 30%, color-mix(in srgb, var(--sc-art-bg, var(--sc-bg)) 88%, transparent) 70%, color-mix(in srgb, var(--sc-art-bg, var(--sc-bg)) 76%, transparent));
   }
   .rhythiax-sc-row-e .rhythiax-sc-row-grade { flex-basis: 40px; }
   .rhythiax-sc-row-e .rhythiax-sc-row-grade b { font-size: 19px; }

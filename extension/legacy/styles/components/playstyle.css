@@ -28,16 +28,6 @@ body[data-rhythiax-theme="white"] {
   min-width: 0;
 }
 
-.rhythiax-text-win {
-  color: var(--rhythiax-status-win) !important;
-  font-weight: 700;
-}
-
-.rhythiax-text-loss {
-  color: var(--rhythiax-status-loss) !important;
-  font-weight: 700;
-}
-
 /* Section label, as Rhythia writes "TITLE PROGRESSION" */
 .rhythiax-m4-label,
 .rhythiax-summary-title,
@@ -319,8 +309,7 @@ body[data-rhythiax-theme="white"] {
   gap: 4px 12px;
 }
 
-.rhythiax-breakdown-hint,
-.rhythiax-best-maps-hint {
+.rhythiax-breakdown-hint {
   font-size: 12px;
   color: var(--rhythiax-text-muted, #9ca3af);
 }
@@ -350,7 +339,7 @@ body[data-rhythiax-theme="white"] {
 }
 
 .rhythiax-breakdown-grid.is-speed { grid-template-columns: repeat(8, minmax(0, 1fr)); }
-.rhythiax-breakdown-grid.is-grade { grid-template-columns: repeat(6, minmax(0, 1fr)); }
+.rhythiax-breakdown-grid.is-grade { grid-template-columns: repeat(7, minmax(0, 1fr)); }
 
 .rhythiax-breakdown-item {
   display: flex;
@@ -386,7 +375,7 @@ body[data-rhythiax-theme="white"] {
 
 @container (max-width: 420px) {
   .rhythiax-breakdown-grid.is-speed { grid-template-columns: repeat(4, minmax(0, 1fr)); }
-  .rhythiax-breakdown-grid.is-grade { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .rhythiax-breakdown-grid.is-grade { grid-template-columns: repeat(4, minmax(0, 1fr)); }
   .rhythiax-breakdown-grid .rhythiax-breakdown-item { border-top: 1px solid var(--rhythiax-border, rgba(255, 255, 255, 0.1)); }
 }
 

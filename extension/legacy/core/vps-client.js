@@ -4,11 +4,17 @@ var RhythiaX = RhythiaX || {};
 
 (function () {
   const VPS_BASE_URL = 'https://rhythia.shuriel.com';
+  // How long a page waits for a history answer.
   const DEFAULT_TIMEOUT_MS = 3500;
+  // How long a request whose late answer is kept (options.onLate) may take in all, its wait for the request
+  // budget included (shared/net.js maxWait): the background gives each of its requests 10 s, and the first
+  // request after online history is chosen also asks for the installation key.
+  const LATE_ANSWER_MS = 20 * 1000;
+  const WAIT_OVER = Symbol('wait over');
   const LOG_KEY = 'rhythiax_connection_logs';
-  const TELEMETRY_ENABLED_KEY = 'rhythiax_telemetry_enabled';
   const VISIT_COOLDOWN_KEY = 'rhythiax_visit_report_cooldowns';
-  const VISIT_COOLDOWN_MS = 5 * 60 * 1000;
+  // The service takes one visit report per player and address an hour; another one within the hour does nothing.
+  const VISIT_COOLDOWN_MS = 60 * 60 * 1000;
   let privacyRevision = 0;
   const historyRequests = new Set();
   const visitRequests = new Set();
@@ -16,7 +22,7 @@ var RhythiaX = RhythiaX || {};
   RhythiaX.getVpsSyncMode = getSyncMode;
   if (typeof chrome !== 'undefined') chrome.storage?.onChanged?.addListener((changes, area) => {
     if (area !== 'local') return;
-    if (changes.rhythiaxDataSettings || changes[TELEMETRY_ENABLED_KEY] || changes[HISTORY_CLEAR_KEY]) {
+    if (changes.rhythiaxDataSettings || changes[HISTORY_CLEAR_KEY]) {
       privacyRevision++;
       historyRequests.forEach(controller => controller.abort());
       visitRequests.forEach(controller => controller.abort());
@@ -52,9 +58,9 @@ var RhythiaX = RhythiaX || {};
         });
       });
       if (!res) return 'local-only';
-      if (res?.rhythiaxDataSettings?.communityConsentVersion !== 1) return 'local-only';
-      const mode = res?.rhythiaxDataSettings?.syncMode;
-      return ['cloud-only', 'hybrid', 'local-only'].includes(mode) ? mode : 'local-only';
+      // The consent and a mode that goes online (shared/consent.js); anything else stays on this device.
+      const settings = res.rhythiaxDataSettings;
+      return RhythiaX.Consent?.historyAllowed?.(settings) === true ? settings.syncMode : 'local-only';
     } catch (_) {
       return 'local-only';
     }
@@ -68,30 +74,33 @@ var RhythiaX = RhythiaX || {};
     if (typeof chrome === 'undefined' || !chrome.storage?.local) return false;
     try {
       const res = await new Promise(resolve => {
-        chrome.storage.local.get([TELEMETRY_ENABLED_KEY, 'rhythiaxDataSettings'], result => {
+        chrome.storage.local.get(['rhythiaxDataSettings'], result => {
           resolve(chrome.runtime?.lastError ? null : result);
         });
       });
       if (!res) return false;
-      if (res?.rhythiaxDataSettings?.communityConsentVersion !== 1) return false;
-      if (!['cloud-only', 'hybrid'].includes(res?.rhythiaxDataSettings?.syncMode)) return false;
-      if (res?.rhythiaxDataSettings?.telemetryEnabled !== undefined) {
-        return res.rhythiaxDataSettings.telemetryEnabled === true;
-      }
-      return res?.[TELEMETRY_ENABLED_KEY] === true;
+      // The choice lives in the data settings; the update from 1.1 copied the old separate switch there.
+      return RhythiaX.Consent?.reportsAllowed?.(res.rhythiaxDataSettings) === true;
     } catch (_) {
       return false;
     }
   }
 
   /**
-   * Fetch full daily ranking history for a player from VPS backend.
-   * Leverages Cloudflare Edge CDN caching and records latency diagnostics.
+   * Fetch a player's daily history from the history service (GET /api/player/:id/history). shared/net.js
+   * carries the request through the background, which adds this installation's key when it has one. The
+   * answer is { player, history }, marked not to be cached on the way (no-store); 404 means the service has
+   * no history for the player. While the service requires keys, a request without one gets only the last
+   * three days, marked recentOnly. Each request adds one entry to the connection log.
+   * The page waits at most options.timeout. Then the request is let go, or, with options.onLate, it may go on
+   * for up to LATE_ANSWER_MS, and an answer that comes in that time is passed to onLate.
    * @param {number|string} playerId
    * @param {Object} [options]
    * @param {AbortSignal} [options.signal]
    * @param {number} [options.timeout]
-   * @returns {Promise<{player: Object, history: Array}|null>}
+   * @param {boolean} [options.withStatus] {unavailable: true} instead of null when the service has no history
+   * @param {Function} [options.onLate]
+   * @returns {Promise<{player: Object, history: Array, recentOnly: boolean}|{unavailable: true}|null>}
    */
   RhythiaX.fetchVpsPlayerHistory = async function (playerId, options = {}) {
     const id = parseInt(playerId, 10);
@@ -117,19 +126,40 @@ var RhythiaX = RhythiaX || {};
     }
 
     const timeoutMs = options.timeout || DEFAULT_TIMEOUT_MS;
+    const onLate = typeof options.onLate === 'function' ? options.onLate : null;
     const controller = new AbortController();
     historyRequests.add(controller);
-    let timeoutId = null;
     const abortFromParent = () => controller.abort();
-
-    if (timeoutMs > 0) {
-      timeoutId = setTimeout(() => controller.abort(), timeoutMs);
-    }
 
     if (options.signal) {
       options.signal.addEventListener('abort', abortFromParent, { once: true });
     }
 
+    const answer = requestHistory(id, controller.signal, { revision, nowStr, withStatus: options.withStatus, maxWait: onLate ? LATE_ANSWER_MS : 0 })
+      .finally(() => {
+        historyRequests.delete(controller);
+        options.signal?.removeEventListener('abort', abortFromParent);
+      });
+    if (!(timeoutMs > 0)) return answer;
+    let timeoutId = null;
+    const waitOver = new Promise(resolve => { timeoutId = setTimeout(resolve, timeoutMs, WAIT_OVER); });
+    let first;
+    try {
+      first = await Promise.race([answer, waitOver]);
+    } finally {
+      clearTimeout(timeoutId);
+    }
+    if (first !== WAIT_OVER) return first;
+    // The page stops waiting here. A caller that keeps late answers gets this one when it comes; otherwise
+    // the request is let go.
+    if (onLate) answer.then(result => (result && revision === privacyRevision ? onLate(result) : null)).catch(() => {});
+    else controller.abort();
+    return null;
+  };
+
+  // One history request and its entry in the connection log. Resolves to what fetchVpsPlayerHistory returns
+  // for it, null for a failure.
+  async function requestHistory(id, signal, { revision, nowStr, withStatus, maxWait }) {
     const startTime = performance.now();
 
     try {
@@ -139,15 +169,14 @@ var RhythiaX = RhythiaX || {};
         headers: {
           'Accept': 'application/json',
         },
-        signal: controller.signal
+        signal,
+        ...(maxWait ? { maxWait } : {})
       });
-
-      if (timeoutId) clearTimeout(timeoutId);
 
       const elapsedMs = Math.round(performance.now() - startTime);
       const elapsedSec = (elapsedMs / 1000).toFixed(2) + 's';
 
-      if (revision !== privacyRevision || controller.signal.aborted) return null;
+      if (revision !== privacyRevision || signal.aborted) return null;
       if (response.status === 404 || response.status === 410) {
         appendDiagnosticLog({
           timestamp: Date.now(),
@@ -160,7 +189,7 @@ var RhythiaX = RhythiaX || {};
           status: 'warning',
           statusText: 'History unavailable'
         });
-        return options.withStatus ? { unavailable: true } : null;
+        return withStatus ? { unavailable: true } : null;
       }
 
       if (!response.ok) {
@@ -179,7 +208,7 @@ var RhythiaX = RhythiaX || {};
       }
 
       const data = await response.json();
-      if (revision !== privacyRevision || controller.signal.aborted) return null;
+      if (revision !== privacyRevision || signal.aborted) return null;
       if (!data || !Array.isArray(data.history)) return null;
 
       const playerLabel = data.player?.username 
@@ -200,12 +229,12 @@ var RhythiaX = RhythiaX || {};
 
       return {
         player: data.player || null,
-        history: data.history
+        history: data.history,
+        recentOnly: data.recentOnly === true
       };
     } catch (err) {
-      if (timeoutId) clearTimeout(timeoutId);
       if (revision !== privacyRevision) return null;
-      const isTimeout = err.name === 'AbortError';
+      const isTimeout = err.name === 'AbortError' || err.name === 'MaxWaitError';
       
       appendDiagnosticLog({
         timestamp: Date.now(),
@@ -223,19 +252,33 @@ var RhythiaX = RhythiaX || {};
         RhythiaX.log(`VPS history fetch skipped for #${id}:`, isTimeout ? 'timeout' : err.message);
       }
       return null;
-    } finally {
-      if (timeoutId) clearTimeout(timeoutId);
-      historyRequests.delete(controller);
-      options.signal?.removeEventListener('abort', abortFromParent);
     }
-  };
+  }
 
   const reportedVisitsThisSession = new Map();
   const pendingVisitReports = new Set();
 
+  // Gives back the hour taken for a report that was turned away, unless a newer report replaced it.
+  function releaseVisitCooldown(id, at) {
+    if (reportedVisitsThisSession.get(id) === at) reportedVisitsThisSession.delete(id);
+    return new Promise(resolve => {
+      try {
+        chrome.storage.local.get({ [VISIT_COOLDOWN_KEY]: {} }, result => {
+          const stored = chrome.runtime?.lastError ? null : result?.[VISIT_COOLDOWN_KEY];
+          if (!stored || Number(stored[id]) !== at) return resolve();
+          const next = { ...stored };
+          delete next[id];
+          chrome.storage.local.set({ [VISIT_COOLDOWN_KEY]: next }, () => resolve());
+        });
+      } catch (_) { resolve(); }
+    });
+  }
+
   /**
    * Report a profile visit to VPS for crawler auto-discovery (P1 / P2 queue).
-   * Respects opt-out telemetry setting and persists the cooldown across reloads.
+   * Respects opt-out telemetry setting. A player is reported at most once an hour (VISIT_COOLDOWN_MS), kept
+   * across reloads and tabs; the hour is given back when the service refused the report, was busy or did
+   * not answer.
    * @param {number|string} playerId
    */
   RhythiaX.reportVpsPlayerVisit = async function (playerId) {
@@ -277,12 +320,22 @@ var RhythiaX = RhythiaX || {};
       reportedVisitsThisSession.set(id, now);
       const controller = new AbortController();
       visitRequests.add(controller);
-      try { await (RhythiaX.Net?.fetch || fetch)(`${VPS_BASE_URL}/api/telemetry/visit`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ playerId: id }),
-        signal: controller.signal
-      }).catch(() => {}); } finally { visitRequests.delete(controller); }
+      let turnedAway = false;
+      try {
+        const response = await (RhythiaX.Net?.fetch || fetch)(`${VPS_BASE_URL}/api/telemetry/visit`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ playerId: id }),
+          signal: controller.signal
+        });
+        turnedAway = response?.status === 429 || response?.status === 503;
+      } catch (_) {
+        turnedAway = true;
+      } finally { visitRequests.delete(controller); }
+      // A refusal (429), a busy service (503) or no answer at all gives the player's hour back; both answers also
+      // pause the report budget for their Retry-After (shared/net.js). Any other answer, an error included,
+      // holds the hour, so a failing service is not sent the same report on every visit.
+      if (turnedAway && revision === privacyRevision) await releaseVisitCooldown(id, now);
     } finally {
       pendingVisitReports.delete(id);
     }

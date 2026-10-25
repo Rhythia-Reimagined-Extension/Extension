@@ -142,17 +142,45 @@ RhythiaX.ExodusMapKit = (function () {
     throw new Error('No notes in the map file');
   }
 
+  // Map files are read only from Rhythia's own hosts (as ExodusData.mapStyles does).
+  const onRhythia = url => /^https:\/\/([a-z0-9-]+\.)*rhythia\.com\//i.test(String(url || ''));
+  // A response body, read up to max bytes: whatever the server says (or does not say) about its length.
+  async function readUpTo(r, max, tooLarge) {
+    const reader = r.body?.getReader?.();
+    if (!reader) {
+      const buf = await r.arrayBuffer();
+      if (buf.byteLength > max) throw new Error(tooLarge);
+      return buf;
+    }
+    const parts = [];
+    let size = 0;
+    for (;;) {
+      const {done, value} = await reader.read();
+      if (done) break;
+      size += value.length;
+      if (size > max) { reader.cancel().catch(() => {}); throw new Error(tooLarge); }
+      parts.push(value);
+    }
+    const out = new Uint8Array(size);
+    let at = 0;
+    for (const p of parts) { out.set(p, at); at += p.length; }
+    return out.buffer;
+  }
+
   // Only the notes, read in parts: the header says where they are, so the audio (most of the
   // file) is never downloaded. A server that ignores Range simply sends the whole file.
   async function notesOnly(url, signal) {
+    if (!onRhythia(url)) throw new Error('Map file is not on Rhythia');
     const get = async (a, b) => {
       if (!(b >= a) || b - a + 1 > PART_MAX) throw new Error('Map file part is too large');
       const r = await fetch(url, {headers: {Range: `bytes=${a}-${b}`}, signal});
       if (!r.ok) throw new Error(`Map file: HTTP ${r.status}`);
       // A server that ignores Range sends the whole file: fine for a normal map, not for a huge one.
-      if (r.status === 200 && Number(r.headers?.get?.('content-length')) > WHOLE_MAX) { r.body?.cancel?.().catch(() => {}); throw new Error('Map file is too large'); }
-      const buf = await r.arrayBuffer();
-      return {whole: r.status === 200, buf, v: new DataView(buf), u8: new Uint8Array(buf)};
+      // A part is never longer than what was asked for.
+      const whole = r.status === 200, max = whole ? WHOLE_MAX : b - a + 1, tooLarge = whole ? 'Map file is too large' : 'Map file part is too large';
+      if (Number(r.headers?.get?.('content-length')) > max) { r.body?.cancel?.().catch(() => {}); throw new Error(tooLarge); }
+      const buf = await readUpTo(r, max, tooLarge);
+      return {whole, buf, v: new DataView(buf), u8: new Uint8Array(buf)};
     };
     const head = await get(0, 1023);
     if (head.whole) return head.v.getUint32(0, true) === ZIP ? rhm(head) : parse(head.buf).notes;
@@ -189,66 +217,86 @@ RhythiaX.ExodusMapKit = (function () {
 
   /* ── How the map plays ── */
   // Grid: the positions a map really uses. Many maps stretch the grid (for example −0.15, 1, 2.15
-  // instead of 0, 1, 2), so a position counts as on the grid when the map uses it often.
-  // Off-grid (quantum) notes are the ones placed anywhere else.
+  // instead of 0, 1, 2), so the grid is the three positions per axis the map uses most (it is 3×3).
+  // Off-grid (quantum) notes are the ones placed anywhere else, a finer grid (steps of 1/6) included.
   const LEVEL_SHARE = .03;
   const r2 = v => Math.round(v * 100) / 100;
   function levels(notes, k) {
     const count = new Map();
     for (const n of notes) { const v = r2(n[k]); count.set(v, (count.get(v) || 0) + 1); }
-    return new Set([...count].filter(([, c]) => c >= notes.length * LEVEL_SHARE).map(([v]) => v));
+    return new Set([...count].filter(([, c]) => c >= notes.length * LEVEL_SHARE).sort((a, b) => b[1] - a[1]).slice(0, 3).map(([v]) => v));
   }
   // The distance between neighbouring grid positions, so moves are measured in this map's cells.
+  // A map with nearly every note off the grid has no real grid: its most used spots are chance, so
+  // a cell far from 1 is not believed.
   function spacing(xs, ys) {
     const gaps = [];
     for (const set of [xs, ys]) { const v = [...set].sort((a, b) => a - b); for (let i = 1; i < v.length; i++) if (v[i] - v[i - 1] >= .5) gaps.push(v[i] - v[i - 1]); }
     if (!gaps.length) return 1;
     gaps.sort((a, b) => a - b);
-    return gaps[gaps.length >> 1];
+    const cell = gaps[gaps.length >> 1];
+    return cell >= .9 && cell <= 1.2 ? cell : 1;
   }
 
-  // Streams: runs of at least six fast notes (150 ms apart or closer at 1×) with an even rhythm.
-  // Jumps: slower notes that move a cell or more. Other: slower notes with small moves.
-  const FAST_MS = 150, RUN_MIN = 6, EVEN = .35, JUMP_CELLS = 1;
+  // The map is read in pieces of 16 moves, and each piece is one of:
+  // Jump: moves mostly longer than 1.3 cells. A spin when the path keeps turning the same way (fast
+  //   jumps are often played by circling the cursor), otherwise jumps back and forth.
+  // Tech: short moves, but the cursor speed keeps changing, so the hand has to bend and catch up.
+  // Stream: short moves at an even cursor speed, on the grid or (quantum) off it.
+  // The limits were set on all ranked maps against maps players had labelled (2026-10-21). On fast
+  // maps time alone cannot tell streams from jumps: most notes there are under 80 ms apart.
+  const PIECE = 16, PIECE_MIN = 6, FAR = 1.3, STEADY = .82, UNEVEN = .1, OFF_PIECE = .5, SLOW_NPS = 5;
+  const wrap = a => (a + 3 * Math.PI) % (2 * Math.PI) - Math.PI;
+  const median = a => { if (!a.length) return 0; const b = [...a].sort((x, y) => x - y); return b[b.length >> 1]; };
   function analyse(notes, durationMs) {
     const end = Math.max(durationMs || 0, notes.length ? notes[notes.length - 1][0] : 0);
-    if (notes.length < 2) return {notes: notes.length, duration: end, zones: [], share: {Stream: 0, Jump: 0, Other: 0}, offGrid: 0, cell: 1, avgNps: 0, peakNps: 0, curve: [], longestStream: null, fastestStream: 0};
+    if (notes.length < 2) return {notes: notes.length, duration: end, zones: [], share: {Stream: 0, Jump: 0, Tech: 0}, mix: {Stream: 0, Jump: 0, Tech: 0}, spin: 0, quantum: 0, offGrid: 0, cell: 1, avgNps: 0, peakNps: 0, curve: [], longestStream: null, fastestStream: 0};
     // Notes at the same moment count as one hit.
     const ev = [];
     for (const n of notes) { const last = ev[ev.length - 1]; if (last && n[0] - last.t < 2) last.n++; else ev.push({t: n[0], x: n[1], y: n[2], n: 1}); }
     const xs = levels(notes, 1), ys = levels(notes, 2), cell = spacing(xs, ys);
     const offGrid = notes.filter(n => !xs.has(r2(n[1])) || !ys.has(r2(n[2]))).length / notes.length;
-    const step = ev.slice(1).map((e, i) => ({dt: e.t - ev[i].t, d: Math.hypot(e.x - ev[i].x, e.y - ev[i].y) / cell}));
-    const label = step.map(s => (s.dt > FAST_MS && s.d >= JUMP_CELLS ? 'Jump' : 'Other'));
+    const step = ev.slice(1).map((e, i) => {
+      const p = ev[i], dt = e.t - p.t, d = Math.hypot(e.x - p.x, e.y - p.y) / cell;
+      return {dt, d, v: d / Math.max(10, dt), dir: Math.atan2(e.y - p.y, e.x - p.x), off: !xs.has(r2(e.x)) || !ys.has(r2(e.y)), n: e.n};
+    });
+    for (let i = 1; i < step.length; i++) step[i].turn = step[i].d > .3 && step[i - 1].d > .3 ? wrap(step[i].dir - step[i - 1].dir) : null;
+    const pieces = [];
     for (let i = 0; i < step.length;) {
-      if (step[i].dt > FAST_MS) { i++; continue; }
-      let j = i + 1;
-      while (j < step.length && step[j].dt <= FAST_MS && Math.abs(step[j].dt - step[i].dt) <= step[i].dt * EVEN) j++;
-      if (j - i >= RUN_MIN - 1) for (let k = i; k < j; k++) label[k] = 'Stream';
+      let j = Math.min(step.length, i + PIECE);
+      if (step.length - j < PIECE_MIN) j = step.length;
+      const c = step.slice(i, j), dist = median(c.filter(s => s.d > .3).map(s => s.d));
+      const turns = c.map(s => s.turn).filter(t => t != null && Math.abs(t) > .05);
+      let same = 0;
+      for (let k = 1; k < turns.length; k++) if (Math.sign(turns[k]) === Math.sign(turns[k - 1])) same++;
+      const speed = [];
+      for (let k = 1; k < c.length; k++) if (c[k].d > .3 && c[k - 1].d > .3) speed.push(Math.abs(Math.log(c[k].v / c[k - 1].v)));
+      const kind = dist >= FAR ? 'Jump' : median(speed) >= UNEVEN ? 'Tech' : 'Stream';
+      pieces.push({kind, spin: kind === 'Jump' && (turns.length > 2 ? same / (turns.length - 1) : 1) >= STEADY,
+        quantum: c.filter(s => s.off).length / c.length >= OFF_PIECE, start: ev[i].t, end: ev[j].t,
+        notes: c.reduce((s, x) => s + x.n, 0), slow: (j - i) / Math.max(.001, (ev[j].t - ev[i].t) / 1000) < SLOW_NPS});
       i = j;
     }
-    // Sections: each step covers the time between its two notes; a short non-stream bit joins the one before.
+    // Sections: neighbouring pieces of the same kind join.
     const zones = [];
-    for (let i = 0; i < step.length; i++) {
+    for (const p of pieces) {
       const z = zones[zones.length - 1];
-      if (z && z.kind === label[i]) { z.end = ev[i + 1].t; z.steps++; } else zones.push({kind: label[i], start: ev[i].t, end: ev[i + 1].t, steps: 1});
+      if (z && z.kind === p.kind) { z.end = p.end; z.notes += p.notes; z.spinNotes += p.spin ? p.notes : 0; z.offNotes += p.quantum ? p.notes : 0; }
+      else zones.push({kind: p.kind, start: p.start, end: p.end, notes: p.notes, spinNotes: p.spin ? p.notes : 0, offNotes: p.quantum ? p.notes : 0});
     }
-    for (let i = zones.length - 1; i > 0; i--) {
-      const z = zones[i], prev = zones[i - 1];
-      if (z.steps < 3 && z.kind !== 'Stream' && prev.kind !== 'Stream') { prev.end = z.end; prev.steps += z.steps; zones.splice(i, 1); }
-    }
-    for (let i = zones.length - 1; i > 0; i--) if (zones[i].kind === zones[i - 1].kind) { zones[i - 1].end = zones[i].end; zones[i - 1].steps += zones[i].steps; zones.splice(i, 1); }
-    let e0 = 0;
     for (const z of zones) {
-      while (e0 < ev.length && ev[e0].t < z.start) e0++;
-      let n = 0;
-      for (let k = e0; k < ev.length && ev[k].t <= z.end; k++) n += ev[k].n;
-      z.notes = n; z.nps = n > 1 ? (n - 1) / Math.max(.001, (z.end - z.start) / 1000) : 0; z.type = z.kind;
+      z.nps = z.notes / Math.max(.001, (z.end - z.start) / 1000);
+      z.type = z.kind === 'Jump' ? (z.spinNotes >= z.notes * .6 ? 'Spin jumps' : 'Jumps') : z.offNotes >= z.notes * .5 ? `Quantum ${z.kind.toLowerCase()}` : z.kind;
     }
-    // Shares count notes, not time: a fast stream holds many notes in a short time.
-    const share = {Stream: 0, Jump: 0, Other: 0};
-    label.forEach((k, i) => { share[k] += ev[i + 1].n; });
-    for (const k in share) share[k] /= Math.max(1, ev.length - 1 + notes.length - ev.length);
+    // Shares count notes, not time: a fast stream holds many notes in a short time. The bar shows
+    // every note; the map's type leaves out slow parts (intros, breaks) unless most of the map is slow.
+    const share = {Stream: 0, Jump: 0, Tech: 0}, mix = {Stream: 0, Jump: 0, Tech: 0};
+    let total = 0, fast = 0, spinNotes = 0, offNotes = 0;
+    for (const p of pieces) { share[p.kind] += p.notes; total += p.notes; if (!p.slow) { mix[p.kind] += p.notes; fast += p.notes; } }
+    const useAll = fast < total * .3;
+    for (const p of pieces) if (useAll || !p.slow) { spinNotes += p.spin ? p.notes : 0; offNotes += p.quantum ? p.notes : 0; }
+    for (const k in share) { mix[k] = useAll ? share[k] / Math.max(1, total) : mix[k] / Math.max(1, fast); share[k] /= Math.max(1, total); }
+    const counted = useAll ? total : fast;
     let peak = 0;
     for (let i = 0, j = 0; i < notes.length; i++) { while (notes[i][0] - notes[j][0] > 1000) j++; peak = Math.max(peak, i - j + 1); }
     const bins = Math.max(1, Math.ceil(end / 500)), curve = new Array(bins).fill(0);
@@ -257,43 +305,78 @@ RhythiaX.ExodusMapKit = (function () {
     const longest = streams.reduce((m, z) => (!m || z.end - z.start > m.end - m.start ? z : m), null);
     const played = (notes[notes.length - 1][0] - notes[0][0]) / 1000;
     return {
-      notes: notes.length, duration: end, zones, share, offGrid, cell,
+      notes: notes.length, duration: end, zones, share, mix, offGrid, cell,
+      spin: spinNotes / Math.max(1, counted), quantum: offNotes / Math.max(1, counted),
       avgNps: played > 0 ? notes.length / played : 0, peakNps: peak,
       curve: curve.map((_, i) => ((curve[i - 1] || 0) * .25 + curve[i] * .5 + (curve[i + 1] || 0) * .25) * 2),
       longestStream: longest, fastestStream: streams.reduce((m, z) => Math.max(m, z.nps), 0),
     };
   }
 
+  // The map's type: the kind with at least half the notes and a lead of 20 points, otherwise Varied.
+  // Tech sets how a map plays sooner, so it leads once it is the largest kind with 40% of the notes.
+  // Other kinds with 30% or more are named too. Quantum is separate: 20% of the notes in off-grid parts.
+  const ORDER = ['Jump', 'Stream', 'Tech'], MAIN = .5, LEAD = .2, TECH_MAIN = .4, ALSO = .3, QUANTUM = .2;
+  function types(a) {
+    const m = a.mix, order = [...ORDER].sort((x, y) => m[y] - m[x]);
+    const main = order[0] === 'Tech' && m.Tech >= TECH_MAIN ? 'Tech'
+      : m[order[0]] >= MAIN && m[order[0]] - m[order[1]] >= LEAD ? order[0] : 'Varied';
+    return {main, also: order.filter(k => k !== main && m[k] >= ALSO)};
+  }
+  // Tag tips name no numbers: the share bar under the tags has them.
+  const TAG = {
+    Jump: a => ({k: 'jump', label: 'Jumps', tip: a.spin >= a.mix.Jump / 2 ? 'Long moves across the grid, mostly spins' : 'Long moves across the grid'}),
+    Stream: () => ({k: 'stream', label: 'Streams', tip: 'Short moves at an even speed'}),
+    Tech: () => ({k: 'tech', label: 'Techs', tip: 'Short moves at a changing speed'}),
+    Varied: () => ({k: 'other', label: 'Varied', tip: 'No kind of movement leads'}),
+  };
+
   // Short tags from the numbers.
   function style(a) {
     if (!a || !a.notes) return [];
-    const s = a.share, tags = [];
-    if (s.Stream >= .55) tags.push({k: 'stream', label: 'Streams', tip: `${Math.round(s.Stream * 100)}% of the notes are in streams`});
-    else if (s.Jump >= .55) tags.push({k: 'jump', label: 'Jumps', tip: `${Math.round(s.Jump * 100)}% of the notes are jumps`});
-    else tags.push({k: 'other', label: 'Varied', tip: `Notes: streams ${Math.round(s.Stream * 100)}%, jumps ${Math.round(s.Jump * 100)}%, other ${Math.round(s.Other * 100)}%`});
-    if (a.offGrid >= .3) tags.push({k: 'quantum', label: 'Quantum', tip: `${Math.round(a.offGrid * 100)}% of the notes sit off the map’s grid`});
+    const t = types(a), tags = [t.main, ...t.also].map(k => TAG[k](a));
+    if (a.quantum >= QUANTUM) tags.push({k: 'quantum', label: 'Quantum', tip: 'Parts placed off the grid'});
     if (a.longestStream && a.longestStream.end - a.longestStream.start >= 15000) tags.push({k: 'stamina', label: 'Long streams', tip: `The longest stream lasts ${Math.round((a.longestStream.end - a.longestStream.start) / 1000)} s`});
     return tags;
   }
 
-  // One word per map for summaries: off-grid maps are Quantum, then the note share decides.
+  // One word per map for summaries (jump, stream, tech or varied); quantum(a) is a separate yes/no.
   function kind(a) {
     if (!a || !a.notes) return null;
-    if (a.offGrid >= .3) return 'quantum';
-    return a.share.Stream >= .55 ? 'stream' : a.share.Jump >= .55 ? 'jump' : 'varied';
+    return types(a).main.toLowerCase();
   }
+  const quantum = a => Boolean(a && a.notes && a.quantum >= QUANTUM);
 
   // Reads a map's notes once per page view; the map page and a score page use it.
+  // The read has its own signal: each caller's signal only stops that caller's wait, and the read
+  // itself stops when every caller that is still waiting has left. A failed read is not kept.
   const files = new Map();
+  const aborted = signal => signal.reason ?? Object.assign(new Error('The map file read was stopped'), {name: 'AbortError'});
   function load(url, signal) {
-    if (!files.has(url)) {
-      const p = notesOnly(url, signal).then(notes => ({notes, analysis: analyse(notes)}));
-      p.catch(() => files.delete(url));
-      files.set(url, p);
+    if (signal?.aborted) return Promise.reject(aborted(signal));
+    let e = files.get(url);
+    if (!e || e.ac.signal.aborted) {
+      const ac = new AbortController();
+      e = {ac, waiting: 0, settled: false};
+      e.p = notesOnly(url, ac.signal).then(notes => ({notes, analysis: analyse(notes)}));
+      const entry = e;
+      e.p.then(() => { entry.settled = true; }, () => { entry.settled = true; if (files.get(url) === entry) files.delete(url); });
+      files.set(url, e);
       while (files.size > 3) files.delete(files.keys().next().value);
     }
-    return files.get(url);
+    e.waiting++;
+    if (!signal) return e.p;
+    const entry = e;
+    return new Promise((resolve, reject) => {
+      const quit = () => {
+        if (--entry.waiting <= 0 && !entry.settled) entry.ac.abort();
+        reject(aborted(signal));
+      };
+      signal.addEventListener('abort', quit, {once: true});
+      entry.p.then(v => { signal.removeEventListener('abort', quit); resolve(v); }, err => { signal.removeEventListener('abort', quit); reject(err); });
+    });
   }
 
-  return {parse, analyse, style, kind, load, notesOnly};
+  // parse is exported only for the playstyle test; the pages use load and analyse.
+  return {parse, analyse, style, kind, quantum, load, notesOnly};
 })();

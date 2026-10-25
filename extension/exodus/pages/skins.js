@@ -8,7 +8,7 @@ var RhythiaX = RhythiaX || {};
 (function () {
 'use strict';
 const K = () => RhythiaX.ExodusKit;
-const {SITE, Data, esc, fmt, REDUCED, ago, fullDate, av, shell, pager, morph} = RhythiaX.ExodusKit;
+const {SITE, Data, esc, fmt, REDUCED, ago, fullDate, av, shell, pager: pageNumbers, morph} = RhythiaX.ExodusKit;
 
 /* ════════════════════ Skins ════════════════════ */
 const SKIN_TYPES = [['rhs', 'RHS', 'RHS skin'], ['cursor', 'Cursors', 'cursor'], ['note', 'Notes', 'note'], ['border', 'Borders', 'border'], ['colorset', 'Colorsets', 'colorset']];
@@ -28,14 +28,22 @@ async function copyText(text) {
   t.remove();
   return ok;
 }
+// A colorset's values reach a style attribute, so only plain colour tokens pass: #rgb, #rgba, #rrggbb, #rrggbbaa,
+// rgb()/rgba()/hsl()/hsla() with numbers only, or a few colour names. Anything else is drawn as an empty swatch.
+const COLOR_NAMES = new Set(['black', 'white', 'gray', 'grey', 'silver', 'red', 'maroon', 'orange', 'yellow', 'olive', 'lime', 'green', 'teal', 'cyan', 'aqua', 'blue', 'navy', 'purple', 'magenta', 'fuchsia', 'pink', 'brown', 'transparent']);
+const COLOR_FN = /^(?:rgba?|hsla?)\(\s*[-+]?[\d.]+(?:%|deg|turn|rad|grad)?(?:\s*[,\s/]\s*[-+]?[\d.]+%?){2,3}\s*\)$/i;
+const cleanColor = c => {
+  const s = typeof c === 'string' ? c.trim() : '';
+  return s.length <= 64 && (/^#(?:[0-9a-f]{3,4}|[0-9a-f]{6}|[0-9a-f]{8})$/i.test(s) || COLOR_FN.test(s) || COLOR_NAMES.has(s.toLowerCase())) ? s : '';
+};
 function colorGrid(colors, cls = '') {
   const n = Math.ceil(Math.sqrt(colors.length)), rows = Math.ceil(colors.length / n);
-  return `<span class="v-cset ${cls}" style="grid-template-columns:repeat(${n},1fr);aspect-ratio:${n}/${rows}" role="img" aria-label="${colors.length} color preview">${colors.map(c => `<i style="background:${esc(c)}"${cls ? ` data-hex="${esc(c)}" data-tip="<b>${esc(c)}</b><small>Click to copy</small>"` : ''}></i>`).join('')}</span>`;
+  return `<span class="v-cset ${cls}" style="grid-template-columns:repeat(${n},1fr);aspect-ratio:${n}/${rows}" role="img" aria-label="${colors.length} color preview">${colors.map(raw => { const c = cleanColor(raw); return c ? `<i style="background:${esc(c)}"${cls ? ` data-hex="${esc(c)}" data-tip="<b>${esc(c)}</b><small>Click to copy</small>"` : ''}></i>` : `<i class="bad"${cls ? ' data-tip="<b>Not a colour</b><small>This value is not drawn</small>"' : ''}></i>`; }).join('')}</span>`;
 }
 
 function skins(host, ctx) {
   const R = host.shadowRoot, ac = new AbortController(), sig = {signal: ac.signal}, $ = s => R.querySelector(s);
-  const ui = shell(R, sig, ctx);
+  const ui = shell(R, sig);
   let bg = 'dark'; try { bg = localStorage.getItem('rhythiax_exodus_skins_bg') || 'dark'; } catch (_) {}
   const S = {q: parse(), data: null, counts: null, loading: false, seq: 0, enter: true, ok: noticeOk(), me: null, bg, open: null, confirm: false, deleting: false};
   const dlg = R.getElementById('cmp');
@@ -81,20 +89,20 @@ function skins(host, ctx) {
     const q = S.q, [, label] = typeOf(q.type), mine = Boolean(S.me) && String(S.me.id) === q.owner;
     return `<div class="container v-mbar">
       <form class="v-mrow" id="v-sfind"><label class="field v-mq"><svg class="ico" aria-hidden="true"><use href="#i-search"/></svg><span class="sr">Search ${esc(label.toLowerCase())}</span><input id="v-sq" type="search" maxlength="100" placeholder="Search ${esc(label.toLowerCase())} by name..." value="${esc(q.search)}" autocomplete="off"></label>
-        ${S.me ? `<label class="b-switch"><input type="checkbox" id="v-mine" ${mine ? 'checked' : ''}><i aria-hidden="true"></i><span>Your uploads<small>Show only what you uploaded</small></span></label>` : ''}
+        ${S.me ? `<label class="b-switch"><input type="checkbox" id="v-mine" ${mine ? 'checked' : ''}><i aria-hidden="true"></i><span>Your uploads</span></label>` : ''}
         ${q.owner && !mine ? `<span class="v-owner">Uploads by <b>${esc(ownerName())}</b><button class="iconbtn" type="button" data-clear-owner aria-label="Show every uploader"><svg class="ico" aria-hidden="true"><use href="#i-x"/></svg></button></span>` : ''}</form>
       <div class="v-mrow v-mpills">
         <div class="pills v-buckets" aria-label="Asset type">${SKIN_TYPES.map(([k, l]) => { const n = S.counts?.[k]; return `<button type="button" aria-pressed="${q.type === k}" data-type="${k}"><b>${l}</b><small class="num">${n == null ? '&nbsp;' : fmt(n)}</small></button>`; }).join('')}</div>
         <div class="pills" aria-label="Sort">${SKIN_SORTS.map(([k, l]) => `<button type="button" aria-pressed="${q.sort === k}" data-sort="${k}">${l}</button>`).join('')}</div>
-        <button class="btn v-dir" type="button" data-dir aria-label="${q.dir === 'desc' ? 'Descending' : 'Ascending'}" data-tip="<b>${q.dir === 'desc' ? 'Descending' : 'Ascending'}</b><small>Click to reverse the order</small>"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="${q.dir === 'desc' ? 'M12 5v14M6 13l6 6 6-6' : 'M12 19V5M6 11l6-6 6 6'}"/></svg></button>
+        <button class="btn v-dir" type="button" data-dir aria-label="${q.dir === 'desc' ? 'Descending' : 'Ascending'}" data-tip="<b>${q.dir === 'desc' ? 'Descending' : 'Ascending'}</b>"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="${q.dir === 'desc' ? 'M12 5v14M6 13l6 6 6-6' : 'M12 19V5M6 11l6-6 6 6'}"/></svg></button>
         ${['cursor', 'note', 'border'].includes(q.type) ? bgPills() : ''}
       </div></div>`;
   }
   function art(a, big = false) {
     const t = a.assetType;
-    if (t === 'colorset') return a.colors?.length ? colorGrid(a.colors, big ? 'big' : '') : '<span class="v-nopv"><b>Preview unavailable</b></span>';
+    if (t === 'colorset') return Array.isArray(a.colors) && a.colors.length ? colorGrid(a.colors, big ? 'big' : '') : '<span class="v-nopv"><b>Preview unavailable</b></span>';
     const src = t === 'rhs' ? a.previewUrl : a.previewUrl || a.url;
-    if (!src) return `<span class="v-nopv"><b>${t === 'rhs' ? 'Preview unavailable' : 'Image unavailable'}</b>${t === 'rhs' ? '<small>This package has no generated preview</small>' : ''}</span>`;
+    if (!src) return `<span class="v-nopv"><b>${t === 'rhs' ? 'Preview unavailable' : 'Image unavailable'}</b></span>`;
     return `<img src="${esc(src)}" alt="${esc(a.name)} preview" ${big ? '' : 'loading="lazy"'} data-kind="${t}">`;
   }
   function card(a, i) {
@@ -117,18 +125,14 @@ function skins(host, ctx) {
       <button class="btn primary" type="button" data-notice>I understand</button></div>`;
     if (!d) return `<div class="v-skins ${S.q.type === 'rhs' ? 'rhs' : ''}">${Array.from({length: 12}, () => `<div class="skeleton" style="height:auto;aspect-ratio:${S.q.type === 'rhs' ? '4/4.1' : '4/5.6'};border-radius:16px"></div>`).join('')}</div>`;
     if (!d.assets.length) return S.q.search || S.q.owner
-      ? `<div class="empty" style="padding:72px 0"><b>No ${esc(label.toLowerCase())} found</b>Try a different search, or clear it to see every asset.</div>`
+      ? `<div class="empty" style="padding:72px 0"><b>No ${esc(label.toLowerCase())} found</b>Try a different search.</div>`
       : `<div class="empty" style="padding:72px 0"><b>No ${esc(label.toLowerCase())} yet</b>Be the first to share a ${esc(one)}.</div>`;
     return `<div class="v-skins ${S.q.type === 'rhs' ? 'rhs' : ''} bg-${S.bg} ${S.enter ? 'anim' : ''} ${S.loading ? 'busy' : ''}">${d.assets.map(card).join('')}</div>`;
   }
   function pager() {
     const d = S.data; if (!S.ok || !d || d.total <= d.perPage) return '';
-    const pages = Math.ceil(d.total / d.perPage), p = S.q.page, [, label] = typeOf(S.q.type);
-    const nums = [...new Set([1, 2, p - 1, p, p + 1, pages - 1, pages])].filter(n => n >= 1 && n <= pages).sort((a, b) => a - b);
-    return `<div class="pager"><span class="num">${fmt((p - 1) * d.perPage + 1)}–${fmt(Math.min(p * d.perPage, d.total))} of ${fmt(d.total)} ${esc(label.toLowerCase())}</span><div class="pages">
-      <button type="button" data-page="${p - 1}" ${p === 1 ? 'disabled' : ''} aria-label="Previous page">‹</button>
-      ${nums.map((n, i) => `${i && n - nums[i - 1] > 1 ? '<span>…</span>' : ''}<button type="button" data-page="${n}" ${n === p ? 'aria-current="page"' : ''}>${fmt(n)}</button>`).join('')}
-      <button type="button" data-page="${p + 1}" ${p === pages ? 'disabled' : ''} aria-label="Next page">›</button></div></div>`;
+    const [, label] = typeOf(S.q.type);
+    return pageNumbers(S.q.page, Math.ceil(d.total / d.perPage), '', {perPage: d.perPage, total: d.total, noun: label.toLowerCase()});
   }
 
   // One asset, larger: the whole preview, its details, and for colorsets every color.
@@ -141,7 +145,7 @@ function skins(host, ctx) {
     const facts = [
       ['Type', esc(one[0].toUpperCase() + one.slice(1))], ['File', esc(a.fileName)], ['Size', bytes(a.sizeBytes)],
       ['Downloads', fmt(a.downloadCount)], ['Uploaded', esc(fullDate(a.createdAt))],
-      ...(a.assetType === 'colorset' && a.colors ? [['Colors', fmt(a.colors.length)]] : []),
+      ...(a.assetType === 'colorset' && Array.isArray(a.colors) ? [['Colors', fmt(a.colors.length)]] : []),
       ...(image ? [['Image size', '<span id="v-skdim">—</span>']] : []),
     ];
     return `<div class="cmp-head"><h2 id="cmp-title">${esc(a.name)}</h2>${closeBtn}</div>
@@ -154,7 +158,7 @@ function skins(host, ctx) {
           <div class="v-skact col">
             <a class="btn primary" href="${esc(shareUrl(a.id))}" target="_blank" rel="noreferrer"><svg class="ico" aria-hidden="true"><use href="#i-dl"/></svg>Download</a>
             <button class="btn" type="button" data-copy="${esc(a.id)}"><svg class="ico" aria-hidden="true"><use href="#i-link"/></svg>Copy link</button>
-            ${a.assetType === 'colorset' && a.colors?.length ? `<button class="btn" type="button" data-copy-colors="${esc(a.id)}">Copy colors</button>` : ''}
+            ${a.assetType === 'colorset' && Array.isArray(a.colors) && a.colors.length ? `<button class="btn" type="button" data-copy-colors="${esc(a.id)}">Copy colors</button>` : ''}
             ${String(a.owner.id) !== S.q.owner ? `<button class="btn" type="button" data-owner="${esc(a.owner.id)}">More from ${esc(a.owner.username)}</button>` : ''}
             ${canDelete(a) ? `<button class="btn danger" type="button" data-del="${esc(a.id)}">${TRASH}Delete</button>` : ''}
           </div>
@@ -256,9 +260,15 @@ function skins(host, ctx) {
     if (d.del) { const a = findAsset(d.del) || S.open; if (a) openViewer(a, true); return; }
     if ('unconfirm' in d) { S.confirm = false; redrawViewer(); return; }
     if (d.delete) { remove(d.delete); return; }
-    if (d.copy) { copyText(shareUrl(d.copy)).then(ok => ui.toast(ok ? 'Share link copied. The public asset link is ready to paste.' : 'Could not copy link. Your browser blocked clipboard access.')); return; }
-    if (d.copyColors) { const a = findAsset(d.copyColors) || S.open; if (a?.colors) copyText(a.colors.join('\n')).then(ok => ui.toast(ok ? `${a.colors.length} colors copied, one per line as in a colorset file.` : 'Your browser blocked clipboard access.')); return; }
-    if (d.hex) { copyText(d.hex).then(ok => ui.toast(ok ? `${d.hex} copied.` : 'Your browser blocked clipboard access.')); return; }
+    if (d.copy) { copyText(shareUrl(d.copy)).then(ok => ui.toast(ok ? 'Share link copied.' : 'Could not copy: the browser blocked clipboard access.')); return; }
+    if (d.copyColors) {
+      // Only real colours are copied; the values drawn as a neutral swatch are left out.
+      const a = findAsset(d.copyColors) || S.open, list = Array.isArray(a?.colors) ? a.colors.map(cleanColor).filter(Boolean) : [];
+      if (!list.length) ui.toast('This colorset has no colors to copy.');
+      else copyText(list.join('\n')).then(ok => ui.toast(ok ? `${list.length} ${list.length === 1 ? 'color' : 'colors'} copied, one per line.` : 'The browser blocked clipboard access.'));
+      return;
+    }
+    if (d.hex) { copyText(d.hex).then(ok => ui.toast(ok ? `${d.hex} copied.` : 'The browser blocked clipboard access.')); return; }
     if (d.owner) { dlg.close(); go({owner: d.owner, page: 1}); scrollTo({top: 0, behavior: REDUCED ? 'auto' : 'smooth'}); return; }
     if ('clearOwner' in d) { go({owner: '', page: 1}); return; }
     if ('close' in d) dlg.close();
@@ -322,6 +332,8 @@ const css = `
 .v-cset.big{width:min(420px,100%)}
 .v-cset.big i{cursor:copy}
 .v-cset.big i:hover{outline:2px solid #fff;outline-offset:-1px}
+.v-cset i.bad{background:var(--panel-3)}
+.v-cset.big i.bad{cursor:default}
 .v-nopv{display:flex;flex-direction:column;align-items:center;gap:4px;padding:0 20px;text-align:center;font-size:13px;color:#a1a7b3}
 .v-nopv b{font-weight:650;color:#d3d7de}
 .v-nopv small{font-size:12px;color:#7d8491}

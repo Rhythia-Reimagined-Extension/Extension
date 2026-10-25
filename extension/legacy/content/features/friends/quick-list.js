@@ -44,27 +44,32 @@ var RhythiaX = RhythiaX || {};
     return candidates.find(element => !candidates.some(candidate => candidate !== element && element.contains(candidate)));
   }
 
+  // Runs for every click and every Enter or Space on rhythia.com, so it looks only at the target and a few of
+  // its ancestors, never the whole page.
+  const COUNTER_DEPTH = 8;
+  const COUNTER_TEXT_MAX = 32;
+
   function findFriendsTrigger(target) {
     if (!target || typeof target.closest !== 'function') return null;
+    // Rhythia shows the counter only on the signed-in player's own profile.
+    if (!window.location.pathname.startsWith('/player/')) return null;
     // Never intercept clicks inside the quick panel itself
     if (target.closest('.rhythiax-friends-quick-window')) return null;
 
     // 1. Explicit class added by enhanceOwnFriendsCounter
     const enhanced = target.closest(triggerSelector);
     if (enhanced) return enhanced;
+    if (target.closest('.fixed.top-0, nav, header')) return null;
 
-    // 2. Clicked on or inside the native counter
-    const nativeCounter = getNativeCounter();
-    if (nativeCounter && (target === nativeCounter || nativeCounter.contains(target))) {
-      return nativeCounter;
-    }
-
-    // 3. Fallback: interactive element whose text strictly matches "\d+ friends"
-    const candidate = target.closest('a, button, [role="button"]');
-    if (candidate && !candidate.closest('.fixed.top-0, nav, header')) {
-      const text = candidate.textContent.trim();
-      if (/^\d+\s+friends?$/i.test(text) && candidate.querySelector('svg, img')) {
-        return candidate;
+    // 2. The inner-most element around the target that reads just "N friends" next to its icon. An ancestor's
+    // text contains its child's, so once the text is too long for a counter no ancestor can be one.
+    let node = target;
+    for (let step = 0; node && step < COUNTER_DEPTH && node.id !== 'root'; step++, node = node.parentElement) {
+      const text = node.textContent.trim();
+      if (text.length > COUNTER_TEXT_MAX) break;
+      const kind = /^(A|BUTTON|DIV)$/.test(String(node.tagName).toUpperCase()) || node.getAttribute?.('role') === 'button';
+      if (kind && /^\d+\s+friends?$/i.test(text) && node.querySelector('svg, img')) {
+        return node;
       }
     }
 
@@ -193,50 +198,10 @@ var RhythiaX = RhythiaX || {};
     }
   }
 
-  function getRhythiaAuthToken() {
-    // 1. Direct legacy session key
-    const legacy = localStorage.getItem('rhythia_auth_session_v1');
-    if (legacy && legacy.trim()) return legacy.trim();
-
-    // 2. Supabase auth token keys (e.g. sb-pfkajngbllcbdzoylrvp-auth-token)
-    try {
-      for (let i = 0; i < localStorage.length; i++) {
-        const key = localStorage.key(i);
-        if (!key) continue;
-        if (key.startsWith('sb-') && key.endsWith('-auth-token')) {
-          const raw = localStorage.getItem(key);
-          if (!raw) continue;
-          const parsed = JSON.parse(raw);
-          const token = parsed?.access_token || parsed?.session?.access_token || (Array.isArray(parsed) && parsed[0]?.access_token);
-          if (typeof token === 'string' && token.length > 10) {
-            return token;
-          }
-        }
-      }
-    } catch (_) {}
-
-    // 3. Fallback: inspect any key with access_token
-    try {
-      for (let i = 0; i < localStorage.length; i++) {
-        const key = localStorage.key(i);
-        if (!key || key.startsWith('rhythiax')) continue;
-        const raw = localStorage.getItem(key);
-        if (raw && raw.includes('access_token')) {
-          const parsed = JSON.parse(raw);
-          const token = parsed?.access_token || parsed?.session?.access_token;
-          if (typeof token === 'string' && token.length > 10) {
-            return token;
-          }
-        }
-      }
-    } catch (_) {}
-
-    return '';
-  }
-
   async function loadFriends() {
     if (!isOfficialRhythiaOrigin()) throw new Error('Friends are available only on an official Rhythia host');
-    const session = getRhythiaAuthToken();
+    // Classic's one Rhythia session lookup (core/api.js), read when asked; without it there is no session.
+    const session = RhythiaX.getRhythiaAuthToken?.() || '';
     if (!session) throw new Error('No Rhythia session found. Please make sure you are signed in.');
     const response = await (RhythiaX.Net?.fetch || fetch)('https://production.rhythia.com/api/getFriends', {
       method: 'POST',
@@ -265,8 +230,8 @@ var RhythiaX = RhythiaX || {};
       const empty = document.createElement('div');
       empty.className = 'rhythiax-friends-quick-empty';
       empty.innerHTML = `
-        <p>You have not added any friends yet.</p>
-        <a href="/friends" class="rhythiax-friends-quick-cta-btn">Manage friends on /friends</a>
+        <p>No friends yet.</p>
+        <a href="/friends" class="rhythiax-friends-quick-cta-btn">Open /friends</a>
       `;
       content.appendChild(empty);
       return;
@@ -383,7 +348,7 @@ var RhythiaX = RhythiaX || {};
           const empty = document.createElement('div');
           empty.className = 'rhythiax-friends-quick-empty rhythiax-friends-quick-error';
           empty.innerHTML = `
-            <p>Could not load friends list automatically.</p>
+            <p>Friends could not be loaded.</p>
             <div class="rhythiax-friends-quick-error-actions">
               <a href="/friends" class="rhythiax-friends-quick-cta-btn">Open /friends</a>
               <button type="button" class="rhythiax-friends-quick-retry-btn">Try again</button>
@@ -402,7 +367,16 @@ var RhythiaX = RhythiaX || {};
     fetchFriends();
   }
 
+  // Gives Rhythia's friends link its own href back once the quick list lets go of it.
+  function restoreFriendsCounterLinks() {
+    document.querySelectorAll('[data-rhythiax-orig-href]').forEach(link => {
+      link.setAttribute('href', link.getAttribute('data-rhythiax-orig-href') || '/friends');
+      link.removeAttribute('data-rhythiax-orig-href');
+    });
+  }
+
   RhythiaX.enhanceOwnFriendsCounter = function () {
+    if (!listEnabled()) { restoreFriendsCounterLinks(); return; }
     if (!isOwnProfile()) return;
     const counter = getNativeCounter();
     if (!counter) return;
@@ -420,6 +394,7 @@ var RhythiaX = RhythiaX || {};
       if (!link._rhythiaxFriendsBound) {
         link._rhythiaxFriendsBound = true;
         link.addEventListener('click', (e) => {
+          if (!listEnabled() || link.hasAttribute('href')) return;
           e.preventDefault();
           e.stopPropagation();
           if (typeof e.stopImmediatePropagation === 'function') e.stopImmediatePropagation();
@@ -438,6 +413,7 @@ var RhythiaX = RhythiaX || {};
       if (!counter._rhythiaxFriendsBound) {
         counter._rhythiaxFriendsBound = true;
         counter.addEventListener('click', (e) => {
+          if (!listEnabled()) return;
           e.preventDefault();
           e.stopPropagation();
           if (typeof e.stopImmediatePropagation === 'function') e.stopImmediatePropagation();
@@ -467,12 +443,31 @@ var RhythiaX = RhythiaX || {};
     triggers.forEach(t => t.setAttribute('aria-expanded', 'false'));
     activeReturnFocus = null;
     activeTrigger = null;
+    restoreFriendsCounterLinks();
   }
 
   RhythiaX.cleanupFriendsQuickList = cleanupFriendsQuickList;
 
-  // Off in the popup (Friends list): Rhythia's own friends counter behaves as usual.
-  const listEnabled = () => RhythiaX.isModuleEnabled?.('friendsList') !== false;
+  // The popup's Friends list switch turned off: the panel closes, and Rhythia's counter and its link lose
+  // what enhanceOwnFriendsCounter added (core/modules.js calls this from applyModuleSettings). The bound
+  // click listeners stay, but they step aside while the switch is off.
+  RhythiaX.unenhanceOwnFriendsCounter = function () {
+    document.querySelectorAll(triggerSelector).forEach(counter => {
+      const link = counter.closest('a');
+      if (link && link !== counter) {
+        link.removeAttribute('role');
+        link.removeAttribute('tabindex');
+        link.style.removeProperty('cursor');
+      }
+      counter.classList.remove('rhythiax-friends-quick-trigger');
+      ['role', 'tabindex', 'aria-label', 'aria-expanded'].forEach(name => counter.removeAttribute(name));
+      counter.style.removeProperty('cursor');
+    });
+    cleanupFriendsQuickList();
+  };
+
+  // Off in the popup (Friends list), or while Exodus shows the page: Rhythia's own friends counter behaves as usual.
+  const listEnabled = () => RhythiaX.isModuleEnabled?.('friendsList') !== false && !RhythiaX.ClassicIdle?.isSuspended?.();
 
   function handleTriggerInteraction(event) {
     if (!listEnabled()) return;
@@ -494,6 +489,9 @@ var RhythiaX = RhythiaX || {};
 
   window.addEventListener('keydown', event => {
     if (listEnabled() && (event.key === 'Enter' || event.key === ' ')) {
+      // Typing in a field (Rhythia's search, a bio editor) is never a press on the counter.
+      const field = event.target;
+      if (field && (field.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(field.tagName || ''))) return;
       const trigger = findFriendsTrigger(event.target);
       if (trigger && (document.activeElement === trigger || trigger.contains(document.activeElement))) {
         event.preventDefault();
@@ -506,5 +504,9 @@ var RhythiaX = RhythiaX || {};
     }
   }, true);
 
-  window.addEventListener('popstate', cleanupFriendsQuickList);
+  window.addEventListener('popstate', () => {
+    if (!RhythiaX.ClassicIdle?.isSuspended?.()) cleanupFriendsQuickList();
+  });
+  // Exodus took the page: an open friends list closes with it.
+  RhythiaX.ClassicIdle?.onSuspend?.(cleanupFriendsQuickList);
 })();

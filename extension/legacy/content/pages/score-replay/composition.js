@@ -1,5 +1,5 @@
 // =============================================
-// Rhythia X - Score replay page enhancements
+// Reimagined for Rhythia — Score replay page enhancements
 // =============================================
 
 var RhythiaX = RhythiaX || {};

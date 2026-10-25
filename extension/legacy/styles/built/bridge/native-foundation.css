@@ -97,8 +97,10 @@ body[data-rhythiax-theme] #root .border-dashed {
 }
 
 /* Light mode is deliberately calm: white cards on a cool paper background,
-   with violet reserved for links and actions. */
-body[data-rhythiax-theme="white"] {
+   with violet reserved for links and actions. An own theme built on the white
+   stylesheet (theme.js marks <html> with data-rhythiax-own-theme) keeps the
+   rule at the top: its own background, panels and lines. */
+html:not([data-rhythiax-own-theme]) body[data-rhythiax-theme="white"] {
    --rhythiax-home-page: #eef2f7;
    --rhythiax-home-surface: #ffffff;
    --rhythiax-home-inner: #f5f7fa;
@@ -114,6 +116,9 @@ body[data-rhythiax-theme="white"] #root .bg-white\/15,
 body[data-rhythiax-theme="white"] #root .hover\:bg-white\/15 {
    background: rgba(30, 41, 59, .07) !important;
 }
+
+/* Text on that tint: White's deep violet, or an own theme's accent darkened towards its text. */
+
 
 body[data-rhythiax-theme="white"] #root .from-\[\#0a0a0a\] {
    --tw-gradient-from: #eef2f7 !important;

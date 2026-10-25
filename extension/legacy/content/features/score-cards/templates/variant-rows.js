@@ -1,6 +1,6 @@
 // ============================================================================
-// Reimagined for Rhythia — Score Card Templates: Variants D (Row), E (Art), F (Table)
-// Rows sized like Rhythia's own score list; numbers without boxes.
+// Reimagined for Rhythia — Score card styles D "Rhythia row", E "Art behind" and F "Table" (variant_d, variant_e,
+// variant_f; styles in variant-rows.css). Rows sized like Rhythia's own score list; numbers without boxes.
 // ============================================================================
 
 var RhythiaX = RhythiaX || {};
@@ -16,17 +16,6 @@ RhythiaX.ScoreCardTemplates = RhythiaX.ScoreCardTemplates || {};
     return node;
   }
 
-  function formatNum(num) {
-    if (RhythiaX.formatNumber) return RhythiaX.formatNumber(num);
-    const n = Number(num);
-    return Number.isFinite(n) ? n.toLocaleString('en-US') : String(num ?? '');
-  }
-
-  function formatAccuracy(acc) {
-    const num = parseFloat(String(acc ?? '').replace('%', ''));
-    return Number.isFinite(num) ? `${num.toFixed(2)}%` : '—%';
-  }
-
   // Everything the three rows show, read once.
   function facts(scoreData) {
     const domain = RhythiaX.ScoreCardDomain;
@@ -39,11 +28,11 @@ RhythiaX.ScoreCardTemplates = RhythiaX.ScoreCardTemplates || {};
       gradeColor: domain.getGradeColor(grade),
       reign,
       fc: Boolean(scoreData.fullCombo || parseInt(scoreData.misses, 10) === 0),
-      acc: formatAccuracy(scoreData.accuracy),
-      misses: formatNum(scoreData.misses || 0),
+      acc: domain.formatAccuracy(scoreData.accuracy),
+      misses: domain.formatNum(scoreData.misses || 0),
       hits: domain.formatHits ? domain.formatHits(scoreData) : { hits: scoreData.notes, total: scoreData.notes },
-      rp: formatNum(scoreData.rpEarned ?? scoreData.weightedRp ?? 0),
-      weightedRp: weighted ? formatNum(scoreData.weightedRp) : '',
+      rp: domain.formatNum(scoreData.rpEarned ?? scoreData.weightedRp ?? 0),
+      weightedRp: weighted ? domain.formatNum(scoreData.weightedRp) : '',
       weightPercent: weighted && scoreData.weightPercent != null ? `${scoreData.weightPercent}%` : '',
       mapper: domain.extractMapper ? domain.extractMapper(scoreData) : (scoreData.mapper || ''),
       date,
@@ -57,7 +46,8 @@ RhythiaX.ScoreCardTemplates = RhythiaX.ScoreCardTemplates || {};
     if (scoreData.beatmapHash) card.setAttribute('data-rhythiax-beatmap-hash', scoreData.beatmapHash);
     if (scoreData.beatmapId) card.setAttribute('data-rhythiax-beatmap-id', scoreData.beatmapId);
     card.style.setProperty('--grade-color', f.gradeColor);
-    if (scoreData.previewUrl) card.style.setProperty('--card-art-url', `url('${scoreData.previewUrl}')`);
+    // A quoted string, so a quote or bracket in the address cannot end the url().
+    if (scoreData.previewUrl) card.style.setProperty('--card-art-url', `url(${JSON.stringify(String(scoreData.previewUrl))})`);
     if (f.reign) card.classList.add('is-reign');
     return card;
   }
@@ -87,8 +77,8 @@ RhythiaX.ScoreCardTemplates = RhythiaX.ScoreCardTemplates || {};
   // Mods, speed included, as one group; follows "Mods as" (icons or labels).
   function modsGroup(scoreData) {
     const domain = RhythiaX.ScoreCardDomain;
-    const showIcons = RhythiaX.isScoreCardModIconsEnabled ? RhythiaX.isScoreCardModIconsEnabled() : RhythiaX.isModuleOptionEnabled?.('scoreCards', 'showModIcons') !== false;
-    const showText = RhythiaX.isScoreCardModTextEnabled ? RhythiaX.isScoreCardModTextEnabled() : RhythiaX.isModuleOptionEnabled?.('scoreCards', 'showModText') === true;
+    const showIcons = RhythiaX.isScoreCardModIconsEnabled();
+    const showText = RhythiaX.isScoreCardModTextEnabled();
     const wrap = el('div', 'rhythiax-sc-mods-wrap rhythiax-sc-row-mods');
     if (!showIcons && !showText) return wrap;
     let mods = domain.getScoreMods ? domain.getScoreMods(scoreData) : [];

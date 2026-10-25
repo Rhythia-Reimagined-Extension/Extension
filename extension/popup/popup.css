@@ -1,5 +1,5 @@
 /* ==========================================================================
-   Reimagined for Rhythia — Popup v6
+   Reimagined for Rhythia — Popup
    Classic looks like Rhythia (bordered panels), Exodus like Exodus Lines (rules, no panels).
    The theme picks the colours, the look picks the shapes.
    ========================================================================== */
@@ -164,6 +164,13 @@ p.alert { background: color-mix(in srgb, var(--bad) 14%, transparent); box-shado
 .tile.theme .pv i:first-child { width: 58%; background: var(--pv-a); }
 .tile.theme .pv i:nth-child(2) { width: 86%; }
 .tile.theme .pv i:nth-child(3) { width: 44%; }
+/* Own Exodus themes under the built-in ones. */
+.own-l { display: block; margin: 12px 0 6px; padding: 0; font-size: 11.5px; font-weight: 600; color: var(--muted); }
+.tile.theme .own-edit { position: absolute; top: 5px; right: 5px; display: grid; place-items: center; width: 20px; height: 20px; padding: 0; border-radius: 5px; background: rgba(0, 0, 0, .5); color: #fff; }
+.tile.theme .own-edit svg { width: 11px; height: 11px; }
+.tile.theme .own-edit:hover { background: rgba(0, 0, 0, .75); }
+.tile.own-new .pv { display: grid; place-items: center; background: none; box-shadow: inset 0 0 0 1px var(--line-2); }
+.tile.own-new .pv::before { content: "+"; color: var(--muted); font-size: 18px; line-height: 1; }
 
 /* The drawings (see ART in popup.js) */
 .art-svg { display: block; width: 100%; height: auto; border-radius: 3px; color: var(--text); }

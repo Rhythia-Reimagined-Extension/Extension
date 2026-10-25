@@ -91,17 +91,18 @@ body[data-rhythiax-theme] #root .fixed.top-0.left-0.w-full.sm\:h-\[60px\] {
    border-bottom: 1px solid var(--rhythiax-border-strong) !important;
    box-shadow: 0 10px 30px color-mix(in srgb, var(--rhythiax-page-bg) 45%, transparent) !important;
    backdrop-filter: blur(18px) saturate(130%);
+   /* Rhythia draws the bar's gradient and checker cells in an <svg> over this background, from these three:
+      they take the theme's colours (clear at the top, a hint of the accent below), so the bar matches it. */
+   --checker-from: transparent;
+   --checker-to: color-mix(in srgb, var(--rhythiax-accent) 8%, transparent);
+   --checker-cell: color-mix(in srgb, var(--rhythiax-text) 3%, transparent);
 }
 body[data-rhythiax-theme] #root .fixed.top-0.left-0.w-full[class*="h-[60px]"] .bg-\[\#2F4184\]\/50,
 body[data-rhythiax-theme] #root .fixed.top-0.left-0.w-full[class*="h-[60px]"] .xl\:bg-\[\#2F4184\]\/50,
 body[data-rhythiax-theme] #root .fixed.top-0.left-0.w-full[class*="h-[60px]"] .bg-\[\#344a9e\],
 body[data-rhythiax-theme] #root button[role="combobox"],
 body[data-rhythiax-theme] #root .fixed.top-0 a[href="/changelog"],
-body[data-rhythiax-theme] #root .fixed.top-0 a[aria-label="Changelog"],
-body[data-rhythiax-theme] #root button:has(img[src*="settingsicon"]),
-body[data-rhythiax-theme] #root .bg-control:has(img[src*="settingsicon"]),
-body[data-rhythiax-theme] #root .focus\:bg-control-hover:has(img[src*="settingsicon"]),
-body[data-rhythiax-theme] #root .hover\:bg-control-hover:has(img[src*="settingsicon"]) {
+body[data-rhythiax-theme] #root .fixed.top-0 a[aria-label="Changelog"] {
    background-color: color-mix(in srgb, var(--rhythiax-accent) 14%, var(--rhythiax-nav-surface)) !important;
    border: 1px solid var(--rhythiax-border-strong) !important;
    color: var(--rhythiax-text-strong) !important;
@@ -142,11 +143,7 @@ body[data-rhythiax-theme] #root .fixed.top-0.left-0.w-full[class*="h-[60px]"] a:
 body[data-rhythiax-theme] #root .fixed.top-0.left-0.w-full[class*="h-[60px]"] button:hover,
 body[data-rhythiax-theme] #root button[role="combobox"]:hover,
 body[data-rhythiax-theme] #root .fixed.top-0 a[href="/changelog"]:hover,
-body[data-rhythiax-theme] #root .fixed.top-0 a[aria-label="Changelog"]:hover,
-body[data-rhythiax-theme] #root button:has(img[src*="settingsicon"]):hover,
-body[data-rhythiax-theme] #root .bg-control:has(img[src*="settingsicon"]):hover,
-body[data-rhythiax-theme] #root .focus\:bg-control-hover:has(img[src*="settingsicon"]):hover,
-body[data-rhythiax-theme] #root .hover\:bg-control-hover:has(img[src*="settingsicon"]):hover {
+body[data-rhythiax-theme] #root .fixed.top-0 a[aria-label="Changelog"]:hover {
    background-color: var(--rhythiax-nav-hover) !important;
    border-color: var(--rhythiax-accent) !important;
 }
@@ -223,34 +220,38 @@ body[data-rhythiax-theme] #root select:focus-visible {
    outline-offset: 2px;
 }
 
-body[data-rhythiax-theme="white"] {
-   color-scheme: light;
+body[data-rhythiax-theme="white"] { color-scheme: light; }
+/* White's text, line and shadow colours. An own theme built on the white stylesheet keeps its own:
+   theme.js marks <html> with data-rhythiax-own-theme while one is painted. */
+html:not([data-rhythiax-own-theme]) body[data-rhythiax-theme="white"] {
    --rhythiax-text-strong: #18181b;
    --rhythiax-text-muted: #52525b;
    --rhythiax-border: rgba(30,41,59,.14);
    --rhythiax-border-strong: rgba(30,41,59,.24);
    --rhythiax-shadow: 0 8px 24px rgba(51,65,85,.10);
 }
-body[data-rhythiax-theme="white"] #root .fixed.top-0.left-0.w-full.h-\[60px\],
-body[data-rhythiax-theme="white"] #root .fixed.top-0.left-0.w-full.sm\:h-\[60px\] {
+/* Built-in White's bar and violet tint (themes/white/theme.css draws the rest of its bar). An own theme keeps
+   the bar above in its own colours. :where() adds no specificity, so built-in White is unchanged. */
+:where(html:not([data-rhythiax-own-theme])) body[data-rhythiax-theme="white"] #root .fixed.top-0.left-0.w-full.h-\[60px\],
+:where(html:not([data-rhythiax-own-theme])) body[data-rhythiax-theme="white"] #root .fixed.top-0.left-0.w-full.sm\:h-\[60px\] {
    color: #ffffff !important;
    background-color: #ffffff !important;
    box-shadow: 0 8px 24px rgba(51,65,85,.12) !important;
 }
-body[data-rhythiax-theme="white"] #root .fixed.top-0.left-0.w-full[class*="h-[60px]"] .\[\&_strong\]\:text-white,
-body[data-rhythiax-theme="white"] #root .fixed.top-0.left-0.w-full[class*="h-[60px]"] .data-\[selected\=true\]\:text-white,
-body[data-rhythiax-theme="white"] #root .fixed.top-0.left-0.w-full[class*="h-[60px]"] .data-\[state\=active\]\:text-white,
-body[data-rhythiax-theme="white"] #root .fixed.top-0.left-0.w-full[class*="h-[60px]"] .data-\[state\=checked\]\:text-white,
-body[data-rhythiax-theme="white"] #root .fixed.top-0.left-0.w-full[class*="h-[60px]"] .file\:text-white,
-body[data-rhythiax-theme="white"] #root .fixed.top-0.left-0.w-full[class*="h-[60px]"] .focus\:text-white,
-body[data-rhythiax-theme="white"] #root .fixed.top-0.left-0.w-full[class*="h-[60px]"] .hover\:text-white,
-body[data-rhythiax-theme="white"] #root .fixed.top-0.left-0.w-full[class*="h-[60px]"] .prose-code\:text-white,
-body[data-rhythiax-theme="white"] #root .fixed.top-0.left-0.w-full[class*="h-[60px]"] .prose-headings\:text-white,
-body[data-rhythiax-theme="white"] #root .fixed.top-0.left-0.w-full[class*="h-[60px]"] .prose-strong\:text-white,
-body[data-rhythiax-theme="white"] #root .fixed.top-0.left-0.w-full[class*="h-[60px]"] .text-white,
-body[data-rhythiax-theme="white"] #root .fixed.top-0.left-0.w-full[class*="h-[60px]"] .text-white\/40,
-body[data-rhythiax-theme="white"] #root .fixed.top-0.left-0.w-full[class*="h-[60px]"] .text-white\/60,
-body[data-rhythiax-theme="white"] #root .fixed.top-0.left-0.w-full[class*="h-[60px]"] .text-white\/80 { color: #ffffff !important; }
+:where(html:not([data-rhythiax-own-theme])) body[data-rhythiax-theme="white"] #root .fixed.top-0.left-0.w-full[class*="h-[60px]"] .\[\&_strong\]\:text-white,
+:where(html:not([data-rhythiax-own-theme])) body[data-rhythiax-theme="white"] #root .fixed.top-0.left-0.w-full[class*="h-[60px]"] .data-\[selected\=true\]\:text-white,
+:where(html:not([data-rhythiax-own-theme])) body[data-rhythiax-theme="white"] #root .fixed.top-0.left-0.w-full[class*="h-[60px]"] .data-\[state\=active\]\:text-white,
+:where(html:not([data-rhythiax-own-theme])) body[data-rhythiax-theme="white"] #root .fixed.top-0.left-0.w-full[class*="h-[60px]"] .data-\[state\=checked\]\:text-white,
+:where(html:not([data-rhythiax-own-theme])) body[data-rhythiax-theme="white"] #root .fixed.top-0.left-0.w-full[class*="h-[60px]"] .file\:text-white,
+:where(html:not([data-rhythiax-own-theme])) body[data-rhythiax-theme="white"] #root .fixed.top-0.left-0.w-full[class*="h-[60px]"] .focus\:text-white,
+:where(html:not([data-rhythiax-own-theme])) body[data-rhythiax-theme="white"] #root .fixed.top-0.left-0.w-full[class*="h-[60px]"] .hover\:text-white,
+:where(html:not([data-rhythiax-own-theme])) body[data-rhythiax-theme="white"] #root .fixed.top-0.left-0.w-full[class*="h-[60px]"] .prose-code\:text-white,
+:where(html:not([data-rhythiax-own-theme])) body[data-rhythiax-theme="white"] #root .fixed.top-0.left-0.w-full[class*="h-[60px]"] .prose-headings\:text-white,
+:where(html:not([data-rhythiax-own-theme])) body[data-rhythiax-theme="white"] #root .fixed.top-0.left-0.w-full[class*="h-[60px]"] .prose-strong\:text-white,
+:where(html:not([data-rhythiax-own-theme])) body[data-rhythiax-theme="white"] #root .fixed.top-0.left-0.w-full[class*="h-[60px]"] .text-white,
+:where(html:not([data-rhythiax-own-theme])) body[data-rhythiax-theme="white"] #root .fixed.top-0.left-0.w-full[class*="h-[60px]"] .text-white\/40,
+:where(html:not([data-rhythiax-own-theme])) body[data-rhythiax-theme="white"] #root .fixed.top-0.left-0.w-full[class*="h-[60px]"] .text-white\/60,
+:where(html:not([data-rhythiax-own-theme])) body[data-rhythiax-theme="white"] #root .fixed.top-0.left-0.w-full[class*="h-[60px]"] .text-white\/80 { color: #ffffff !important; }
 body[data-rhythiax-theme="white"] #root .bg-\[\#0a0a0a\] { background-color: var(--rhythiax-page-bg) !important; }
 body[data-rhythiax-theme="white"] #root .bg-white\/10,
 body[data-rhythiax-theme="white"] #root .data-\[selected\=\'true\'\]\:bg-white\/10,
@@ -259,9 +260,9 @@ body[data-rhythiax-theme="white"] #root .data-\[state\=open\]\:bg-white\/10,
 body[data-rhythiax-theme="white"] #root .data-\[state\=unchecked\]\:bg-white\/10,
 body[data-rhythiax-theme="white"] #root .focus\:bg-white\/10,
 body[data-rhythiax-theme="white"] #root .hover\:bg-white\/10 { background-color: rgba(30,41,59,.07) !important; }
-body[data-rhythiax-theme="white"] #root .bg-blue-500\/10,
-body[data-rhythiax-theme="white"] #root .data-\[state\=checked\]\:bg-blue-500\/10,
-body[data-rhythiax-theme="white"] #root .data-\[state\=checked\]\:hover\:bg-blue-500\/10 { background-color: rgba(91,33,182,.10) !important; }
+:where(html:not([data-rhythiax-own-theme])) body[data-rhythiax-theme="white"] #root .bg-blue-500\/10,
+:where(html:not([data-rhythiax-own-theme])) body[data-rhythiax-theme="white"] #root .data-\[state\=checked\]\:bg-blue-500\/10,
+:where(html:not([data-rhythiax-own-theme])) body[data-rhythiax-theme="white"] #root .data-\[state\=checked\]\:hover\:bg-blue-500\/10 { background-color: rgba(91,33,182,.10) !important; }
 
 body[data-rhythiax-theme="dark"] { color-scheme: dark; }
 body[data-rhythiax-theme="rhythia-reimagined"] {

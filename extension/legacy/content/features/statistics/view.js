@@ -22,7 +22,7 @@ var RhythiaX = RhythiaX || {};
     if (!RhythiaX.isModuleEnabled('statHistory') || !element || !key || element.dataset.historyKey) return element;
     element.classList.add('rhythiax-history-enabled');
     element.dataset.historyKey = key;
-    element.title = 'Click to focus this metric in history log';
+    element.title = 'Show its history';
     element.tabIndex = 0;
     element.setAttribute('role', 'button');
     element.setAttribute('aria-expanded', 'false');
@@ -239,14 +239,6 @@ var RhythiaX = RhythiaX || {};
       historyPane.classList.add('open');
     }
 
-    // Performance Profiles Grid
-    let perfGrid = performancePane.querySelector('.rhythiax-profiles-grid');
-    if (!perfGrid) {
-      perfGrid = document.createElement('div');
-      perfGrid.className = 'rhythiax-profiles-grid';
-      performancePane.appendChild(perfGrid);
-    }
-
     // Sub-tab switching logic
     const switchSubtab = (tabKey) => {
       subTabs.querySelectorAll('.rhythiax-subtab-btn').forEach(btn => {
@@ -285,13 +277,6 @@ var RhythiaX = RhythiaX || {};
           performancePane.dataset.renderedPlayer = String(playerId);
           if (RhythiaX.PlaystyleView?.render) {
             RhythiaX.PlaystyleView.render(performancePane, { player, scores: ratingScores || scores, ratingScores, playerId });
-          } else if (!perfGrid.hasChildNodes()) {
-            if (RhythiaX.isModuleOptionEnabled?.('advancedStats', 'tempoProfile') !== false) {
-              RhythiaX.injectTempoProfile(ratingScores || scores, perfGrid, 'profile');
-            }
-            if (RhythiaX.isModuleOptionEnabled?.('advancedStats', 'ratingProfile') !== false) {
-              RhythiaX.injectRatingProfile(scores, ratingScores, perfGrid, 'profile');
-            }
           }
         }
       }
@@ -301,12 +286,16 @@ var RhythiaX = RhythiaX || {};
       btn.onclick = () => switchSubtab(btn.dataset.subtab);
     });
 
-    // Populate initial Progress history immediately if stats subtab is active
+    // Populate initial Progress history immediately if stats subtab is active. When the Reimagined body shows
+    // at once, switchSubtab below draws it: the pane is still empty until the first read returns, so drawing
+    // it here as well would read and draw it twice. Clearing the mark makes that call draw it once.
     const activeSubtabBtn = subTabs.querySelector('.rhythiax-subtab-btn.active');
     const initialSubtab = activeSubtabBtn?.dataset?.subtab || 'stats';
     if ((initialSubtab === 'stats' || initialSubtab === 'overview') && (!player?.profileMode || player.profileMode === 'normal')) {
       const playerId = player?.id || window.location.pathname.match(/\/player\/([^/]+)/)?.[1];
-      if (playerId) {
+      if (playerId && !isInitOfficial) {
+        delete historyPane.dataset.renderedPlayer;
+      } else if (playerId) {
         historyPane.dataset.renderedPlayer = String(playerId);
         RhythiaX.renderInlineProgressHistory?.(historyPane, playerId);
       }
@@ -413,16 +402,6 @@ var RhythiaX = RhythiaX || {};
       const player = RhythiaX.profileHistoryContext?.player || (typeof RhythiaX.extractPlayerData === 'function' ? RhythiaX.extractPlayerData() : null);
       const playerId = RhythiaX.profileHistoryContext?.playerId || player?.id;
       RhythiaX.PlaystyleView.render(perfPane, { player, scores: ratingScores || scores, ratingScores, playerId });
-      return;
-    }
-    const perfGrid = perfPane.querySelector('.rhythiax-profiles-grid') || perfPane;
-    if (!perfGrid.hasChildNodes()) {
-      if (RhythiaX.isModuleOptionEnabled('advancedStats', 'tempoProfile')) {
-        RhythiaX.injectTempoProfile(ratingScores || scores, perfGrid, pageType || 'profile');
-      }
-      if (RhythiaX.isModuleOptionEnabled('advancedStats', 'ratingProfile')) {
-        RhythiaX.injectRatingProfile(scores, ratingScores, perfGrid, pageType || 'profile');
-      }
     }
   }
 
@@ -453,3 +432,28 @@ var RhythiaX = RhythiaX || {};
 
   RhythiaX.StatisticsView = { row, history, injectOfficial, buildPanel, deferredProfiles, updateSubtabVisibility };
 })();
+
+// The entry points the profile page calls (pages/profile/composition.js), and the copy of Rhythia's own
+// Statistics rows that cleanupOfficialStats puts back when content/bootstrap/cleanup.js sweeps the page.
+const officialStatsSnapshots = new Map();
+
+function snapshotOfficialStats() {
+  const container = RhythiaX.findOfficialStatsContainer();
+  const space = container?.querySelector('.space-y-3');
+  if (space && !officialStatsSnapshots.has(space)) {
+    officialStatsSnapshots.set(space, Array.from(space.children, child => child.cloneNode(true)));
+  }
+}
+
+// StatisticsView adapts site-owned rows in place. Keep an exact pre-injection
+// copy so route cleanup can restore native labels, classes, and child markup.
+RhythiaX.cleanupOfficialStats = function () {
+  officialStatsSnapshots.forEach((children, space) => {
+    if (!space.isConnected) return;
+    space.replaceChildren(...children.map(child => child.cloneNode(true)));
+  });
+  officialStatsSnapshots.clear();
+};
+
+RhythiaX.buildStatsPanel = function (player, scores, playerRp, pageType, ratingScores, options) { snapshotOfficialStats(); return RhythiaX.StatisticsView.buildPanel(player, scores, playerRp, pageType, ratingScores, options); };
+RhythiaX.injectDeferredStatsProfiles = function (scores, ratingScores, pageType) { return RhythiaX.StatisticsView.deferredProfiles(scores, ratingScores, pageType); };

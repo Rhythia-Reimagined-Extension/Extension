@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Reimagined for Rhythia",
-  "version": "1.3.0",
+  "version": "1.3.1",
   "browser_specific_settings": {
     "gecko": {
       "id": "shurieldev@gmail.com",
@@ -19,7 +19,7 @@
       "strict_min_version": "142.0"
     }
   },
-  "description": "Make your Rhythia profile easier to read, customize, and explore",
+  "description": "Make your Rhythia profile easier to read, customize, and explore, with your own themes and player comparisons",
   "action": {
     "default_title": "Reimagined for Rhythia",
     "default_popup": "popup/popup.html"
@@ -31,13 +31,13 @@
   ],
   "background": {
     "scripts": [
-      "shared/time.js",
+      "shared/consent.js",
       "shared/data/data-schema.js",
       "shared/data/data-migrations.js",
       "shared/data/data-repository.js",
-      "shared/data/storage-mutation-bridge.js",
-      "shared/data/storage-mutation-authority.js",
+      "background/storage-mutation-authority.js",
       "engines.js",
+      "background/vps-access.js",
       "background.js"
     ]
   },

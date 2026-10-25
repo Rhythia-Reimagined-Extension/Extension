@@ -1,26 +1,21 @@
 // Injection lifecycle; route detection and SPA observation are separate providers.
 var RhythiaX = RhythiaX || {};
 
+// Legacy builds when Rhythia's elements are there, with no timed retries: wake() tries once now, and
+// the page observer (route-observer.js) tries again whenever Rhythia's own DOM changes.
 RhythiaX.ContentLifecycle = (function () {
-  const RETRY_DELAYS = [0, 250, 500, 1000, 2000, 4000, 8000, 15000, 30000, 60000];
   let retryTimer = null;
-  let readinessPoll = null;
-  let retryGeneration = 0;
 
   const invalidated = error => RhythiaX.isExtensionContextInvalidated?.(error)
     || /extension context invalidated|context invalidated/i.test(String(error?.message || error));
 
   function clearTimers() {
-    retryGeneration++;
     if (retryTimer) clearTimeout(retryTimer);
-    if (readinessPoll) clearInterval(readinessPoll);
     retryTimer = null;
-    readinessPoll = null;
   }
 
   function inject() {
     if (RhythiaX.extensionContextInvalidated) return false;
-    if (RhythiaX.isMasterActive && !RhythiaX.isMasterActive()) return false;
     if (document.documentElement?.dataset.rhythiaxSettingsReady !== 'true') return false;
     const pageType = RhythiaX.PageRouteContext.type();
     if (!RhythiaX.PageRouteContext.isInjectable()) return false;
@@ -33,7 +28,6 @@ RhythiaX.ContentLifecycle = (function () {
       if (pageType === 'changelog') return RhythiaX.injectChangelog?.() || false;
       if (pageType === 'scores') {
         const ready = RhythiaX.enhanceScoreCards?.() === true;
-        RhythiaX.applyScoreFilter?.();
         RhythiaX.injected = ready;
         return ready;
       }
@@ -60,7 +54,7 @@ RhythiaX.ContentLifecycle = (function () {
     if (RhythiaX.isModuleEnabled?.('advancedStats') === false) return true;
     // A surviving Scores Hub or title card does not mean the native statistics
     // subtree survived the SPA render as well.
-    if (pageType === 'profile') return Boolean(document.querySelector('.rhythiax-stats-panel, .rhythiax-stats-tabs, .rhythiax-reimagined-stats-body, .rhythiax-injected-stats-section, .rhythiax-profile-box, .rhythiax-injected-grade-row'));
+    if (pageType === 'profile') return Boolean(document.querySelector('.rhythiax-stats-panel, .rhythiax-stats-tabs, .rhythiax-reimagined-stats-body'));
     return false;
   }
 
@@ -69,30 +63,12 @@ RhythiaX.ContentLifecycle = (function () {
       && RhythiaX.profileRequestContext?.navigationToken === RhythiaX.navigationToken) return;
     if (RhythiaX.extensionContextInvalidated || !RhythiaX.injected || hasInjectedContent()) return;
     RhythiaX.log('Injected content was removed; scheduling a fresh injection');
-    RhythiaX.clearLoadingState();
     RhythiaX.injected = false;
-    scheduleRetries();
-    startReadinessPoll();
+    wake();
   }
 
   // Pages Legacy does not build on (the home page, the leaderboards, the maps ...) need no retries.
   const worthTrying = () => RhythiaX.PageRouteContext.isInjectable();
-
-  function startReadinessPoll() {
-    if (readinessPoll) clearInterval(readinessPoll);
-    readinessPoll = null;
-    if (!worthTrying()) return;
-    const deadline = Date.now() + 120000;
-    readinessPoll = setInterval(() => {
-      if (RhythiaX.extensionContextInvalidated) return RhythiaX.ContentBootstrap?.stop();
-      if (RhythiaX.injected || Date.now() >= deadline) {
-        clearInterval(readinessPoll);
-        readinessPoll = null;
-        return;
-      }
-      inject();
-    }, 500);
-  }
 
   function queueInject(delay) {
     if (retryTimer || !worthTrying()) return;
@@ -102,17 +78,16 @@ RhythiaX.ContentLifecycle = (function () {
     }, delay);
   }
 
-  function scheduleRetries() {
-    const generation = ++retryGeneration;
-    if (!worthTrying()) return;
-    RETRY_DELAYS.forEach(delay => setTimeout(() => {
-      if (!RhythiaX.extensionContextInvalidated && generation === retryGeneration && !RhythiaX.injected) inject();
-    }, delay));
+  function wake() {
+    if (RhythiaX.extensionContextInvalidated || RhythiaX.injected) return;
+    queueInject(0);
   }
 
   function handleNavigation() {
     if (RhythiaX.extensionContextInvalidated) return;
     RhythiaX.navigationToken++;
+    // Map art still loading for the page just left is given up now, not at this page's first art request.
+    RhythiaX.beatmapPageSignal?.();
     RhythiaX.profileHistoryContext = null;
     RhythiaX.profileRequestContext = null;
     RhythiaX.loadTheme?.();
@@ -121,24 +96,20 @@ RhythiaX.ContentLifecycle = (function () {
     RhythiaX.CompareLoader?.reset();
     RhythiaX.cleanupScoreReplay?.();
     RhythiaX.cleanupChangelog?.();
-    RhythiaX.clearLoadingState();
-    retryGeneration++;
+    clearTimers();
     RhythiaX.injected = false;
     RhythiaX.profileCrownRollPath = null;
     RhythiaX.profileCrownEnabled = false;
     RhythiaX.profileAvatarEffectRollPath = null;
     RhythiaX.profileAvatarEffectEnabled = false;
-    RhythiaX.activeGrades = null;
-    RhythiaX.activeSpeed = null;
     RhythiaX.cleanupStaleElements();
     if (RhythiaX.PageRouteContext.type() === 'maps') return;
     const nextPlayerId = typeof window !== 'undefined' ? window.location.pathname.match(/\/player\/(\d+)/)?.[1] : null;
     if (nextPlayerId) {
       RhythiaX.prefetchPlayerData?.(nextPlayerId);
     }
-    scheduleRetries();
-    startReadinessPoll();
+    wake();
   }
 
-  return { clearTimers, inject, recover, startReadinessPoll, queueInject, scheduleRetries, handleNavigation };
+  return { clearTimers, inject, recover, queueInject, wake, handleNavigation };
 })();

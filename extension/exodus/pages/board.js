@@ -14,10 +14,9 @@ RhythiaX.ExodusBoard = function mountExodusBoard(host, ctx) {
 const R = host.shadowRoot;
 const ac = new AbortController(), sig = {signal: ac.signal};
 const Data = RhythiaX.ExodusData;
-const SITE = 'https://www.rhythia.com';
+const {SITE, esc, fmt} = RhythiaX.ExodusKit;
 const $ = s => R.querySelector(s);
-const esc = v => String(v ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-const fmt = (n, d = 0) => Number(n || 0).toLocaleString('en-US', {minimumFractionDigits: d, maximumFractionDigits: d});
+const cssUrl = RhythiaX.ExodusKit.cssUrl;
 const REDUCED = matchMedia('(prefers-reduced-motion: reduce)').matches;
 const MODES = {normal: ['Lock', 'lock.png', 'rp', 'position', 'change'], spin: ['Spin', 'spincam.png', 'spinRp', 'spinPosition', 'spinChange'], vr: ['VR', 'vr.png', 'vrRp', 'vrPosition', 'vrChange']};
 const PERIODS = [['today', 'Today'], ['7d', '7 days'], ['30d', '30 days']];
@@ -28,10 +27,8 @@ const COUNTRIES = CODES.map(c => [c, country(c)]).sort((a, b) => a[1].localeComp
 // A supporter's row is Rhythia's supporter card: its background art and the heart.
 const SUP_BG = `<picture class="b-supbg" aria-hidden="true"><source media="(min-width: 1024px)" srcset="${SITE}/supporterbg.png"><img src="${SITE}/supporterbg-mobile.png" alt=""></picture>`;
 const HEART = `<img class="b-heart" src="${SITE}/supporterheart.png" alt="Rhythia Supporter" data-tip="<b>Rhythia Supporter</b><small>Supports Rhythia’s development</small>">`;
-// Rhythia's titles, as its leaderboard shows them next to a name (art in /titles/).
-const TITLES = [['candidate_grandmaster', 'Candidate Grandmaster', 10000], ['master', 'Master', 5000], ['candidate_master', 'Candidate Master', 2500], ['expert', 'Expert', 1500], ['novice', 'Novice', 0]];
-const titleOf = (rp, pos) => (rp >= 10000 && pos > 0 && pos <= 30 ? ['grandmaster', 'Grandmaster'] : TITLES.find(t => rp >= t[2]));
-const titleImg = (rp, pos) => { const [k, l] = titleOf(rp || 0, pos); return `<img class="b-tt" src="${SITE}/titles/${k}.png" alt="${l}" data-tip="<b>${l}</b><small>Rhythia title</small>">`; };
+// Rhythia's title, as its leaderboard shows it next to a name (core/kit.js titleOf; art in /titles/).
+const titleImg = (rp, pos) => { const {id: k, name: l} = RhythiaX.ExodusKit.titleOf(rp || 0, pos); return `<img class="b-tt" src="${SITE}/titles/${k}.png" alt="${l}" data-tip="<b>${l}</b><small>Rhythia title</small>">`; };
 const morph = (el, html) => RhythiaX.ExodusKit.morph(el, html);
 // Line icons only: a globe for Global, a chevron, a check for the chosen country.
 const GLOBE = '<svg class="b-globe" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.5 2.7 3.8 5.7 3.8 9s-1.3 6.3-3.8 9c-2.5-2.7-3.8-5.7-3.8-9S9.5 5.7 12 3z"/></svg>';
@@ -63,19 +60,9 @@ const periodOk = p => p === 'today' || (S.allowed && S.q.mode === 'normal');
 const WAIT = 'wait';
 const period = () => periodOk(S.period) ? S.period : 'today';
 
-/* ── Tooltip and toast (same behaviour as the other pages) ── */
-const tipEl = $('#tip');
-function showTip(t) {
-  RhythiaX.ExodusKit.fillTip(tipEl, t.dataset.tip); tipEl.classList.add('on');
-  const r = t.getBoundingClientRect(), w = tipEl.offsetWidth, h = tipEl.offsetHeight;
-  const x = Math.min(innerWidth - w - 8, Math.max(8, r.left + r.width / 2 - w / 2)); let y = r.top - h - 8;
-  if (y < 64) y = r.bottom + 8;
-  tipEl.style.left = x + 'px'; tipEl.style.top = y + 'px';
-}
-const hideTip = () => tipEl.classList.remove('on');
-R.addEventListener('pointerover', e => { const t = e.target.closest?.('[data-tip]'); t ? showTip(t) : hideTip(); }, sig);
-addEventListener('scroll', hideTip, {passive: true, signal: ac.signal});
-function toast(m) { const t = $('#toast'); t.textContent = m; t.classList.add('on'); clearTimeout(toast.t); toast.t = setTimeout(() => t.classList.remove('on'), 2600); }
+/* ── Tooltip and toast (core/kit.js, as on the other pages; Rhythia's own buttons are opened below) ── */
+const {hide: hideTip} = RhythiaX.ExodusKit.tips(R, sig);
+const toast = m => RhythiaX.ExodusKit.toast(R, m);
 
 /* ── Movement ── */
 const daysAgo = n => { const d = new Date(); d.setUTCDate(d.getUTCDate() - n); return d.toISOString().slice(0, 10); };
@@ -104,11 +91,13 @@ const scope = () => period() === 'today' ? 'since yesterday' : `in ${period() ==
 
 /* ── Header ── */
 function head() {
+  // A saved copy carries no userPosition (undefined): the position is unknown until the fresh page is in, so no
+  // 'Not ranked' text is shown for it. Rhythia itself sends null or 0 for a player who is not on this board.
   const me = S.me, pos = S.data?.userPosition, m = MODES[S.q.mode];
   const card = me
-    ? `<a class="b-me-av" href="/player/${esc(me.id)}" style="background-image:url('${esc(me.avatar_url)}')" aria-label="Your profile"></a>
+    ? `<a class="b-me-av" href="/player/${esc(me.id)}" style="background-image:${cssUrl(me.avatar_url)}" aria-label="Your profile"></a>
        <div><small>Your position${S.q.flag ? ` in ${esc(country(S.q.flag))}` : ''} · ${m[0]}</small><strong class="num">${pos ? '#' + fmt(pos) : '—'}</strong>
-       ${pos ? `<button class="b-link" type="button" data-mine>Show my page</button>` : '<span class="cap">Not ranked here yet</span>'}</div>`
+       ${pos ? `<button class="b-link" type="button" data-mine>Show my page</button>` : pos === undefined ? '' : '<span class="cap">Not ranked here yet</span>'}</div>`
     : `<p>Please log in to see your position here!</p><button class="btn" type="button" data-native-click="Sign in">Sign in</button>`;
   return `<section class="container b-head">
     <div class="b-title"><img src="${SITE}/mascot.png" alt="" class="b-mascot"><div><span class="cap">Leaderboards</span><h1>Compete and track your performance</h1><p>Compare scores, track your progress, and see where you rank.</p></div></div>
@@ -120,7 +109,7 @@ function bar() {
   return `<div class="container b-bar">
     <div class="b-cp ${S.cp.open ? 'open' : ''}"><button class="b-cp-btn" type="button" data-cp aria-haspopup="listbox" aria-expanded="${S.cp.open}" aria-label="Country: ${q.flag ? esc(country(q.flag)) : 'Global'}">${flagImg(q.flag)}<span>${q.flag ? esc(country(q.flag)) : 'Global'}</span>${CHEVRON}</button>${S.cp.open ? picker() : ''}</div>
     <div class="pills" aria-label="Game mode">${Object.entries(MODES).map(([k, v]) => `<button type="button" aria-pressed="${q.mode === k}" data-mode="${k}"><img src="${SITE}/${v[1]}" alt="">${v[0]}</button>`).join('')}</div>
-    <div class="pills" aria-label="Movement period">${PERIODS.map(([k, l]) => `<button type="button" aria-pressed="${period() === k}" data-period="${k}" ${periodOk(k) ? '' : `aria-disabled="true" data-tip="${!S.allowed ? '<b>Community history is off</b><small>Turn it on in the Reimagined popup to see 7 and 30 day movement.</small>' : '<b>Lock only</b><small>Community history follows Lock rhythm points.</small>'}"`}>${l}</button>`).join('')}</div>
+    <div class="pills" aria-label="Movement period">${PERIODS.map(([k, l]) => `<button type="button" aria-pressed="${period() === k}" data-period="${k}" ${periodOk(k) ? '' : `aria-disabled="true" data-tip="${!S.allowed ? '<b>Community history is off</b><small>Turn it on in the Reimagined popup.</small>' : '<b>Lock only</b><small>Movement over days is tracked for Lock only.</small>'}"`}>${l}</button>`).join('')}</div>
     <label class="b-switch"><input type="checkbox" id="b-inactive" ${q.inactive ? 'checked' : ''}><i aria-hidden="true"></i>Include inactive</label>
   </div>`;
 }
@@ -165,18 +154,18 @@ function highlights() {
   const waiting = all.filter(x => x.m === WAIT).length;
   // Nothing known yet: placeholders of the same size, so nothing moves when the history comes.
   if (waiting && !moved.length) return `<section class="container b-hls" aria-label="Highlights" aria-busy="true">
-    <div class="b-hls-head"><h2>On this page <span>· last ${period() === '7d' ? '7' : '30'} days</span></h2><span class="cap">Loading Reimagined’s community history…</span></div>
+    <div class="b-hls-head"><h2>On this page <span>· last ${period() === '7d' ? '7' : '30'} days</span></h2><span class="cap">Loading history…</span></div>
     <div class="b-hls-row">${['Biggest climb', 'Biggest drop', 'Most RP gained', 'Closest race'].map(l => `<div class="b-hl"><small>${l}</small><div class="skeleton" style="width:70%;height:26px"></div><div class="skeleton" style="width:55%;height:24px"></div><div class="skeleton" style="width:45%;height:14px"></div></div>`).join('')}</div></section>`;
   const best = moved.filter(x => x.m.places > 0).sort((a, b) => b.m.places - a.m.places)[0];
   const worst = moved.filter(x => x.m.places < 0).sort((a, b) => a.m.places - b.m.places)[0];
   const gain = period() !== 'today' ? moved.filter(x => x.m.rp > 0).sort((a, b) => b.m.rp - a.m.rp)[0] : null;
   let race = null;
   for (let i = 0; i + 1 < rows.length; i++) { const gap = rows[i][rpK] - rows[i + 1][rpK]; if (gap >= 0 && (!race || gap < race.gap)) race = {a: rows[i], b: rows[i + 1], gap}; }
-  const who = u => `<a class="b-hl-who" href="/player/${esc(u.id)}"><i style="background-image:url('${esc(u.avatar)}')"></i><b>${esc(u.username)}</b></a>`;
+  const who = u => `<a class="b-hl-who" href="/player/${esc(u.id)}"><i style="background-image:${cssUrl(u.avatar)}"></i><b>${esc(u.username)}</b></a>`;
   const card = (label, body, tone = '') => `<div class="b-hl ${tone}"><small>${label}</small>${body}</div>`;
   const none = t => `<p class="cap">${t}</p>`;
   return `<section class="container b-hls" aria-label="Highlights">
-    <div class="b-hls-head"><h2>On this page <span>· ${period() === 'today' ? 'since yesterday' : `last ${period() === '7d' ? '7' : '30'} days`}</span></h2>${period() !== 'today' ? `<span class="cap">From Reimagined’s community history${waiting ? ` · ${fmt(waiting)} ${waiting === 1 ? 'player' : 'players'} still loading` : ''}</span>` : ''}</div>
+    <div class="b-hls-head"><h2>On this page <span>· ${period() === 'today' ? 'since yesterday' : `last ${period() === '7d' ? '7' : '30'} days`}</span></h2>${period() !== 'today' && waiting ? `<span class="cap">${fmt(waiting)} ${waiting === 1 ? 'player' : 'players'} still loading</span>` : ''}</div>
     <div class="b-hls-row">
       ${card('Biggest climb', best ? `${who(best.u)}<strong class="num up">▲ ${fmt(best.m.places)}</strong><span class="num">${best.m.oldRank ? `#${fmt(best.m.oldRank)} → #${fmt(best.u.rank)}` : `Now #${fmt(best.u.rank)}`}</span>` : none('Nobody here climbed.'), 'up')}
       ${card('Biggest drop', worst ? `${who(worst.u)}<strong class="num down">▼ ${fmt(-worst.m.places)}</strong><span class="num">${worst.m.oldRank ? `#${fmt(worst.m.oldRank)} → #${fmt(worst.u.rank)}` : `Now #${fmt(worst.u.rank)}`}</span>` : none('Nobody here dropped.'), 'down')}
@@ -197,22 +186,17 @@ function table() {
     <div class="b-rows ${showTrend ? 'trend' : ''} ${S.enter ? 'anim' : ''}">${d.rows.map((u, i) => {
       const m = move(u), pos = u.rank, mine = S.me && String(S.me.id) === String(u.id);
       const mv = m === WAIT ? '<span class="b-mv"><i class="skeleton b-mvsk"></i></span>' : m ? `<span class="b-mv ${m.places > 0 ? 'up' : m.places < 0 ? 'down' : ''}" data-tip="${m.places ? `<b>${m.places > 0 ? 'Up' : 'Down'} ${fmt(Math.abs(m.places))} place${Math.abs(m.places) === 1 ? '' : 's'}</b><small>${scope()}${m.rp != null ? ` · ${m.rp >= 0 ? '+' : '−'}${fmt(Math.abs(m.rp), 1)} RP` : ''}</small>` : `<b>No change</b><small>${scope()}</small>`}">${placesTxt(m.places)}</span>`
-        : `<span class="b-mv none" data-tip="<b>No history yet</b><small>Reimagined has not tracked this player long enough</small>">·</span>`;
+        : `<span class="b-mv none" data-tip="<b>No history yet</b><small>Not tracked long enough</small>">·</span>`;
       return `<a class="b-row ${mine ? 'me' : ''} ${u.verified ? 'sup' : ''}" href="/player/${esc(u.id)}" style="--i:${Math.min(i, 30)}">${u.verified ? SUP_BG : ''}
         <span class="pos num ${pos <= 3 ? 'p' + pos : ''}">${fmt(pos)}</span>${mv}
-        <span class="who">${u.flag ? `<img class="b-flag" src="${SITE}/flags/${esc(u.flag)}.svg" alt="${esc(u.flag)}">` : ''}<i class="av" style="background-image:url('${esc(u.avatar)}')"></i><b>${esc(u.username)}</b>${titleImg(u[rpK], u[posK])}${u.clan ? `<span class="tag">${esc(u.clan.acronym)}</span>` : ''}${u.verified ? HEART : ''}</span>
+        <span class="who">${u.flag ? `<img class="b-flag" src="${SITE}/flags/${esc(u.flag)}.svg" alt="${esc(u.flag)}">` : ''}<i class="av" style="background-image:${cssUrl(u.avatar)}"></i><b>${esc(u.username)}</b>${titleImg(u[rpK], u[posK])}${u.clan ? `<span class="tag">${esc(u.clan.acronym)}</span>` : ''}${u.verified ? HEART : ''}</span>
         ${showTrend ? spark(u) : ''}
         <span class="rp num">${fmt(u[rpK], 2)}</span><span class="pc num">${fmt(u.plays)}</span></a>`;
     }).join('')}</div>`;
 }
 function pager() {
   const d = S.data; if (!d || d.total <= d.perPage) return '';
-  const pages = Math.ceil(d.total / d.perPage), p = S.q.page;
-  const nums = [...new Set([1, 2, p - 1, p, p + 1, pages - 1, pages])].filter(n => n >= 1 && n <= pages).sort((a, b) => a - b);
-  return `<div class="pager"><span class="num">${fmt((p - 1) * d.perPage + 1)}–${fmt(Math.min(p * d.perPage, d.total))} of ${fmt(d.total)}</span><div class="pages">
-    <button type="button" data-page="${p - 1}" ${p === 1 ? 'disabled' : ''} aria-label="Previous page">‹</button>
-    ${nums.map((n, i) => `${i && n - nums[i - 1] > 1 ? '<span>…</span>' : ''}<button type="button" data-page="${n}" ${n === p ? 'aria-current="page"' : ''}>${fmt(n)}</button>`).join('')}
-    <button type="button" data-page="${p + 1}" ${p === pages ? 'disabled' : ''} aria-label="Next page">›</button></div></div>`;
+  return RhythiaX.ExodusKit.pager(S.q.page, Math.ceil(d.total / d.perPage), '', {perPage: d.perPage, total: d.total});
 }
 
 /* ── Rendering ── */
@@ -287,7 +271,7 @@ R.addEventListener('click', e => {
   const d = t.dataset;
   if (d.mode) { if (d.mode !== S.q.mode) go({mode: d.mode, page: 1}); return; }
   if (d.period) {
-    if (!periodOk(d.period)) { toast(S.allowed ? 'Movement over days follows Lock only.' : 'Turn on community history in the Reimagined popup to see 7 and 30 day movement.'); return; }
+    if (!periodOk(d.period)) { toast(S.allowed ? 'Movement over days is tracked for Lock only.' : 'Turn on community history in the Reimagined popup to see this.'); return; }
     S.period = d.period; try { localStorage.setItem('rhythiax_exodus_board_period', d.period); } catch (_) {}
     hideTip(); return refresh();
   }
@@ -338,11 +322,6 @@ return {
 };
 
 RhythiaX.ExodusBoard.css = `
-.b-head{display:flex;align-items:flex-end;justify-content:space-between;gap:24px;flex-wrap:wrap;padding-top:48px}
-.b-title{display:flex;align-items:center;gap:22px;min-width:0}
-.b-mascot{width:96px;height:96px;object-fit:contain;flex:none}
-.b-title h1{margin:4px 0 0;font-size:clamp(28px,3.4vw,40px);line-height:1.1;font-weight:800;letter-spacing:-.03em}
-.b-title p{margin:8px 0 0;font-size:15px;color:var(--muted)}
 .b-me{display:flex;align-items:center;gap:14px;min-width:240px;padding:14px 18px;border-radius:16px;background:var(--panel);box-shadow:inset 0 0 0 1px var(--line)}
 .b-me.out{flex-direction:column;align-items:flex-start;gap:10px;max-width:280px}
 .b-me.out p{margin:0;color:var(--text-2)}
@@ -379,13 +358,6 @@ RhythiaX.ExodusBoard.css = `
 .b-cp-item[aria-selected="true"]{color:var(--text);font-weight:650}
 .b-cp-none{margin:14px 10px}
 .b-bar .pills button[aria-disabled="true"]{opacity:.45}
-.b-switch{display:inline-flex;align-items:center;gap:10px;margin-left:auto;font-weight:600;color:var(--text-2);cursor:pointer;user-select:none}
-.b-switch input{position:absolute;opacity:0;pointer-events:none}
-.b-switch i{position:relative;width:38px;height:22px;border-radius:999px;background:var(--panel-3);box-shadow:inset 0 0 0 1px var(--line-2);transition:background-color .2s}
-.b-switch i::after{content:"";position:absolute;top:3px;left:3px;width:16px;height:16px;border-radius:50%;background:var(--text);transition:transform .25s var(--ease)}
-.b-switch input:checked + i{background:var(--accent)}
-.b-switch input:checked + i::after{transform:translateX(16px);background:#fff}
-.b-switch input:focus-visible + i{outline:2px solid var(--accent);outline-offset:2px}
 .b-hls{margin-top:28px}
 .b-hls-head{display:flex;align-items:baseline;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:12px}
 .b-hls-head h2{margin:0;font-size:17px;font-weight:700}
@@ -450,12 +422,10 @@ RhythiaX.ExodusBoard.css = `
 .b-rows.anim .b-row{animation:hRise .45s var(--ease) both;animation-delay:calc(var(--i) * 18ms)}
 .b-rows.anim .b-spark path{stroke-dasharray:200;stroke-dashoffset:200;animation:bDraw 1s var(--ease) .35s forwards}
 @keyframes bDraw{to{stroke-dashoffset:0}}
-@keyframes hRise{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
-.b-page.enter .b-head{animation:exoEnter .6s var(--ease) both}
 .b-page.enter .b-bar{animation:exoEnter .6s var(--ease) .08s both}
 .b-page.enter .b-hls{animation:exoEnter .6s var(--ease) .16s both}
 [data-variant="lines"] .b-panel{padding:0}
-@media (max-width:900px){.b-cols.trend,.b-rows.trend .b-row,.b-cols,.b-row{grid-template-columns:40px 52px minmax(0,1fr) 100px}.b-cols span:nth-child(4):not(:last-child),.b-row .b-spark,.b-row .pc,.b-cols span:last-child{display:none}.b-cols.trend span:nth-child(5){display:block}.b-switch{margin-left:0}}
-@media (max-width:560px){.b-mascot{display:none}.b-me{width:100%}.b-cp,.b-cp-btn{width:100%}.b-cp-pop{width:100%}.b-cols,.b-row{grid-template-columns:34px 44px minmax(0,1fr) 84px;gap:8px}.b-cols.trend,.b-rows.trend .b-row{grid-template-columns:34px 44px minmax(0,1fr) 84px}.b-row .tag,.b-row .b-flag{display:none}.b-hls-row{grid-template-columns:1fr 1fr}}
-@media (prefers-reduced-motion:reduce){.b-rows.anim .b-row,.b-page.enter *{animation:none!important}.b-rows.anim .b-spark path{stroke-dasharray:none;animation:none}}
+@media (max-width:900px){.b-cols.trend,.b-rows.trend .b-row,.b-cols,.b-row{grid-template-columns:40px 52px minmax(0,1fr) 100px}.b-cols span:nth-child(4):not(:last-child),.b-row .b-spark,.b-row .pc,.b-cols span:last-child{display:none}.b-cols.trend span:nth-child(5){display:block}}
+@media (max-width:560px){.b-me{width:100%}.b-cp,.b-cp-btn{width:100%}.b-cp-pop{width:100%}.b-cols,.b-row{grid-template-columns:34px 44px minmax(0,1fr) 84px;gap:8px}.b-cols.trend,.b-rows.trend .b-row{grid-template-columns:34px 44px minmax(0,1fr) 84px}.b-row .tag,.b-row .b-flag{display:none}.b-hls-row{grid-template-columns:1fr 1fr}}
+@media (prefers-reduced-motion:reduce){.b-rows.anim .b-row{animation:none!important}.b-rows.anim .b-spark path{stroke-dasharray:none;animation:none}}
 `;

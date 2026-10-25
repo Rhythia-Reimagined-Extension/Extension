@@ -1,7 +1,6 @@
 // =============================================
-// Rhythia X — Playstyle Feature: View Module
-// DOM rendering, score breakdown, FAQ popover & UI orchestration
-// Pure SVG vectors, zero unicode emojis & readable score distributions
+// Reimagined for Rhythia — Playstyle Feature: View Module
+// The Playstyle tab: values, summary, status FAQ, breakdown and best maps.
 // =============================================
 
 var RhythiaX = RhythiaX || {};
@@ -11,7 +10,7 @@ var RhythiaX = RhythiaX || {};
   const scout = RhythiaX.PlaystyleScout;
   const loader = RhythiaX.PlaystyleLoader;
 
-  // SVG Icon definitions (zero unicode emojis)
+  // Status icons.
   const ICONS = {
     trendingUp: `<svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>`,
     trendingDown: `<svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 18 13.5 8.5 8.5 13.5 1 6"/><polyline points="17 18 23 18 23 12"/></svg>`,
@@ -194,7 +193,6 @@ var RhythiaX = RhythiaX || {};
     const faqBtn = document.createElement('button');
     faqBtn.type = 'button';
     faqBtn.className = 'rhythiax-faq-btn';
-    faqBtn.title = 'View Playstyle status & momentum criteria';
     faqBtn.textContent = 'How statuses work';
 
     summaryHeader.append(headerLeft, faqBtn);
@@ -205,34 +203,34 @@ var RhythiaX = RhythiaX || {};
     momentumNote.hidden = !momentum.context;
     summaryCard.appendChild(momentumNote);
 
-    // FAQ Popover Card (Collapsible, pure SVG, zero emoji)
+    // How statuses work.
     const faqPopover = document.createElement('div');
     faqPopover.className = 'rhythiax-faq-popover';
     faqPopover.style.display = 'none';
     faqPopover.innerHTML = `
       <div class="rhythiax-faq-header">
-        <span class="rhythiax-faq-heading">Playstyle Statuses</span>
+        <span class="rhythiax-faq-heading">Statuses</span>
         <button type="button" class="rhythiax-faq-close" aria-label="Close FAQ">&times;</button>
       </div>
       <div class="rhythiax-faq-grid">
         <div class="rhythiax-faq-item">
           <span class="rhythiax-faq-tag win">${ICONS.trendingUp} Climbing</span>
-          <p>Rank improved over 14 days. A fast climb means at least 5% of the previous rank, with a minimum of 3 places.</p>
+          <p>Rank went up over 14 days. A fast climb is at least 5% of the earlier rank and at least 3 places.</p>
         </div>
         <div class="rhythiax-faq-item">
           <span class="rhythiax-faq-tag loss">${ICONS.trendingDown} Dropping</span>
-          <p>Rank fell over 14 days, even if RP grew. A sharp drop uses the same 5% threshold, with a minimum of 3 places.</p>
+          <p>Rank went down over 14 days, even if RP grew. A sharp drop uses the same 5% and 3-place limits.</p>
         </div>
         <div class="rhythiax-faq-item">
           <span class="rhythiax-faq-tag steady">${ICONS.activity} Holding Steady</span>
-          <p>Rank is unchanged. Stagnation is noted only with recent activity and almost no RP growth.</p>
+          <p>Rank unchanged. Little progress is noted only when the player is active and RP barely grows.</p>
         </div>
         <div class="rhythiax-faq-item">
           <span class="rhythiax-faq-tag elite">${ICONS.shield} Defending Top 30</span>
-          <p>Holding the same rank in the top 30. Low RP gain alone does not count as stagnation here.</p>
+          <p>Same rank inside the top 30. Low RP gain alone does not count as little progress here.</p>
         </div>
       </div>
-      <p class="rhythiax-faq-note">RP notes use 14 days: below 0.5% gain is low; less than 0.1% movement is almost flat. Sudden moves use 2% over 3 days, minimum 3 places. Shorter history shows its actual comparison period.</p>
+      <p class="rhythiax-faq-note">RP over 14 days: under 0.5% gain is low, under 0.1% either way is flat. Sudden moves: 2% of rank in 3 days, at least 3 places. With less history, the real period is shown.</p>
     `;
 
     faqBtn.addEventListener('click', () => {
@@ -324,8 +322,8 @@ var RhythiaX = RhythiaX || {};
     const breakdownHint = document.createElement('span');
     breakdownHint.className = 'rhythiax-breakdown-hint';
     breakdownHint.textContent = scores.length
-      ? scores.length + ' scores · counts below'
-      : 'No scores available yet';
+      ? scores.length + ' scores'
+      : 'No scores yet';
     breakdownHeader.append(breakdownTitle, breakdownHint);
     const breakdownSections = document.createElement('div');
     breakdownSections.className = 'rhythiax-breakdown-sections';
@@ -361,7 +359,7 @@ var RhythiaX = RhythiaX || {};
     }
     if (variantB) {
       breakdownTitle.textContent = 'Breakdown';
-      breakdownHint.textContent = scores.length ? scores.length + ' top plays' : 'No scores available yet';
+      breakdownHint.textContent = scores.length ? scores.length + ' top plays' : 'No scores yet';
       breakdownSections.append(
         stackedBar('Speed', domain.SPEED_KEYS, speedBuckets, domain.SPEED_COLORS, 'x', scores.length),
         stackedBar('Grades', domain.GRADE_KEYS, gradeBuckets, domain.GRADE_COLORS, '', scores.length)
@@ -384,7 +382,6 @@ var RhythiaX = RhythiaX || {};
       bestMapsHeader.className = 'rhythiax-best-maps-header';
       bestMapsHeader.innerHTML = `
         <span class="rhythiax-best-maps-title">Best maps</span>
-        <span class="rhythiax-best-maps-hint">Top standout plays</span>
       `;
       bestMapsBox.appendChild(bestMapsHeader);
 
@@ -426,7 +423,6 @@ var RhythiaX = RhythiaX || {};
 
       if (variantB) {
         // Map art as on the score cards; off when "Map art behind cards" is off.
-        bestMapsHeader.querySelector('.rhythiax-best-maps-hint')?.remove();
         bestMapsBox.classList.add('rhythiax-ps2-maps');
         const showArt = RhythiaX.isCardBackgroundsEnabled?.() !== false;
         const token = RhythiaX.navigationToken;
@@ -437,7 +433,7 @@ var RhythiaX = RhythiaX || {};
           row.prepend(art);
           const key = item?.score && (item.score.beatmapId || item.score.beatmapHash || item.score.songId);
           if (showArt && key && RhythiaX.resolveBeatmapMeta) {
-            RhythiaX.resolveBeatmapMeta(key).then(meta => {
+            RhythiaX.resolveBeatmapMeta(key, { signal: RhythiaX.beatmapPageSignal?.() }).then(meta => {
               if (!meta?.previewUrl || !art.isConnected || token !== RhythiaX.navigationToken) return;
               const img = document.createElement('img');
               img.alt = '';

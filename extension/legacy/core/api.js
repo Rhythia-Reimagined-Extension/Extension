@@ -1,5 +1,5 @@
 // =============================================
-// Rhythia X — API fetch & cross-verification
+// Reimagined for Rhythia — Rhythia API requests and the player caches
 // =============================================
 
 var RhythiaX = RhythiaX || {};
@@ -33,52 +33,19 @@ function restoreRecentWeightedRp(scoreSets) {
 }
 
 // ─── Authentication token resolver ────────────
-RhythiaX.getRhythiaAuthToken = function () {
-  if (typeof localStorage === 'undefined') return '';
-  // 1. Direct legacy session key
-  try {
-    const legacy = localStorage.getItem('rhythia_auth_session_v1');
-    if (legacy && legacy.trim()) return legacy.trim();
-  } catch (_) {}
+// Rhythia's signed-in session, read as Exodus reads it (shared/rhythia-session.js); without that file
+// nobody is signed in.
+RhythiaX.getRhythiaAuthToken = () => RhythiaX.RhythiaSession?.token?.() || '';
 
-  // 2. Supabase auth token keys (e.g. sb-pfkajngbllcbdzoylrvp-auth-token)
-  try {
-    for (let i = 0; i < localStorage.length; i++) {
-      const key = localStorage.key(i);
-      if (!key) continue;
-      if (key.startsWith('sb-') && key.endsWith('-auth-token')) {
-        const raw = localStorage.getItem(key);
-        if (!raw) continue;
-        const parsed = JSON.parse(raw);
-        const token = parsed?.access_token || parsed?.session?.access_token || (Array.isArray(parsed) && parsed[0]?.access_token);
-        if (typeof token === 'string' && token.length > 10) {
-          return token;
-        }
-      }
-    }
-  } catch (_) {}
-
-  // 3. Fallback: inspect any non-rhythiax key with access_token
-  try {
-    for (let i = 0; i < localStorage.length; i++) {
-      const key = localStorage.key(i);
-      if (!key || key.startsWith('rhythiax')) continue;
-      const raw = localStorage.getItem(key);
-      if (raw && raw.includes('access_token')) {
-        const parsed = JSON.parse(raw);
-        const token = parsed?.access_token || parsed?.session?.access_token;
-        if (typeof token === 'string' && token.length > 10) {
-          return token;
-        }
-      }
-    }
-  } catch (_) {}
-
-  return '';
-};
+// Rhythia's page's own answer for the same request, if it has a fresh one (page-api-bridge.js); else null.
+// On that player's page it first gives the page up to waitMs to start the same request.
+function pageAnswer(endpoint, playerId, session, waitMs) {
+  return RhythiaX.PageApi?.take(endpoint, Number(playerId), Boolean(session), waitMs).catch(() => null) || Promise.resolve(null);
+}
 
 // Invalidate score sets cache in memory and sessionStorage
 RhythiaX.invalidatePlayerScoreSets = function (playerId) {
+  RhythiaX.PageApi?.forget();
   if (!playerId) return;
   const id = String(playerId).trim();
   if (RhythiaX.scoreSetsMemoryCache) {
@@ -119,12 +86,14 @@ RhythiaX.fetchPlayerScoreSets = async function (playerId, signal) {
           signal: request.signal,
           body: JSON.stringify({ id: Number(playerId), limit: 200, session: sessionToken }),
         }),
-        (RhythiaX.Net?.fetch || fetch)('https://production.rhythia.com/api/getPinnedScores', {
-          method: 'POST',
-          headers: { 'Content-Type': 'text/plain;charset=UTF-8' },
-          signal: request.signal,
-          body: JSON.stringify({ id: Number(playerId), session: sessionToken }),
-        }).catch(() => null),
+        // Rhythia's page asks for the pinned scores too; its answer is used when it has one (page-api-bridge.js).
+        pageAnswer('getPinnedScores', playerId, sessionToken, 1000).then(data => data ? { ok: true, json: async () => data } :
+          (RhythiaX.Net?.fetch || fetch)('https://production.rhythia.com/api/getPinnedScores', {
+            method: 'POST',
+            headers: { 'Content-Type': 'text/plain;charset=UTF-8' },
+            signal: request.signal,
+            body: JSON.stringify({ id: Number(playerId), session: sessionToken }),
+          })).catch(() => null),
       ]);
       if (!scoresResp.ok) { RhythiaX.error('REST API returned an unsuccessful status', { status: scoresResp.status }); return null; }
       const data = await scoresResp.json();
@@ -225,11 +194,6 @@ RhythiaX.fetchPlayerScoreSets = async function (playerId, signal) {
   return fetchPromise;
 };
 
-RhythiaX.fetchPlayerScores = async function (playerId, signal) {
-  const sets = await RhythiaX.fetchPlayerScoreSets(playerId, signal);
-  return sets ? sets.scores : null;
-};
-
 RhythiaX.fetchUserProfile = async function (playerId, signal) {
   if (!validPlayerId(playerId)) {
     return null;
@@ -245,14 +209,18 @@ RhythiaX.fetchUserProfile = async function (playerId, signal) {
   const fetchPromise = (async () => {
     const request = createApiRequestSignal(signal);
     try {
-      const resp = await (RhythiaX.Net?.fetch || fetch)('https://production.rhythia.com/api/getProfile', {
-        method: 'POST',
-        headers: { 'Content-Type': 'text/plain;charset=UTF-8' },
-        signal: request.signal,
-        body: JSON.stringify({ id: Number(playerId), session: RhythiaX.getRhythiaAuthToken() }),
-      });
-      if (!resp.ok) return null;
-      const data = await resp.json();
+      const session = RhythiaX.getRhythiaAuthToken();
+      let data = await pageAnswer('getProfile', playerId, session, 400);
+      if (!data) {
+        const resp = await (RhythiaX.Net?.fetch || fetch)('https://production.rhythia.com/api/getProfile', {
+          method: 'POST',
+          headers: { 'Content-Type': 'text/plain;charset=UTF-8' },
+          signal: request.signal,
+          body: JSON.stringify({ id: Number(playerId), session }),
+        });
+        if (!resp.ok) return null;
+        data = await resp.json();
+      }
       const user = data?.user || null;
       if (user) RhythiaX.setCachedUserProfile?.(id, user);
       return user;
@@ -272,7 +240,7 @@ RhythiaX.fetchUserProfile = async function (playerId, signal) {
 RhythiaX.prefetchPlayerData = function (playerId) {
   if (!validPlayerId(playerId)) return;
   // Exodus loads its own profile data.
-  if (RhythiaX.Exodus?.owns?.()) return;
+  if (RhythiaX.exodusShowing?.()) return;
   const id = String(playerId).trim();
   if (!RhythiaX.getCachedPlayerScoreSets(id) && !RhythiaX.scoreSetsInFlight.has(id)) {
     RhythiaX.fetchPlayerScoreSets(id).catch(() => null);
@@ -310,88 +278,6 @@ RhythiaX.mergeWeightedRp = function (scoreSets, sourceScores) {
     });
   });
   return scoreSets;
-};
-
-// ─── Cross-verify card data with API ──────────
-RhythiaX.crossVerifyCardsWithApi = function (playerId, scoreSets) {
-  if (!validPlayerId(playerId)) return Promise.resolve(new Map());
-
-  // Do not fetch /player/:id/scores again. That route is a client-rendered SPA
-  // page, so a content-script fetch can be blocked by CORS or return only the
-  // app shell. The REST response and the cards already in the current DOM are
-  // the two sources available to this page.
-  return Promise.resolve().then(function () {
-      var weightedMap = new Map();
-      var rankingMap = new Map();
-      (scoreSets?.topScores || scoreSets?.scores || []).forEach(function (score) {
-        var raw = String(score.weightedRp ?? '').trim();
-        var value = /\d/.test(raw)
-          ? (RhythiaX.parseLocalizedNumber ? RhythiaX.parseLocalizedNumber(raw) : Number.parseFloat(raw.replace(/,/g, '')))
-          : Number.NaN;
-        if (score.scoreId && Number.isFinite(value) && value > 0) {
-          weightedMap.set(String(score.scoreId), String(value));
-          rankingMap.set(String(score.scoreId), {
-            rankIndex: score.rankIndex,
-            weightPercent: score.weightPercent,
-          });
-        }
-      });
-
-      RhythiaX.findScoreCards().forEach(function (card) {
-        var parsed = RhythiaX.parseScoreCard(card);
-        var raw = String(parsed.weightedRp ?? '').trim();
-        var value = /\d/.test(raw)
-          ? (RhythiaX.parseLocalizedNumber ? RhythiaX.parseLocalizedNumber(raw) : Number.parseFloat(raw.replace(/,/g, '')))
-          : Number.NaN;
-        if (parsed.scoreId && Number.isFinite(value) && value > 0 && !weightedMap.has(String(parsed.scoreId))) {
-          weightedMap.set(String(parsed.scoreId), String(value));
-        }
-      });
-
-      // Feed the verified values back into the score objects used by Stats.
-      [scoreSets?.scores, scoreSets?.ratingScores, scoreSets?.topScores, scoreSets?.pinnedScores].forEach(function (scores) {
-        (scores || []).forEach(function (score) {
-          var weighted = weightedMap.get(String(score.scoreId));
-          if (weighted !== undefined) score.weightedRp = weighted;
-          var ranking = rankingMap.get(String(score.scoreId));
-          if (ranking?.rankIndex !== undefined) score.rankIndex = ranking.rankIndex;
-          if (ranking?.weightPercent !== undefined) score.weightPercent = ranking.weightPercent;
-        });
-      });
-
-      // Now update cards on the current page
-      var currentCards = RhythiaX.findScoreCards();
-      currentCards.forEach(function (card) {
-        var link = card.querySelector('a[href*="/score/"]');
-        var idMatch = link ? link.href.match(/\/score\/(\d+)/) : null;
-        var sid = idMatch ? idMatch[1] : (card.dataset?.rhythiaxScoreId || '');
-        if (!sid || !weightedMap.has(sid)) return;
-        var correctRp = weightedMap.get(sid);
-        if (!correctRp) return;
-
-        var parsedCorrect = RhythiaX.parseLocalizedNumber ? RhythiaX.parseLocalizedNumber(correctRp) : (Number.parseFloat(String(correctRp || '').replace(/,/g, '')) || 0);
-        var formatted = RhythiaX.formatNumber(Math.round(parsedCorrect));
-
-        // Update the modern card's Weighted RP display
-        var modernSubVal = card.querySelector('.rhythiax-card-rp-sub-val');
-        if (modernSubVal) {
-          var cardRanking = rankingMap.get(sid);
-          var percent = cardRanking?.weightPercent;
-          modernSubVal.textContent = formatted + (percent !== undefined ? ' (' + percent + '%)' : '');
-        }
-
-        // Update the card's Weighted RP display (pill in the expanded panel)
-        var pills = card.querySelectorAll('.bg-\\[\\#1F2021\\]');
-        pills.forEach(function (pill) {
-          var labelEl = pill.querySelector('.text-neutral-300');
-          var valueEl = pill.querySelector('.text-neutral-100');
-          if (labelEl && valueEl && labelEl.textContent.trim() === 'Weighted RP') {
-            valueEl.textContent = formatted;
-          }
-        });
-      });
-      return weightedMap;
-    });
 };
 
 const PLAYER_MEMORY_CACHE_MAX_ENTRIES = 32;
@@ -440,6 +326,41 @@ class PlayerMemoryCache extends Map {
 RhythiaX.scoreSetsMemoryCache = new PlayerMemoryCache(RhythiaX.scoreSetsMemoryCache);
 RhythiaX.userProfileMemoryCache = new PlayerMemoryCache(RhythiaX.userProfileMemoryCache);
 
+// The same entries also live in the tab's sessionStorage, so a reload can paint at once.
+// That storage is small and shared with Rhythia, so before each write the cache's expired
+// entries go and at most PLAYER_MEMORY_CACHE_MAX_ENTRIES of the newest stay. Only keys with
+// the cache's own prefix are read. An entry is written as {"data":...,"time":N}, so its time
+// is read from the end of the text without parsing the whole score list.
+function sessionPlayerCacheTime(raw) {
+  if (typeof raw !== 'string') return NaN;
+  const tail = raw.slice(-40).match(/"time":(\d+)\}$/);
+  if (tail) return Number(tail[1]);
+  try {
+    const time = JSON.parse(raw)?.time;
+    return Number.isFinite(time) ? time : NaN;
+  } catch (_) {
+    return NaN;
+  }
+}
+
+function pruneSessionPlayerCache(prefix, id) {
+  if (typeof sessionStorage.key !== 'function') return;
+  const now = Date.now();
+  const keys = [];
+  for (let i = 0; i < sessionStorage.length; i++) {
+    const key = sessionStorage.key(i);
+    if (key && key.startsWith(prefix) && key !== prefix + id) keys.push(key);
+  }
+  const fresh = [];
+  keys.forEach(key => {
+    const time = sessionPlayerCacheTime(sessionStorage.getItem(key));
+    if (!Number.isFinite(time) || now - time >= PLAYER_MEMORY_CACHE_TTL_MS) sessionStorage.removeItem(key);
+    else fresh.push([time, key]);
+  });
+  fresh.sort((a, b) => b[0] - a[0]).slice(PLAYER_MEMORY_CACHE_MAX_ENTRIES - 1)
+    .forEach(([, key]) => sessionStorage.removeItem(key));
+}
+
 RhythiaX.getCachedPlayerScoreSets = function (playerId) {
   if (!playerId) return null;
   const id = String(playerId).trim();
@@ -466,6 +387,7 @@ RhythiaX.setCachedPlayerScoreSets = function (playerId, data) {
   RhythiaX.scoreSetsMemoryCache.set(id, entry);
   try {
     if (typeof sessionStorage !== 'undefined') {
+      pruneSessionPlayerCache('rhythiax_score_sets_', id);
       sessionStorage.setItem('rhythiax_score_sets_' + id, JSON.stringify(entry));
     }
   } catch (_) {}
@@ -497,6 +419,7 @@ RhythiaX.setCachedUserProfile = function (playerId, data) {
   RhythiaX.userProfileMemoryCache.set(id, entry);
   try {
     if (typeof sessionStorage !== 'undefined') {
+      pruneSessionPlayerCache('rhythiax_user_profile_', id);
       sessionStorage.setItem('rhythiax_user_profile_' + id, JSON.stringify(entry));
     }
   } catch (_) {}

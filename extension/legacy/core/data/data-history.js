@@ -1,5 +1,5 @@
 // =============================================
-// Rhythia X - Open-day and daily history engine
+// Reimagined for Rhythia — Open-day and daily history engine
 // =============================================
 
 var RhythiaX = RhythiaX || {};
@@ -52,10 +52,6 @@ function dataHistoryEnsureCurrentDay(record, today) {
   return true;
 }
 
-function dataHistoryEffectiveLimit(openDay, settings) {
-  return settings.maxSnapshotsPerDay;
-}
-
 function dataHistoryAppendDiagnostic(record, details) {
   const diagnostic = {
     timestamp: Number(details.timestamp) || Date.now(),
@@ -81,22 +77,27 @@ function dataHistoryUpdateCollection(record, snapshot) {
   };
 }
 
-function dataHistoryPruneByAge(record, settings, now) {
+// Drops daily entries and an open day from before the 90 days that are kept. True when anything went.
+function dataHistoryPruneByAge(record, now) {
   const cutoff = new Date(now);
   cutoff.setHours(0, 0, 0, 0);
   cutoff.setDate(cutoff.getDate() - 89);
   const cutoffDate = RhythiaX.localDateKey(cutoff);
   const before = Object.keys(record.history.daily).length;
   record.history.daily = Object.fromEntries(Object.entries(record.history.daily).filter(([date]) => date >= cutoffDate));
-  if (record.history.openDay?.date < cutoffDate) record.history.openDay = null;
-  return before - Object.keys(record.history.daily).length;
+  let changed = Object.keys(record.history.daily).length !== before;
+  if (record.history.openDay?.date < cutoffDate) {
+    record.history.openDay = null;
+    changed = true;
+  }
+  return changed;
 }
 
 function dataHistoryOpenBytes(records) {
   return records.reduce((sum, record) => sum + dataHistoryBytes(record.history?.openDay), 0);
 }
 
-function dataHistoryOldestCapture(records, settings) {
+function dataHistoryOldestCapture(records) {
   return records
     .filter(record => (record.history?.openDay?.captures?.length || 0) > 0)
     .map(record => ({
@@ -106,13 +107,28 @@ function dataHistoryOldestCapture(records, settings) {
     .sort((left, right) => (left.capture.capturedAt || 0) - (right.capture.capturedAt || 0))[0] || null;
 }
 
-function dataHistoryOldestDaily(records, settings) {
-  return records
-    .flatMap(record => Object.values(record.history?.daily || {}).map(snapshot => ({ record, snapshot })))
-    .sort((left, right) => (left.snapshot.capturedAt || 0) - (right.snapshot.capturedAt || 0))[0] || null;
+// The removals below return how many bytes the stored JSON loses: the entry, plus the comma that went with
+// it while another entry remains.
+function dataHistoryShiftCapture(record) {
+  const captures = record.history.openDay.captures;
+  const bytes = dataHistoryBytes(captures[0]) + (captures.length > 1 ? 1 : 0);
+  captures.shift();
+  return bytes;
 }
 
-function dataHistoryEnforceLimits(records, settings) {
+function dataHistoryDeleteDaily(record, date) {
+  const daily = record.history.daily;
+  // The key with its quotes (the JSON of the date string), its colon, then the entry.
+  const bytes = dataHistoryBytes(date) + 1 + dataHistoryBytes(daily[date]) + (Object.keys(daily).length > 1 ? 1 : 0);
+  delete daily[date];
+  return bytes;
+}
+
+// Removes the oldest history until the open days fit openDayMaxMb and all records fit maxStorageMb: open-day
+// captures oldest first, then daily entries oldest first, then open-day captures, then whole records least
+// recently updated first. Sizes are measured once and reduced as entries go, so the work stays linear in the
+// size of the history however much has to go. Records it changes are added to changed.
+function dataHistoryEnforceLimits(records, settings, changed = new Set()) {
   const report = {
     removedDaily: 0,
     removedOpenCaptures: 0,
@@ -120,32 +136,51 @@ function dataHistoryEnforceLimits(records, settings) {
     openDayOverflow: false,
   };
   const openLimit = settings.openDayMaxMb * 1024 * 1024;
-  while (dataHistoryOpenBytes(records) > openLimit) {
-    const candidate = dataHistoryOldestCapture(records, settings);
+  let openBytes = dataHistoryOpenBytes(records);
+  while (openBytes > openLimit) {
+    const candidate = dataHistoryOldestCapture(records);
     if (!candidate) {
       report.openDayOverflow = true;
       break;
     }
-    candidate.record.history.openDay.captures.shift();
+    openBytes -= dataHistoryShiftCapture(candidate.record);
+    changed.add(candidate.record);
     report.removedOpenCaptures++;
   }
 
   const maxBytes = settings.maxStorageMb * 1024 * 1024;
-  while (dataHistoryBytes(records) > maxBytes) {
-    const dailyCandidate = dataHistoryOldestDaily(records, settings);
-    if (dailyCandidate) {
-      delete dailyCandidate.record.history.daily[dailyCandidate.snapshot.date];
+  let total = dataHistoryBytes(records);
+  if (total <= maxBytes) return report;
+  const sizes = new Map(records.map(record => [record, dataHistoryBytes(record)]));
+  const dailies = records
+    .flatMap(record => Object.entries(record.history?.daily || {}).map(([date, snapshot]) => ({ record, date, snapshot })))
+    .sort((left, right) => (left.snapshot.capturedAt || 0) - (right.snapshot.capturedAt || 0));
+  let nextDaily = 0;
+  while (total > maxBytes) {
+    let record = null;
+    let removed = 0;
+    if (nextDaily < dailies.length) {
+      const candidate = dailies[nextDaily++];
+      record = candidate.record;
+      removed = dataHistoryDeleteDaily(record, candidate.date);
       report.removedDaily++;
-      continue;
+    } else {
+      const captureCandidate = dataHistoryOldestCapture(records);
+      if (captureCandidate) {
+        record = captureCandidate.record;
+        removed = dataHistoryShiftCapture(record);
+        report.removedOpenCaptures++;
+      }
     }
-    const captureCandidate = dataHistoryOldestCapture(records, settings);
-    if (captureCandidate) {
-      captureCandidate.record.history.openDay.captures.shift();
-      report.removedOpenCaptures++;
+    if (record) {
+      sizes.set(record, sizes.get(record) - removed);
+      total -= removed;
+      changed.add(record);
       continue;
     }
     const oldestRecord = records.slice().sort((a, b) => a.updatedAt - b.updatedAt)[0];
     if (oldestRecord) {
+      total -= sizes.get(oldestRecord) + (records.length > 1 ? 1 : 0);
       records.splice(records.indexOf(oldestRecord), 1);
       continue;
     }
@@ -155,22 +190,51 @@ function dataHistoryEnforceLimits(records, settings) {
   return report;
 }
 
-async function dataHistoryMaintain(now = Date.now()) {
-  if (RhythiaX.dataStorageReadOnly) return;
+// Saves the records in changed that are still kept and removes the listed records the limits dropped, in one
+// commit through the background (RhythiaX.commitDataRecords; since: a Clear history mark, see there).
+// Returns the records saved ([] in a tab the extension has left, which writes nothing), or null when another
+// tab saved or removed one of them since the listing; then nothing was written.
+async function dataHistorySaveChanges(records, listed, changed, since) {
+  const put = records.filter(record => changed.has(record));
+  const remove = listed.filter(record => !records.includes(record));
+  const result = await RhythiaX.commitDataRecords({ put, remove, since });
+  if (result?.conflict) return null;
+  return result?.committed ? put : [];
+}
+
+// What a task below answers when its commit met a record another tab changed since it was read.
+const DATA_HISTORY_CONFLICT = Symbol('history-conflict');
+const DATA_HISTORY_ATTEMPTS = 3;
+
+// Runs task on a fresh read (read: the listing of every record, by default) and, while another tab's save
+// gets in between, reads again and runs it again: DATA_HISTORY_ATTEMPTS times in all, then it gives up.
+async function dataHistoryWithFreshRecords(task, read = () => RhythiaX.listDataRecords()) {
+  for (let attempt = 0; attempt < DATA_HISTORY_ATTEMPTS; attempt++) {
+    const result = await task(await read());
+    if (result !== DATA_HISTORY_CONFLICT) return result;
+  }
+  return { saved: false, reason: 'conflict' };
+}
+
+// Applies the age and size limits to every stored record and saves what changed. Returns the records as they
+// are now, null while local data is read-only, or { saved: false, reason: 'conflict' }.
+async function dataHistoryMaintainRecords(now) {
+  if (RhythiaX.dataStorageReadOnly) return null;
   const settings = await RhythiaX.getDataSettings();
-  const records = await RhythiaX.listDataRecords();
-  const before = new Map(records.map(record => [record.profileId, dataHistoryClone(record)]));
-  records.forEach(record => dataHistoryPruneByAge(record, settings, now));
-  dataHistoryEnforceLimits(records, settings);
-  await Promise.all(dataHistoryChangedIds(before, records).map(record => RhythiaX.saveDataRecord(record)));
-  await Promise.all([...before.keys()].filter(id => !records.some(record => record.profileId === id)).map(id => RhythiaX.removeDataRecord(id)));
+  return dataHistoryWithFreshRecords(async records => {
+    const listed = records.slice();
+    const changed = new Set(records.filter(record => dataHistoryPruneByAge(record, now)));
+    dataHistoryEnforceLimits(records, settings, changed);
+    return await dataHistorySaveChanges(records, listed, changed) ? records : DATA_HISTORY_CONFLICT;
+  });
 }
 
-RhythiaX.maintainDataHistory = () => dataHistoryWrite(dataHistoryMaintain);
-
-function dataHistoryChangedIds(before, after) {
-  return after.filter(record => JSON.stringify(before.get(record.profileId)) !== JSON.stringify(record));
+async function dataHistoryMaintain(now = Date.now()) {
+  await dataHistoryMaintainRecords(now);
 }
+
+// The write queue hands its task the previous write's result, so the task takes no argument of its own.
+RhythiaX.maintainDataHistory = () => dataHistoryWrite(() => dataHistoryMaintain());
 
 function dataHistoryWrite(task) {
   return RhythiaX.dataCanonicalWrite(task);
@@ -220,11 +284,22 @@ RhythiaX.recordProfileDataCapture = function (profileId, player, scoreSets, opti
     if (options.isCurrentProfile && !options.isCurrentProfile()) return { saved: false, reason: 'stale-navigation' };
     if (player?.id != null && String(player.id) !== String(profileId)) return { saved: false, reason: 'profile-mismatch' };
     if (options.verifiedProfile && String(player?.userProfile?.id) !== String(profileId)) return { saved: false, reason: 'profile-mismatch' };
-    const settings = await RhythiaX.getDataSettings();
-    if (settings.syncMode === 'cloud-only') return { saved: false, reason: 'cloud-only' };
+    const stored = await RhythiaX.getDataSettings();
+    if (stored.syncMode === 'cloud-only') return { saved: false, reason: 'cloud-only' };
+    // The module switches decide what is recorded: statHistory the statistics, rankingHistory the ranks. The
+    // popup's "Rank and stat history" sets both, so with it off nothing is saved. The stored collectStats and
+    // collectRanking (1.1, no control since) are replaced here; shared/data/data-migrations.js moved a 1.1
+    // opt-out onto the switches.
+    const settings = {
+      ...stored,
+      collectStats: RhythiaX.isModuleEnabled?.('statHistory') !== false,
+      collectRanking: RhythiaX.isModuleEnabled?.('rankingHistory') !== false,
+    };
     if (!settings.collectStats && !settings.collectRanking) return { saved: false, reason: 'collection-disabled' };
     const now = Number(options.capturedAt) || Date.now();
-    await dataHistoryMaintain(now);
+    // The page's numbers are read once. A Clear history from here on drops the capture (since), and each
+    // attempt below starts from a fresh listing, so what another tab saved in between is kept.
+    const since = RhythiaX.dataHistoryClearMark?.();
     const snapshot = RhythiaX.collectDataSnapshot({
       player,
       scoreSets,
@@ -233,98 +308,90 @@ RhythiaX.recordProfileDataCapture = function (profileId, player, scoreSets, opti
       capturedAt: now,
       settings,
     });
-    const records = await RhythiaX.listDataRecords();
-    if (options.isCurrentProfile && !options.isCurrentProfile()) return { saved: false, reason: 'stale-navigation' };
-    const before = new Map(records.map(record => [record.profileId, dataHistoryClone(record)]));
     const key = String(profileId);
-    let record = records.find(item => item.profileId === key);
-    if (!record) record = RhythiaX.createDataRecord(key, player, now);
-    if (options.verifiedProfile) {
-      const repaired = RhythiaX.removeForeignProfileCaptures(record, records);
-      if (repaired) dataHistoryAppendDiagnostic(record, {
-        timestamp: now, source: 'api', status: 'partial',
-        reason: 'foreign-profile-captures-removed', code: 'profile-history-repaired', missing: [],
+    return dataHistoryWithFreshRecords(async records => {
+      if (options.isCurrentProfile && !options.isCurrentProfile()) return { saved: false, reason: 'stale-navigation' };
+      const listed = records.slice();
+      // The age limit on every listed record; what it changes goes in the same commit as the capture.
+      const touched = new Set(records.filter(item => dataHistoryPruneByAge(item, now)));
+      let record = records.find(item => item.profileId === key);
+      if (!record) {
+        record = RhythiaX.createDataRecord(key, player, now);
+        RhythiaX.registerDataRecord?.(record, records);
+      }
+      if (options.verifiedProfile) {
+        const repaired = RhythiaX.removeForeignProfileCaptures(record, records);
+        if (repaired) dataHistoryAppendDiagnostic(record, {
+          timestamp: now, source: 'api', status: 'partial',
+          reason: 'foreign-profile-captures-removed', code: 'profile-history-repaired', missing: [],
+        });
+      }
+      record.identity = {
+        username: String(player?.username || record.identity?.username || '').trim(),
+        country: String(player?.country || player?.countryCode || record.identity?.country || '').trim(),
+      };
+      dataHistoryEnsureCurrentDay(record, snapshot.date);
+      const openDay = record.history.openDay;
+      const sameVisitIndex = snapshot.visitId
+        ? openDay.captures.findIndex(item => item.visitId && item.visitId === snapshot.visitId)
+        : -1;
+      if (sameVisitIndex >= 0) {
+        openDay.captures[sameVisitIndex] = RhythiaX.mergeDataSnapshots(openDay.captures[sameVisitIndex], snapshot);
+        openDay.captures.sort((left, right) => left.capturedAt - right.capturedAt);
+      } else {
+        const latest = dataHistoryLatest(openDay);
+        const elapsed = latest ? now - latest.capturedAt : Number.POSITIVE_INFINITY;
+        const rawChanged = !latest || RhythiaX.dataSnapshotHasMetricChange(latest, snapshot);
+        const changed = rawChanged && !(snapshot.status === 'partial' && latest?.status === 'complete' && elapsed < settings.snapshotIntervalMinutes * 60 * 1000);
+        const cooldownMs = settings.snapshotIntervalMinutes * 60 * 1000;
+        if (latest && !changed) {
+          // Nothing new to keep: the record notes the attempt, and the limits' changes are saved with it.
+          const reason = elapsed < cooldownMs ? 'duplicate-within-cooldown' : 'duplicate-data';
+          dataHistoryUpdateCollection(record, snapshot);
+          dataHistoryAppendDiagnostic(record, {
+            timestamp: now,
+            source: snapshot.source,
+            status: snapshot.status,
+            reason,
+            missing: snapshot.missing,
+            code: 'capture-skipped',
+          });
+          record.updatedAt = now;
+          touched.add(record);
+          dataHistoryEnforceLimits(records, settings, touched);
+          if (!await dataHistorySaveChanges(records, listed, touched, since)) return DATA_HISTORY_CONFLICT;
+          return { saved: false, reason, snapshot: latest, record };
+        }
+        if (openDay.captures.length >= settings.maxSnapshotsPerDay) openDay.captures.shift();
+        openDay.captures.push(snapshot);
+      }
+      openDay.lastUpdatedAt = now;
+      dataHistoryUpdateCollection(record, dataHistoryLatest(openDay));
+      dataHistoryAppendDiagnostic(record, {
+        timestamp: now,
+        source: snapshot.source,
+        status: snapshot.status,
+        reason: sameVisitIndex >= 0 ? 'merged-visit' : 'saved',
+        missing: snapshot.missing,
+        code: snapshot.status === 'complete' ? 'capture-saved' : 'capture-partial',
       });
-    }
-    record.identity = {
-      username: String(player?.username || record.identity?.username || '').trim(),
-      country: String(player?.country || player?.countryCode || record.identity?.country || '').trim(),
-    };
-    dataHistoryEnsureCurrentDay(record, snapshot.date);
-    const openDay = record.history.openDay;
-    const sameVisitIndex = snapshot.visitId
-      ? openDay.captures.findIndex(item => item.visitId && item.visitId === snapshot.visitId)
-      : -1;
-    if (sameVisitIndex >= 0) {
-      openDay.captures[sameVisitIndex] = RhythiaX.mergeDataSnapshots(openDay.captures[sameVisitIndex], snapshot);
-      openDay.captures.sort((left, right) => left.capturedAt - right.capturedAt);
-    } else {
-      const latest = dataHistoryLatest(openDay);
-      const elapsed = latest ? now - latest.capturedAt : Number.POSITIVE_INFINITY;
-      const rawChanged = !latest || RhythiaX.dataSnapshotHasMetricChange(latest, snapshot);
-      const changed = rawChanged && !(snapshot.status === 'partial' && latest?.status === 'complete' && elapsed < settings.snapshotIntervalMinutes * 60 * 1000);
-      const cooldownMs = settings.snapshotIntervalMinutes * 60 * 1000;
-      if (latest && !changed && elapsed < cooldownMs) {
-        dataHistoryUpdateCollection(record, snapshot);
-        dataHistoryAppendDiagnostic(record, {
-          timestamp: now,
-          source: snapshot.source,
-          status: snapshot.status,
-          reason: 'duplicate-within-cooldown',
-          missing: snapshot.missing,
-          code: 'capture-skipped',
-        });
-        record.updatedAt = now;
-        records.splice(records.findIndex(item => item.profileId === key), 1, record);
-        await RhythiaX.saveDataRecord(record);
-        return { saved: false, reason: 'duplicate-within-cooldown', snapshot: latest, record };
-      }
-      if (latest && !changed) {
-        dataHistoryUpdateCollection(record, snapshot);
-        dataHistoryAppendDiagnostic(record, {
-          timestamp: now,
-          source: snapshot.source,
-          status: snapshot.status,
-          reason: 'duplicate-data',
-          missing: snapshot.missing,
-          code: 'capture-skipped',
-        });
-        record.updatedAt = now;
-        records.splice(records.findIndex(item => item.profileId === key), 1, record);
-        await RhythiaX.saveDataRecord(record);
-        return { saved: false, reason: 'duplicate-data', snapshot: latest, record };
-      }
-      const limit = dataHistoryEffectiveLimit(openDay, settings);
-      if (openDay.captures.length >= limit) openDay.captures.shift();
-      openDay.captures.push(snapshot);
-    }
-    openDay.lastUpdatedAt = now;
-    dataHistoryUpdateCollection(record, dataHistoryLatest(openDay));
-    dataHistoryAppendDiagnostic(record, {
-      timestamp: now,
-      source: snapshot.source,
-      status: snapshot.status,
-      reason: sameVisitIndex >= 0 ? 'merged-visit' : 'saved',
-      missing: snapshot.missing,
-      code: snapshot.status === 'complete' ? 'capture-saved' : 'capture-partial',
+      record.updatedAt = now;
+      const existingIndex = records.findIndex(item => item.profileId === key);
+      if (existingIndex >= 0) records.splice(existingIndex, 1, record);
+      else records.push(record);
+      const changed = new Set([record, ...touched, ...records.filter(item => dataHistoryPruneByAge(item, now))]);
+      const report = dataHistoryEnforceLimits(records, settings, changed);
+      const savedRecords = await dataHistorySaveChanges(records, listed, changed, since);
+      if (!savedRecords) return DATA_HISTORY_CONFLICT;
+      return {
+        saved: savedRecords.includes(record),
+        snapshot,
+        record,
+        report,
+        openDayCount: openDay.captures.length,
+        openDayLimit: settings.maxSnapshotsPerDay,
+      };
     });
-    record.updatedAt = now;
-    const existingIndex = records.findIndex(item => item.profileId === key);
-    if (existingIndex >= 0) records.splice(existingIndex, 1, record);
-    else records.push(record);
-    records.forEach(item => dataHistoryPruneByAge(item, settings, now));
-    const report = dataHistoryEnforceLimits(records, settings);
-    const changedRecords = dataHistoryChangedIds(before, records);
-    await Promise.all(changedRecords.map(item => RhythiaX.saveDataRecord(item)));
-    await Promise.all([...before.keys()].filter(id => !records.some(item => item.profileId === id)).map(id => RhythiaX.removeDataRecord(id)));
-    return {
-      saved: changedRecords.some(item => item.profileId === key),
-      snapshot,
-      record,
-      report,
-      openDayCount: openDay.captures.length,
-      openDayLimit: dataHistoryEffectiveLimit(openDay, settings),
-    };
   });
 };
 
@@ -333,23 +400,25 @@ RhythiaX.recordProfileDataDiagnostic = function (profileId, details = {}) {
   return dataHistoryWrite(async () => {
     const settings = await RhythiaX.getDataSettings();
     if (settings.syncMode === 'cloud-only') return null;
-    const record = await RhythiaX.getDataRecord(profileId);
-    if (!record) return null;
     const timestamp = Number(details.timestamp) || Date.now();
-    dataHistoryAppendDiagnostic(record, {
-      timestamp,
-      source: details.source || 'api',
-      status: details.status || 'error',
-      reason: details.reason || 'collection-error',
-      missing: details.missing || record.collection?.missing || [],
-      code: details.code || 'collection-error',
-    });
-    record.collection = {
-      ...record.collection,
-      status: details.collectionStatus || (record.collection?.status === 'complete' ? 'partial' : record.collection?.status || 'partial'),
-      lastAttemptAt: timestamp,
-    };
-    return RhythiaX.saveDataRecord(record);
+    // Only this profile's record is read, again on each attempt.
+    return dataHistoryWithFreshRecords(async record => {
+      if (!record) return null;
+      dataHistoryAppendDiagnostic(record, {
+        timestamp,
+        source: details.source || 'api',
+        status: details.status || 'error',
+        reason: details.reason || 'collection-error',
+        missing: details.missing || record.collection?.missing || [],
+        code: details.code || 'collection-error',
+      });
+      record.collection = {
+        ...record.collection,
+        status: details.collectionStatus || (record.collection?.status === 'complete' ? 'partial' : record.collection?.status || 'partial'),
+        lastAttemptAt: timestamp,
+      };
+      return await dataHistorySaveChanges([record], [record], new Set([record])) ? record : DATA_HISTORY_CONFLICT;
+    }, () => RhythiaX.getDataRecord(profileId));
   });
 };
 

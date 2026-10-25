@@ -14,11 +14,10 @@ RhythiaX.ExodusAccount = (function () {
   const SITE = 'https://www.rhythia.com';
   // Rhythia's flag list (its Settings window), in its order; shown sorted by name.
   const COUNTRIES = ['US', 'AE', 'AM', 'AR', 'AT', 'AU', 'AZ', 'BA', 'BB', 'BD', 'BE', 'BG', 'BH', 'BN', 'BO', 'BR', 'BT', 'BW', 'BY', 'CA', 'CH', 'CI', 'CL', 'CN', 'CO', 'CR', 'CU', 'CW', 'CY', 'CZ', 'DE', 'DJ', 'DK', 'DO', 'DZ', 'EC', 'EE', 'EG', 'ES', 'ET', 'FI', 'FJ', 'FO', 'FR', 'GA', 'GB', 'GE', 'GG', 'GH', 'GP', 'GR', 'GT', 'GU', 'GY', 'HK', 'HN', 'HR', 'HU', 'ID', 'IE', 'IL', 'IM', 'IN', 'IQ', 'IR', 'IS', 'IT', 'JE', 'JM', 'JO', 'JP', 'KE', 'KG', 'KH', 'KR', 'KW', 'LB', 'LI', 'LK', 'LT', 'LU', 'LV', 'MA', 'MC', 'MD', 'ME', 'MG', 'MK', 'MM', 'MN', 'MT', 'MU', 'MV', 'MX', 'MY', 'NA', 'NC', 'NG', 'NL', 'NO', 'NP', 'NZ', 'OM', 'PA', 'PE', 'PG', 'PH', 'PK', 'PL', 'PR', 'PS', 'PT', 'PY', 'QA', 'RE', 'RO', 'RS', 'RU', 'SA', 'SD', 'SE', 'SG', 'SI', 'SK', 'SL', 'SN', 'SR', 'SV', 'SY', 'TG', 'TH', 'TN', 'TR', 'TT', 'TW', 'TZ', 'UA', 'UY', 'UZ', 'KZ', 'VE', 'VN', 'XK', 'YE', 'ZA', 'ZW'];
-  // Rhythia accepts these social links only, over https.
-  const SOCIAL_HOSTS = ['discord.com', 'discord.gg', 't.me', 'telegram.me', 'youtube.com', 'youtu.be', 'twitch.tv', 'x.com', 'twitter.com', 'github.com', 'instagram.com', 'tiktok.com', 'facebook.com', 'steamcommunity.com'];
   const BIO_MAX = 10000;
 
-  const esc = v => String(v ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  // Escaping and the social-link rule are ExodusKit's (core/kit.js), read when used.
+  const esc = v => RhythiaX.ExodusKit.esc(v);
   // The shared sprite (core/assets.js) has search and x; the rest are drawn here.
   const OWN = {
     img: '<rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="9" cy="10" r="2"/><path d="m21 16-5-5-8 8"/>',
@@ -26,6 +25,8 @@ RhythiaX.ExodusAccount = (function () {
     down: '<path d="m6 9 6 6 6-6"/>',
     lock: '<rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/>',
   };
+  // A complete url("…") token, safe inside a style attribute (core/kit.js).
+  const cssUrl = x => RhythiaX.ExodusKit.cssUrl(x);
   const ico = id => OWN[id] ? `<svg class="ico" viewBox="0 0 24 24" aria-hidden="true">${OWN[id]}</svg>` : `<svg class="ico" aria-hidden="true"><use href="#i-${id}"/></svg>`;
   const regionName = (() => { try { const n = new Intl.DisplayNames(['en'], { type: 'region' }); return c => n.of(c) || c; } catch (_) { return c => c; } })();
   const flagImg = c => `<img class="ac-flag" src="${SITE}/flags/${esc(c || 'US')}.svg" alt="">`;
@@ -35,14 +36,8 @@ RhythiaX.ExodusAccount = (function () {
     const m = String(raw || '').match(re);
     try { return m ? decodeURIComponent(m[1]) : ''; } catch (_) { return ''; }
   });
-  const normalLink = v => {
-    const t = String(v || '').trim();
-    if (!t) return '';
-    try {
-      const u = new URL(t), h = u.hostname.toLowerCase().replace(/^www\./, '');
-      return u.protocol === 'https:' && SOCIAL_HOSTS.some(d => h === d || h.endsWith(`.${d}`)) ? u.toString() : null;
-    } catch (_) { return null; }
-  };
+  // '' for a blank link, null for one Rhythia would refuse, otherwise the link written out in full.
+  const normalLink = v => RhythiaX.ExodusKit.socialLink(v);
   const timeLeft = ms => {
     const d = Math.ceil((ms - Date.now()) / 864e5);
     if (d <= 0) return 'expired';
@@ -53,6 +48,9 @@ RhythiaX.ExodusAccount = (function () {
   const price = p => { try { return new Intl.NumberFormat('en-US', { style: 'currency', currency: p.currency, maximumFractionDigits: 2 }).format(p.amountMinor / 100); } catch (_) { return '$4'; } };
 
   let S = null;
+  // What was typed before a hand-off to Rhythia's own Settings, offered again at the next open (same player, a while only).
+  let kept = null;
+  const KEEP_MS = 10 * 60 * 1000;
 
   // ─── Reading the state ──────
   const privacyAllowed = u => Array.isArray(u?.badges) && (u.badges.includes('Developer') || u.badges.includes('Content Creator'));
@@ -79,10 +77,10 @@ RhythiaX.ExodusAccount = (function () {
     return `<a href="/support">Supporter</a>: <b>${esc(v)}</b>`;
   }
   function identity(u) {
-    return `<div class="ac-banner" style="${u?.profile_image ? `background-image:url('${esc(u.profile_image)}')` : ''}">
+    return `<div class="ac-banner" style="${u?.profile_image ? `background-image:${cssUrl(u.profile_image)}` : ''}">
         <span class="ac-size">At least 1018 × 205</span>
         <button class="ac-plate" type="button" data-ac="rhythia" data-why="banner">${ico('img')}Change banner</button></div>
-      <div class="ac-who"><button class="ac-ava" type="button" data-ac="rhythia" data-why="avatar" aria-label="Change avatar" style="background-image:url('${esc(u?.avatar_url || '')}')"><span>${ico('cam')}</span></button>
+      <div class="ac-who"><button class="ac-ava" type="button" data-ac="rhythia" data-why="avatar" aria-label="Change avatar" style="${u?.avatar_url ? `background-image:${cssUrl(u.avatar_url)}` : ''}"><span>${ico('cam')}</span></button>
         <div><b>${esc(u?.username || '')}</b><small>${supporter(u)} · avatar at least 150 × 150</small></div></div>`;
   }
   function nameHelp() {
@@ -92,7 +90,7 @@ RhythiaX.ExodusAccount = (function () {
     if (!p) return '<p class="ac-help"><span class="skeleton ac-line-sk" style="width:92%"></span><span class="skeleton ac-line-sk" style="width:60%"></span></p><span class="skeleton ac-btn-sk"></span>';
     let text;
     if (!p.allowed) text = 'Your account cannot change its name.';
-    else if (p.freeAvailable) text = p.credits > 0 ? `Your first name change is free. Your ${p.credits === 1 ? 'Name Change item stays' : `${p.credits} Name Change items stay`} in your inventory.` : 'Your first name change is free and needs no item.';
+    else if (p.freeAvailable) text = p.credits > 0 ? `Your first name change is free. Your ${p.credits === 1 ? 'Name Change item stays' : `${p.credits} Name Change items stay`} in your inventory.` : 'Your first name change is free.';
     else if (p.credits > 0) text = `${plural(p.credits, 'Name Change item', 'Name Change items')} in your inventory. Saving a new name uses one.`;
     else text = 'Changing it needs a Name Change item. Your first Supporter purchase includes one.';
     const buy = !nameEditable() && p.canPurchase ? `<button class="btn ac-sm" type="button" data-ac="rhythia" data-why="name">Buy a name change · ${esc(price(p))}</button>` : '';
@@ -109,7 +107,7 @@ RhythiaX.ExodusAccount = (function () {
         <div class="ac-list" id="ac-flag-list">${flagOptions()}</div></div>` : '';
     const changed = d.flag !== S.base.flag;
     return `<button class="field ac-select" type="button" data-ac="flag-open" ${allowed ? '' : 'disabled'} aria-expanded="${S.flagOpen}">${flagImg(d.flag)}<span>${esc(regionName(d.flag))}</span>${ico(allowed ? 'down' : 'lock')}</button>${list}
-      <p class="ac-help">${!allowed ? 'Your flag was already changed once.' : changed ? 'Saved when you press Save changes.' : '<span class="ac-warn">Can be changed once.</span> You’ll be asked to confirm.'}</p>`;
+      ${!allowed ? '<p class="ac-help">Your flag was already changed once.</p>' : changed ? '' : '<p class="ac-help"><span class="ac-warn">Can be changed once.</span></p>'}`;
   }
   function flagOptions() {
     const q = S.flagQ.trim().toLowerCase();
@@ -126,12 +124,12 @@ RhythiaX.ExodusAccount = (function () {
     const email = (l.emails || []).find(e => e.is_primary && e.verified_at)?.email || '';
     return `<div class="ac-row"><span class="ac-tx"><b>Username and password</b><small>${l.hasPassword ? `Set up${email ? ` · ${esc(email)}` : ''}` : 'Not set up. You sign in with Discord.'}</small></span><span class="ac-chip ${l.hasPassword ? 'ok' : ''}">${l.hasPassword ? 'On' : 'Off'}</span></div>
       <div class="ac-row"><span class="ac-tx"><b>Discord</b><small>${l.discordLinked ? 'Linked to this profile.' : 'Not linked.'}</small></span><span class="ac-chip ${l.discordLinked ? 'ok' : ''}">${l.discordLinked ? 'Linked' : 'Not linked'}</span></div>
-      <div class="ac-row"><span class="ac-tx"><small>Email, password and login changes are confirmed by email, in Rhythia’s own window.</small></span>${manage}</div>`;
+      <div class="ac-row"><span class="ac-tx"><small>Changes are made in Rhythia’s window and confirmed by email.</small></span>${manage}</div>`;
   }
   const sw = (key, on, label) => `<button class="ac-sw" type="button" role="switch" aria-checked="${on}" aria-label="${esc(label)}" data-ac-sw="${key}"></button>`;
   function body() {
     const u = S.user, d = S.draft;
-    return `<div class="ac-head"><div><h2 id="ac-title">Settings</h2><p>Your profile, flag and privacy on Rhythia.</p></div><button class="iconbtn" type="button" data-ac="close" aria-label="Close">${ico('x')}</button></div>
+    return `<div class="ac-head"><div><h2 id="ac-title">Settings</h2></div><button class="iconbtn" type="button" data-ac="close" aria-label="Close">${ico('x')}</button></div>
       <div class="ac-body">
         <div class="ac-ident" id="ac-ident">${identity(u)}</div>
         <section class="ac-sec"><h3>Profile</h3><div class="ac-grid">
@@ -157,11 +155,11 @@ RhythiaX.ExodusAccount = (function () {
   function paintFoot() {
     if (!S) return;
     const save = $('ac-save'), hint = $('ac-hint');
-    if (!S.user) { hint.textContent = 'Reading your profile from Rhythia…'; return; }
+    if (!S.user) { hint.textContent = 'Loading your profile…'; return; }
     const list = changes();
     save.disabled = S.saving || !S.fresh || !list.length;
     save.textContent = S.saving ? 'Saving…' : 'Save changes';
-    hint.innerHTML = !S.fresh ? 'Checking your profile on Rhythia…'
+    hint.innerHTML = !S.fresh ? 'Loading your profile…'
       : list.length ? `<b>${plural(list.length, 'change', 'changes')}</b> not saved yet` : '';
   }
   function paintName() {
@@ -212,6 +210,8 @@ RhythiaX.ExodusAccount = (function () {
   // ─── Saving ──────
   async function save() {
     if (!S || S.saving || !S.fresh) return;
+    // The window can be closed, or a new one opened, while this saves: after each wait only this one is used.
+    const mine = S;
     const d = S.draft, b = S.base, u = S.user, list = changes();
     if (!list.length) return;
     // Links are checked only when they were edited; links saved earlier (or by Rhythia) are kept as they are.
@@ -236,23 +236,29 @@ RhythiaX.ExodusAccount = (function () {
       }
       if (aboutChanged) {
         try {
-          await S.saveAbout(d.bio.trim(), links.filter(Boolean));
+          await mine.saveAbout(d.bio.trim(), links.filter(Boolean));
         } catch (err) {
           throw new Error(profileChanged ? `Your profile was saved, but not your about me: ${err.message}` : err.message);
         }
       }
     } catch (err) {
-      if (!S) return;
+      mine.toast(`Could not save: ${err.message}`);
+      if (S !== mine) return;
       S.saving = false;
       paintFoot();
-      S.toast(`Could not save: ${err.message}`);
       if (profileChanged) loadName();
       return;
     }
-    const done = S;
-    close();
-    done.toast(list.length === 1 ? `Your ${list[0]} is saved on Rhythia.` : 'Your settings are saved on Rhythia.');
-    done.onSaved();
+    if (S === mine) close();
+    mine.toast(list.length === 1 ? `Your ${list[0]} is saved.` : 'Settings saved.');
+    Promise.resolve(mine.onSaved()).catch(() => {});
+  }
+
+  // Before a hand-off to Rhythia's own Settings (or the Supporter page): unsaved edits are kept for the next open.
+  function keepDraft() {
+    kept = null;
+    if (!S || S.saving || !S.user || S.user.id == null || !changes().length) return;
+    kept = { id: S.user.id, at: Date.now(), user: S.user, base: S.base, draft: { ...S.draft, links: [...S.draft.links] }, touched: [...S.touched] };
   }
 
   // ─── Events ──────
@@ -275,6 +281,8 @@ RhythiaX.ExodusAccount = (function () {
       paintFoot();
       return;
     }
+    // The Supporter link goes through the page's own navigation, which closes this window.
+    if (e.target.closest('a[href]')) { keepDraft(); return; }
     const t = e.target.closest('[data-ac]');
     if (!t) { if (S.flagOpen && !e.target.closest('.ac-pick')) { S.flagOpen = false; paintFlag(); } return; }
     const act = t.dataset.ac;
@@ -287,6 +295,7 @@ RhythiaX.ExodusAccount = (function () {
     else if (act === 'rhythia') {
       // Uploads, purchases and login changes are Rhythia's; anything typed here is kept until the next open.
       const go = S.rhythiaSettings, why = t.dataset.why;
+      keepDraft();
       close();
       go(why);
     }
@@ -320,12 +329,16 @@ RhythiaX.ExodusAccount = (function () {
   function open(opts) {
     if (S) return;
     const ac = new AbortController();
-    const u = opts.me || null;
-    S = { ...opts, ac, user: u, base: fromUser(u), draft: fromUser(u), fresh: false, saving: false, product: null, productError: '', login: null, loginError: '',
-      flagOpen: false, flagQ: '', flagAsk: '', touched: new Set() };
+    const me = opts.me || null;
+    // Edits kept from a hand-off come back with the profile they were made on; the fresh copy then fills in the rest.
+    const keep = kept && me && kept.id === me.id && Date.now() - kept.at < KEEP_MS ? kept : null;
+    kept = null;
+    const u = keep ? keep.user : me;
+    S = { ...opts, ac, user: u, base: keep ? keep.base : fromUser(u), draft: keep ? keep.draft : fromUser(u), fresh: false, saving: false, product: null, productError: '', login: null, loginError: '',
+      flagOpen: false, flagQ: '', flagAsk: '', touched: new Set(keep ? keep.touched : []) };
     const dlg = opts.dlg;
     // Without a kept copy of the profile (rare), the window waits for it instead of showing wrong values.
-    dlg.innerHTML = u ? body() : `<div class="ac-head"><div><h2 id="ac-title">Settings</h2><p>Your profile, flag and privacy on Rhythia.</p></div><button class="iconbtn" type="button" data-ac="close" aria-label="Close">${ico('x')}</button></div>
+    dlg.innerHTML = u ? body() : `<div class="ac-head"><div><h2 id="ac-title">Settings</h2></div><button class="iconbtn" type="button" data-ac="close" aria-label="Close">${ico('x')}</button></div>
       <div class="ac-body"><div class="skeleton" style="height:150px;border-radius:12px"></div><div class="skeleton" style="width:40%;margin-top:22px"></div><div class="skeleton" style="height:40px;margin-top:22px;border-radius:9px"></div><div class="skeleton" style="height:96px;margin-top:22px;border-radius:9px"></div></div>
       <div class="ac-foot"><span class="ac-hint" id="ac-hint"></span><button class="btn" type="button" data-ac="close">Cancel</button><button class="btn primary" type="button" id="ac-save" disabled>Save changes</button></div>`;
     dlg.showModal();
@@ -350,7 +363,7 @@ RhythiaX.ExodusAccount = (function () {
       .catch(err => { if (S === mine) { $('ac-hint').textContent = `Could not read your profile (${err.message}). Close and try again.`; } });
     loadName();
     A.login(ac.signal).then(l => { if (S === mine) { S.login = l; if ($('ac-login')) $('ac-login').innerHTML = loginRows(); } })
-      .catch(() => { if (S === mine) { S.loginError = 'Could not check your login. You can still manage it in Rhythia’s window.'; if ($('ac-login')) $('ac-login').innerHTML = loginRows(); } });
+      .catch(() => { if (S === mine) { S.loginError = 'Could not check your login.'; if ($('ac-login')) $('ac-login').innerHTML = loginRows(); } });
   }
 
   const css = `
@@ -432,5 +445,5 @@ dialog.acct[open]{display:flex;flex-direction:column}
 @media (max-width:560px){.ac-grid{grid-template-columns:1fr}.ac-head,.ac-foot{padding-left:16px;padding-right:16px}.ac-body{padding:0 16px 16px}.ac-hint{display:none}}
 `;
 
-  return { open, close, css, isOpen: () => Boolean(S) };
+  return { open, css };
 })();

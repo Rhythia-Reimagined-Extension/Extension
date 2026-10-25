@@ -320,19 +320,21 @@
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
 }
 
+/* The accent is built-in White's #7c3aed (themes/white/theme.css) or an own theme's, which also sets
+   --rhythiax-on-accent, the text colour that reads on it. */
 [data-rhythiax-theme="white"] .rhythiax-pagination-active,
 [data-rhythiax-theme="white"] .rhythiax-pagination-page.rhythiax-pagination-active {
-  background: #7c3aed !important;
-  border-color: #7c3aed !important;
-  color: #ffffff !important;
+  background: var(--rhythiax-accent) !important;
+  border-color: var(--rhythiax-accent) !important;
+  color: var(--rhythiax-on-accent, #ffffff) !important;
   opacity: 1 !important;
   pointer-events: none !important;
-  box-shadow: 0 2px 8px rgba(124, 58, 237, 0.35) !important;
+  box-shadow: 0 2px 8px color-mix(in srgb, var(--rhythiax-accent) 35%, transparent) !important;
 }
 
 [data-rhythiax-theme="white"] .rhythiax-pagination-btn:hover:not(:disabled):not(.rhythiax-pagination-active) {
-  border-color: #7c3aed !important;
-  color: #7c3aed !important;
+  border-color: var(--rhythiax-accent) !important;
+  color: var(--rhythiax-accent) !important;
 }
 
 /* Hide native Chrome datalist dropdown arrow */

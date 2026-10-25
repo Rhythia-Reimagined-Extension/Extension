@@ -9,19 +9,19 @@ var RhythiaX = RhythiaX || {};
 (function () {
 'use strict';
 const K = () => RhythiaX.ExodusKit;
-const {SITE, Data, Kit, esc, fmt, REDUCED, ago, fullDate, mmss, diff, status, MODES, mods, av, shell, slot, playsHtml, playsNote, PREVIEW_SPEEDS, ask, row, morph} = RhythiaX.ExodusKit;
+const {SITE, Data, Kit, esc, cssUrl, fmt, REDUCED, ago, fullDate, mmss, diff, status, MODES, av, shell, slot, playsHtml, playsNote, PREVIEW_SPEEDS, ask, row, morph} = RhythiaX.ExodusKit;
 
 /* ════════════════════ Map ════════════════════ */
 function map(host, ctx) {
   const R = host.shadowRoot, ac = new AbortController(), sig = {signal: ac.signal}, $ = s => R.querySelector(s);
-  const ui = shell(R, sig, ctx);
+  const ui = shell(R, sig);
   const id = ctx.id;
   const S = {d: null, mode: 'normal', me: null, more: false, file: null, fileErr: '', comments: null, enter: true, dock: null, busy: false, posting: false, speed: 0, live: false};
 
   function hero(m) {
     const [dl, dc] = diff(m.difficulty), [sl, sc] = status(m);
-    return `<section class="v-hero map ${S.enter ? 'enter' : ''}"><div class="v-banner" style="background-image:url('${esc(m.art)}')"></div><div class="container v-hero-in">
-      <i class="v-cover" style="background-image:url('${esc(m.art)}')"></i>
+    return `<section class="v-hero map ${S.enter ? 'enter' : ''}"><div class="v-banner" style="background-image:${cssUrl(m.art)}"></div><div class="container v-hero-in">
+      <i class="v-cover" style="background-image:${cssUrl(m.art)}"></i>
       <div class="v-who">
         <div class="v-chips"><span class="v-chip" style="--c:${sc}">${sl}</span><span class="v-chip" style="--c:${dc}">${dl}</span>${m.explicit ? '<span class="v-chip" style="--c:var(--bad)">Explicit</span>' : ''}</div>
         <h1>${esc(m.title)}</h1>
@@ -50,7 +50,7 @@ function map(host, ctx) {
     const end = Math.max(1, a.duration), top = Math.max(1, ...a.curve);
     const pts = a.curve.map((v, i) => `${((i + .5) / a.curve.length * 1000).toFixed(1)},${(60 - v / top * 54).toFixed(1)}`).join(' ');
     return `<div class="v-zl"><svg viewBox="0 0 1000 60" preserveAspectRatio="none" aria-hidden="true"><polygon points="0,60 ${pts} 1000,60"/></svg>
-      <div class="v-zr">${a.zones.map(z => `<button type="button" class="k-${z.kind.toLowerCase()}" style="left:${(z.start / end * 100).toFixed(3)}%;width:${Math.max(.15, (z.end - z.start) / end * 100).toFixed(3)}%" data-zone="${z.start}" data-tip="<b>${esc(z.type)} · ${mmss(z.start)}–${mmss(z.end)}</b><small>${fmt(z.nps, 1)} notes/s · ${fmt(z.notes)} notes · click to play the preview from here</small>"></button>`).join('')}</div>
+      <div class="v-zr">${a.zones.map(z => `<button type="button" class="k-${z.kind.toLowerCase()}" style="left:${(z.start / end * 100).toFixed(3)}%;width:${Math.max(.15, (z.end - z.start) / end * 100).toFixed(3)}%" data-zone="${z.start}" data-tip="<b>${esc(z.type)} · ${mmss(z.start)}–${mmss(z.end)}</b><small>${fmt(z.nps, 1)} notes/s · ${fmt(z.notes)} notes · click to play from here</small>"></button>`).join('')}</div>
       <div class="v-zt num"><span>0:00</span><span>${mmss(end)}</span></div></div>`;
   }
   // Speeds beyond the preview's own menu (0.75–1.45×), applied through its own speed change.
@@ -65,8 +65,8 @@ function map(host, ctx) {
     const trophy = t && S.mode === 'normal' ? `<a class="v-trophy" href="/score/${esc(t.scoreId)}"><small>Trophy owner</small>${av(t.avatar, 'v-av lg')}<div><b>${esc(t.username)}</b>${t.clan ? `<span class="cap">${esc(t.clan.name)}</span>` : ''}</div><span class="num">${fmt(t.rp)} RP</span></a>` : '';
     const me = mine ? `<div class="v-mine"><small>Your best</small>${row(mine, mine.place || 0, true)}<span class="cap">#${fmt(mine.place)} of ${fmt(mine.total)}</span></div>` : '';
     const table = list.length ? `<div class="v-cols" aria-hidden="true"><span>#</span><span>Player</span><span>RP</span><span>Accuracy</span><span>Misses</span><span>Mods</span><span>When</span></div>${rows.map((x, i) => row(x, i + 1, S.me && x.userId === S.me.id)).join('')}`
-      : '<div class="empty"><b>No scores yet</b>Nobody has a score in this mode yet.</div>';
-    return `<section class="container v-sec" id="v-board-sec"><div class="sec-head"><div><h2>Leaderboard</h2><p class="lede">Everyone’s best on this map, one score per player.</p></div>${pills}</div>
+      : '<div class="empty"><b>No scores yet</b></div>';
+    return `<section class="container v-sec" id="v-board-sec"><div class="sec-head"><div><h2>Leaderboard</h2><p class="lede">One score per player.</p></div>${pills}</div>
       ${trophy || me ? `<div class="v-top">${trophy}${me}</div>` : ''}
       <div class="panel v-table ${S.busy ? 'busy' : ''}">${table}</div>
       ${list.length > 10 ? `<div class="v-moreb"><button class="btn" type="button" data-more>${S.more ? 'Show less' : `Show all ${fmt(list.length)}`}</button></div>` : ''}</section>`;
@@ -84,7 +84,7 @@ function map(host, ctx) {
     const d = S.d;
     morph($('#hero'), hero(d.map));
     morph($('#body'), `<div class="v-page ${S.enter ? 'enter' : ''}">${about(d.map)}${playsSec()}
-      <section class="container v-sec" id="v-preview-sec"><div class="sec-head"><div><h2>Map preview</h2><p class="lede">Rhythia’s preview player. Its mods, settings and zone chart are in its own controls.</p></div></div>${slot()}${speedBar()}</section>
+      <section class="container v-sec" id="v-preview-sec"><div class="sec-head"><div><h2>Map preview</h2></div></div>${slot()}${speedBar()}</section>
       ${boardSec()}${commentsSec()}<div style="height:96px"></div></div>`);
     S.dock?.release();
     S.dock = ctx.dock($('#v-dock'));
@@ -132,7 +132,7 @@ function map(host, ctx) {
     else { S.enter = false; morph($('#hero'), hero(d.map)); redraw('#v-board-sec', boardSec()); }
     S.enter = false;
     Data().comments(id, ac.signal).then(c => { S.comments = c; redraw('#v-com-sec', commentsSec()); }).catch(() => { S.comments = []; redraw('#v-com-sec', commentsSec()); });
-    if (!d.map.file) { S.fileErr = 'Rhythia did not give the map file.'; } else {
+    if (!d.map.file) { S.fileErr = 'Rhythia did not send the map file.'; } else {
       try { S.file = await Kit().load(d.map.file, ac.signal); } catch (err) { if (ac.signal.aborted) return; S.fileErr = `The map file could not be read (${err.message}).`; }
     }
     if (ac.signal.aborted) return;

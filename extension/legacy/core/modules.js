@@ -26,6 +26,13 @@ RhythiaX.MODULE_SETTING_DEFAULTS = {
 RhythiaX.moduleSettings = { ...RhythiaX.MODULE_DEFAULTS };
 RhythiaX.moduleOptionSettings = JSON.parse(JSON.stringify(RhythiaX.MODULE_SETTING_DEFAULTS));
 
+// While Exodus shows the page (RhythiaX.ClassicIdle, core/state.js) a changed setting is kept and marked on
+// <html>, but Classic's elements are left alone; they follow when the page is handed back (end of this file).
+let moduleUpdatesWaiting = false;
+function moduleUpdatesIdle() {
+  return RhythiaX.ClassicIdle?.isSuspended?.() === true;
+}
+
 RhythiaX.applyModuleOptionSettings = function (settings) {
   RhythiaX.moduleOptionSettings = Object.keys(RhythiaX.MODULE_SETTING_DEFAULTS).reduce((all, name) => {
     const stored = { ...(settings?.[name] || {}) };
@@ -54,6 +61,10 @@ RhythiaX.applyModuleOptionSettings = function (settings) {
 
   // Variants D/E/F hide their map art from CSS, so the switch applies without a re-render.
   document.documentElement.dataset.rhythiaxCardArt = RhythiaX.isCardBackgroundsEnabled?.() === false ? 'off' : 'on';
+  if (moduleUpdatesIdle()) {
+    moduleUpdatesWaiting = true;
+    return;
+  }
   if (!RhythiaX.isModuleOptionEnabled('scoreCards', 'customCards')) {
     RhythiaX.ScoreCardView?.unenhance?.();
   } else if (!RhythiaX.isCardBackgroundsEnabled?.()) {
@@ -83,16 +94,6 @@ RhythiaX.isModuleOptionEnabled = function (moduleName, optionName) {
   return RhythiaX.moduleOptionSettings[moduleName]?.[optionName] !== false;
 };
 
-RhythiaX.getProfileStyle = function () {
-  const style = RhythiaX.moduleOptionSettings.advancedStats?.profileStyle;
-  return ['soft-blocks', 'profile-surface', 'pill-rows'].includes(style) ? style : 'profile-surface';
-};
-
-RhythiaX.getProfileMetric = function () {
-  const metric = RhythiaX.moduleOptionSettings.advancedStats?.profileMetric;
-  return ['percentage', 'count', 'both'].includes(metric) ? metric : 'percentage';
-};
-
 // Statistics variant: A is the history tables, B is one value at a time with a chart (statistics/history-view.js).
 RhythiaX.getStatsVariant = function () {
   return RhythiaX.moduleOptionSettings.statHistory?.layout === 'variant_a' ? 'variant_a' : 'variant_b';
@@ -116,7 +117,8 @@ RhythiaX.getDateFormat = function () {
     format = scFmt;
   }
   const clean = String(format).toLowerCase().trim();
-  const valid = ['yyyy-mm-dd', 'mm-dd-yyyy', 'dd-mm-yyyy', 'mm/dd/yyyy', 'dd/mm/yyyy', 'yyyy/mm/dd'];
+  // The popup offers these three (shared/settings/schema.js); no version stored a format with slashes.
+  const valid = ['yyyy-mm-dd', 'mm-dd-yyyy', 'dd-mm-yyyy'];
   return valid.includes(clean) ? clean : 'yyyy-mm-dd';
 };
 
@@ -132,10 +134,22 @@ RhythiaX.isScoreCardModTextEnabled = function () {
 RhythiaX.applyModuleSettings = function (settings) {
   RhythiaX.moduleSettings = { ...RhythiaX.MODULE_DEFAULTS, ...(settings || {}) };
   document.documentElement.dataset.rhythiaxModulesReady = 'true';
+  // styles/bridge/anti-flicker.css hides Rhythia's score list and Statistics body from the first frame, for
+  // Classic's own to take their place; a module that is off puts nothing there, so Rhythia's stay.
+  document.documentElement.dataset.rhythiaxModuleScoreCards = String(RhythiaX.isModuleEnabled('scoreCards'));
+  document.documentElement.dataset.rhythiaxModuleAdvancedStats = String(RhythiaX.isModuleEnabled('advancedStats'));
+  if (moduleUpdatesIdle()) {
+    moduleUpdatesWaiting = true;
+    return;
+  }
   if (!RhythiaX.isModuleEnabled('scoreCards')) {
     RhythiaX.ScoreCardView?.unenhance?.();
   }
-  if (!RhythiaX.isModuleEnabled('playerCompare') || (RhythiaX.isMasterActive && !RhythiaX.isMasterActive())) {
+  // Friends list off: Rhythia's friends counter and its link work as Rhythia made them again.
+  if (!RhythiaX.isModuleEnabled('friendsList')) {
+    RhythiaX.unenhanceOwnFriendsCounter?.();
+  }
+  if (!RhythiaX.isModuleEnabled('playerCompare')) {
     RhythiaX.CompareView?.cleanup?.();
     document.querySelectorAll('.rhythiax-compare-profile-button, .rhythiax-compare-tray, .rhythiax-compare-modal').forEach(el => el.remove());
   } else {
@@ -168,6 +182,10 @@ RhythiaX.applyModuleSettings = function (settings) {
 };
 
 RhythiaX.applyLiveUpdates = function () {
+  if (moduleUpdatesIdle()) {
+    moduleUpdatesWaiting = true;
+    return;
+  }
   // 1. Update score cards & layout
   try {
     if (RhythiaX.isModuleEnabled('scoreCards')) {
@@ -178,6 +196,11 @@ RhythiaX.applyLiveUpdates = function () {
       RhythiaX.ScoreCardView?.unenhance?.();
       const hub = document.querySelector('.rhythiax-scores-hub');
       if (hub) hub.style.display = 'none';
+      // The hub hid Rhythia's own score sections (score-cards/hub-native.js); they show in its place again.
+      document.querySelectorAll('.rhythiax-native-score-section-hidden').forEach(section => {
+        section.classList.remove('rhythiax-native-score-section-hidden');
+        section.style.removeProperty('display');
+      });
     }
   } catch (err) {
     RhythiaX.captureError?.(err, 'Live update scoreCards failed');
@@ -227,7 +250,7 @@ RhythiaX.applyLiveUpdates = function () {
 
   // 5. Update player compare
   try {
-    if (RhythiaX.isModuleEnabled('playerCompare') && (RhythiaX.isMasterActive ? RhythiaX.isMasterActive() : true)) {
+    if (RhythiaX.isModuleEnabled('playerCompare')) {
       if (RhythiaX.PageRouteContext?.type() === 'profile') {
         const player = RhythiaX.profileHistoryContext?.player || RhythiaX.extractPlayerData?.();
         RhythiaX.injectPlayerCompare?.(player);
@@ -284,54 +307,52 @@ function loadModuleStorage(key, defaults, apply) {
 }
 
 Promise.all([
-  loadModuleStorage('rhythiaxMasterActive', true, val => {
-    RhythiaX.masterActive = val !== false;
-  }),
   loadModuleStorage('rhythiaxModules', RhythiaX.MODULE_DEFAULTS, RhythiaX.applyModuleSettings),
   loadModuleStorage('rhythiaxModuleOptions', RhythiaX.MODULE_SETTING_DEFAULTS, RhythiaX.applyModuleOptionSettings),
 ]).catch(error => {
-  RhythiaX.masterActive = true;
   RhythiaX.applyModuleSettings(RhythiaX.MODULE_DEFAULTS);
   RhythiaX.applyModuleOptionSettings(RhythiaX.MODULE_SETTING_DEFAULTS);
   RhythiaX.captureError?.(error, 'Module storage initialization failed; using defaults');
 }).then(() => {
   document.documentElement.dataset.rhythiaxSettingsReady = 'true';
+  RhythiaX.ContentBootstrap?.settingsReady?.();
 });
 
-if (typeof chrome !== 'undefined' && chrome.runtime?.onMessage) {
-  chrome.runtime.onMessage.addListener(message => {
-    if (message?.type === 'rhythiax-master-toggle') {
-      RhythiaX.setMasterActive?.(message.active);
-      return;
-    }
-    if (message?.type === 'rhythiax-module-options') {
-      RhythiaX.applyModuleOptionSettings(message.options);
-      RhythiaX.applyLiveUpdates();
-      return;
-    }
-    if (message?.type === 'rhythiax-module-settings') {
-      RhythiaX.applyModuleSettings(message.settings);
-      RhythiaX.applyLiveUpdates();
-      return;
-    }
-  });
+function sameSettingValue(a, b) {
+  if (a === b) return true;
+  if (!a || !b || typeof a !== 'object' || typeof b !== 'object' || Array.isArray(a) !== Array.isArray(b)) return false;
+  const keys = new Set([...Object.keys(a), ...Object.keys(b)]);
+  for (const key of keys) {
+    if (!sameSettingValue(a[key], b[key])) return false;
+  }
+  return true;
 }
 
+// The page's own List/Grid button saves scoreCards.playerView in rhythiaxModuleOptions as well, and
+// score-cards/store.js already applies that in every tab: a change of nothing else needs no live update.
+// No old value means nothing was saved yet: that first save counts as a view change only when it holds
+// nothing but scoreCards.playerView.
+function onlyPlayerViewChanged(oldOptions, newOptions) {
+  if (!newOptions) return false;
+  const withoutPlayerView = options => ({ ...options, scoreCards: { ...(options.scoreCards || {}), playerView: undefined } });
+  return sameSettingValue(withoutPlayerView(oldOptions || {}), withoutPlayerView(newOptions));
+}
+
+// Every change to the switches and options, from the popup or from any tab, arrives here once per tab.
+// The popup has no other path into the tab: a message would run the same live update a second time.
 try {
   if (typeof chrome !== 'undefined' && chrome.storage?.onChanged) {
     chrome.storage.onChanged.addListener((changes, areaName) => {
       if (areaName === 'local') {
         let updated = false;
-        if (changes.rhythiaxMasterActive !== undefined) {
-          RhythiaX.setMasterActive?.(changes.rhythiaxMasterActive.newValue !== false);
-        }
         if (changes.rhythiaxModules?.newValue) {
           RhythiaX.applyModuleSettings(changes.rhythiaxModules.newValue);
           updated = true;
         }
-        if (changes.rhythiaxModuleOptions?.newValue) {
-          RhythiaX.applyModuleOptionSettings(changes.rhythiaxModuleOptions.newValue);
-          updated = true;
+        const options = changes.rhythiaxModuleOptions;
+        if (options?.newValue) {
+          RhythiaX.applyModuleOptionSettings(options.newValue);
+          if (!onlyPlayerViewChanged(options.oldValue, options.newValue)) updated = true;
         }
         if (updated) {
           RhythiaX.applyLiveUpdates();
@@ -340,3 +361,12 @@ try {
     });
   }
 } catch (_) {}
+
+// Classic has the page again: a change made while Exodus showed it reaches Classic's elements now, before
+// route-observer.js builds the page again with the same settings.
+RhythiaX.ClassicIdle?.onResume?.(() => {
+  if (!moduleUpdatesWaiting) return;
+  moduleUpdatesWaiting = false;
+  RhythiaX.applyModuleSettings(RhythiaX.moduleSettings);
+  RhythiaX.applyModuleOptionSettings(RhythiaX.moduleOptionSettings);
+});

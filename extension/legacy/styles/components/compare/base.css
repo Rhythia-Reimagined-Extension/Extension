@@ -2,34 +2,6 @@
    Reimagined for Rhythia - Player Compare: Base
    ============================================= */
 
-/* Preserved injected profile section styles */
-.rhythiax-injected-stats-section {
-  display: flex;
-  flex-direction: column;
-  gap: 0;
-  margin: 0 !important;
-  animation: rhythiax-injected-stats-enter 300ms cubic-bezier(.16, 1, .3, 1) both;
-}
-
-@keyframes rhythiax-injected-stats-enter {
-  from {
-    opacity: 0;
-    transform: translateY(4px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-.rhythiax-injected-grade-row {
-  margin-top: 14px;
-}
-
-.rhythiax-injected-stats-section .rhythiax-speed-chart {
-  margin-bottom: 6px;
-}
-
 .rhythiax-history-enabled {
   cursor: pointer;
 }
@@ -66,11 +38,23 @@
   background: color-mix(in srgb, var(--rhythiax-accent, #c084fc) 16%, var(--rhythiax-surface, #1b1a24));
 }
 
+/* --rhythiax-on-accent, the text colour that reads on the accent, is set only by an own theme. */
 .rhythiax-compare-profile-button.is-active {
   border-color: var(--rhythiax-accent, #c084fc);
-  color: #ffffff;
+  color: var(--rhythiax-on-accent, #ffffff);
   background: var(--rhythiax-accent, #c084fc);
-  box-shadow: 0 4px 14px rgba(192, 132, 252, 0.3);
+  box-shadow: 0 4px 14px color-mix(in srgb, var(--rhythiax-accent, #c084fc) 30%, transparent);
+}
+
+/* An own theme: the button rests with a light tint of its accent and hovers like the Friends and Add friend
+   buttons beside it (bridge/native-final.css). */
+:where(html[data-rhythiax-own-theme]) .rhythiax-compare-profile-button:not(.is-active) {
+  background: color-mix(in srgb, var(--rhythiax-accent) 18%, var(--rhythiax-inner-surface));
+}
+
+:where(html[data-rhythiax-own-theme]) .rhythiax-compare-profile-button:not(.is-active):hover {
+  border-color: var(--rhythiax-accent);
+  background: color-mix(in srgb, var(--rhythiax-accent) 28%, var(--rhythiax-inner-surface));
 }
 
 .rhythiax-compare-profile-button:focus-visible {
@@ -271,7 +255,7 @@
   border-radius: 9px;
   background: var(--rhythiax-accent, #c084fc);
   border: 0;
-  color: #ffffff;
+  color: var(--rhythiax-on-accent, #ffffff);
   font-family: inherit;
   font-size: 13px;
   font-weight: 800;

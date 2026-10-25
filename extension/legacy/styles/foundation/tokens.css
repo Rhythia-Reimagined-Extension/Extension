@@ -1,4 +1,4 @@
-/* Rhythia X design tokens.
+/* Reimagined for Rhythia — Classic design tokens.
    Runtime theme values are written by legacy/core/theme.js. These fallbacks keep
    the stylesheet safe before the extension finishes loading the preset. */
 :root {

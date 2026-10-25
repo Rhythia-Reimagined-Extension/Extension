@@ -1,10 +1,10 @@
-# Installation — Reimagined for Rhythia 1.3.0
+# Installation — Reimagined for Rhythia 1.3.1
 
 ## Chrome and compatible browsers
 
 Use the [Chrome Web Store listing](https://chromewebstore.google.com/detail/rhythia-reimagined/ekjfnmfocjohkiieakohbnagjcdbfolb) and choose **Add to Chrome**, then open [Rhythia](https://rhythia.com). Store installations receive automatic updates.
 
-Chrome 116+ is supported, along with compatible versions of Edge, Brave, Opera, and Opera GX. Check the listing for its published version; this repository contains the 1.3.0 source.
+Chrome 116+ is supported, along with compatible versions of Edge, Brave, Opera, and Opera GX. Check the listing for its published version; this repository contains the 1.3.1 source.
 
 ## Manual Chromium installation
 
@@ -14,11 +14,11 @@ Chrome 116+ is supported, along with compatible versions of Edge, Brave, Opera, 
 
 ## Firefox desktop 140+
 
-The Firefox package uses a separate manifest. There is no signed Firefox installer or published AMO listing supplied with this source release.
+Use the [Firefox Add-ons listing](https://addons.mozilla.org/firefox/addon/rhythia-reimagined/) and choose **Add to Firefox**, then open [Rhythia](https://rhythia.com). Installations from the listing receive automatic updates. Check the listing for its published version.
 
-For temporary testing, extract the prepared Firefox ZIP, open `about:debugging` → **This Firefox** → **Load Temporary Add-on**, and select its `manifest.json`. The shared source is in `extension/`; `firefox/manifest.json` contains the Firefox-specific manifest.
+Firefox uses a separate manifest. For temporary testing from source, download and extract the [public source](https://github.com/Rhythia-Reimagined-Extension/Extension), copy `firefox/manifest.json` over `extension/manifest.json` in that copy, open `about:debugging` → **This Firefox** → **Load Temporary Add-on**, and select `extension/manifest.json`. The shared source is in `extension/`; `firefox/manifest.json` contains the Firefox-specific manifest.
 
-Temporary add-ons are removed when Firefox closes. Permanent installation requires Mozilla signing. Firefox for Android has not been validated for this release.
+Temporary add-ons are removed when Firefox closes. Firefox for Android has not been validated for this release.
 
 ## First setup and updates
 

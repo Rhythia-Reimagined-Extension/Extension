@@ -1,7 +1,7 @@
 // =============================================
 // Reimagined for Rhythia — Exodus player bridge (page world)
 // =============================================
-// Runs in the page's own JavaScript world (manifest "world": "MAIN") so it can
+// Runs in the page's own JavaScript world (engines.js registers it with world MAIN) so it can
 // reach Rhythia's map preview, which Exodus shows inside its map page. It only
 // calls the preview's own functions: its speed change (any speed, not only the
 // eight in its menu), its seek and its play button. Exodus asks through DOM
@@ -61,6 +61,8 @@
   document.addEventListener(ASK, e => {
     let req;
     try { req = JSON.parse(String(e.detail)); } catch (_) { return; }
+    // Exodus always sends an object; anything else (null, a number) gets no answer.
+    if (!req || typeof req !== 'object') return;
     const f = preview();
     let res = { ok: false };
     try {

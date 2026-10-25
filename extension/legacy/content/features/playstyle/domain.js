@@ -1,5 +1,5 @@
 // =============================================
-// Rhythia X — Playstyle Feature: Domain Logic
+// Reimagined for Rhythia — Playstyle Feature: Domain Logic
 // Pure calculations, aggregates & score analytics
 // =============================================
 
@@ -7,7 +7,7 @@ var RhythiaX = RhythiaX || {};
 
 (function () {
   const SPEED_KEYS = ['1.45', '1.35', '1.25', '1.15', '1.00', '0.87', '0.80', '0.75'];
-  const GRADE_KEYS = ['SS', 'S', 'A', 'B', 'C', 'D'];
+  const GRADE_KEYS = ['SS', 'S', 'A', 'B', 'C', 'D', 'F'];
 
   const SPEED_COLORS = {
     '1.45': '#8960E8',
@@ -27,6 +27,7 @@ var RhythiaX = RhythiaX || {};
     'B': '#84CC16',
     'C': '#9CA3AF',
     'D': '#EF4444',
+    'F': '#B91C1C',
   };
 
   function parseNumber(value) {
@@ -51,8 +52,9 @@ var RhythiaX = RhythiaX || {};
     return bestKey;
   }
 
-  function getScoreAccuracy(s) {
-    if (!s) return 0;
+  // The accuracy in percent: the stored one, else worked out from notes and misses; NaN when neither is known.
+  function knownAccuracy(s) {
+    if (!s) return NaN;
     if (s.accuracy !== undefined && s.accuracy !== null && s.accuracy !== '—') {
       const parsed = parseNumber(s.accuracy);
       if (Number.isFinite(parsed) && parsed > 0) return parsed;
@@ -62,21 +64,24 @@ var RhythiaX = RhythiaX || {};
     if (notes > 0) {
       return Math.max(0, (1 - misses / notes) * 100);
     }
-    return 0;
+    return NaN;
   }
 
+  // The accuracy for display and sorting: 0 when it is not known.
+  function getScoreAccuracy(s) {
+    const acc = knownAccuracy(s);
+    return Number.isFinite(acc) ? acc : 0;
+  }
+
+  // The bucket letter (one of GRADE_KEYS) for a score, or '' when it belongs to no bucket.
   function getScoreGrade(s) {
-    if (!s) return 'D';
+    if (!s) return '';
     const rawGrade = String(s.grade || '').trim().toUpperCase();
     if (GRADE_KEYS.includes(rawGrade)) return rawGrade;
-    const acc = getScoreAccuracy(s);
+    // Without a stored letter the grade follows the one rule both looks share (shared/grades.js): F for a
+    // failed play, else the letter for the accuracy, and '' when the accuracy is not known.
     const misses = parseNumber(s.misses ?? s.missCount ?? 0);
-    if (acc >= 100 && misses === 0) return 'SS';
-    if (acc >= 98) return 'S';
-    if (acc >= 95) return 'A';
-    if (acc >= 93) return 'B';
-    if (acc >= 90) return 'C';
-    return 'D';
+    return RhythiaX.Grades.of({ accuracy: knownAccuracy(s), misses, failed: s.passed === false || s.failed === true });
   }
 
   function getScoreRawRp(s) {
@@ -295,7 +300,7 @@ var RhythiaX = RhythiaX || {};
 
       let pill = '';
       if (kind === 'accuracy') {
-        pill = `${acc}% ${grade} • ${speed}x`;
+        pill = `${acc}%${grade ? ' ' + grade : ''} • ${speed}x`;
       } else if (kind === 'rp') {
         pill = `${rp} RP • ${speed}x`;
       } else if (kind === 'notes') {

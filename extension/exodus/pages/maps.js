@@ -8,7 +8,7 @@ var RhythiaX = RhythiaX || {};
 (function () {
 'use strict';
 const K = () => RhythiaX.ExodusKit;
-const {SITE, Data, esc, fmt, REDUCED, mmss, diff, status, shell, pager, morph} = RhythiaX.ExodusKit;
+const {SITE, Data, esc, cssUrl, fmt, REDUCED, mmss, diff, status, shell, pager: pageNumbers, morph} = RhythiaX.ExodusKit;
 
 /* ════════════════════ Map list ════════════════════ */
 const BUCKETS = [['Any', 'All difficulties', 0, 20], ['Beginner', '★ 0–3', 0, 3], ['Intermediate', '★ 3–5', 3, 5], ['Hard', '★ 5–7', 5, 7], ['Expert', '★ 7–20', 7, 20]];
@@ -17,7 +17,7 @@ const NOTICE = 'rhythia_community_maps_notice_v1';
 
 function maps(host, ctx) {
   const R = host.shadowRoot, ac = new AbortController(), sig = {signal: ac.signal}, $ = s => R.querySelector(s);
-  const ui = shell(R, sig, ctx);
+  const ui = shell(R, sig);
   let explicit = false; try { explicit = localStorage.getItem('rhythiax_exodus_maps_explicit') === '1'; } catch (_) {}
   const S = {q: parse(), data: null, loading: false, seq: 0, enter: true, adv: false, ok: noticeOk()};
 
@@ -59,13 +59,13 @@ function maps(host, ctx) {
     return `<div class="container v-mbar">
       <form class="v-mrow" id="v-mfind"><label class="field v-mq"><svg class="ico" aria-hidden="true"><use href="#i-search"/></svg><span class="sr">Search maps</span><input id="v-mq" type="search" placeholder="Search by title" value="${esc(q.filter)}" autocomplete="off"></label>
         <label class="b-switch"><input type="checkbox" id="v-ranked" ${q.status === 'RANKED' ? 'checked' : ''}><i aria-hidden="true"></i><span>Gives RP<small>Show ranked maps only</small></span></label>
-        <label class="b-switch"><input type="checkbox" id="v-explicit" ${q.explicit ? 'checked' : ''}><i aria-hidden="true"></i><span>Show explicit<small>Include explicit maps</small></span></label>
+        <label class="b-switch"><input type="checkbox" id="v-explicit" ${q.explicit ? 'checked' : ''}><i aria-hidden="true"></i><span>Show explicit</span></label>
         <button class="btn v-advb" type="button" data-adv aria-expanded="${S.adv || Boolean(q.author || q.tags)}">Advanced Filters</button></form>
       ${S.adv || q.author || q.tags ? `<form class="v-mrow v-adv" id="v-madv"><label class="field"><span class="sr">Mapper</span><input id="v-author" placeholder="Mapper" value="${esc(q.author)}" autocomplete="off"></label><label class="field"><span class="sr">Tags</span><input id="v-tags" placeholder="Tags" value="${esc(q.tags)}" autocomplete="off"></label><button class="btn" type="submit">Apply</button>${q.author || q.tags ? '<button class="btn" type="button" data-clear-adv>Clear</button>' : ''}</form>` : ''}
       <div class="v-mrow v-mpills">
         <div class="pills v-buckets" aria-label="Difficulty">${BUCKETS.map(([l, s, lo, hi], i) => `<button type="button" aria-pressed="${b === i}" data-bucket="${i}"><b>${l}</b><small>${s}</small></button>`).join('')}</div>
         <div class="pills" aria-label="Sort">${SORTS.map(([k, l]) => `<button type="button" aria-pressed="${q.sort === k}" data-sort="${k}">${l}</button>`).join('')}</div>
-        <button class="btn v-dir" type="button" data-dir aria-label="${q.dir === 'desc' ? 'Descending' : 'Ascending'}" data-tip="<b>${q.dir === 'desc' ? 'Descending' : 'Ascending'}</b><small>Click to reverse the order</small>"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="${q.dir === 'desc' ? 'M12 5v14M6 13l6 6 6-6' : 'M12 19V5M6 11l6-6 6 6'}"/></svg></button>
+        <button class="btn v-dir" type="button" data-dir aria-label="${q.dir === 'desc' ? 'Descending' : 'Ascending'}" data-tip="<b>${q.dir === 'desc' ? 'Descending' : 'Ascending'}</b>"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="${q.dir === 'desc' ? 'M12 5v14M6 13l6 6 6-6' : 'M12 19V5M6 11l6-6 6 6'}"/></svg></button>
       </div></div>`;
   }
   function grid() {
@@ -78,19 +78,14 @@ function maps(host, ctx) {
     if (!d) return `<div class="h-maps v-mgrid">${Array.from({length: 12}, () => '<div class="skeleton" style="aspect-ratio:4/3.2;border-radius:16px"></div>').join('')}</div>`;
     if (!d.maps.length) return '<div class="empty" style="padding:72px 0"><b>No maps found</b>Try other filters.</div>';
     return `<div class="h-maps v-mgrid ${S.enter ? 'anim' : ''} ${S.loading ? 'busy' : ''}">${d.maps.map((m, i) => { const [dl, dc] = diff(m.difficulty), [sl, sc] = status(m); return `<a class="h-map" href="/maps/${esc(m.id)}" style="--i:${Math.min(i, 24)}">
-        <span class="art" style="background-image:url('${esc(m.img)}')"></span>
+        <span class="art" style="background-image:${cssUrl(m.img)}"></span>
         <span class="chips"><span class="h-diff" style="--c:${dc}">${dl}</span><span class="h-star num">★ ${fmt(m.stars, 2)}</span></span>
         ${m.status !== 'RANKED' || m.explicit ? `<span class="v-mflags">${m.status !== 'RANKED' ? `<span class="h-diff" style="--c:${sc}">${sl}</span>` : ''}${m.explicit ? '<span class="h-diff" style="--c:var(--bad)">Explicit</span>' : ''}</span>` : ''}
         <span class="plate"><b title="${esc(m.title)}">${esc(m.title)}</b><small><span>by ${esc(m.mapper || 'Unknown')}</span><span class="num">${mmss(m.length)}</span><span class="num">${fmt(m.plays)} plays</span></small></span></a>`; }).join('')}</div>`;
   }
   function pager() {
     const d = S.data; if (!S.ok || !d || d.total <= d.perPage) return '';
-    const pages = Math.ceil(d.total / d.perPage), p = S.q.page;
-    const nums = [...new Set([1, 2, p - 1, p, p + 1, pages - 1, pages])].filter(n => n >= 1 && n <= pages).sort((a, b) => a - b);
-    return `<div class="pager"><span class="num">${fmt((p - 1) * d.perPage + 1)}–${fmt(Math.min(p * d.perPage, d.total))} of ${fmt(d.total)} maps</span><div class="pages">
-      <button type="button" data-page="${p - 1}" ${p === 1 ? 'disabled' : ''} aria-label="Previous page">‹</button>
-      ${nums.map((n, i) => `${i && n - nums[i - 1] > 1 ? '<span>…</span>' : ''}<button type="button" data-page="${n}" ${n === p ? 'aria-current="page"' : ''}>${fmt(n)}</button>`).join('')}
-      <button type="button" data-page="${p + 1}" ${p === pages ? 'disabled' : ''} aria-label="Next page">›</button></div></div>`;
+    return pageNumbers(S.q.page, Math.ceil(d.total / d.perPage), '', {perPage: d.perPage, total: d.total, noun: 'maps'});
   }
   function render() {
     $('#hero').innerHTML = '';
@@ -151,7 +146,10 @@ function maps(host, ctx) {
     if (e.target.id === 'v-ranked') go({status: e.target.checked ? 'RANKED' : 'UNRANKED', page: 1});
     if (e.target.id === 'v-explicit') {
       explicit = e.target.checked; try { localStorage.setItem('rhythiax_exodus_maps_explicit', explicit ? '1' : '0'); } catch (_) {}
+      // The address follows back to page 1, so a later sync does not load the old page again.
+      const was = parse().page;
       S.q = {...S.q, explicit, page: 1}; load();
+      if (was > 1) go({page: 1});
     }
   }, sig);
   render();

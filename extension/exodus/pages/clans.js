@@ -8,31 +8,26 @@ var RhythiaX = RhythiaX || {};
 (function () {
 'use strict';
 const K = () => RhythiaX.ExodusKit;
-const {SITE, Data, esc, fmt, pct, REDUCED, ago, fullDate, diff, MODES, mods, flag, av, accTxt, shell, pager, morph} = RhythiaX.ExodusKit;
+const {SITE, Data, esc, cssUrl, fmt, pct, REDUCED, ago, fullDate, diff, MODES, mods, flag, av, accTxt, shell, pager: pageNumbers, watchDialog, morph} = RhythiaX.ExodusKit;
 
 /* ════════════════════ Clans ════════════════════ */
 const CLAN_SORTS = [['trophies', 'Trophies'], ['avg-rp', 'Avg RP'], ['total-rp', 'Total RP']];
-const TROPHY_TIP = '<b>Trophies</b><small>Ranked maps where this clan owns the #1 spot in the selected mode. Winners must have played within the last 30 days.</small>';
+const TROPHY_TIP = '<b>Trophies</b><small>Ranked maps where this clan holds #1 in this mode. Only players active in the last 30 days count.</small>';
 const TROPHY = '<svg class="v-trico" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 3h10v2h3v3a4 4 0 0 1-4 4h-.3A5 5 0 0 1 13 14.9V18h3v3H8v-3h3v-3.1A5 5 0 0 1 8.3 12H8a4 4 0 0 1-4-4V5h3V3Zm0 4H6v1a2 2 0 0 0 1 1.7V7Zm10 0v2.7A2 2 0 0 0 18 8V7h-1Z"/></svg>';
 const parseMode = v => (v === 'spin' || v === 'vr' ? v : 'normal');
 // Rhythia leaves a clan's average RP out until it has five members.
 const avgRp = c => (c.members < 5 ? null : Math.round(c.rp / c.members));
 const myClanId = me => Number(me?.clans?.id ?? me?.clan?.id ?? me?.clan) || null;
-const clanChip = (url, cls = 'v-clav') => `<i class="${cls}" style="background-image:url('${esc(url || '')}')"></i>`;
+const clanChip = (url, cls = 'v-clav') => `<i class="${cls}" style="background-image:${cssUrl(url || '')}"></i>`;
 function modePills(mode) {
   return `<div class="pills v-modes" aria-label="Clan gamemode">${Object.entries(MODES).map(([k, [l, img]]) => `<button type="button" aria-pressed="${mode === k}" data-mode="${k}"><img src="${SITE}/${img}" alt="">${l}</button>`).join('')}</div>`;
 }
-// Clan descriptions are written in Markdown; links, bold text and line breaks are kept.
-function richText(t) {
-  return esc(String(t || '').trim())
-    .replace(/\[([^\]]+)\]\((https?:\/\/[^)\s]+)\)|(https?:\/\/[^\s<]+)/g, (_, label, url, bare) => `<a href="${url || bare}" target="_blank" rel="noopener noreferrer" data-tip="<b>${url || bare}</b><small>Opens in a new tab</small>">${label || bare}</a>`)
-    .replace(/\*\*([^*]+)\*\*/g, '<b>$1</b>')
-    .replace(/\n/g, '<br>');
-}
+// Clan descriptions are written in Markdown and go through the shared reader (core/markdown.js), without pictures.
+const richText = t => RhythiaX.ExodusMarkdown.md(String(t || '').trim(), {images: false});
 
 function clans(host, ctx) {
   const R = host.shadowRoot, ac = new AbortController(), sig = {signal: ac.signal}, $ = s => R.querySelector(s);
-  const ui = shell(R, sig, ctx);
+  const ui = shell(R, sig);
   const S = {q: parse(), data: null, loading: false, seq: 0, enter: true, me: undefined};
 
   function parse() {
@@ -81,17 +76,12 @@ function clans(host, ctx) {
       <span class="pos num ${c.rank <= 3 ? 'p' + c.rank : ''}">${fmt(c.rank)}</span>
       <span class="who">${clanChip(c.avatar)}<b>${esc(c.name)}</b>${c.acronym ? `<span class="tag">${esc(c.acronym)}</span>` : ''}${c.id === mine ? '<span class="tag you">Your clan</span>' : ''}</span>
       <span class="tr num">${TROPHY}${fmt(c.trophies)}</span><span class="num">${fmt(c.members)}</span>
-      <span class="num ${a == null ? 'cap' : ''}" ${a == null ? 'data-tip="<b>Not shown</b><small>Rhythia shows the average from five members</small>"' : ''}>${a == null ? '—' : fmt(a)}</span>
+      <span class="num ${a == null ? 'cap' : ''}" ${a == null ? 'data-tip="<b>Not shown</b><small>Shown from five members</small>"' : ''}>${a == null ? '—' : fmt(a)}</span>
       <span class="num rp">${fmt(Math.round(c.rp))}</span></a>`; }).join('')}</div>`;
   }
   function pager() {
     const d = S.data; if (!d || d.total <= d.perPage) return '';
-    const pages = Math.ceil(d.total / d.perPage), p = S.q.page;
-    const nums = [...new Set([1, 2, p - 1, p, p + 1, pages - 1, pages])].filter(n => n >= 1 && n <= pages).sort((a, b) => a - b);
-    return `<div class="pager"><span class="num">${fmt((p - 1) * d.perPage + 1)}–${fmt(Math.min(p * d.perPage, d.total))} of ${fmt(d.total)} clans</span><div class="pages">
-      <button type="button" data-page="${p - 1}" ${p === 1 ? 'disabled' : ''} aria-label="Previous page">‹</button>
-      ${nums.map((n, i) => `${i && n - nums[i - 1] > 1 ? '<span>…</span>' : ''}<button type="button" data-page="${n}" ${n === p ? 'aria-current="page"' : ''}>${fmt(n)}</button>`).join('')}
-      <button type="button" data-page="${p + 1}" ${p === pages ? 'disabled' : ''} aria-label="Next page">›</button></div></div>`;
+    return pageNumbers(S.q.page, Math.ceil(d.total / d.perPage), '', {perPage: d.perPage, total: d.total, noun: 'clans'});
   }
   function render() {
     $('#hero').innerHTML = '';
@@ -160,7 +150,7 @@ function clans(host, ctx) {
 /* ════════════════════ Clan ════════════════════ */
 function clan(host, ctx) {
   const R = host.shadowRoot, ac = new AbortController(), sig = {signal: ac.signal}, $ = s => R.querySelector(s);
-  const ui = shell(R, sig, ctx);
+  const ui = shell(R, sig);
   const id = Number(ctx.id);
   const S = {mode: parseMode(new URLSearchParams(location.search).get('mode')), d: null, ranks: null, me: undefined, scores: [], scorePage: 1, more: false, enter: true, seq: 0};
 
@@ -175,15 +165,15 @@ function clan(host, ctx) {
     if (canInvite()) out.push(full ? '<button class="btn" type="button" disabled data-tip="<b>Clan is full</b>">Clan full</button>' : '<button class="btn primary" type="button" data-native-click="Invite">Invite</button>');
     if (isOwner()) out.push('<button class="btn" type="button" data-native-click="Edit clan">Edit clan</button>', '<button class="btn danger" type="button" data-native-click="Delete clan">Delete clan</button>');
     else if (isMember() && !canInvite()) out.push('<button class="btn danger" type="button" data-native-click="Leave clan">Leave clan</button>');
-    if (canInvite()) out.push('<button class="btn" type="button" data-native-x data-tip="<b>Rhythia’s clan page</b><small>Removing members and setting friends and rivals happen there</small>">Members and relationships</button>');
+    if (canInvite()) out.push('<button class="btn" type="button" data-native-x data-tip="<b>Rhythia’s clan page</b><small>Remove members, set friends and rivals</small>">Members and relationships</button>');
     return out.join('');
   }
   function hero() {
     const d = S.d, leader = d.members.find(m => m.id === d.owner), rk = S.ranks;
     const ranks = rk ? [['trophies', 'by trophies'], ['total-rp', 'by total RP'], ['avg-rp', 'by average RP']].filter(([k]) => rk[k]).map(([k, l]) => `<span class="v-chip plain num">#${fmt(rk[k])} ${l}</span>`).join('') : '';
-    return `<div class="v-banner" style="background-image:url('${esc(d.avatar || '')}')"></div>
+    return `<div class="v-banner" style="background-image:${cssUrl(d.avatar || '')}"></div>
       <div class="container v-hero-in">
-        <div class="v-cover" style="background-image:url('${esc(d.avatar || '')}')"></div>
+        <div class="v-cover" style="background-image:${cssUrl(d.avatar || '')}"></div>
         <div class="v-who"><span class="cap">Clan</span><h1>${esc(d.name)} ${d.acronym ? `<span class="v-acr">[${esc(d.acronym)}]</span>` : ''}</h1>
           <p class="v-by">${leader ? `<span>Clan leader <a href="/player/${esc(leader.id)}">${esc(leader.username)}</a></span>` : ''}<span data-tip="<b>${esc(fullDate(d.created))}</b>">Founded ${esc(ago(d.created))}</span></p>
           <div class="v-chips">${ranks}</div>
@@ -203,7 +193,7 @@ function clan(host, ctx) {
   function aboutSec() {
     const d = S.d;
     return `<section class="container v-sec v-clabout">
-      ${d.description.trim() ? `<div class="v-card"><small>Description</small><p class="v-cldesc">${richText(d.description)}</p></div>` : ''}
+      ${d.description.trim() ? `<div class="v-card"><small>Description</small><div class="v-cldesc md">${richText(d.description)}</div></div>` : ''}
       <div class="v-card"><small>Friends</small>${relList(d.friends)}<span class="cap">Friended by ${fmt(d.stats.friendedBy || 0)} ${d.stats.friendedBy === 1 ? 'clan' : 'clans'}</span></div>
       <div class="v-card"><small>Rivals</small>${relList(d.rivals)}<span class="cap">Rivaled by ${fmt(d.stats.rivaledBy || 0)} ${d.stats.rivaledBy === 1 ? 'clan' : 'clans'}</span></div>
     </section>`;
@@ -216,9 +206,9 @@ function clan(host, ctx) {
       <span class="pos num ${i < 3 ? 'p' + (i + 1) : ''}">${fmt(i + 1)}</span>
       <span class="who">${flag(m.flag)}${av(m.avatar)}<b>${esc(m.username)}</b>${m.id === d.owner ? '<span class="tag lead">Clan leader</span>' : ''}${S.me && m.id === S.me.id ? '<span class="tag you">You</span>' : ''}</span>
       <span class="rp num">${fmt(m.rp, 2)} <small>RP</small></span>
-      <span class="share" data-tip="<b>${pct(m.rp / total, 1)} of the clan’s RP</b><small>${esc(m.username)}’s RP out of the members’ ${fmt(Math.round(total))}</small>"><i style="width:${(m.rp / top) * 100}%"></i><em class="num">${pct(m.rp / total, 1)}</em></span>
+      <span class="share" data-tip="<b>${pct(m.rp / total, 1)} of the clan’s RP</b><small>Out of ${fmt(Math.round(total))} RP</small>"><i style="width:${(m.rp / top) * 100}%"></i><em class="num">${pct(m.rp / total, 1)}</em></span>
       <span class="num plays">${fmt(m.plays)} <small>plays</small></span></a>`).join('');
-    return `<section class="container v-sec" id="v-clmem"><div class="sec-head"><div><h2>Active members</h2><p class="lede">List of members that contribute to this clan. Share is each member’s part of the clan’s total RP.</p></div>
+    return `<section class="container v-sec" id="v-clmem"><div class="sec-head"><div><h2>Active members</h2><p class="lede">List of members that contribute to this clan.</p></div>
         ${countries.length ? `<div class="v-clcty" aria-label="Countries">${countries.map(([c, n]) => `<span data-tip="<b>${esc(c)}</b><small>${n} ${n === 1 ? 'member' : 'members'}</small>">${flag(c)}<b class="num">${n}</b></span>`).join('')}</div>` : ''}</div>
       ${list.length ? `<div class="v-table">${rows}</div>` : '<div class="empty"><b>No active members found.</b></div>'}</section>`;
   }
@@ -281,20 +271,11 @@ function clan(host, ctx) {
   }
 
   // After Rhythia's own dialog (invite, edit, leave) closes, read the clan again.
-  let watch = 0;
-  function watchDialog() {
-    clearInterval(watch);
-    let seen = false, ticks = 0;
-    watch = setInterval(() => {
-      const open = [...document.querySelectorAll('[role="dialog"],[role="alertdialog"]')].some(x => !x.closest('#root'));
-      if (open) seen = true;
-      if ((seen && !open) || ++ticks > 1200) { clearInterval(watch); if (seen && location.pathname === `/clans/${id}`) load(true); }
-    }, 500);
-  }
+  const dialog = watchDialog(`/clans/${id}`, () => load(true));
 
   R.addEventListener('click', e => {
     if (e.target.closest('[data-native-x]')) { ctx.showNative(); return; }
-    if (e.target.closest('[data-native-click]')) { watchDialog(); return; }
+    if (e.target.closest('[data-native-click]')) { dialog.start(); return; }
     const t = e.target.closest('[data-mode],[data-more-scores]');
     if (!t || t.disabled) return;
     if (t.dataset.mode) {
@@ -311,7 +292,7 @@ function clan(host, ctx) {
   return {
     state: () => ({}), idle: () => !S.more, relayout() {},
     page() { const m = parseMode(new URLSearchParams(location.search).get('mode')); if (m === S.mode) return; S.mode = m; S.ranks = null; load(); },
-    destroy() { ac.abort(); ui.hide(); clearInterval(watch); },
+    destroy() { ac.abort(); ui.hide(); dialog.stop(); },
   };
 }
 
@@ -350,6 +331,7 @@ const css = `
 .v-cldesc{line-height:1.65;color:var(--text-2);overflow-wrap:anywhere}
 .v-cldesc a{color:var(--accent-2);font-weight:600}
 .v-cldesc a:hover{text-decoration:underline;text-underline-offset:3px}
+.v-cldesc > :last-child{margin-bottom:0}
 .v-clrel{display:flex;align-items:center;gap:10px;min-width:0;padding:8px 10px;border-radius:10px;background:var(--panel-2)}
 .v-clrel b{font-weight:650;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .v-clrel:hover b{color:var(--accent-2)}

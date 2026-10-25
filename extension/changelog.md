@@ -3,6 +3,131 @@
 All notable user-facing changes are documented in this file.
 
 ---
+version: 1.3.1
+date: 2026-10-25
+title: Custom Themes
+listed: yes
+---
+
+## 1.3.1 - Custom Themes - 2026-10-25
+
+## Added
+
+- Pictures, GIFs and videos you add to a theme are kept on this computer and never uploaded.
+- Both theme editors list your last 6 uploads, to use again in any theme.
+
+## Changed
+
+- Online history uses an anonymous key for this installation, given out by the Reimagined server. It holds nothing about you or your game account and is removed when you choose This device.
+- Choosing This device also removes history already downloaded from the Reimagined server.
+- Clear history also clears the list of recent profile visits.
+- Saved profile history not updated for 90 days and Exodus' saved pages older than 7 days are now removed once a day, also while the look that saved them is not in use.
+- Grade letters in both looks are the ones Rhythia gives a score. Without one, the letter comes from accuracy on Rhythia's scale: SS for 100% without a miss, S from 98%, A from 95%, B from 93%, C from 90%, D from 80%, and F below 80% or for a failed play.
+- In the changelog, Reimagined's own notes show one version at a time, with the list of versions beside it and a switch between the Exodus and Classic changes.
+- Shorter text in the popup.
+
+## Fixed
+
+- Recent profile visits shows the five newest visits instead of the five oldest.
+- When the Reimagined server is slow or does not answer, the changelog shows the notes included with the extension instead of staying on loading.
+- When saved history is damaged, the popup no longer locks every setting: only the history settings are locked, and Repair sets the damaged profiles aside and keeps the rest.
+- Links in older release notes open the documents.
+
+# Exodus
+
+## Added
+
+- Own themes. In the popup, under Appearance, "New theme" opens a theme editor next to the page, and every change shows on the page at once.
+- In the theme editor, start from a ready-made theme, then choose a background (one colour, a gradient, a built-in picture, or your own picture, GIF or video), an accent, contrast and Lines or Floating. The other colours are worked out to stay readable.
+- In the theme editor's Advanced tab, click a part of the page, such as the top bar, banners, buttons, panels, lines or text, to change it.
+- Profile banners in a theme can show for everyone, only on your own profile, or not at all.
+- You can keep up to 24 own themes, listed under the built-in ones in the popup. The pencil on a theme opens it again to change, export or delete it.
+- Compare shows who is better at what, with both players' numbers, such as who is stronger on streams and why.
+- Compare shows the map types in each player's top 100 (jumps, streams, techs, varied) and how both players do on each type.
+- Techs, a map type for short moves where the speed keeps changing.
+
+## Changed
+
+- Map types look at how far and how evenly the cursor moves instead of only the time between notes. Fast jumps, including spins, now count as jumps.
+- A map also shows a second type when at least 30% of its notes are of that kind.
+- Quantum is shown on top of a map's type, for maps with at least a fifth of their notes in parts placed off the grid, instead of replacing the type.
+- Map types are worked out again once, with the new rules.
+- On a map page, the note shares add up to 100%, and off-grid notes are shown with the other numbers.
+- On a profile, the change shown next to the rank and RP is since yesterday instead of over the last 7 days.
+- In Compare, the player picker is a narrower window and lists the suggested players one per row.
+- Shorter text on every page, without captions that repeated what the page already shows.
+- Profile bios and clan descriptions use the same formatting as the wiki, so clan descriptions also show lists and headings.
+- The Data tab no longer lists recent profile visits, which only Classic records.
+- In the profile editor, social links follow the same rule as in Settings: they must start with https:// and lead to one of the listed sites, and the help under them says so.
+- Info boxes in the wiki are as wide as the other boxes.
+
+## Improved
+
+- Profiles no longer wait for the online history server. The history is filled in when it arrives.
+
+## Fixed
+
+- On someone else's profile, Statistics, Month in review and the status explanations name the player instead of saying "you".
+- The Add friend button now lines up with the player's name.
+- The Compare window has one scroll bar instead of two, and an older search there no longer replaces the results of a newer one.
+- Searching the changelog shows the matching entries.
+- On a profile, typing / in a text box or in one of Rhythia's windows no longer jumps to the score search.
+- A request that fails no longer replaces a profile's saved history, pinned scores or showcase with empty ones.
+- After you sign out or switch accounts, saved pages no longer show the previous account, its friends or its profile tools.
+- Clear history and This device take effect in open tabs at once.
+- When a profile updates in the background, the score search, filters and page are kept, and a change on your own profile, such as a pin or your bio, is no longer undone by an update that was already on its way.
+- A mod filter on profile scores no longer stays active, but hidden, after switching mode or list.
+- Title progression shows "Not ranked" instead of negative or zero places for players without a rank.
+- In Chrome, opening another page starts at the top.
+- On Home, the Spin and VR top 10 no longer stay empty after the page updates in the background.
+- On Maps, switching Show explicit goes back to page 1 and stays there.
+- On Skins, Copy colors leaves out values that are not colours, and says so when a colorset has none.
+- On Support, Gift no longer opens the purchase for yourself when clicked before the page knows who is signed in.
+- Closing Settings while it saves no longer skips saving About me or closes Settings opened again, and unsaved changes in Settings are kept when a button opens Rhythia's own Settings, for example for the avatar or banner.
+- On phones, the changelog uses the whole width instead of a narrow column, and the top of a collection page is shown in one column.
+
+# Classic
+
+## Added
+
+- Own themes for Classic, up to 12, listed under the built-in ones in the popup. Under Appearance, "New theme" opens a theme editor next to the page, and the pencil on a theme opens it again to change, export or delete it.
+- In Classic's theme editor, start from a ready-made theme, then choose the colours, contrast, whether to show the profile banner, and a background (one colour, a gradient, or your own picture, GIF or video), with see-through panels.
+
+## Changed
+
+- Classic Dark uses Rhythia's own dark colours.
+- Shorter text on Classic's panels.
+- Turning off Rank and stat history now also stops recording your history on this device.
+- A score card's menu follows the theme's colours.
+- On your profile, the settings button looks like the buttons beside it, with a sharper gear icon.
+- The pattern in the top bar takes the theme's colours.
+- When only the last 3 days of a profile's online history are available, Classic marks it "Online: last 3 days".
+
+## Improved
+
+- Classic appears as soon as Rhythia's page is ready instead of at fixed retry times, and still appears when the page takes a long time to load.
+- Profiles reuse the profile and pinned scores Rhythia's page has already loaded instead of asking for them again.
+- Score cards, the Statistics history and the title progression card are no longer redrawn when nothing in them changed, for example when fresh scores arrive.
+- When the Reimagined server answers slowly, a profile's online history is filled in when it arrives instead of being left out.
+
+## Fixed
+
+- On pages with Rhythia's footer, the whole page is no longer painted as one panel with dimmed text.
+- An open profile draws its history again after a setting is changed in the popup or after Clear history, instead of leaving it empty until the page is reloaded. This includes the history table of the Tables layout of Statistics.
+- Map art that could not load because of a connection or server problem is tried again after a few minutes instead of never.
+- On profiles, Rhythia's own score list and Statistics no longer stay hidden when Score cards or Statistics and playstyle is off, including right after switching it off, or when Classic cannot load the profile.
+- When the Reimagined server does not answer, a profile's online history is no longer hidden in its other open tabs or after a reload.
+- With the Tables layout of Statistics, the cards show how much each value has changed, next to the value.
+- In Compare, switching which player you compare as keeps the search, filter and sort of the shared maps.
+- With Friends list off, the friends counter on your own profile opens Rhythia's friends page instead of Classic's list, also right after switching it off.
+- Classic's compare tray no longer stays on screen over pages Exodus shows, for example after switching to Exodus.
+- Profile history recorded in two tabs at the same time no longer loses one of the visits.
+
+## Removed
+
+- The Profile visuals and Other effects switches under Easter eggs, which had no effect.
+
+---
 version: 1.3.0
 date: 2026-10-20
 title: Exodus
@@ -288,4 +413,4 @@ listed: yes
 ## Notes
 
 - The first release of Rhythia Reimagined. The main features can be enabled or disabled from the extension popup, so the experience can stay as focused or as feature-rich as you prefer.
-- See [Installation](INSTALLATION.md) and [Data and Sync](DATA-AND-SYNC.md) for current usage information. This 1.0.0 entry describes backup features available at that release.
+- See [Installation](https://github.com/Rhythia-Reimagined-Extension/Extension/blob/main/INSTALLATION.md) and [Data and Sync](https://github.com/Rhythia-Reimagined-Extension/Extension/blob/main/DATA-AND-SYNC.md) for current usage information. This 1.0.0 entry describes backup features available at that release.

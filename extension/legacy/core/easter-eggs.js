@@ -57,7 +57,7 @@ var RhythiaX = RhythiaX || {};
         return;
       }
       const parent = textNode.parentNode;
-      if (!parent || parent.isConnected === false || parent.closest?.(`.${EGG_CLASS}`) || parent.closest?.('[data-v3-root], [cmdk-root]')) {
+      if (!parent || parent.isConnected === false || parent.closest?.(`.${EGG_CLASS}`) || parent.closest?.('[cmdk-root]')) {
         return;
       }
       if (IGNORED_TAGS.has(parent.nodeName)) {
@@ -213,7 +213,7 @@ var RhythiaX = RhythiaX || {};
     scanFrame = 0;
     const nodes = pendingNodes;
     pendingNodes = new Set();
-    if (!isRunning || RhythiaX.Exodus?.owns?.()) return;
+    if (!isRunning || RhythiaX.exodusShowing?.()) return;
     for (const node of nodes) {
       // A node inside another queued node is covered by that one's scan.
       let covered = false;
@@ -281,6 +281,8 @@ var RhythiaX = RhythiaX || {};
   function start() {
     if (isRunning) return;
     if (!isEasterEggsEnabled()) return;
+    // Not while Exodus shows the page: the eggs start again when it is handed back (below).
+    if (RhythiaX.ClassicIdle?.isSuspended?.()) return;
 
     isRunning = true;
     currentPath = typeof window !== 'undefined' && window.location ? window.location.pathname : '';
@@ -293,7 +295,7 @@ var RhythiaX = RhythiaX || {};
       observer = new MutationObserver(mutations => {
         if (!isRunning) return;
         // Exodus draws its own page; Rhythia's, unseen underneath, needs no eggs.
-        if (RhythiaX.Exodus?.owns?.()) return;
+        if (RhythiaX.exodusShowing?.()) return;
         try {
           handleRouteChange();
           for (const mutation of mutations) {
@@ -353,6 +355,10 @@ var RhythiaX = RhythiaX || {};
     isEnabled: isEasterEggsEnabled,
     isRunning: () => isRunning,
   };
+
+  // Exodus took the page: the observer and the timers stop and Rhythia's numbers get their own text back.
+  RhythiaX.ClassicIdle?.onSuspend?.(stop);
+  RhythiaX.ClassicIdle?.onResume?.(() => { if (isEasterEggsEnabled()) start(); });
 
   if (typeof chrome !== 'undefined' && chrome.storage?.onChanged) {
     chrome.storage.onChanged.addListener((changes, areaName) => {

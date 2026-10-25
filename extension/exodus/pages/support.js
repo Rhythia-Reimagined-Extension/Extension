@@ -8,7 +8,7 @@ var RhythiaX = RhythiaX || {};
 (function () {
 'use strict';
 const K = () => RhythiaX.ExodusKit;
-const {SITE, Data, esc, fmt, REDUCED, status, flag, row} = RhythiaX.ExodusKit;
+const {SITE, Data, esc, fmt, REDUCED} = RhythiaX.ExodusKit;
 
 /* ════════════════════ Support ════════════════════ */
 // Rhythia's texts and pictures. Paying stays in Rhythia's own dialog (Paynet), and the page Paynet
@@ -23,12 +23,12 @@ const HEART_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" st
 const GIFT_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="8" width="18" height="4" rx="1"/><path d="M12 8v13"/><path d="M19 12v7a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2v-7"/><path d="M7.5 8a2.5 2.5 0 0 1 0-5A4.8 8 0 0 1 12 8a4.8 8 0 0 1 4.5-5 2.5 2.5 0 0 1 0 5"/></svg>';
 // The same rounding as Rhythia's own "… left".
 const timeLeft = d => { const t = Math.ceil((new Date(d) - Date.now()) / 864e5); if (t <= 0) return 'expired'; const [n, u] = t >= 365 ? [Math.max(1, Math.round(t / 365)), 'year'] : t >= 30 ? [Math.max(1, Math.round(t / 30)), 'month'] : [t, 'day']; return `${n} ${u}${n === 1 ? '' : 's'} left`; };
-// Rhythia's title next to the name, as on its leaderboard.
-const titleImg = (rp = 0, pos = 0) => { const [k, l] = rp >= 10000 && pos > 0 && pos <= 30 ? ['grandmaster', 'Grandmaster'] : [[10000, 'candidate_grandmaster', 'Candidate Grandmaster'], [5000, 'master', 'Master'], [2500, 'candidate_master', 'Candidate Master'], [1500, 'expert', 'Expert'], [0, 'novice', 'Novice']].find(t => rp >= t[0]).slice(1); return `<img class="s-ctt" src="${SITE}/titles/${k}.png" alt="${l}" data-tip="<b>${l}</b><small>Rhythia title</small>">`; };
+// Rhythia's title next to the name, as on its leaderboard (core/kit.js titleOf).
+const titleImg = (rp = 0, pos = 0) => { const {id: k, name: l} = K().titleOf(rp, pos); return `<img class="s-ctt" src="${SITE}/titles/${k}.png" alt="${l}" data-tip="<b>${l}</b><small>Rhythia title</small>">`; };
 const SUP_NOTE = '<p class="s-note">Each payment adds one month of supporter status to your account or a recipient of your choice.</p>';
 function support(host, ctx) {
   const R = host.shadowRoot, ac = new AbortController(), sig = {signal: ac.signal}, $ = s => R.querySelector(s);
-  const ui = K().shell(R, sig, ctx);
+  const ui = K().shell(R, sig);
   const S = {me: undefined};
   let io = null, raf = 0, gift = 0;
 
@@ -92,13 +92,15 @@ function support(host, ctx) {
   R.addEventListener('click', e => {
     if (!e.target.closest('[data-gift]')) return;
     if (!ui.native('Support now')) { ui.toast('Rhythia is still loading. Try again in a moment.'); return; }
-    if (!S.me) return;
+    // Signed out (known): Rhythia shows its sign-in prompt. Not known yet: look for the switch anyway; a signed-out
+    // player never gets it and the search simply ends.
+    if (S.me === null) return;
     const t0 = Date.now();
     clearInterval(gift);
     gift = setInterval(() => {
       const b = [...document.querySelectorAll('[role=dialog] button')].find(x => x.textContent.trim() === 'For another user');
       if (b) { b.click(); clearInterval(gift); setTimeout(() => document.querySelector('[role=dialog] input[placeholder*="username" i]')?.focus(), 60); }
-      else if (Date.now() - t0 > 3000) clearInterval(gift);
+      else if (Date.now() - t0 > 3000) { clearInterval(gift); if (S.me) ui.toast('Choose “For another user” in Rhythia’s dialog to send it as a gift.'); }
     }, 80);
   }, sig);
 

@@ -10,9 +10,9 @@
 // "# Legacy" also means Classic; the code keeps Classic's folder name, legacy.
 // Notes before the first such heading belong to both.
 //
-// Both changelogs show them the same way: each look's part under its own header (LOOKS), sections such as
-// "## Featured" with the same icon and colour (category, ICONS), and a list item written "- Title: text"
-// with its title in bold.
+// Both changelogs show them the same way: a list of versions beside one release, a switch between the looks
+// (sections, forLook; the reader's own look first), sections such as "## Featured" with the same icon
+// (category, ICONS), and a list item written "- Title: text" with its title in bold.
 
 var RhythiaX = RhythiaX || {};
 
@@ -20,15 +20,10 @@ RhythiaX.Releases = RhythiaX.Releases || (function () {
   'use strict';
 
   const ENGINES = { exodus: 'Exodus', legacy: 'Classic' };
-  const SVG = paths => `<svg viewBox="0 0 24 24" focusable="false">${paths}</svg>`;
-  // '' is the part for both looks, shown with this header once an entry has look parts.
+  // The name each changelog shows for a look's part (LOOKS[look].label).
   const LOOKS = {
-    '': { label: 'Both looks', blurb: 'For everyone, whichever look you use.',
-      icon: SVG('<rect x="3.5" y="7.5" width="11" height="11" rx="2.5"></rect><path d="M9.5 5.5v-.5a2 2 0 0 1 2-2H19a2 2 0 0 1 2 2v7.5a2 2 0 0 1-2 2h-.5"></path>') },
-    exodus: { label: ENGINES.exodus, blurb: 'The new look, drawn from Rhythia\u2019s own data.',
-      icon: SVG('<rect x="3" y="3.5" width="18" height="17" rx="3"></rect><path d="M3 9h18M9.5 9v11.5"></path>') },
-    legacy: { label: ENGINES.legacy, blurb: 'The look you know, added on top of Rhythia\u2019s pages.',
-      icon: SVG('<path d="m12 3 9 4.75-9 4.75-9-4.75L12 3Z"></path><path d="m3 12.25 9 4.75 9-4.75"></path><path d="m3 16.5 9 4.75 9-4.75"></path>') },
+    exodus: { label: ENGINES.exodus },
+    legacy: { label: ENGINES.legacy },
   };
   const ICONS = {
     featured: '<svg viewBox="0 0 24 24" focusable="false"><path d="m12 2.5 2.2 5.5 5.8 1.8-4.4 4.1 1.2 5.8-4.8-3.1-4.8 3.1 1.2-5.8-4.4-4.1 5.8-1.8L12 2.5Z"></path><path d="M19.5 3.5v3M21 5h-3M4 17v2M5 18H3"></path></svg>',
@@ -121,6 +116,55 @@ RhythiaX.Releases = RhythiaX.Releases || (function () {
     return out.map(g => ({ engine: g.engine, label: g.label, content: titled(g.lines.join('\n').trim()) })).filter(g => g.content);
   }
 
+  // One release for the version reader of both changelogs: its sections in the usual order, each item with the
+  // look it belongs to ('' for both). Sections of the same kind from each look's part are merged, and an item
+  // written the same way under Exodus and under Classic is listed once, for both.
+  const ORDER = ['featured', 'added', 'changed', 'improved', 'fixed', 'removed', 'security', 'deprecated', 'experimental', 'notes'];
+  const LABELS = { featured: 'Featured', added: 'Added', changed: 'Changed', improved: 'Improved', fixed: 'Fixed', removed: 'Removed',
+    security: 'Security', deprecated: 'Deprecated', experimental: 'Experimental', notes: 'Notes' };
+  function sections(entry) {
+    const groups = entry?.groups?.length ? entry.groups : [{ engine: '', content: entry?.content || '' }];
+    const map = new Map();
+    const section = (key, label) => map.get(key) || map.set(key, { cat: category(key) ? key : '', label, items: [] }).get(key);
+    for (const group of groups) {
+      let current = null, item = null;
+      for (const line of String(group.content || '').split('\n')) {
+        const heading = line.match(/^#{1,6}\s+(.+?)\s*$/);
+        if (heading) {
+          const cat = category(heading[1]);
+          current = section(cat || heading[1].toLowerCase(), cat ? LABELS[cat] || heading[1] : heading[1]);
+          item = null;
+          continue;
+        }
+        if (!line.trim() || /^(?:---+|___+)$/.test(line.trim())) { item = null; continue; }
+        const bullet = line.match(/^[-*+]\s+(.*)$/);
+        if (item && !bullet && /^\s/.test(line)) { item.text += ' ' + line.trim(); continue; }
+        current = current || section('notes', LABELS.notes);
+        item = { text: bullet ? bullet[1].trim() : line.trim(), look: group.engine || '' };
+        current.items.push(item);
+      }
+    }
+    const list = [...map.values()].filter(s => s.items.length);
+    for (const s of list) {
+      const seen = new Map();
+      s.items = s.items.filter(i => {
+        const twin = seen.get(i.text);
+        if (!twin) { seen.set(i.text, i); return true; }
+        if (twin.look !== i.look) twin.look = '';
+        return false;
+      });
+    }
+    const rank = s => (ORDER.includes(s.cat) ? ORDER.indexOf(s.cat) : ORDER.length - 1.5);
+    return list.map((s, i) => ({ s, i })).sort((a, b) => rank(a.s) - rank(b.s) || a.i - b.i).map(x => x.s);
+  }
+  // The looks a release has its own notes for (['exodus', 'legacy'] or one of them); none before 1.3.0.
+  const looksOf = entry => ['exodus', 'legacy'].filter(look => entry?.groups?.some(g => g.engine === look));
+  // The sections one look sees ('all' keeps every item), and the empty ones dropped.
+  const forLook = (list, look) => list.map(s => ({ ...s, items: s.items.filter(i => look === 'all' || !i.look || i.look === look) })).filter(s => s.items.length);
+  // "5 added · 3 changed · 2 fixed" for the header of a release.
+  const summary = list => list.filter(s => ['added', 'changed', 'improved', 'fixed', 'removed'].includes(s.cat))
+    .map(s => `${s.items.length} ${s.label.toLowerCase()}`).join(' · ');
+
   // The first list wins for a version it has.
   function merge(primary, secondary) {
     const seen = new Set(), all = [];
@@ -141,5 +185,5 @@ RhythiaX.Releases = RhythiaX.Releases || (function () {
   }
   const entries = () => load().then(r => r.list);
 
-  return { entries, load, parse, merge, category, ENGINES, LOOKS, ICONS };
+  return { entries, load, parse, merge, category, sections, looksOf, forLook, summary, ENGINES, LOOKS, ICONS };
 })();

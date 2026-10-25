@@ -154,6 +154,121 @@ body[data-rhythiax-theme] #root .hover\:text-blue-400,
 body[data-rhythiax-theme] #root .prose-a\:text-blue-400,
 body[data-rhythiax-theme] #root .text-blue-400 { color: var(--rhythiax-accent) !important; }
 
+/* An own theme's accent on the rest of Rhythia's blue, indigo and sky utilities: solid fills and the fills that
+   are mostly accent (with the text colour that reads on the accent), tints, borders, rings, focus outlines,
+   native form controls, accent text and the nav hover outside the top bar.
+   Built-in themes keep Rhythia's colours there. The map status pills over map art keep theirs in every theme
+   (themes/white/theme.css). :is(#root, ...) weighs as much as the #root rules above and also reaches dialogs
+   and popovers, which Radix mounts outside #root. */
+:where(html[data-rhythiax-own-theme]) body[data-rhythiax-theme] :is(#root, [role="dialog"], [data-radix-popper-content-wrapper]) :is(.bg-blue-500, .data-\[state\=checked\]\:bg-blue-500[data-state="checked"]) {
+  background-color: var(--rhythiax-accent) !important;
+  color: var(--rhythiax-on-accent, #ffffff) !important;
+}
+:where(html[data-rhythiax-own-theme]) body[data-rhythiax-theme] :is(#root, [role="dialog"], [data-radix-popper-content-wrapper]) :is(button.bg-blue-500:hover, .hover\:bg-blue-400:hover) {
+  background-color: color-mix(in srgb, var(--rhythiax-accent) 85%, var(--rhythiax-text-strong)) !important;
+  color: var(--rhythiax-on-accent, #ffffff) !important;
+}
+:where(html[data-rhythiax-own-theme]) body[data-rhythiax-theme] :is(#root, [role="dialog"], [data-radix-popper-content-wrapper]) :is(.bg-blue-500, .data-\[state\=checked\]\:bg-blue-500[data-state="checked"], .hover\:bg-blue-400:hover) .text-white {
+  color: var(--rhythiax-on-accent, #ffffff) !important;
+}
+:where(html[data-rhythiax-own-theme]) body[data-rhythiax-theme] :is(#root, [role="dialog"], [data-radix-popper-content-wrapper]) .data-\[state\=checked\]\:border-blue-500[data-state="checked"] {
+  border-color: var(--rhythiax-accent) !important;
+}
+:where(html[data-rhythiax-own-theme]) body[data-rhythiax-theme] :is(#root, [role="dialog"], [data-radix-popper-content-wrapper]) :is(.bg-blue-400\/10, .bg-indigo-500\/10) {
+  background-color: color-mix(in srgb, var(--rhythiax-accent) 10%, transparent) !important;
+}
+/* The faint blue-500 tints: the 11% the #root bridge rule above gives every theme, here for an own theme in the
+   dialogs and menus as well (Radix menus mark the checked item with data-[state=checked]:bg-blue-500/10). */
+:where(html[data-rhythiax-own-theme]) body[data-rhythiax-theme] :is(#root, [role="dialog"], [data-radix-popper-content-wrapper]) :is(.bg-blue-500\/10, .bg-blue-500\/15, .bg-blue-500\/40, .bg-blue-500\/\[0\.06\], .data-\[state\=checked\]\:bg-blue-500\/10[data-state="checked"], .data-\[state\=checked\]\:hover\:bg-blue-500\/10[data-state="checked"]:hover, .data-\[state\=checked\]\:focus\:bg-blue-500\/15[data-state="checked"]:focus, .hover\:bg-blue-500\/\[0\.14\]:hover) {
+  background-color: color-mix(in srgb, var(--rhythiax-accent) 11%, transparent) !important;
+}
+/* Fills of 60% accent and more: the text takes the colour that reads on the accent. */
+:where(html[data-rhythiax-own-theme]) body[data-rhythiax-theme] :is(#root, [role="dialog"], [data-radix-popper-content-wrapper]) .bg-indigo-500\/60 {
+  background-color: color-mix(in srgb, var(--rhythiax-accent) 60%, transparent) !important;
+  color: var(--rhythiax-on-accent, #ffffff) !important;
+}
+:where(html[data-rhythiax-own-theme]) body[data-rhythiax-theme] :is(#root, [role="dialog"], [data-radix-popper-content-wrapper]) :is(.bg-blue-600\/65, .bg-sky-600\/65):not(img[src*="beatmap-"] ~ div *) {
+  background-color: color-mix(in srgb, var(--rhythiax-accent) 65%, transparent) !important;
+  color: var(--rhythiax-on-accent, #ffffff) !important;
+}
+:where(html[data-rhythiax-own-theme]) body[data-rhythiax-theme] :is(#root, [role="dialog"], [data-radix-popper-content-wrapper]) .bg-blue-400\/70 {
+  background-color: color-mix(in srgb, var(--rhythiax-accent) 70%, transparent) !important;
+  color: var(--rhythiax-on-accent, #ffffff) !important;
+}
+:where(html[data-rhythiax-own-theme]) body[data-rhythiax-theme] :is(#root, [role="dialog"], [data-radix-popper-content-wrapper]) .bg-sky-400\/80:not(img[src*="beatmap-"] ~ div *) {
+  background-color: color-mix(in srgb, var(--rhythiax-accent) 80%, transparent) !important;
+  color: var(--rhythiax-on-accent, #ffffff) !important;
+}
+:where(html[data-rhythiax-own-theme]) body[data-rhythiax-theme] :is(#root, [role="dialog"], [data-radix-popper-content-wrapper]) .data-\[state\=open\]\:bg-\[\#4D65C0\]\/50[data-state="open"] {
+  background-color: var(--rhythiax-nav-hover) !important;
+}
+:where(html[data-rhythiax-own-theme]) body[data-rhythiax-theme] :is(#root, [role="dialog"], [data-radix-popper-content-wrapper]) .hover\:bg-\[\#4D65C0\]\/50:hover {
+  background-color: var(--rhythiax-nav-hover) !important;
+}
+@media (min-width: 1280px) {
+  :where(html[data-rhythiax-own-theme]) body[data-rhythiax-theme] :is(#root, [role="dialog"], [data-radix-popper-content-wrapper]) .xl\:hover\:bg-\[\#4D65C0\]\/50:hover {
+    background-color: var(--rhythiax-nav-hover) !important;
+  }
+}
+/* Borders in the accent at Rhythia's opacities; the sky ones keep their colour on the pills over map art. */
+:where(html[data-rhythiax-own-theme]) body[data-rhythiax-theme] :is(#root, [role="dialog"], [data-radix-popper-content-wrapper]) :is(.border-indigo-400\/25, .border-sky-400\/30:not(img[src*="beatmap-"] ~ div *)) {
+  border-color: color-mix(in srgb, var(--rhythiax-accent) 28%, transparent) !important;
+}
+:where(html[data-rhythiax-own-theme]) body[data-rhythiax-theme] :is(#root, [role="dialog"], [data-radix-popper-content-wrapper]) :is(.border-indigo-400\/55, .border-sky-400\/55:not(img[src*="beatmap-"] ~ div *)) {
+  border-color: color-mix(in srgb, var(--rhythiax-accent) 55%, transparent) !important;
+}
+:where(html[data-rhythiax-own-theme]) body[data-rhythiax-theme] :is(#root, [role="dialog"], [data-radix-popper-content-wrapper]) .hover\:border-sky-400\/85:hover:not(img[src*="beatmap-"] ~ div *) {
+  border-color: color-mix(in srgb, var(--rhythiax-accent) 85%, transparent) !important;
+}
+:where(html[data-rhythiax-own-theme]) body[data-rhythiax-theme] :is(#root, [role="dialog"], [data-radix-popper-content-wrapper]) .border-blue-300\/30 {
+  border-color: color-mix(in srgb, var(--rhythiax-accent) 30%, transparent) !important;
+}
+:where(html[data-rhythiax-own-theme]) body[data-rhythiax-theme] :is(#root, [role="dialog"], [data-radix-popper-content-wrapper]) .border-b-blue-400\/70 {
+  border-bottom-color: color-mix(in srgb, var(--rhythiax-accent) 70%, transparent) !important;
+}
+:where(html[data-rhythiax-own-theme]) body[data-rhythiax-theme] :is(#root, [role="dialog"], [data-radix-popper-content-wrapper]) .focus-visible\:border-blue-400\/40:focus-visible {
+  border-color: color-mix(in srgb, var(--rhythiax-accent) 40%, transparent) !important;
+}
+:where(html[data-rhythiax-own-theme]) body[data-rhythiax-theme] :is(#root, [role="dialog"], [data-radix-popper-content-wrapper]) :is(.focus-visible\:ring-blue-300:focus-visible, .focus-visible\:ring-blue-400:focus-visible) {
+  --tw-ring-color: var(--rhythiax-accent) !important;
+}
+:where(html[data-rhythiax-own-theme]) body[data-rhythiax-theme] :is(#root, [role="dialog"], [data-radix-popper-content-wrapper]) :is(.ring-blue-400\/20, .focus-visible\:ring-blue-400\/20:focus-visible) {
+  --tw-ring-color: color-mix(in srgb, var(--rhythiax-accent) 20%, transparent) !important;
+}
+:where(html[data-rhythiax-own-theme]) body[data-rhythiax-theme] :is(#root, [role="dialog"], [data-radix-popper-content-wrapper]) :is(.ring-blue-400\/30, .focus-visible\:ring-blue-400\/30:focus-visible, .data-\[state\=checked\]\:ring-blue-400\/30[data-state="checked"]) {
+  --tw-ring-color: color-mix(in srgb, var(--rhythiax-accent) 30%, transparent) !important;
+}
+:where(html[data-rhythiax-own-theme]) body[data-rhythiax-theme] :is(#root, [role="dialog"], [data-radix-popper-content-wrapper]) .focus-visible\:ring-blue-400\/50:focus-visible {
+  --tw-ring-color: color-mix(in srgb, var(--rhythiax-accent) 50%, transparent) !important;
+}
+:where(html[data-rhythiax-own-theme]) body[data-rhythiax-theme] :is(#root, [role="dialog"], [data-radix-popper-content-wrapper]) :is(.focus-visible\:outline-\[\#4D65C0\]:focus-visible, .focus-visible\:outline-blue-400:focus-visible) {
+  outline-color: var(--rhythiax-accent) !important;
+}
+:where(html[data-rhythiax-own-theme]) body[data-rhythiax-theme] :is(#root, [role="dialog"], [data-radix-popper-content-wrapper]) :is(.accent-blue-400, .accent-blue-500) {
+  accent-color: var(--rhythiax-accent) !important;
+}
+:where(html[data-rhythiax-own-theme]) body[data-rhythiax-theme] :is(#root, [role="dialog"], [data-radix-popper-content-wrapper]) .decoration-blue-400\/40 {
+  text-decoration-color: color-mix(in srgb, var(--rhythiax-accent) 40%, transparent) !important;
+}
+:where(html[data-rhythiax-own-theme]) body[data-rhythiax-theme] :is(#root, [role="dialog"], [data-radix-popper-content-wrapper]) :is(.text-indigo-300, .text-sky-400) {
+  color: var(--rhythiax-accent) !important;
+}
+:where(html[data-rhythiax-own-theme]) body[data-rhythiax-theme] :is(#root, [role="dialog"], [data-radix-popper-content-wrapper]) .text-indigo-100 {
+  color: color-mix(in srgb, var(--rhythiax-accent) 25%, var(--rhythiax-text-strong)) !important;
+}
+:where(html[data-rhythiax-own-theme]) body[data-rhythiax-theme] :is(#root, [role="dialog"], [data-radix-popper-content-wrapper]) .text-blue-100 {
+  color: color-mix(in srgb, var(--rhythiax-accent) 25%, var(--rhythiax-text-strong)) !important;
+}
+:where(html[data-rhythiax-own-theme]) body[data-rhythiax-theme] :is(#root, [role="dialog"], [data-radix-popper-content-wrapper]) :is(.text-blue-200, .hover\:text-blue-200:hover) {
+  color: color-mix(in srgb, var(--rhythiax-accent) 65%, var(--rhythiax-text-strong)) !important;
+}
+:where(html[data-rhythiax-own-theme]) body[data-rhythiax-theme] :is(#root, [role="dialog"], [data-radix-popper-content-wrapper]) .text-blue-200\/70 {
+  color: color-mix(in srgb, color-mix(in srgb, var(--rhythiax-accent) 65%, var(--rhythiax-text-strong)) 70%, transparent) !important;
+}
+:where(html[data-rhythiax-own-theme]) body[data-rhythiax-theme] :is(#root, [role="dialog"], [data-radix-popper-content-wrapper]) .fill-sky-400 {
+  fill: var(--rhythiax-accent) !important;
+}
+
 /* Radix mounts dialogs in a body-level portal, outside #root. Keep the same
    literal utility classes themeable there as well. */
 body[data-rhythiax-theme] [role="dialog"]:not(.rhythiax-friends-quick-panel):not(.rhythiax-friends-quick-backdrop) {
@@ -243,7 +358,7 @@ body[data-rhythiax-theme] #root textarea::placeholder { color: var(--rhythiax-te
 body[data-rhythiax-theme] #root .to-neutral-950,
 body[data-rhythiax-theme] #root .from-\[\#0a0a0a\] { --tw-gradient-to: var(--rhythiax-page-bg) !important; --tw-gradient-from: var(--rhythiax-page-bg) !important; }
 body[data-rhythiax-theme] #root footer,
-body[data-rhythiax-theme] #root div:has(a[href*="github.com/Capo-Games/dmca"]),
+body[data-rhythiax-theme] #root div:has(a[href*="github.com/Capo-Games/dmca"]):not(:has(footer)),
 body[data-rhythiax-theme] #root div.border-\[\#4D65C0\],
 body[data-rhythiax-theme] #root .\[\&_\[cmdk-group-heading\]\]\:text-neutral-500,
 body[data-rhythiax-theme] #root .data-\[placeholder\]\:text-neutral-500,
@@ -251,13 +366,13 @@ body[data-rhythiax-theme] #root .marker\:text-neutral-500,
 body[data-rhythiax-theme] #root .placeholder\:text-neutral-500,
 body[data-rhythiax-theme] #root .text-neutral-500 { color: var(--rhythiax-text-muted) !important; }
 body[data-rhythiax-theme] #root footer,
-body[data-rhythiax-theme] #root div:has(a[href*="github.com/Capo-Games/dmca"]),
+body[data-rhythiax-theme] #root div:has(a[href*="github.com/Capo-Games/dmca"]):not(:has(footer)),
 body[data-rhythiax-theme] #root div.border-\[\#4D65C0\] {
   background-color: var(--rhythiax-surface) !important;
   border-color: var(--rhythiax-border) !important;
 }
 body[data-rhythiax-theme="white"] #root footer,
-body[data-rhythiax-theme="white"] #root div:has(a[href*="github.com/Capo-Games/dmca"]),
+body[data-rhythiax-theme="white"] #root div:has(a[href*="github.com/Capo-Games/dmca"]):not(:has(footer)),
 body[data-rhythiax-theme="white"] #root div.border-\[\#4D65C0\] {
   color: var(--rhythiax-text) !important;
   background-color: var(--rhythiax-surface) !important;
@@ -271,41 +386,20 @@ body[data-rhythiax-theme] #root a.underline-offset-4 { color: var(--rhythiax-acc
    their values the same readable foreground as the rest of the active theme. */
 
 
-/* The settings control is native markup with a literal dark background. Keep
-   it on the preset surface and tint its icon instead of inheriting white-mode
-   image treatment in Reimagined. */
-body[data-rhythiax-theme] #root .bg-control:has(img[src*="settingsicon"]),
-body[data-rhythiax-theme] #root .focus\:bg-control-hover:has(img[src*="settingsicon"]),
-body[data-rhythiax-theme] #root .hover\:bg-control-hover:has(img[src*="settingsicon"]),
-body[data-rhythiax-theme] #root button:has(img[src*="settingsicon"]),
-body[data-rhythiax-theme] #root button[aria-label="Settings"] {
-  background: var(--rhythiax-inner-surface) !important;
-  border: 1px solid var(--rhythiax-border-strong) !important;
-  color: var(--rhythiax-text-strong) !important;
+/* The profile's settings button (Rhythia's button.bg-control > img[src="/settingsicon.png"]) takes the fill,
+   border and hover of the buttons beside it (Compare, friends) from the .bg-control rules, as no rule picks it out
+   any more. In place of Rhythia's 92px picture shrunk to 20px, which every theme had to filter, it shows a sharp
+   gear drawn in the theme's text colour. */
+html body[data-rhythiax-theme] #root button > img[src*="settingsicon"] {
+  display: none !important;
 }
-body[data-rhythiax-theme="rhythia-reimagined"] #root .bg-control:has(img[src*="settingsicon"]),
-body[data-rhythiax-theme="rhythia-reimagined"] #root .focus\:bg-control-hover:has(img[src*="settingsicon"]),
-body[data-rhythiax-theme="rhythia-reimagined"] #root .hover\:bg-control-hover:has(img[src*="settingsicon"]),
-body[data-rhythiax-theme="rhythia-reimagined"] #root button:has(img[src*="settingsicon"]),
-body[data-rhythiax-theme="rhythia-reimagined"] #root button[aria-label="Settings"] {
-  background: linear-gradient(135deg, rgba(124, 58, 237, 0.35) 0%, rgba(91, 33, 182, 0.45) 100%) !important;
-  border-color: rgba(221, 214, 254, .36) !important;
-}
-body[data-rhythiax-theme="rhythia-reimagined"] #root .bg-control:has(img[src*="settingsicon"]):hover,
-body[data-rhythiax-theme="rhythia-reimagined"] #root .focus\:bg-control-hover:has(img[src*="settingsicon"]):hover,
-body[data-rhythiax-theme="rhythia-reimagined"] #root .hover\:bg-control-hover:has(img[src*="settingsicon"]):hover,
-body[data-rhythiax-theme="rhythia-reimagined"] #root button:has(img[src*="settingsicon"]):hover,
-body[data-rhythiax-theme="rhythia-reimagined"] #root button[aria-label="Settings"]:hover {
-  background: linear-gradient(135deg, rgba(139, 92, 246, 0.55) 0%, rgba(109, 40, 217, 0.65) 100%) !important;
-  border-color: rgba(221, 214, 254, .65) !important;
-  box-shadow: 0 0 12px rgba(139, 92, 246, 0.35) !important;
-}
-body[data-rhythiax-theme="rhythia-reimagined"] #root [class*="bg-[#1e1f21]"]:has(img[src*="settingsicon"]) img[src*="settingsicon"],
-body[data-rhythiax-theme="rhythia-reimagined"] #root [class*="bg-control"]:has(img[src*="settingsicon"]) img[src*="settingsicon"],
-body[data-rhythiax-theme="rhythia-reimagined"] #root button:has(img[src*="settingsicon"]) img[src*="settingsicon"],
-body[data-rhythiax-theme="rhythia-reimagined"] #root button[aria-label="Settings"] img[src*="settingsicon"] {
-  filter: grayscale(1) brightness(0) invert(1) !important;
-  opacity: .88 !important;
+html body[data-rhythiax-theme] #root button:has(> img[src*="settingsicon"])::after {
+  content: "";
+  width: 20px;
+  height: 20px;
+  background: currentColor;
+  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z'/%3E%3Ccircle cx='12' cy='12' r='3'/%3E%3C/svg%3E") center / contain no-repeat;
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z'/%3E%3Ccircle cx='12' cy='12' r='3'/%3E%3C/svg%3E") center / contain no-repeat;
 }
 
 /* Map thumbnails must stay above the themed tile background. The site puts

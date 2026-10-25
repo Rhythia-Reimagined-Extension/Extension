@@ -1,5 +1,5 @@
 // =============================================
-// Rhythia X — Constants
+// Reimagined for Rhythia — Constants
 // =============================================
 
 var RhythiaX = RhythiaX || {};
@@ -17,7 +17,15 @@ RhythiaX.GRADE_COLORS = {
   SS: '#FFD700', S: '#00E5FF', A: '#22C55E', B: '#84CC16',
   C: '#9CA3AF', D: '#EF4444', F: '#EF4444',
 };
+// The same list as RhythiaX.Grades.ORDER (shared/grades.js), kept here for code and tests that load
+// only this file.
 RhythiaX.GRADE_ORDER = ['SS', 'S', 'A', 'B', 'C', 'D', 'F'];
+
+// A value as text for HTML markup and attributes: & < > " ' escaped (' as &#39;); null and undefined
+// give ''.
+RhythiaX.escapeHtml = function (value) {
+  return String(value ?? '').replace(/[&<>"']/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[m]);
+};
 
 RhythiaX.SCORE_SELECTOR = 'div.relative.py-2, div.relative.overflow-hidden.rounded-lg.border';
 

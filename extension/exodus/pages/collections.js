@@ -8,12 +8,12 @@ var RhythiaX = RhythiaX || {};
 (function () {
 'use strict';
 const K = () => RhythiaX.ExodusKit;
-const {SITE, Data, esc, fmt, REDUCED, diff, status, pager, spreadHtml, hoursMin, avgStars, morph} = RhythiaX.ExodusKit;
+const {SITE, Data, esc, cssUrl, fmt, REDUCED, pager, watchDialog, spreadHtml, hoursMin, avgStars, morph} = RhythiaX.ExodusKit;
 
 /* ════════════════════ Collections ════════════════════ */
 function collections(host, ctx) {
   const R = host.shadowRoot, ac = new AbortController(), sig = {signal: ac.signal}, $ = s => R.querySelector(s);
-  const ui = K().shell(R, sig, ctx);
+  const ui = K().shell(R, sig);
   const own = /^\/collections\/own\/?$/.test(location.pathname);
   const S = {q: parse(), data: null, loading: false, seq: 0, enter: true, me: undefined};
 
@@ -116,7 +116,7 @@ const STATUS_F = [['ALL', 'All maps'], ['RANKED', 'Ranked'], ['UNRANKED', 'Unran
 const C_SORTS = [['order', 'Collection order'], ['stars', 'Star rating'], ['length', 'Length'], ['plays', 'Most played']];
 function collection(host, ctx) {
   const R = host.shadowRoot, ac = new AbortController(), sig = {signal: ac.signal}, $ = s => R.querySelector(s);
-  const ui = K().shell(R, sig, ctx);
+  const ui = K().shell(R, sig);
   const id = Number(ctx.id);
   const S = {d: null, me: undefined, status: 'ALL', sort: 'order', dir: 'desc', shown: 30, enter: true, seq: 0, removing: 0};
 
@@ -132,8 +132,8 @@ function collection(host, ctx) {
     const d = S.d, maps = d.maps, counts = Array(18).fill(0);
     for (const m of maps) counts[Math.min(17, Math.max(0, Math.floor(m.stars || 0) - 1))]++;
     const ranked = maps.filter(m => statusOf(m) === 'RANKED').length, total = maps.reduce((s, m) => s + (m.length || 0), 0);
-    const art = maps.slice(0, 4).map(m => `<i style="background-image:url('${esc(m.img || '')}')"></i>`).join('');
-    const acts = [`<button class="btn primary" type="button" data-native-click="Download all" data-tip="<b>Download all</b><small>Rhythia’s own download: one .zip with every map file</small>"><svg class="ico" aria-hidden="true"><use href="#i-dl"/></svg>Download all</button>`];
+    const art = maps.slice(0, 4).map(m => `<i style="background-image:${cssUrl(m.img || '')}"></i>`).join('');
+    const acts = [`<button class="btn primary" type="button" data-native-click="Download all" data-tip="<b>Download all</b><small>One .zip with every map</small>"><svg class="ico" aria-hidden="true"><use href="#i-dl"/></svg>Download all</button>`];
     if (isOwner()) acts.push('<button class="btn" type="button" data-native-click="Edit collection" data-watch>Edit collection</button>', '<button class="btn danger" type="button" data-native-click="Remove collection" data-watch>Remove collection</button>');
     return `<div class="container c-hero">
         <div class="c-art n${Math.min(4, maps.length)}">${art}</div>
@@ -150,19 +150,19 @@ function collection(host, ctx) {
         <div><small>Maps</small><b class="num">${fmt(d.count)}</b></div>
         <div><small>Average stars</small><b class="num">${maps.length ? `★ ${fmt(maps.reduce((s, m) => s + (m.stars || 0), 0) / maps.length, 2)}` : '—'}</b></div>
         <div><small>Ranked</small><b class="num">${fmt(ranked)}<span> of ${fmt(maps.length)}</span></b></div>
-        <div data-tip="<b>Playing time</b><small>Every map in the collection, played once at 1×</small>"><small>Playing time</small><b class="num">${hoursMin(total)}</b></div>
+        <div data-tip="<b>Playing time</b><small>Every map played once at 1×</small>"><small>Playing time</small><b class="num">${hoursMin(total)}</b></div>
       </div></div>`;
   }
   function card(m, i) {
     const [dl, dc] = K().diff(m.difficulty), [sl, sc] = K().status(m), st = statusOf(m);
     const remove = isOwner() ? `<button class="iconbtn c-rm" type="button" data-remove="${esc(m.id)}" aria-label="Remove ${esc(m.title)} from the collection" data-tip="<b>Remove from collection</b>" ${S.removing === m.id ? 'disabled' : ''}><svg class="ico" aria-hidden="true"><use href="#i-x"/></svg></button>` : '';
     if (S.d.isList) return `<div class="c-lrow"><span class="pos num">${fmt(m.order + 1)}</span><a class="h-map" href="/maps/${esc(m.id)}" style="--i:${Math.min(i, 24)}">
-      <span class="art" style="background-image:url('${esc(m.img)}')"></span>
+      <span class="art" style="background-image:${cssUrl(m.img)}"></span>
       <span class="chips"><span class="h-diff" style="--c:${dc}">${dl}</span><span class="h-star num">★ ${K().fmt(m.stars, 2)}</span></span>
       ${st !== 'RANKED' ? `<span class="v-mflags"><span class="h-diff" style="--c:${sc}">${sl}</span></span>` : ''}
       <span class="plate"><b title="${esc(m.title)}">${esc(m.title)}</b><small><span>by ${esc(m.mapper || 'Unknown')}</span><span class="num">${K().mmss(m.length)}</span><span class="num">${fmt(m.plays)} plays</span></small></span></a>${remove}</div>`;
     return `<div class="c-cell"><a class="h-map" href="/maps/${esc(m.id)}" style="--i:${Math.min(i, 24)}">
-      <span class="art" style="background-image:url('${esc(m.img)}')"></span>
+      <span class="art" style="background-image:${cssUrl(m.img)}"></span>
       <span class="chips"><span class="h-diff" style="--c:${dc}">${dl}</span><span class="h-star num">★ ${K().fmt(m.stars, 2)}</span></span>
       ${st !== 'RANKED' ? `<span class="v-mflags"><span class="h-diff" style="--c:${sc}">${sl}</span></span>` : ''}
       <span class="plate"><b title="${esc(m.title)}">${esc(m.title)}</b><small><span>by ${esc(m.mapper || 'Unknown')}</span><span class="num">${K().mmss(m.length)}</span><span class="num">${fmt(m.plays)} plays</span></small></span></a>${remove}</div>`;
@@ -172,12 +172,12 @@ function collection(host, ctx) {
     return `<section class="container v-sec" id="c-maps"><div class="sec-head"><div><h2>Collection maps</h2><p class="lede">${fmt(list.length)} ${list.length === 1 ? 'item' : 'items'}${S.d.maps.length < S.d.count ? ` · the first ${fmt(S.d.maps.length)} are shown` : ''}</p></div>
         <div class="right"><div class="pills" aria-label="Filter collection maps by status">${STATUS_F.map(([k, l]) => `<button type="button" aria-pressed="${S.status === k}" data-status="${k}">${l}</button>`).join('')}</div>
           <div class="pills" aria-label="Sort">${C_SORTS.map(([k, l]) => `<button type="button" aria-pressed="${S.sort === k}" data-sort="${k}">${l}</button>`).join('')}</div>
-          <button class="btn v-dir" type="button" data-dir aria-label="${S.dir === 'desc' ? 'Descending' : 'Ascending'}" data-tip="<b>${S.sort === 'order' ? (S.dir === 'desc' ? 'Collection order' : 'Reversed order') : S.dir === 'desc' ? 'Descending' : 'Ascending'}</b><small>Click to reverse the order</small>"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="${S.dir === 'desc' ? 'M12 5v14M6 13l6 6 6-6' : 'M12 19V5M6 11l6-6 6 6'}"/></svg></button></div></div>
+          <button class="btn v-dir" type="button" data-dir aria-label="${S.dir === 'desc' ? 'Descending' : 'Ascending'}" data-tip="<b>${S.sort === 'order' ? (S.dir === 'desc' ? 'Collection order' : 'Reversed order') : S.dir === 'desc' ? 'Descending' : 'Ascending'}</b>"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="${S.dir === 'desc' ? 'M12 5v14M6 13l6 6 6-6' : 'M12 19V5M6 11l6-6 6 6'}"/></svg></button></div></div>
       ${part.length ? `<div class="${S.d.isList ? 'c-list' : 'h-maps c-mgrid'}">${part.map(card).join('')}</div>` : '<div class="empty" style="padding:56px 0"><b>No maps here.</b>Try another filter.</div>'}
       ${list.length > S.shown ? `<div class="v-moreb"><button class="btn" type="button" data-more>Show ${fmt(Math.min(30, list.length - S.shown))} more</button></div>` : ''}</section>`;
   }
   function render() {
-    morph($('#hero'), `<section class="v-hero c-h ${S.enter ? 'enter' : ''}"><div class="v-banner" style="background-image:url('${esc(S.d.maps[0]?.img || '')}')"></div>${hero()}</section>`);
+    morph($('#hero'), `<section class="v-hero c-h ${S.enter ? 'enter' : ''}"><div class="v-banner" style="background-image:${cssUrl(S.d.maps[0]?.img || '')}"></div>${hero()}</section>`);
     morph($('#body'), `<div class="v-page ${S.enter ? 'enter' : ''}">${mapsSec()}<div style="height:96px"></div></div>`);
     document.title = `${S.d.title} | Rhythia`;
   }
@@ -211,20 +211,11 @@ function collection(host, ctx) {
     render();
   }
   // After Rhythia's own dialog (edit, remove) closes, read the collection again.
-  let watch = 0;
-  function watchDialog() {
-    clearInterval(watch);
-    let seen = false, ticks = 0;
-    watch = setInterval(() => {
-      const open = [...document.querySelectorAll('[role="dialog"],[role="alertdialog"]')].some(x => !x.closest('#root'));
-      if (open) seen = true;
-      if ((seen && !open) || ++ticks > 1200) { clearInterval(watch); if (seen && location.pathname === `/collections/${id}`) load(); }
-    }, 500);
-  }
+  const dialog = watchDialog(`/collections/${id}`, () => load());
 
   R.addEventListener('click', e => {
     if (e.target.closest('[data-native-x]')) { ctx.showNative(); return; }
-    if (e.target.closest('[data-watch]')) { watchDialog(); return; }
+    if (e.target.closest('[data-watch]')) { dialog.start(); return; }
     const t = e.target.closest('[data-status],[data-sort],[data-dir],[data-more],[data-remove]');
     if (!t || t.disabled) return;
     const d = t.dataset;
@@ -240,7 +231,7 @@ function collection(host, ctx) {
 
   return {
     state: () => ({}), idle: () => !S.removing, relayout() {}, page() {},
-    destroy() { ac.abort(); ui.hide(); clearInterval(watch); },
+    destroy() { ac.abort(); ui.hide(); dialog.stop(); },
   };
 }
 
@@ -291,7 +282,8 @@ const css = `
 #c-maps .sec-head .right .pills button{height:auto;min-height:34px}
 [data-variant="lines"] .c-card{background:none;box-shadow:none;border-radius:0;border-top:1px solid var(--rule)}
 [data-variant="lines"] .c-grid{gap:0 28px}
-@media (max-width:640px){.c-card{grid-template-columns:1fr}.c-spread{height:64px}.c-hero{grid-template-columns:1fr;gap:18px}.c-art{width:112px;height:112px}.md .pattern-row{grid-template-columns:1fr}.g-stream{min-width:0;flex:1 1 40%}.c-lrow{grid-template-columns:32px minmax(0,1fr)}.c-lrow .h-map .plate{width:auto;left:8px;top:auto}.g-entry{padding:18px}}
+@media (max-width:860px){.c-grid{grid-template-columns:1fr}.c-hero{grid-template-columns:auto minmax(0,1fr)}.c-hspread{grid-column:1/-1}}
+@media (max-width:640px){.c-card{grid-template-columns:1fr}.c-spread{height:64px}.c-hero{grid-template-columns:1fr;gap:18px}.c-art{width:112px;height:112px}.c-lrow{grid-template-columns:32px minmax(0,1fr)}.c-lrow .h-map .plate{width:auto;left:8px;top:auto}}
 @media (prefers-reduced-motion:reduce){.c-grid.anim .c-card{animation:none!important}}
 `;
 

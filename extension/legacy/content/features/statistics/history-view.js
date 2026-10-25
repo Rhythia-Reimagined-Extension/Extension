@@ -1,7 +1,7 @@
 // Statistics variant B: one value at a time.
 // The value row (Progress cards, or the Rankings row built here) shows the change over the chosen range
 // and picks what the chart shows. Under the chart, weeks are listed one month at a time.
-// Variant A is the older tables in core/data/data-profile-ui.js; the popup's "Statistics variant" picks one.
+// Variant A is the older tables in statistics/history-tables.js; the popup's "Statistics variant" picks one.
 var RhythiaX = RhythiaX || {};
 
 RhythiaX.HistoryView = (function () {
@@ -36,7 +36,6 @@ RhythiaX.HistoryView = (function () {
 
   const isRank = key => key === 'globalRank' || key === 'countryRank';
   const fmtNum = n => (RhythiaX.formatNumber ? RhythiaX.formatNumber(n) : Number(n).toLocaleString('en-US'));
-  const esc = value => String(value ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
 
   function parseDate(text) {
     const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(text || ''));
@@ -161,6 +160,8 @@ RhythiaX.HistoryView = (function () {
   // ---------- chart ----------
   function drawChart(host, points, key, labelFor) {
     host.replaceChildren();
+    host._rhythiaxResizeObserver?.disconnect();
+    host._rhythiaxResizeObserver = null;
     if (!points.length) return;
     const svgNs = 'http://www.w3.org/2000/svg';
     const svg = document.createElementNS(svgNs, 'svg');
@@ -197,13 +198,13 @@ RhythiaX.HistoryView = (function () {
       };
       let g = '';
       for (let v = Math.ceil(lo / step) * step; v <= hi + 1e-9; v += step) {
-        g += `<line class="rhythiax-hv2-grid" x1="${padL}" x2="${W - padR}" y1="${y(v)}" y2="${y(v)}"/><text class="rhythiax-hv2-axis" x="${padL - 8}" y="${y(v) + 4}" text-anchor="end">${esc(tick(v))}</text>`;
+        g += `<line class="rhythiax-hv2-grid" x1="${padL}" x2="${W - padR}" y1="${y(v)}" y2="${y(v)}"/><text class="rhythiax-hv2-axis" x="${padL - 8}" y="${y(v) + 4}" text-anchor="end">${RhythiaX.escapeHtml(tick(v))}</text>`;
       }
       const every = Math.max(1, Math.ceil(points.length / Math.max(2, Math.floor((W - padL) / 72))));
       points.forEach((p, i) => {
         if ((points.length - 1 - i) % every !== 0) return;
         const anchor = points.length > 1 && i === points.length - 1 ? 'end' : points.length > 1 && i === 0 ? 'start' : 'middle';
-        g += `<text class="rhythiax-hv2-axis" x="${x(i)}" y="${H - 4}" text-anchor="${anchor}">${esc(labelFor(p, true))}</text>`;
+        g += `<text class="rhythiax-hv2-axis" x="${x(i)}" y="${H - 4}" text-anchor="${anchor}">${RhythiaX.escapeHtml(labelFor(p, true))}</text>`;
       });
       const line = points.map((p, i) => `${i ? 'L' : 'M'}${x(i).toFixed(1)},${y(p.value ?? lo).toFixed(1)}`).join('');
       const id = `rhythiax-hv2-fill-${Math.random().toString(36).slice(2, 8)}`;
@@ -223,7 +224,7 @@ RhythiaX.HistoryView = (function () {
         const delta = i ? change(key, p.value, points[i - 1].value) : null;
         cross.setAttribute('x1', x(i)); cross.setAttribute('x2', x(i)); cross.setAttribute('visibility', 'visible');
         dot.setAttribute('cx', x(i)); dot.setAttribute('cy', y(p.value ?? lo)); dot.setAttribute('visibility', 'visible');
-        tip.innerHTML = `<span class="rhythiax-hv2-tip-date">${esc(labelFor(p))}</span><strong>${esc(fmtValue(key, p.value))}</strong>${delta !== null && key !== 'mapsPerWeek' ? ` <span class="${tone(key, delta)}">${esc(fmtChange(key, delta))}</span>` : ''}`;
+        tip.innerHTML = `<span class="rhythiax-hv2-tip-date">${RhythiaX.escapeHtml(labelFor(p))}</span><strong>${RhythiaX.escapeHtml(fmtValue(key, p.value))}</strong>${delta !== null && key !== 'mapsPerWeek' ? ` <span class="${tone(key, delta)}">${RhythiaX.escapeHtml(fmtChange(key, delta))}</span>` : ''}`;
         tip.style.left = `${Math.max(70, Math.min(W - 70, x(i)))}px`;
         tip.style.top = `${y(p.value ?? lo)}px`;
         tip.classList.add('is-visible');
@@ -237,7 +238,8 @@ RhythiaX.HistoryView = (function () {
     draw();
     if (typeof ResizeObserver === 'function') {
       let width = host.clientWidth;
-      new ResizeObserver(() => { if (host.clientWidth !== width) { width = host.clientWidth; draw(); } }).observe(host);
+      host._rhythiaxResizeObserver = new ResizeObserver(() => { if (host.clientWidth !== width) { width = host.clientWidth; draw(); } });
+      host._rhythiaxResizeObserver.observe(host);
     }
   }
 
@@ -258,7 +260,7 @@ RhythiaX.HistoryView = (function () {
     const delta = days.length > 1 ? change(key, days[0].v[key], base?.v[key]) : null;
     // History shorter than the range: say where it starts instead of naming the range.
     const per = base && (days[0].d - base.d) / DAY < rangeDays(range) - 0.5 ? `since ${short(base.d)}` : rangeName;
-    line.innerHTML = `<span class="rhythiax-metric-change-value ${tone(key, delta)}">${esc(fmtChange(key, delta))}</span><span class="rhythiax-metric-change-per"> · ${esc(per)}</span>`;
+    line.innerHTML = `<span class="rhythiax-metric-change-value ${tone(key, delta)}">${RhythiaX.escapeHtml(fmtChange(key, delta))}</span><span class="rhythiax-metric-change-per"> · ${RhythiaX.escapeHtml(per)}</span>`;
   }
 
   // Progress cards already show values worked out from scores; history fills the ones still empty and Maps / Week.
@@ -282,7 +284,7 @@ RhythiaX.HistoryView = (function () {
       card.dataset.hv2Owned = 'true';
       card.tabIndex = 0;
       card.setAttribute('role', 'button');
-      card.innerHTML = `<div class="rhythiax-reimagined-metric-label">${esc(metric.label)}</div><div class="rhythiax-reimagined-metric-value">—</div>`;
+      card.innerHTML = `<div class="rhythiax-reimagined-metric-label">${RhythiaX.escapeHtml(metric.label)}</div><div class="rhythiax-reimagined-metric-value">—</div>`;
       grid.appendChild(card);
     });
     return grid;
@@ -301,7 +303,8 @@ RhythiaX.HistoryView = (function () {
   }
 
   // ---------- pane ----------
-  function render(container, { kind, history, grid, couldNotReachCloud = false }) {
+  // recentOnly: the online part holds only the service's last days (history-tables.js HISTORY_RECENT_ONLY_NOTE).
+  function render(container, { kind, history, grid, couldNotReachCloud = false, recentOnly = false }) {
     const config = KINDS[kind];
     const keys = Array.from(new Set([...config.metrics.map(m => m.key), 'playCount']));
     const days = toDays(history, keys);
@@ -352,13 +355,15 @@ RhythiaX.HistoryView = (function () {
         }
       });
 
-      const cloud = couldNotReachCloud ? '<span class="rhythiax-hv2-cloud" title="Couldn\'t reach cloud — using local data">Couldn\'t reach cloud</span>' : '';
-      title.innerHTML = `${ICON_LINE}<span>${esc(config.title)}</span><small>${esc(metricOf(key).label)}</small>${cloud}`;
-      range.innerHTML = RANGES.map(([name]) => `<button type="button" class="rhythiax-history-horizon-btn${name === state.range ? ' active' : ''}" data-range="${name}" aria-pressed="${name === state.range}">${name}</button>`).join('');
+      const cloud = couldNotReachCloud ? '<span class="rhythiax-hv2-cloud" title="Showing this device’s history">Couldn\'t reach cloud</span>' : '';
+      // The words are history-tables.js's, which loads after this file and is the only caller of render.
+      const recent = recentOnly ? `<span class="rhythiax-hv2-recent" title="${RhythiaX.escapeHtml(HISTORY_RECENT_ONLY_NOTE)}">${RhythiaX.escapeHtml(HISTORY_RECENT_ONLY_LABEL)}</span>` : '';
+      RhythiaX.setMarkup(title, `${ICON_LINE}<span>${RhythiaX.escapeHtml(config.title)}</span><small>${RhythiaX.escapeHtml(metricOf(key).label)}</small>${cloud}${recent}`);
+      RhythiaX.setMarkup(range, RANGES.map(([name]) => `<button type="button" class="rhythiax-history-horizon-btn${name === state.range ? ' active' : ''}" data-range="${name}" aria-pressed="${name === state.range}">${name}</button>`).join(''));
 
       if (!days.length) {
         chart.replaceChildren();
-        list.innerHTML = `<div class="rhythiax-history-empty">${kind === 'rankings' ? 'Rank' : 'Progress'} history starts after the first recorded activity.</div>`;
+        RhythiaX.setMarkup(list, `<div class="rhythiax-history-empty">${kind === 'rankings' ? 'Rank' : 'Progress'} history starts after the first recorded activity.</div>`);
         return;
       }
 
@@ -384,7 +389,7 @@ RhythiaX.HistoryView = (function () {
           if (played !== null) sum = `${fmtNum(played)} ${played === 1 ? 'map' : 'maps'} <span class="rhythiax-hv2-per">played</span>`;
         } else if (start) {
           const delta = change(key, end.v[key], start.v[key]);
-          sum = `<span class="${tone(key, delta)}">${esc(fmtChange(key, delta))}</span> <span class="rhythiax-hv2-per">this month</span>`;
+          sum = `<span class="${tone(key, delta)}">${RhythiaX.escapeHtml(fmtChange(key, delta))}</span> <span class="rhythiax-hv2-per">this month</span>`;
         }
         html += `<div class="rhythiax-hv2-month"><div class="rhythiax-hv2-month-head"><span class="rhythiax-hv2-month-name">${MONTHS[month.d.getMonth()]} ${month.d.getFullYear()}</span><span class="rhythiax-hv2-per">${month.weeks.length} ${month.weeks.length === 1 ? 'week' : 'weeks'}</span><span class="rhythiax-hv2-month-sum">${sum}</span></div>`;
         month.weeks.forEach(week => {
@@ -395,14 +400,14 @@ RhythiaX.HistoryView = (function () {
           const note = week.played === null ? '' : current && !week.played ? 'this week' : quiet ? 'no plays' : `${fmtNum(week.played)} ${week.played === 1 ? 'map' : 'maps'}`;
           const value = key === 'mapsPerWeek' ? (week.played === null ? '—' : fmtNum(week.played)) : fmtValue(key, week.end.v[key]);
           const delta = key === 'mapsPerWeek' || !week.prev ? null : change(key, week.end.v[key], week.prev.v[key]);
-          html += `<div class="rhythiax-hv2-week${quiet ? ' is-quiet' : ''}"><span class="rhythiax-hv2-when"><b>${esc(weekLabel(week))}</b>${esc(note)}</span><span class="rhythiax-hv2-value">${esc(value)}</span><span class="rhythiax-hv2-change ${tone(key, delta)}">${delta === null ? '' : esc(fmtChange(key, delta))}</span></div>`;
+          html += `<div class="rhythiax-hv2-week${quiet ? ' is-quiet' : ''}"><span class="rhythiax-hv2-when"><b>${RhythiaX.escapeHtml(weekLabel(week))}</b>${RhythiaX.escapeHtml(note)}</span><span class="rhythiax-hv2-value">${RhythiaX.escapeHtml(value)}</span><span class="rhythiax-hv2-change ${tone(key, delta)}">${delta === null ? '' : RhythiaX.escapeHtml(fmtChange(key, delta))}</span></div>`;
         });
         html += '</div>';
       });
       const next = months[shown];
       if (next) html += `<button type="button" class="rhythiax-hv2-more" data-more>Show ${MONTHS[next.d.getMonth()]} ${next.d.getFullYear()}</button>`;
       else if (shown > 1) html += `<button type="button" class="rhythiax-hv2-more" data-less>Show only ${MONTHS[months[0].d.getMonth()]}</button>`;
-      list.innerHTML = html;
+      RhythiaX.setMarkup(list, html);
     }
 
     const select = key => {

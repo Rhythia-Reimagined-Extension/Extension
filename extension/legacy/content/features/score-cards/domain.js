@@ -46,28 +46,29 @@ var RhythiaX = RhythiaX || {};
   function getGrade(scoreOrAcc, passed = true, misses = 0) {
     if (typeof scoreOrAcc === 'object' && scoreOrAcc !== null) {
       const s = scoreOrAcc;
+      // A letter Rhythia gave the score comes first: read from its card (gradeSource 'page', parseScoreCard)
+      // or sent by its API (gradeSource 'api', mapApiScores in core/scores.js). A letter the extension worked
+      // out itself is not used; accuracy decides then, as it does when there is no letter.
+      const fromRhythia = s.gradeSource === 'page' || s.gradeSource === 'api';
+      const known = fromRhythia ? RhythiaX.Grades.supplied(s.grade) : '';
+      if (known) return known;
       const p = s.passed !== false && s.failed !== true;
       const m = parseInt(s.misses, 10) || 0;
-      const accVal = RhythiaX.parseLocalizedNumber ? RhythiaX.parseLocalizedNumber(s.accuracy) : parseFloat(String(s.accuracy || '').replace('%', ''));
+      // An accuracy with no digit in it ('—', '' or none at all) is unknown, not 0%: parseLocalizedNumber
+      // would read it as 0.
+      const rawAcc = String(s.accuracy ?? '');
+      const accVal = !/\d/.test(rawAcc) ? NaN
+        : RhythiaX.parseLocalizedNumber ? RhythiaX.parseLocalizedNumber(rawAcc) : parseFloat(rawAcc.replace('%', ''));
       return calculateGrade(accVal, p, m, s.fullCombo);
     }
     const accVal = typeof scoreOrAcc === 'number' ? scoreOrAcc : parseFloat(String(scoreOrAcc || '').replace('%', ''));
     return calculateGrade(accVal, passed, misses);
   }
 
+  // The one grade rule (shared/grades.js): F for a failed play, else the letter for the accuracy. A play
+  // that did not fail and has no known accuracy gets the neutral '?', as core/scores.js gives it.
   function calculateGrade(acc, passed, misses, isFc) {
-    if (!passed) return 'F';
-    const numAcc = Number.isFinite(acc) ? acc : 0;
-    const numMiss = Number.isFinite(misses) ? misses : 0;
-    const fc = isFc || numMiss === 0;
-
-    if (numAcc >= 100 && fc) return 'SS';
-    if (numAcc >= 98.0) return 'S';
-    if (numAcc >= 95.0) return 'A';
-    if (numAcc >= 90.0) return 'B';
-    if (numAcc >= 80.0) return 'C';
-    if (numAcc >= 70.0) return 'D';
-    return 'D';
+    return RhythiaX.Grades.of({ accuracy: acc, misses: isFc ? 0 : misses, failed: !passed }) || '?';
   }
 
   function getGradeColor(grade) {
@@ -80,7 +81,7 @@ var RhythiaX = RhythiaX || {};
       case 'C':  return 'var(--grade-c, #facc15)';
       case 'D':  return 'var(--grade-d, #f97316)';
       case 'F':  return 'var(--grade-f, #ef4444)';
-      default:   return 'var(--grade-a, #4ade80)';
+      default:   return 'var(--grade-unknown, #9ca3af)';
     }
   }
 
@@ -94,8 +95,22 @@ var RhythiaX = RhythiaX || {};
       case 'C':  return 'rgba(250, 204, 21, 0.45)';
       case 'D':  return 'rgba(249, 115, 22, 0.45)';
       case 'F':  return 'rgba(239, 68, 68, 0.45)';
-      default:   return 'rgba(74, 222, 128, 0.45)';
+      default:   return 'rgba(156, 163, 175, 0.35)';
     }
+  }
+
+  // Numbers and accuracy as the score card templates show them.
+  function formatNum(num) {
+    if (RhythiaX.formatNumber) return RhythiaX.formatNumber(num);
+    const n = Number(num);
+    return Number.isFinite(n) ? n.toLocaleString('en-US') : String(num ?? '');
+  }
+
+  function formatAccuracy(acc) {
+    if (acc == null || acc === '' || acc === '—' || /nan/i.test(String(acc))) return '—%';
+    const cleaned = String(acc).replace('%', '').trim();
+    const num = parseFloat(cleaned);
+    return Number.isFinite(num) ? `${num.toFixed(2)}%` : '—%';
   }
 
   function formatDuration(lengthMs, speedMultiplier) {
@@ -190,6 +205,8 @@ var RhythiaX = RhythiaX || {};
     return null;
   }
 
+  // Only the mod pictures listed here, the ones Rhythia's site has: a name from the API never becomes a path of
+  // its own, and any other mod shows its name instead of a picture.
   function getModIconUrl(modLabel) {
     if (!modLabel) return null;
     const clean = String(modLabel).toLowerCase().replace(/^mod[_\s-]*/i, '').replace(/[\s-]+/g, '');
@@ -212,7 +229,7 @@ var RhythiaX = RhythiaX || {};
       easy: '/modeasy.png',
       perfect: '/modperfect.png',
     };
-    return iconMap[clean] || `/mod${clean}.png`;
+    return Object.prototype.hasOwnProperty.call(iconMap, clean) ? iconMap[clean] : null;
   }
 
   function getScoreMods(score) {
@@ -470,6 +487,8 @@ var RhythiaX = RhythiaX || {};
     getGrade,
     getGradeColor,
     getGradeGlow,
+    formatNum,
+    formatAccuracy,
     formatDuration,
     formatScoreDate,
     getScoreDateTooltip,

@@ -1,15 +1,11 @@
 // =============================================
-// Rhythia X — DOM cleanup
+// Reimagined for Rhythia — Classic's own elements taken off the page before it is built again
 // =============================================
 
 var RhythiaX = RhythiaX || {};
 
 // ─── Cleanup stale injected elements ─────────
 RhythiaX.cleanupStaleElements = function (preserveCards) {
-  if (!preserveCards) {
-    RhythiaX.activeGrades = null;
-    RhythiaX.activeSpeed = null;
-  }
   RhythiaX.cleanupOfficialStats?.();
   RhythiaX.cleanupFriendsQuickList?.();
   RhythiaX.qsa('.rhythiax-friends-quick-panel').forEach(el => el.remove());
@@ -19,15 +15,10 @@ RhythiaX.cleanupStaleElements = function (preserveCards) {
     RhythiaX.qsa('.rhythiax-stats-panel').forEach(el => el.remove());
     RhythiaX.qsa('.rhythiax-stats-tabs').forEach(el => el.remove());
     RhythiaX.qsa('.rhythiax-reimagined-stats-body').forEach(el => el.remove());
-    // Also remove our injected sections from the official stats container
-    RhythiaX.qsa('.rhythiax-injected-stats-section').forEach(el => el.remove());
-    RhythiaX.qsa('.rhythiax-injected-grade-row').forEach(el => el.remove());
-    RhythiaX.qsa('.rhythiax-profiles-grid').forEach(el => el.remove());
-    RhythiaX.qsa('.rhythiax-profile-box').forEach(el => el.remove());
     RhythiaX.qsa('.rhythiax-history-row').forEach(el => el.remove());
   }
   RhythiaX.qsa('.rhythiax-compare-profile-button').forEach(el => el.remove());
-  if ((RhythiaX.isMasterActive && !RhythiaX.isMasterActive()) || (RhythiaX.isModuleEnabled && !RhythiaX.isModuleEnabled('playerCompare'))) {
+  if (RhythiaX.isModuleEnabled && !RhythiaX.isModuleEnabled('playerCompare')) {
     RhythiaX.qsa('.rhythiax-compare-tray').forEach(el => el.remove());
     RhythiaX.CompareView?.cleanupModal?.();
   }
@@ -57,13 +48,6 @@ RhythiaX.cleanupStaleElements = function (preserveCards) {
   if (!/^\/player\/255585(?:\/|$)/.test(window.location.pathname)) {
     RhythiaX.qsa('.rhythiax-creator-badge').forEach(el => el.remove());
   }
-  RhythiaX.qsa('.rhythiax-profile-score-tab-strip').forEach(el => {
-    if (el._rhythiaxResizeObserver) {
-      el._rhythiaxResizeObserver.disconnect();
-      delete el._rhythiaxResizeObserver;
-    }
-    delete el.__rhythiaxResizeObserved;
-  });
   RhythiaX.qsa('.rhythiax-score-replay-fullscreen-button').forEach(el => el.remove());
   RhythiaX.qsa('.rhythiax-score-replay-fullscreen').forEach(el => el.classList.remove('rhythiax-score-replay-fullscreen'));
 

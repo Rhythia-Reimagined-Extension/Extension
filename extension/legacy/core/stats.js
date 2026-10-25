@@ -1,5 +1,5 @@
 // =============================================
-// Rhythia X — Stats calculations
+// Reimagined for Rhythia — Stats calculations
 // =============================================
 
 var RhythiaX = RhythiaX || {};

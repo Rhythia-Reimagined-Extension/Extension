@@ -20,8 +20,10 @@ var RhythiaX = RhythiaX || {};
   let entryLoadAttached = false;
   let clickListenerAttached = false;
   let tabObserver = null;
+  let focusTitle = false; // the next render moves focus to the release's title (revealEntry)
   let requestedReimagined = false;
   let requestedEntry = '';
+  let look = 'legacy'; // the look whose changes the reader shows: 'legacy' (Classic), 'exodus' or 'all'
 
   function isChangelogRoute() {
     return /^\/changelog(?:\/|$)/.test(window.location.pathname);
@@ -37,12 +39,6 @@ var RhythiaX = RhythiaX || {};
     else delete document.documentElement.dataset.rhythiaxChangelog;
   }
 
-  function escapeHtml(value) {
-    return String(value ?? '').replace(/[&<>"']/g, char => ({
-      '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;',
-    }[char]));
-  }
-
   function safeUrl(value) {
     const url = String(value || '').trim();
     return /^https?:\/\//i.test(url) ? url : '#';
@@ -53,164 +49,27 @@ var RhythiaX = RhythiaX || {};
   const normalizeCategory = label => RhythiaX.Releases.category(label);
 
   function inlineMarkdown(value) {
-    let html = escapeHtml(value);
+    let html = RhythiaX.escapeHtml(value);
     html = html.replace(/^(?:<strong>\[([a-zA-Z0-9\s_-]+)\]<\/strong>|\[([a-zA-Z0-9\s_-]+)\])\s*/i, (match, tag1, tag2) => {
       const rawTag = tag1 || tag2;
       const cat = normalizeCategory(rawTag);
       if (!cat) return match;
       const icon = CHANGELOG_CATEGORY_ICONS[cat];
-      return `<span class="rhythiax-changelog-inline-badge" data-rhythiax-category="${cat}">${icon ? `<span class="rhythiax-changelog-inline-icon" aria-hidden="true">${icon}</span>` : ''}<span>${escapeHtml(rawTag)}</span></span> `;
+      return `<span class="rhythiax-changelog-inline-badge" data-rhythiax-category="${cat}">${icon ? `<span class="rhythiax-changelog-inline-icon" aria-hidden="true">${icon}</span>` : ''}<span>${RhythiaX.escapeHtml(rawTag)}</span></span> `;
     });
     html = html.replace(/`([^`]+)`/g, '<code>$1</code>');
+  // The text is escaped above, so a URL taken from it is already safe inside an attribute.
     html = html.replace(/!\[([^\]]*)\]\(([^)\s]+)(?:\s+"[^"]*")?\)/g, (_, alt, url) => {
       const imageUrl = safeUrl(url);
-      return imageUrl === '#' ? '' : `<img src="${escapeHtml(imageUrl)}" alt="${alt}" loading="lazy" decoding="async">`;
+      return imageUrl === '#' ? '' : `<img src="${imageUrl}" alt="${alt}" loading="lazy" decoding="async">`;
     });
     html = html.replace(/\[([^\]]+)\]\(([^)\s]+)(?:\s+"[^"]*")?\)/g, (_, label, url) => {
       const linkUrl = safeUrl(url);
-      return linkUrl === '#' ? label : `<a href="${escapeHtml(linkUrl)}" target="_blank" rel="noopener noreferrer">${label}</a>`;
+      return linkUrl === '#' ? label : `<a href="${linkUrl}" target="_blank" rel="noopener noreferrer">${label}</a>`;
     });
     html = html.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
     html = html.replace(/\*([^*]+)\*/g, '<em>$1</em>');
     return html;
-  }
-
-  function renderCategoryHeading(label, category, level = 2) {
-    const icon = CHANGELOG_CATEGORY_ICONS[category] || '';
-    const displayLevel = Math.min(Math.max(level, 2), 4);
-    const iconHtml = icon ? `<span class="rhythiax-changelog-category-icon" aria-hidden="true">${icon}</span>` : '';
-    return `<h${displayLevel} class="rhythiax-changelog-category-heading" data-rhythiax-category="${escapeHtml(category)}">${iconHtml}<span class="rhythiax-changelog-category-title">${inlineMarkdown(label)}</span></h${displayLevel}>`;
-  }
-
-  function renderSectionContent(lines) {
-    const output = [];
-    let paragraph = [];
-    let listType = '';
-    let listItems = [];
-
-    function flushParagraph() {
-      if (!paragraph.length) return;
-      output.push(`<p>${paragraph.map(inlineMarkdown).join('<br>')}</p>`);
-      paragraph = [];
-    }
-
-    function flushList() {
-      if (!listItems.length) return;
-      // Keep every entry in the same paragraph layout. A colon in release-note
-      // prose should not turn only some entries into separate bold headings.
-      output.push(`<${listType}>${listItems.map(item => `<li>${inlineMarkdown(item)}</li>`).join('')}</${listType}>`);
-      listItems = [];
-      listType = '';
-    }
-
-    function flushBlocks() {
-      flushParagraph();
-      flushList();
-    }
-
-    lines.forEach(line => {
-      const trimmed = line.trim();
-      const unordered = trimmed.match(/^[-+*]\s+(.+)$/);
-      const ordered = trimmed.match(/^\d+\.\s+(.+)$/);
-      const quote = trimmed.match(/^>\s?(.*)$/);
-
-      if (!trimmed) {
-        flushBlocks();
-        return;
-      }
-      if (/^(?:---+|___+|\*\s*\*\s*\*)$/.test(trimmed)) {
-        flushBlocks();
-        output.push('<hr>');
-        return;
-      }
-      if (unordered || ordered) {
-        flushParagraph();
-        const nextType = unordered ? 'ul' : 'ol';
-        if (listType && listType !== nextType) flushList();
-        listType = nextType;
-        listItems.push((unordered || ordered)[1]);
-        return;
-      }
-      if (quote) {
-        flushBlocks();
-        output.push(`<blockquote>${inlineMarkdown(quote[1])}</blockquote>`);
-        return;
-      }
-      flushList();
-      paragraph.push(trimmed);
-    });
-
-    flushBlocks();
-    return output.join('');
-  }
-
-  // idPrefix keeps section ids apart when one entry has an Exodus and a Legacy part.
-  function markdownToHtml(markdown, idPrefix = '') {
-    const lines = String(markdown || '').replace(/\r/g, '').split('\n');
-    const sections = [];
-    let currentSection = {
-      heading: null,
-      lines: [],
-    };
-
-    for (let i = 0; i < lines.length; i++) {
-      const line = lines[i];
-      const trimmed = line.trim();
-      const headingMatch = trimmed.match(/^(#{1,4})\s+(.+)$/);
-
-      if (headingMatch) {
-        const level = Math.min(headingMatch[1].length + 1, 4);
-        const text = headingMatch[2].trim();
-        const category = normalizeCategory(text);
-
-        if (currentSection.heading || currentSection.lines.length > 0) {
-          sections.push(currentSection);
-        }
-
-        currentSection = {
-          heading: { level, text, category },
-          lines: [],
-        };
-      } else {
-        currentSection.lines.push(line);
-      }
-    }
-
-    if (currentSection.heading || currentSection.lines.length > 0) {
-      sections.push(currentSection);
-    }
-
-    const output = [];
-
-    for (const section of sections) {
-      const isMeaningful = section.lines.some(l => {
-        const t = l.trim();
-        return t && !/^(?:---+|___+|\*\s*\*\s*\*)$/.test(t);
-      });
-
-      if (section.heading?.category && !isMeaningful) {
-        continue;
-      }
-
-      if (section.heading?.category) {
-        output.push(`<section class="rhythiax-changelog-section" id="rhythiax-changelog-section-${escapeHtml(idPrefix + section.heading.category)}" data-rhythiax-section="${escapeHtml(section.heading.category)}" data-rhythiax-section-id="${escapeHtml(idPrefix + section.heading.category)}">`);
-      }
-      if (section.heading) {
-        if (section.heading.category) {
-          output.push(renderCategoryHeading(section.heading.text, section.heading.category, section.heading.level));
-        } else {
-          output.push(`<h${section.heading.level}>${inlineMarkdown(section.heading.text)}</h${section.heading.level}>`);
-        }
-      }
-
-      const contentHtml = renderSectionContent(section.lines);
-      if (contentHtml) {
-        output.push(contentHtml);
-      }
-      if (section.heading?.category) output.push('</section>');
-    }
-
-    return output.join('');
   }
 
   // Release notes come from shared/releases.js (the packaged changelog.md and the online copy).
@@ -267,8 +126,8 @@ var RhythiaX = RhythiaX || {};
   }
 
   function tabsContainer() {
-    const publicTab = RhythiaX.ChangelogPageAdapter.query('#root a[href*="/changelog/public"]:not([data-rhythiax-changelog-snapshot])');
-    const webTab = RhythiaX.ChangelogPageAdapter.query('#root a[href*="/changelog/web"]:not([data-rhythiax-changelog-snapshot])');
+    const publicTab = RhythiaX.ChangelogPageAdapter.query('#root a[href*="/changelog/public"]');
+    const webTab = RhythiaX.ChangelogPageAdapter.query('#root a[href*="/changelog/web"]');
     if (!publicTab || !webTab || publicTab.parentElement !== webTab.parentElement) return null;
     return publicTab.parentElement;
   }
@@ -376,11 +235,11 @@ var RhythiaX = RhythiaX || {};
   }
 
   function officialArticles() {
-    return RhythiaX.ChangelogPageAdapter.queryAll('#root article:not(.rhythiax-changelog-entry):not([data-rhythiax-changelog-snapshot])');
+    return RhythiaX.ChangelogPageAdapter.queryAll('#root article:not(.rhythiax-changelog-entry)');
   }
 
   function removePanel() {
-    document.querySelector(`.${PANEL_CLASS}:not([data-rhythiax-changelog-snapshot])`)?.remove();
+    document.querySelector(`.${PANEL_CLASS}`)?.remove();
     officialArticles().forEach(article => {
       if (article.dataset.rhythiaxChangelogHidden !== 'true') return;
       const display = article.dataset.rhythiaxChangelogDisplay || '';
@@ -393,17 +252,23 @@ var RhythiaX = RhythiaX || {};
 
   // Laid out like Rhythia's own changelog entries: the release centred on top, a rule, then plain lists.
   function noteMarkup() {
-    return '<p class="rhythiax-changelog-note">Unofficial community changelog for the Reimagined for Rhythia extension. Not affiliated with or endorsed by Rhythia or CAPO Games.</p>';
+    return '<p class="rhythiax-changelog-note">Changelog of the unofficial Reimagined for Rhythia extension. Not affiliated with or endorsed by Rhythia or CAPO Games.</p>';
   }
 
   function stateMarkup(body) {
     return `<article class="rhythiax-changelog-entry is-state"><div class="rhythiax-changelog-empty">${body}</div></article>${noteMarkup()}`;
   }
 
-  function arrow(target, label, glyph) {
-    if (!target) return `<span class="rhythiax-changelog-arrow is-disabled" aria-hidden="true">${glyph}</span>`;
-    const text = `${label}: ${target.version} (${formatDate(target.date)})`;
-    return `<button type="button" class="rhythiax-changelog-arrow" data-rhythiax-entry="${escapeHtml(target.version)}" aria-label="${escapeHtml(text)}" title="${escapeHtml(text)}">${glyph}</button>`;
+  // The list of versions beside the release: its number, title and date, and a dot for each look it changes.
+  function versionsMarkup(entries, entry) {
+    const dots = item => RhythiaX.Releases.looksOf(item).map(key =>
+      `<i data-rhythiax-engine="${key}" title="${RhythiaX.escapeHtml(RhythiaX.Releases.LOOKS[key].label)}"></i>`).join('');
+    return `<nav class="rhythiax-changelog-versions" aria-label="Versions">${entries.map(item => `<button type="button" class="rhythiax-changelog-v${item === entry ? ' is-on' : ''}" data-rhythiax-entry="${RhythiaX.escapeHtml(item.version)}"${item === entry ? ' aria-current="true"' : ''}><b>${RhythiaX.escapeHtml(item.version)}<span class="rhythiax-changelog-dots">${dots(item)}</span></b><small>${item.title ? `${RhythiaX.escapeHtml(item.title)} · ` : ''}${RhythiaX.escapeHtml(formatDate(item.date, true))}</small></button>`).join('')}</nav>`;
+  }
+
+  function step(target, label) {
+    if (!target) return '<span></span>';
+    return `<button type="button" class="rhythiax-changelog-step" data-rhythiax-entry="${RhythiaX.escapeHtml(target.version)}"><small>${label}</small><b>${RhythiaX.escapeHtml(target.version)}${target.title ? ` · ${RhythiaX.escapeHtml(target.title)}` : ''}</b></button>`;
   }
 
   function panelInnerMarkup(entries) {
@@ -423,30 +288,33 @@ var RhythiaX = RhythiaX || {};
     if (!entry) return stateMarkup('<strong>No release notes yet.</strong>');
 
     const index = entries.indexOf(entry);
-    // An entry split by look shows each part under its own heading, with links to them under the date.
-    const groups = entry.groups || [{ engine: '', content: entry.content }];
-    const split = groups.some(group => group.engine);
-    const lookOf = group => RhythiaX.Releases.LOOKS[group.engine] || RhythiaX.Releases.LOOKS[''];
-    const contentHtml = groups.map(group => {
-      if (!split) return markdownToHtml(group.content);
-      const look = lookOf(group);
-      const key = group.engine || 'both';
-      return `<section class="rhythiax-changelog-engine" id="rhythiax-changelog-section-look-${escapeHtml(key)}" data-rhythiax-engine="${escapeHtml(key)}"><h3 class="rhythiax-changelog-engine-title"><span class="rhythiax-changelog-engine-icon" aria-hidden="true">${look.icon}</span>${escapeHtml(look.label)}<span class="rhythiax-changelog-engine-blurb">${escapeHtml(look.blurb)}</span></h3>${markdownToHtml(group.content, key + '-')}</section>`;
-    }).join('');
-    const jump = split ? `<nav class="rhythiax-changelog-jump" aria-label="Parts of this release">${groups.map(group =>
-      `<a href="#rhythiax-changelog-section-look-${escapeHtml(group.engine || 'both')}" data-rhythiax-changelog-section-link="look-${escapeHtml(group.engine || 'both')}">${escapeHtml(lookOf(group).label)}</a>`).join('')}</nav>` : '';
-    return `<article class="rhythiax-changelog-entry">
-        <header class="rhythiax-changelog-head">
-          ${arrow(entries[index - 1], 'Newer', '&#x2039;')}
-          <div class="rhythiax-changelog-head-text">
-            <h2 class="rhythiax-changelog-title">${escapeHtml(entry.title || 'Release notes')}</h2>
-            <div class="rhythiax-changelog-meta"><span class="rhythiax-changelog-version">${escapeHtml(entry.version)}</span><span>${escapeHtml(formatDate(entry.date))}</span>${entry.draft ? '<span class="rhythiax-changelog-draft">Draft · only in a copy loaded from a folder</span>' : ''}</div>
-            ${jump}
-          </div>
-          ${arrow(entries[index + 1], 'Older', '&#x203A;')}
-        </header>
-        <div class="rhythiax-changelog-body">${contentHtml}</div>
-      </article>
+    // One look at a time (Classic first), with a switch; an item for both looks is marked so.
+    const looks = RhythiaX.Releases.looksOf(entry);
+    const shownLook = looks.length ? look : 'all';
+    const shown = RhythiaX.Releases.forLook(RhythiaX.Releases.sections(entry), shownLook);
+    const summary = RhythiaX.Releases.summary(shown);
+    const tag = item => (shownLook === 'all' ? (item.look ? RhythiaX.Releases.LOOKS[item.look].label : '') : !item.look && looks.length ? 'Both looks' : '');
+    const itemHtml = item => `<li>${inlineMarkdown(item.text)}${tag(item) ? ` <span class="rhythiax-changelog-tag">${RhythiaX.escapeHtml(tag(item))}</span>` : ''}</li>`;
+    const switchHtml = looks.length ? `<div class="rhythiax-changelog-looks" role="group" aria-label="Changes for">${[['legacy', 'Classic'], ['exodus', 'Exodus'], ['all', 'All']].map(([key, label]) =>
+      `<button type="button" data-rhythiax-changelog-look="${key}" aria-pressed="${shownLook === key}">${label}</button>`).join('')}</div>` : '';
+    const contentHtml = shown.length ? shown.map(section => `<section class="rhythiax-changelog-section" data-rhythiax-section="${RhythiaX.escapeHtml(section.cat)}">
+        <h3 class="rhythiax-changelog-category-heading" data-rhythiax-category="${RhythiaX.escapeHtml(section.cat)}">${CHANGELOG_CATEGORY_ICONS[section.cat] ? `<span class="rhythiax-changelog-category-icon" aria-hidden="true">${CHANGELOG_CATEGORY_ICONS[section.cat]}</span>` : ''}<span class="rhythiax-changelog-category-title">${RhythiaX.escapeHtml(section.label)}</span><span class="rhythiax-changelog-count">${section.items.length}</span></h3>
+        <ul>${section.items.map(itemHtml).join('')}</ul></section>`).join('')
+      : `<div class="rhythiax-changelog-empty"><strong>Nothing changed in ${RhythiaX.escapeHtml(RhythiaX.Releases.LOOKS[shownLook]?.label || shownLook)} in this version.</strong><button type="button" class="rhythiax-changelog-retry-btn" data-rhythiax-changelog-look="all">Show all changes</button></div>`;
+    return `<div class="rhythiax-changelog-reader">
+        ${versionsMarkup(entries, entry)}
+        <article class="rhythiax-changelog-entry">
+          <header class="rhythiax-changelog-head">
+            <div class="rhythiax-changelog-head-text">
+              <h2 class="rhythiax-changelog-title" tabindex="-1">${RhythiaX.escapeHtml(entry.version)}${entry.title ? ` <span>${RhythiaX.escapeHtml(entry.title)}</span>` : ''}</h2>
+              <div class="rhythiax-changelog-meta"><span>${RhythiaX.escapeHtml(formatDate(entry.date))}</span>${summary ? `<span>${RhythiaX.escapeHtml(summary)}</span>` : ''}${entry.draft ? '<span class="rhythiax-changelog-draft">Draft · not published</span>' : ''}</div>
+            </div>
+            ${switchHtml}
+          </header>
+          <div class="rhythiax-changelog-body">${contentHtml}</div>
+          <footer class="rhythiax-changelog-steps">${step(entries[index + 1], 'Older')}${step(entries[index - 1], 'Newer')}</footer>
+        </article>
+      </div>
       ${noteMarkup()}`;
   }
 
@@ -455,10 +323,12 @@ var RhythiaX = RhythiaX || {};
     if (loadState === 'error') return `error:${loadError || ''}`;
     if (!entries || !entries.length) return 'empty';
     const entry = currentEntry(entries);
-    return entry ? JSON.stringify([entry.version, entry.title, entry.date, entry.content, entries.length, preview]) : 'empty';
+    return entry ? JSON.stringify([entry.version, entry.title, entry.date, entry.content, entries.map(item => item.version).join(), preview, look]) : 'empty';
   }
 
   function render(entries = []) {
+    const focus = focusTitle;
+    focusTitle = false;
     ensureReimaginedTab(entries);
     markView();
     if (!isReimaginedView()) {
@@ -468,7 +338,7 @@ var RhythiaX = RhythiaX || {};
     const articles = officialArticles();
     const host = articles[0]?.parentNode || tabsContainer()?.parentElement;
     if (!host) return;
-    let panel = document.querySelector(`.${PANEL_CLASS}:not([data-rhythiax-changelog-snapshot])`);
+    let panel = document.querySelector(`.${PANEL_CLASS}`);
     const key = panelMarkupKey(entries);
     if (!panel) {
       panel = document.createElement('section');
@@ -488,10 +358,12 @@ var RhythiaX = RhythiaX || {};
       }
       article.style.setProperty('display', 'none', 'important');
     });
+    if (focus) panel.querySelector('.rhythiax-changelog-title')?.focus?.({ preventScroll: true });
   }
 
   function scheduleRender() {
-    if (renderFrame) return;
+    // Nothing is drawn while Exodus shows the page; the reader starts again when it is handed back.
+    if (renderFrame || RhythiaX.ClassicIdle?.isSuspended?.()) return;
     renderFrame = window.requestAnimationFrame(() => {
       renderFrame = null;
       if (!isChangelogRoute()) {
@@ -508,13 +380,11 @@ var RhythiaX = RhythiaX || {};
   }
 
   function handleClick(event) {
-    const sectionLink = event.target.closest?.('[data-rhythiax-changelog-section-link]');
-    if (sectionLink) {
-      const section = document.getElementById(`rhythiax-changelog-section-${sectionLink.dataset.rhythiaxChangelogSectionLink}`);
-      if (section) {
-        event.preventDefault();
-        section.scrollIntoView({ block: 'start', behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'instant' : 'smooth' });
-      }
+    const lookButton = event.target.closest?.('[data-rhythiax-changelog-look]');
+    if (lookButton) {
+      event.preventDefault();
+      look = lookButton.dataset.rhythiaxChangelogLook;
+      render(changelogEntries || []);
       return;
     }
     const retryBtn = event.target.closest?.('.rhythiax-changelog-retry-btn, [data-rhythiax-changelog-retry]');
@@ -561,10 +431,25 @@ var RhythiaX = RhythiaX || {};
       }
     }
     const entryButton = event.target.closest?.('[data-rhythiax-entry]');
-    if (entryButton && document.querySelector(`.${PANEL_CLASS}:not([data-rhythiax-changelog-snapshot])`)) {
+    if (entryButton && document.querySelector(`.${PANEL_CLASS}`)) {
       event.preventDefault();
       setView(true, entryButton.dataset.rhythiaxEntry);
+      revealEntry();
     }
+  }
+
+  // Rhythia's top bar covers this much of the window (pages/changelog.css keeps the same space clear).
+  const TOP_BAR = 80;
+
+  // After a step (Older, Newer) or a version from the list, the release opens at its top rather than where the
+  // last one was scrolled to, and its title takes the focus once drawn: the clicked button is replaced with it.
+  function revealEntry() {
+    const top = document.querySelector(`.${PANEL_CLASS} .rhythiax-changelog-entry`)?.getBoundingClientRect?.().top;
+    if (Number.isFinite(top) && (top < TOP_BAR || top > window.innerHeight)) {
+      const still = window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches;
+      window.scrollBy?.({ top: top - TOP_BAR, behavior: still ? 'auto' : 'smooth' });
+    }
+    focusTitle = true;
   }
 
   // Capture phase, before Rhythia's own handler routes: a click on Public or Web drops the
@@ -585,22 +470,33 @@ var RhythiaX = RhythiaX || {};
     }
   }
 
-  function attachClickListener() {
-    if (clickListenerAttached) return;
-    clickListenerAttached = true;
-    document.addEventListener('click', handleClick);
-    document.addEventListener('click', leaveReimagined, true);
-    window.addEventListener('popstate', handlePopState);
-    // Native stream navigation replaces the tabs. Restore our tab in the same
-    // mutation checkpoint, before paint, rather than waiting for the page injector.
+  // Native stream navigation replaces the tabs. Restore our tab in the same mutation checkpoint, before paint,
+  // rather than waiting for the page injector. Only on /changelog: injectChangelog starts it when the route is
+  // reached, and it stops when the route is left.
+  function observeTabs() {
+    if (tabObserver || !isChangelogRoute() || typeof MutationObserver === 'undefined') return;
     tabObserver = new MutationObserver(() => {
-      if (!isChangelogRoute()) return;
+      if (!isChangelogRoute()) return unobserveTabs();
       const container = tabsContainer();
       if (container && !container.querySelector(`[${TAB_MARKER}]`)) {
         ensureReimaginedTab(changelogEntries || []);
       }
     });
     tabObserver.observe(document.body, { childList: true, subtree: true });
+  }
+
+  function unobserveTabs() {
+    tabObserver?.disconnect();
+    tabObserver = null;
+  }
+
+  function attachClickListener() {
+    observeTabs();
+    if (clickListenerAttached) return;
+    clickListenerAttached = true;
+    document.addEventListener('click', handleClick);
+    document.addEventListener('click', leaveReimagined, true);
+    window.addEventListener('popstate', handlePopState);
   }
 
   RhythiaX.injectChangelog = function () {
@@ -634,20 +530,22 @@ var RhythiaX = RhythiaX || {};
       requestedReimagined = false;
       requestedEntry = '';
       markView('');
+      unobserveTabs();
     }
     removePanel();
   };
 
   RhythiaX.ChangelogPageComposition = {
     start() {
+      if (RhythiaX.ClassicIdle?.isSuspended?.()) return;
       requestedReimagined = isReimaginedView();
       requestedEntry = requestedReimagined ? new URLSearchParams(window.location.search).get('entry') || '' : '';
       attachClickListener();
       scheduleRender();
     },
     stop() {
-      tabObserver?.disconnect();
-      tabObserver = null;
+      unobserveTabs();
+      focusTitle = false;
       markView('');
       requestedReimagined = false;
       requestedEntry = '';
@@ -667,6 +565,9 @@ var RhythiaX = RhythiaX || {};
     inject: RhythiaX.injectChangelog,
     cleanup: RhythiaX.cleanupChangelog,
     parseChangelogEntries: markdown => RhythiaX.Releases.parse(markdown),
-    markdownToHtml,
   };
+
+  // Exodus took the page: the reader and its listeners stop. Handed back, they start as on a fresh visit.
+  RhythiaX.ClassicIdle?.onSuspend?.(() => RhythiaX.ChangelogPageComposition.stop());
+  RhythiaX.ClassicIdle?.onResume?.(() => RhythiaX.ChangelogPageComposition.start());
 })();

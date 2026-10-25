@@ -37,8 +37,7 @@ body[data-rhythiax-theme="reimagined"],
 html[data-rhythiax-theme="rhythia-reimagined"],
 html[data-rhythiax-theme="reimagined"],
 [data-rhythiax-theme="rhythia-reimagined"],
-[data-rhythiax-theme="reimagined"],
-[data-theme="reimagined"] {
+[data-rhythiax-theme="reimagined"] {
   --sc-bg: #1a1226;
   --sc-inner-bg: #221634;
   --sc-border: rgba(216, 180, 254, 0.22);
@@ -54,11 +53,13 @@ html[data-rhythiax-theme="reimagined"],
   --sc-dock-cell-bg: #261b36;
 }
 
+/* THEMES 2 and 3 step aside for an own theme built on the dark or white stylesheet (theme.js marks <html>
+   with data-rhythiax-own-theme while one is painted): its cards take the theme's colours through the
+   defaults at the top and the block after THEME 3. Only <html> and <body> carry data-rhythiax-theme. */
+
 /* THEME 2: Dark / Pure Black (Obsidian Zinc) */
-body[data-rhythiax-theme="dark"],
-html[data-rhythiax-theme="dark"],
-[data-rhythiax-theme="dark"],
-[data-theme="dark"] {
+html:not([data-rhythiax-own-theme]) body[data-rhythiax-theme="dark"],
+html:not([data-rhythiax-own-theme])[data-rhythiax-theme="dark"] {
   --sc-bg: #151619;
   --sc-inner-bg: #1d1f22;
   --sc-border: rgba(255, 255, 255, 0.16);
@@ -75,10 +76,8 @@ html[data-rhythiax-theme="dark"],
 }
 
 /* THEME 3: White / Light Mode */
-body[data-rhythiax-theme="white"],
-html[data-rhythiax-theme="white"],
-[data-rhythiax-theme="white"],
-[data-theme="white"] {
+html:not([data-rhythiax-own-theme]) body[data-rhythiax-theme="white"],
+html:not([data-rhythiax-own-theme])[data-rhythiax-theme="white"] {
   --sc-bg: #ffffff;
   --sc-inner-bg: #f1f5f9;
   --sc-border: rgba(15, 23, 42, 0.16);
@@ -92,6 +91,27 @@ html[data-rhythiax-theme="white"],
   --sc-mod-pill-bg: #f1f5f9;
   --sc-dock-bg: #f8fafc;
   --sc-dock-cell-bg: #ffffff;
+}
+
+/* Own theme: every --sc-* value the card rules read, from its tokens (tests/classic-own-theme.test.js keeps
+   the list complete). The pill and dock fills, fixed colours in the defaults at the top, follow its panels.
+   --sc-art-bg is what the map art fades into (variant-rows.css): the panel colour without see-through, as
+   opaque as Dark's and White's card colour, so a see-through theme does not show the art's edge. */
+html[data-rhythiax-own-theme][data-rhythiax-theme] {
+  --sc-bg: var(--rhythiax-surface);
+  --sc-art-bg: var(--rhythiax-surface-solid, var(--rhythiax-surface));
+  --sc-inner-bg: var(--rhythiax-inner-surface);
+  --sc-border: var(--rhythiax-border);
+  --sc-border-strong: var(--rhythiax-border-strong);
+  --sc-text-strong: var(--rhythiax-text-strong);
+  --sc-text: var(--rhythiax-text);
+  --sc-text-muted: var(--rhythiax-text-muted);
+  --sc-accent: var(--rhythiax-accent);
+  --sc-accent-soft: var(--rhythiax-accent-soft);
+  --sc-shadow: var(--rhythiax-shadow);
+  --sc-mod-pill-bg: var(--rhythiax-inner-surface);
+  --sc-dock-bg: var(--rhythiax-surface);
+  --sc-dock-cell-bg: var(--rhythiax-inner-surface);
 }
 
 /* Base Card Container */

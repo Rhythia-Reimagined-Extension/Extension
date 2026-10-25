@@ -9,19 +9,20 @@ var RhythiaX = RhythiaX || {};
 (function () {
 'use strict';
 const K = () => RhythiaX.ExodusKit;
-const {SITE, Data, Kit, esc, fmt, REDUCED, when, ago, fullDate, diff, status, grade, GRADE_C, MODES, mods, av, accTxt, shell, slot, playsHtml, playsNote, row, morph} = RhythiaX.ExodusKit;
+const {SITE, Data, Kit, esc, cssUrl, fmt, REDUCED, when, ago, fullDate, diff, status, grade, GRADE_C, MODES, mods, av, accTxt, shell, slot, playsHtml, playsNote, row, morph} = RhythiaX.ExodusKit;
 
 /* ════════════════════ Score ════════════════════ */
 function score(host, ctx) {
   const R = host.shadowRoot, ac = new AbortController(), sig = {signal: ac.signal}, $ = s => R.querySelector(s);
-  const ui = shell(R, sig, ctx);
+  const ui = shell(R, sig);
   const id = ctx.id;
   const S = {d: null, hist: undefined, allowed: false, plays: null, playsErr: '', enter: true, dock: null};
 
   function hero(d) {
-    const s = d.score, m = d.map, acc = s.acc ?? 0, g = grade(acc, s.misses), [dl, dc] = diff(m?.difficulty ?? s.difficulty);
+    // The score as data.js keeps it carries no letter of Rhythia's own; a play marked as failed is F.
+    const s = d.score, m = d.map, acc = s.acc ?? 0, g = grade(acc, s.misses, undefined, s.passed === false), [dl, dc] = diff(m?.difficulty ?? s.difficulty);
     const C = 2 * Math.PI * 52, off = C * (1 - Math.min(100, acc) / 100);
-    return `<section class="v-hero ${S.enter ? 'enter' : ''}"><div class="v-banner" style="background-image:url('${esc(m?.art || '')}')"></div><div class="container v-hero-in">
+    return `<section class="v-hero ${S.enter ? 'enter' : ''}"><div class="v-banner" style="background-image:${cssUrl(m?.art || '')}"></div><div class="container v-hero-in">
       <div class="v-ring" style="--g:${GRADE_C[g]}" data-tip="<b>${accTxt(s.acc)} accuracy</b><small>Grade ${g}</small>">
         <svg viewBox="0 0 120 120" aria-hidden="true"><circle cx="60" cy="60" r="52" class="bg"/><circle cx="60" cy="60" r="52" class="fg" style="stroke-dasharray:${C};stroke-dashoffset:${REDUCED || !S.enter ? off : C};--off:${off}"/></svg>
         <span><b>${esc(g)}</b><small class="num">${accTxt(s.acc)}</small></span></div>
@@ -29,7 +30,7 @@ function score(host, ctx) {
         <span class="cap">Score</span>
         <h1>${m ? `<a href="/maps/${esc(m.id)}">${esc(s.title || m.title)}</a>` : esc(s.title)}</h1>
         <p class="v-by"><a class="v-player" href="/player/${esc(s.userId)}">${av(d.top.find(x => x.userId === s.userId)?.avatar || d.best?.avatar || '')}${esc(s.username)}</a>
-          <span data-tip="<b>${esc(fullDate(s.at))}</b><small>When it was played</small>">${esc(ago(s.at))}</span>${m ? `<span>mapped by <a href="/player/${esc(m.mapperId)}">${esc(m.mapper)}</a></span>` : ''}</p>
+          <span data-tip="<b>${esc(fullDate(s.at))}</b>">${esc(ago(s.at))}</span>${m ? `<span>mapped by <a href="/player/${esc(m.mapperId)}">${esc(m.mapper)}</a></span>` : ''}</p>
         <div class="v-chips"><span class="v-chip" style="--c:${dc}">${dl}</span>${m ? `<span class="v-chip" style="--c:${status(m)[1]}">${status(m)[0]}</span><span class="v-chip plain num">★ ${fmt(m.stars, 2)}</span>` : ''}
           <span class="v-chip plain"><img src="${SITE}/${MODES[d.mode][1]}" alt="">${MODES[d.mode][0]}</span>${s.passed === false ? '<span class="v-chip" style="--c:var(--bad)">Failed</span>' : ''}${mods(s)}</div>
       </div></div>
@@ -49,7 +50,7 @@ function score(host, ctx) {
     else if (best) cards.push(['Place on this map', `<strong class="num">Not their best</strong><span>Their best here is <a href="/score/${esc(best.id)}">#${fmt(best.place)} of ${fmt(best.total)}</a></span><p class="cap">${accTxt(best.acc)} · ${fmt(best.rp)} RP · ${esc(ago(best.at))}</p>`]);
     else cards.push(['Place on this map', `<strong class="num">—</strong><p class="cap">${d.map ? 'Rhythia lists no best score for this player here.' : 'Rhythia did not say which map this is.'}</p>`]);
     if (top) {
-      if (top.id === s.id) cards.push(['Against first place', `<strong class="num good">First place</strong><span>The top score on this map</span>`]);
+      if (top.id === s.id) cards.push(['Against first place', `<strong class="num good">First place</strong>`]);
       else {
         const dRp = (s.rp || 0) - (top.rp || 0), dAcc = (s.acc || 0) - (top.acc || 0);
         cards.push(['Against first place', `<strong class="num">${dRp < 0 ? '−' : '+'}${fmt(Math.abs(dRp))} RP</strong><span>${dAcc < 0 ? '−' : '+'}${fmt(Math.abs(dAcc), 2)}% accuracy, ${fmt(s.misses)} vs ${fmt(top.misses)} misses</span>
@@ -57,23 +58,23 @@ function score(host, ctx) {
       }
     }
     cards.push(['The day of this play', dayHtml(d)]);
-    return `<section class="container v-sec" id="v-stand-sec"><div class="sec-head"><div><h2>How it stands</h2><p class="lede">Its place among everyone’s best on this map, and the player’s day around it.</p></div></div>
+    return `<section class="container v-sec" id="v-stand-sec"><div class="sec-head"><div><h2>How it stands</h2></div></div>
       <div class="v-cards">${cards.map(([h, b]) => `<div class="v-card"><small>${h}</small>${b}</div>`).join('')}</div></section>`;
   }
   // From the community history (Reimagined's VPS), with the same consent as everywhere else.
   function dayHtml(d) {
-    if (!S.allowed) return '<strong class="num">—</strong><p class="cap">Turn on community history in the Reimagined popup to see the player’s rhythm points and rank around this day.</p>';
+    if (!S.allowed) return '<strong class="num">—</strong><p class="cap">Turn on community history in the Reimagined popup to see RP and rank around this day.</p>';
     if (S.hist === undefined) return '<div class="skeleton" style="width:70%;height:26px;margin-top:6px"></div><div class="skeleton" style="width:90%;margin-top:10px"></div>';
     if (S.hist === null) return '<strong class="num">—</strong><p class="cap">The community history did not answer.</p>';
     const day = when(d.score.at).toISOString().slice(0, 10), list = S.hist.filter(x => x.skillPoints > 0);
-    if (!list.length) return '<strong class="num">—</strong><p class="cap">Reimagined has no history for this player yet.</p>';
-    if (day < list[0].date) return `<strong class="num">—</strong><p class="cap">This play is older than the ${list.length} days of history Reimagined keeps.</p>`;
+    if (!list.length) return '<strong class="num">—</strong><p class="cap">No history for this player yet.</p>';
+    if (day < list[0].date) return `<strong class="num">—</strong><p class="cap">This play is older than the ${list.length} days of history.</p>`;
     const before = [...list].reverse().find(x => x.date < day), after = list.find(x => x.date > day) || list.find(x => x.date === day);
     if (!before || !after) return '<strong class="num">—</strong><p class="cap">Not enough history around this day yet.</p>';
     const dRp = after.skillPoints - before.skillPoints, dRank = (before.globalRank || 0) - (after.globalRank || 0);
     return `<strong class="num ${dRp > .05 ? 'good' : ''}">${dRp >= 0 ? '+' : '−'}${fmt(Math.abs(dRp), 1)} RP</strong>
       <span class="num">#${fmt(before.globalRank)} → #${fmt(after.globalRank)}${dRank ? ` (${dRank > 0 ? '▲' : '▼'} ${fmt(Math.abs(dRank))})` : ''}</span>
-      <p class="cap">From ${esc(before.date)} to ${esc(after.date)}: every play that day counts, not only this one.</p>`;
+      <p class="cap">${esc(before.date)} to ${esc(after.date)}, counting every play that day.</p>`;
   }
   function playsSec(d) {
     const body = S.plays ? playsHtml(S.plays, d.score.speed || 1) : S.playsErr ? `<p class="cap">${esc(S.playsErr)}</p>` : '<div class="skeleton" style="height:120px;border-radius:14px"></div>';
@@ -91,7 +92,7 @@ function score(host, ctx) {
     if (!d) return;
     morph($('#hero'), hero(d));
     morph($('#body'), `<div class="v-page ${S.enter ? 'enter' : ''}">${stands(d)}
-      <section class="container v-sec"><div class="sec-head"><div><h2>Replay</h2><p class="lede">Rhythia’s replay player.</p></div></div>${slot()}</section>
+      <section class="container v-sec"><div class="sec-head"><div><h2>Replay</h2></div></div>${slot()}</section>
       ${playsSec(d)}${topSec(d)}<div style="height:96px"></div></div>`);
     S.dock?.release();
     S.dock = ctx.dock($('#v-dock'));
@@ -124,7 +125,7 @@ function score(host, ctx) {
     // The map file: what the map asks.
     if (d.map?.file) {
       try { const m = await Kit().load(d.map.file, ac.signal); S.plays = m.analysis; } catch (err) { if (ac.signal.aborted) return; S.playsErr = `The map file could not be read (${err.message}).`; }
-    } else S.playsErr = 'Rhythia did not give the map file.';
+    } else S.playsErr = 'Rhythia did not send the map file.';
     if (!ac.signal.aborted) redraw('#v-plays-sec', playsSec(d));
   }
   R.addEventListener('click', e => { if (e.target.closest('[data-native-x]')) ctx.showNative(); }, sig);

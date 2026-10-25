@@ -125,8 +125,6 @@ var RhythiaX = RhythiaX || {};
   RhythiaX.CompareLoader = {
     playerId,
     isContextInvalidated,
-    extractAvatar: extractProfileAvatarFromDom,
-    extractRank: extractProfileRankFromDom,
     currentPlayer(player) {
       const profile = playerData(player);
       let username = profile.username;

@@ -60,14 +60,17 @@ body[data-rhythiax-theme] #root .fixed.top-0.left-0.w-full[class*="h-[60px]"] {
    border-bottom: 1px solid var(--rhythiax-border-strong) !important;
    box-shadow: 0 10px 30px color-mix(in srgb, var(--rhythiax-page-bg) 45%, transparent) !important;
    backdrop-filter: blur(18px) saturate(130%);
+   /* Rhythia draws the bar's gradient and checker cells in an <svg> over this background, from these three:
+      they take the theme's colours (clear at the top, a hint of the accent below), so the bar matches it. */
+   --checker-from: transparent;
+   --checker-to: color-mix(in srgb, var(--rhythiax-accent) 8%, transparent);
+   --checker-cell: color-mix(in srgb, var(--rhythiax-text) 3%, transparent);
 }
 body[data-rhythiax-theme] #root .fixed.top-0.left-0.w-full[class*="h-[60px]"] [class*="bg-[#2F4184]"],
 body[data-rhythiax-theme] #root .fixed.top-0.left-0.w-full[class*="h-[60px]"] [class*="bg-[#344a9e]"],
 body[data-rhythiax-theme] #root button[role="combobox"],
 body[data-rhythiax-theme] #root .fixed.top-0 a[href="/changelog"],
-body[data-rhythiax-theme] #root .fixed.top-0 a[aria-label="Changelog"],
-body[data-rhythiax-theme] #root button:has(img[src*="settingsicon"]),
-body[data-rhythiax-theme] #root [class*="bg-control"]:has(img[src*="settingsicon"]) {
+body[data-rhythiax-theme] #root .fixed.top-0 a[aria-label="Changelog"] {
    background-color: color-mix(in srgb, var(--rhythiax-accent) 14%, var(--rhythiax-nav-surface)) !important;
    border: 1px solid var(--rhythiax-border-strong) !important;
    color: var(--rhythiax-text-strong) !important;
@@ -106,9 +109,7 @@ body[data-rhythiax-theme] #root .fixed.top-0.left-0.w-full[class*="h-[60px]"] a:
 body[data-rhythiax-theme] #root .fixed.top-0.left-0.w-full[class*="h-[60px]"] button:hover,
 body[data-rhythiax-theme] #root button[role="combobox"]:hover,
 body[data-rhythiax-theme] #root .fixed.top-0 a[href="/changelog"]:hover,
-body[data-rhythiax-theme] #root .fixed.top-0 a[aria-label="Changelog"]:hover,
-body[data-rhythiax-theme] #root button:has(img[src*="settingsicon"]):hover,
-body[data-rhythiax-theme] #root [class*="bg-control"]:has(img[src*="settingsicon"]):hover {
+body[data-rhythiax-theme] #root .fixed.top-0 a[aria-label="Changelog"]:hover {
    background-color: var(--rhythiax-nav-hover) !important;
    border-color: var(--rhythiax-accent) !important;
 }
@@ -158,24 +159,28 @@ body[data-rhythiax-theme] #root select:focus-visible {
    outline-offset: 2px;
 }
 
-body[data-rhythiax-theme="white"] {
-   color-scheme: light;
+body[data-rhythiax-theme="white"] { color-scheme: light; }
+/* White's text, line and shadow colours. An own theme built on the white stylesheet keeps its own:
+   theme.js marks <html> with data-rhythiax-own-theme while one is painted. */
+html:not([data-rhythiax-own-theme]) body[data-rhythiax-theme="white"] {
    --rhythiax-text-strong: #18181b;
    --rhythiax-text-muted: #52525b;
    --rhythiax-border: rgba(30,41,59,.14);
    --rhythiax-border-strong: rgba(30,41,59,.24);
    --rhythiax-shadow: 0 8px 24px rgba(51,65,85,.10);
 }
-body[data-rhythiax-theme="white"] #root .fixed.top-0.left-0.w-full[class*="h-[60px]"] {
+/* Built-in White's bar and violet tint (themes/white/theme.css draws the rest of its bar). An own theme keeps
+   the bar above in its own colours. :where() adds no specificity, so built-in White is unchanged. */
+:where(html:not([data-rhythiax-own-theme])) body[data-rhythiax-theme="white"] #root .fixed.top-0.left-0.w-full[class*="h-[60px]"] {
    color: #ffffff !important;
    background-color: #ffffff !important;
    box-shadow: 0 8px 24px rgba(51,65,85,.12) !important;
 }
-body[data-rhythiax-theme="white"] #root .fixed.top-0.left-0.w-full[class*="h-[60px]"] [class*="text-white"] { color: #ffffff !important; }
+:where(html:not([data-rhythiax-own-theme])) body[data-rhythiax-theme="white"] #root .fixed.top-0.left-0.w-full[class*="h-[60px]"] [class*="text-white"] { color: #ffffff !important; }
 body[data-rhythiax-theme="white"] #root [class*="bg-neutral-950"],
 body[data-rhythiax-theme="white"] #root [class*="bg-[#0a0a0a"] { background-color: var(--rhythiax-page-bg) !important; }
 body[data-rhythiax-theme="white"] #root [class*="bg-white/10"] { background-color: rgba(30,41,59,.07) !important; }
-body[data-rhythiax-theme="white"] #root [class*="bg-blue-500/10"] { background-color: rgba(91,33,182,.10) !important; }
+:where(html:not([data-rhythiax-own-theme])) body[data-rhythiax-theme="white"] #root [class*="bg-blue-500/10"] { background-color: rgba(91,33,182,.10) !important; }
 
 body[data-rhythiax-theme="dark"] { color-scheme: dark; }
 body[data-rhythiax-theme="rhythia-reimagined"] {

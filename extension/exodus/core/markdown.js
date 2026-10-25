@@ -3,7 +3,8 @@
 // =============================================
 // The wiki and the changelog are Markdown (Rhythia's own files and entries, and this
 // extension's changelog); they are drawn by this small renderer, which keeps to what those
-// texts use and the short list of HTML Rhythia allows.
+// texts use and the short list of HTML Rhythia allows. Text players write (an About me, a clan
+// description) goes through it too, with its own rules (md's opts.images).
 
 var RhythiaX = RhythiaX || {};
 
@@ -22,18 +23,28 @@ const TAGS = {
 const safeUrl = (u, link) => { const m = String(u || '').trim().replace(/[\u0000-\u001F\u007F\s]+/g, '').match(/^([a-z][a-z0-9+.-]*):/i); return !m || (link ? ['http', 'https', 'mailto'] : ['http', 'https']).includes(m[1].toLowerCase()); };
 // Wiki pictures live under /wiki/public/src on Rhythia's site.
 const asset = u => (/^\/src\//.test(u) ? `${SITE}/wiki/public${u}` : /^\//.test(u) ? SITE + u : u);
+// Whether a picture or video may load: opts.images is 'all' (any http(s) address), 'rhythia-only'
+// (Rhythia's own hosts) or false (none; a picture is shown as its alt text).
+const onRhythia = u => { try { const x = new URL(asset(u), SITE); return x.protocol === 'https:' && /(^|\.)rhythia\.com$/i.test(x.hostname); } catch (_) { return false; } };
+const mediaOk = (u, opts) => safeUrl(u) && (opts.images === 'rhythia-only' ? onRhythia(u) : opts.images !== false);
 function sanitize(html, opts) {
   const doc = new DOMParser().parseFromString(`<body>${html}</body>`, 'text/html');
   const walk = node => {
     for (const el of [...node.children]) {
       const tag = el.tagName.toLowerCase(), keep = TAGS[tag];
       if (!keep) { el.remove(); continue; }
+      // Media the caller does not allow goes, a picture leaving its alt text behind.
+      if (opts.images !== 'all' && ['img', 'video', 'source'].includes(tag) && (opts.images === false || [el.getAttribute('src'), el.getAttribute('poster')].some(u => u != null && !mediaOk(u, opts)))) {
+        if (tag === 'img' && el.getAttribute('alt')) el.replaceWith(doc.createTextNode(el.getAttribute('alt'))); else el.remove();
+        continue;
+      }
       for (const a of [...el.attributes]) {
         const n = a.name.toLowerCase();
         if (!(n === 'class' || n.startsWith('aria-') || keep.includes(n))) { el.removeAttribute(a.name); continue; }
         if (['href', 'src', 'poster'].includes(n)) { if (!safeUrl(a.value, n === 'href')) el.removeAttribute(a.name); else el.setAttribute(n, n === 'href' ? a.value : asset(a.value)); }
       }
-      if (tag === 'a') opts.link(el);
+      // A link that leads nowhere on this site stays as its text (opts.link says so).
+      if (tag === 'a' && !opts.link(el)) { walk(el); el.replaceWith(...el.childNodes); continue; }
       if (tag === 'img') el.setAttribute('loading', 'lazy');
       walk(el);
     }
@@ -41,15 +52,15 @@ function sanitize(html, opts) {
   walk(doc.body);
   return doc.body.innerHTML;
 }
-function inline(text, opts) {
-  const keep = [];
+function inline(text, opts, keep = []) {
   const hold = h => `\u0000${keep.push(h) - 1}\u0000`;
   let s = String(text).replace(/`([^`]+)`/g, (_, c) => hold(`<code>${esc(c)}</code>`));
-  s = s.replace(/!\[([^\]]*)\]\(([^)\s]+)(?:\s+"[^"]*")?\)/g, (_, alt, src) => hold(safeUrl(src) ? `<img src="${esc(asset(src))}" alt="${esc(alt)}" loading="lazy">` : esc(alt)));
-  s = s.replace(/\[([^\]]+)\]\(([^)\s]+)(?:\s+"[^"]*")?\)/g, (_, label, href) => hold(opts.linkHtml(href, inline(label, opts))));
+  s = s.replace(/!\[([^\]]*)\]\(([^)\s]+)(?:\s+"[^"]*")?\)/g, (_, alt, src) => hold(mediaOk(src, opts) ? `<img src="${esc(asset(src))}" alt="${esc(alt)}" loading="lazy">` : esc(alt)));
+  s = s.replace(/\[([^\]]+)\]\(([^)\s]+)(?:\s+"[^"]*")?\)/g, (_, label, href) => hold(opts.linkHtml(href, inline(label, opts, keep))));
   s = s.replace(/<br\s*\/?>/gi, () => hold('<br>'));
+  // A bare address stops at a held part (\u0000): the markup kept there must never end up inside an href.
   s = esc(s)
-    .replace(/(^|[\s(])(https?:\/\/[^\s<)]+)/g, (_, pre, url) => `${pre}${opts.linkHtml(url.replace(/&amp;/g, '&'), url)}`)
+    .replace(/(^|[\s(])(https?:\/\/[^\s<)\u0000]+)/g, (_, pre, url) => `${pre}${opts.linkHtml(url.replace(/&amp;/g, '&'), url)}`)
     .replace(/\*\*([^*]+)\*\*|__([^_]+)__/g, (_, a, b) => `<strong>${a || b}</strong>`)
     .replace(/(^|[^*\w])\*([^*\s][^*]*?)\*(?!\*)|(^|[^_\w])_([^_\s][^_]*?)_(?!\w)/g, (m, p1, a, p2, b) => `${p1 ?? p2 ?? ''}<em>${a || b}</em>`)
     .replace(/~~([^~]+)~~/g, '<s>$1</s>');
@@ -72,7 +83,7 @@ function blocks(lines, opts) {
     }
     if ((m = line.match(/^(#{1,6})\s+(.*?)\s*#*\s*$/))) {
       const n = Math.min(4, m[1].length), plain = m[2].replace(/\[([^\]]+)\]\([^)]*\)/g, '$1').replace(/[*_`~]/g, '').trim();
-      out.push(`<h${n} id="${esc(opts.idPrefix + slugify(plain))}">${inline(m[2], opts)}</h${n}>`);
+      out.push(`<h${n}${opts.ids ? ` id="${esc(opts.idPrefix + slugify(plain))}"` : ''}>${inline(m[2], opts)}</h${n}>`);
       i++; continue;
     }
     if (/^\s*(-{3,}|\*{3,})\s*$/.test(line)) { out.push('<hr>'); i++; continue; }
@@ -101,7 +112,7 @@ function blocks(lines, opts) {
       out.push(list(body, opts));
       continue;
     }
-    if (/^\s*<(div|p|img|video|table|details)\b/i.test(line)) {
+    if (opts.html && /^\s*<(div|p|img|video|table|details)\b/i.test(line)) {
       const body = [];
       for (; i < lines.length && lines[i].trim(); i++) body.push(lines[i]);
       out.push(`<div class="md-html">${sanitize(body.join('\n'), opts)}</div>`);
@@ -109,7 +120,7 @@ function blocks(lines, opts) {
     }
     const para = [];
     for (; i < lines.length && lines[i].trim() && !(para.length && isStart(lines[i])); i++) para.push(lines[i].trim());
-    out.push(`<p>${inline(para.join('\n'), opts).replace(/\n/g, ' ')}</p>`);
+    out.push(`<p>${inline(para.join('\n'), opts).replace(/\n/g, opts.breaks ? '<br>' : ' ')}</p>`);
   }
   return out.join('');
 }
@@ -130,20 +141,36 @@ function list(lines, opts) {
   return ordered ? `<ol${start !== 1 ? ` start="${start}"` : ''}>${items.map(li).join('')}</ol>` : `<ul>${items.map(li).join('')}</ul>`;
 }
 // opts.href(href) → {href, internal} lets the wiki turn its relative .md links into wiki pages.
+// opts.images is 'all' (the default: pictures from any http(s) address), 'rhythia-only' (Rhythia's own hosts)
+// or false (no pictures or videos; a picture shows its alt text). Passing it marks text a player wrote (an
+// About me, a clan description): raw HTML in it is shown as text, single line breaks are kept, its headings
+// get no ids (they could clash with the page's own) unless opts.idPrefix is given, and nothing is cut off as
+// front matter. opts.html and opts.breaks set the first two either way.
 function md(text, opts = {}) {
-  const o = {idPrefix: opts.idPrefix || '', href: opts.href || (h => ({href: h}))};
+  const user = 'images' in opts;
+  const o = {idPrefix: opts.idPrefix || '', href: opts.href || (h => ({href: h})), images: opts.images ?? 'all',
+    html: opts.html ?? !user, breaks: opts.breaks ?? user, ids: !user || Boolean(opts.idPrefix)};
+  // Without opts.href, a relative link (no scheme, not starting with / or #) would open that name on
+  // rhythia.com, where nothing is (the changelog's links to the repository's own documents): it is shown
+  // as its text. The wiki passes opts.href and keeps its relative .md links.
+  const nowhere = h => !opts.href && !/^([a-z][a-z0-9+.-]*:|[/#])/i.test(String(h).trim());
   o.linkHtml = (href, label) => {
-    if (!safeUrl(href, true)) return label;
+    if (!safeUrl(href, true) || nowhere(href)) return label;
     const r = o.href(href);
     const ext = /^(https?:|mailto:)/i.test(r.href) && !r.href.startsWith(SITE);
     return `<a href="${esc(r.href)}"${ext ? ' target="_blank" rel="noopener noreferrer"' : ''}>${label}</a>`;
   };
+  // false: the link is shown as its text.
   o.link = a => {
-    const h = a.getAttribute('href'); if (!h) return;
+    const h = a.getAttribute('href'); if (!h) return true;
+    if (nowhere(h)) return false;
     const r = o.href(h); a.setAttribute('href', r.href);
     if (/^(https?:|mailto:)/i.test(r.href) && !r.href.startsWith(SITE)) { a.setAttribute('target', '_blank'); a.setAttribute('rel', 'noopener noreferrer'); } else a.removeAttribute('target');
+    return true;
   };
-  const src = String(text || '').replace(/\r/g, '').replace(/^---\s*\n[\s\S]*?\n---\s*\n/, '')
+  // NUL marks the parts inline() holds back, so the text itself may not carry one.
+  const raw = String(text || '').replace(/[\r\u0000]/g, '');
+  const src = user ? raw : raw.replace(/^---\s*\n[\s\S]*?\n---\s*\n/, '')
     // VitePress boxes (::: tip … :::) read as the same boxes as > [!TIP].
     .replace(/:::\s*([a-zA-Z]+)[^\n]*\n([\s\S]*?)\n:::/g, (_, kind, body) => [`> [!${kind.toUpperCase()}]`, ...body.replace(/^\n+|\n+$/g, '').split('\n').map(l => `> ${l}`)].join('\n'));
   return blocks(src.split('\n'), o);
@@ -187,6 +214,7 @@ const css = `
 details.md-box summary{cursor:pointer;font-weight:650;color:var(--text)}
 details.md-box[open] summary{margin-bottom:8px}
 .md .pattern-row{display:grid;grid-template-columns:160px minmax(0,1fr);gap:18px;align-items:center;margin:0 0 16px}
+@media (max-width:640px){.md .pattern-row{grid-template-columns:1fr}}
 .md .pattern-row img{margin:0;width:160px}
 .md .pattern-row p{margin:0}
 `;

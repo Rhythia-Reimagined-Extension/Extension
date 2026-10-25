@@ -4,8 +4,16 @@ Exodus is the experimental redesign of rhythia.com. It is switched on in the pop
 default). Everything it needs lives in this folder, apart from these files in `../shared/`:
 
 - `shared/net.js`: shared request limits for Rhythia's API and the VPS, across tabs.
-- `shared/settings/schema.js`: the popup's settings, shared with the Legacy look.
+- `shared/consent.js`: the rule for the player's online-history choice (`RhythiaX.Consent`), the same one Legacy,
+  the popup and the background ask.
+- `shared/rhythia-session.js`: who is signed in to Rhythia, read the same way as in Legacy.
+- `shared/grades.js`: the grade letter of a score, the same rule as in Legacy.
+- `shared/settings/schema.js`: every popup setting, shared with the popup.
+- `shared/colour.js`: the colour maths, background checks and placing that own themes are built from, shared
+  with Legacy and the popup.
+- `shared/exodus-themes.js`: own themes, shared with the popup that lists them.
 - `shared/releases.js`: this extension's release notes.
+- `shared/notices.js`: the notification stack in the bottom-right corner, in Exodus' colours from `core/notice-skin.js`.
 - `shared/community-consent.js`: the online-history choice card. Exodus redraws the page after a choice.
 
 It does not use anything in `../legacy/`, so Legacy can change without touching Exodus, and the other way round.
@@ -13,9 +21,13 @@ See `../README.md` for how the three folders fit together.
 
 ## Where Exodus ends
 
-While Exodus is on, a tab loads only Exodus and Legacy's small start files (tokens, anti-flicker CSS and the early changelog script); the rest of Legacy is not loaded (`../engines.js`).
-While Exodus shows a page, it puts the class `rhythiax-exodus` on `<html>` (`RhythiaX.Exodus.owns()`), and
-Rhythia's own page keeps running underneath, unseen.
+While Exodus is on, a tab loads only Exodus and Classic's pre-paint group (`legacyStart`: tokens, anti-flicker CSS and the early changelog script, `changelog-early.js`, which also gives Rhythia's own profile sections back when Classic does not replace them in time), so a page Exodus gives to Legacy is covered from the first frame; under Exodus its rules on Rhythia's page do nothing (`html:not(.rhythiax-exodus)`). The rest of Legacy is not loaded (`../engines.js`).
+While Exodus shows a page, it puts the class `rhythiax-exodus` on `<html>`, and Rhythia's own page keeps
+running underneath, unseen.
+
+The looks share only this contract (see `../README.md`): the class `rhythiax-exodus` on `<html>`, the theme
+mark `data-rhythiax-exodus-theme` on `<html>` (the shared notices follow it), and the message
+`rhythiax-page-free`. Legacy reads the class itself and never calls into `RhythiaX.Exodus`.
 
 On a profile, Rhythia's page is not moved along when Exodus changes the address, because it would load the
 same profile a second time. It catches up when one of its own parts is needed: a native button, Settings,
@@ -24,8 +36,9 @@ same profile a second time. It catches up when one of its own parts is needed: a
 Rhythia's player or buttons.
 
 When Exodus does not take a page (Rhythia's own page, a page switched off in the popup, or Exodus switched
-off), it sends `rhythiax-page-free` to the background once, and the background adds Legacy to that tab.
-Legacy then builds the page as on a fresh visit, and stays idle whenever the class comes back.
+off), it sends `rhythiax-page-free` to the background (again after a failed hand-off, until the background
+confirms it), and the background adds Legacy to that tab.
+Legacy then builds the page as on a fresh visit, and suspends whenever the class comes back.
 Exodus never calls into the Legacy scripts.
 
 ## Loading
@@ -36,17 +49,29 @@ in this order:
 | File | What it is |
 |---|---|
 | `boot.css` | Hides Rhythia's page before it paints and colours the page while Exodus starts. |
-| `../shared/net.js` | `RhythiaX.Net.fetch`. Shared request limits for Rhythia's API and the VPS, across tabs. |
+| `../shared/net.js` | `RhythiaX.Net.fetch`. Shared request limits for Rhythia's API and the VPS, across tabs. A caller that would rather fail than wait passes `maxWait` (ms); the request then fails with an error named `MaxWaitError` (with `retryAt`, when the limit says when it frees up). |
+| `../shared/consent.js` | `RhythiaX.Consent`. Whether the player allowed online history and profile visit reports. |
+| `../shared/rhythia-session.js` | `RhythiaX.RhythiaSession`. Who is signed in to Rhythia (`core/data.js` sends it); missing means signed out. |
+| `../shared/grades.js` | `RhythiaX.Grades`. A score's grade letter: Rhythia's own when it sent one, otherwise from the accuracy. |
 | `../shared/settings/schema.js` | `RhythiaX.SettingsSchema`. Every popup setting, where it is saved and which look uses it. |
-| `core/assets.js` | Base CSS, icon sprite and title art, generated from the approved mockup. Do not edit by hand. |
+| `../shared/colour.js` | `RhythiaX.Colour`. Colour maths, the check a saved background must pass, background placing, and reading a file picked in the theme editor. |
+| `../shared/exodus-themes.js` | `RhythiaX.ExodusThemes`. Own themes: presets, the colours worked out from a theme, what may be saved. |
+| `core/assets.js` | Base CSS, icon sprite and title art from the approved design. Generated by `tools/exodus-assets/export.py` in the development repository: change the files there and run it again, never edit this file by hand. |
 | `core/data.js` | `RhythiaX.ExodusData`. Every request to Rhythia and the VPS, and the saved copies pages paint from. |
 | `core/kit.js` | `RhythiaX.ExodusKit`. Shared helpers, `morph()` and the page registry. |
-| `core/markdown.js` | The small Markdown renderer used by the wiki and the changelog. |
+| `core/markdown.js` | The small Markdown renderer used by the wiki, the changelog, bios and clan descriptions. Without `opts.href` (everywhere but the wiki), a link with no scheme that does not start with `/` or `#` is shown as its text. |
 | `../shared/releases.js` | `RhythiaX.Releases`. This extension's release notes, through the background (see `../README.md`). |
 | `core/mapkit.js` | Reads a map file (.sspm or .rhm, only the notes part): what the map is made of. |
-| `pages/*.js` | One file per page (see below). |
+| `pages/*.js` | One file per page, plus the profile's part files and its CSS (see below). |
+| `core/notice-skin.js` | `RhythiaX.NoticeSkins.exodus`. Exodus' colours for the shared notices, a copy of `core/assets.js`' theme colours. |
+| `../shared/notices.js` | `RhythiaX.Notices`. The notification stack in the bottom-right corner. |
+| `../shared/community-consent.js` | `RhythiaX.CommunityConsentNotice`. The online-history choice card. |
+| `core/theme-editor.js` | `RhythiaX.ExodusThemeEditor`. The theme editor the popup opens on the page (see Own themes). |
 | `core/account.js` | `RhythiaX.ExodusAccount`. The Settings window the header's gear opens. It saves with Rhythia's own request; image uploads, buying a name change and login changes open Rhythia's window. |
-| `core/shell.js` | `RhythiaX.Exodus`. The header, the router, and which page shows at which address. |
+| `core/routes.js` | `RhythiaX.ExodusRoutes`. Which page shows at which address (`routeKey()`, `viewKey()`) and which "Pages Exodus takes over" entry it belongs to (`pageGroup()`). No state, so it runs in a test as it is. |
+| `core/own-theme.js` | `RhythiaX.ExodusOwnTheme`. The CSS an own theme adds to the page (`css()`, `pictureCss()`), and the shell's part of own themes: the theme in use, its background picture or video, and the theme editor's hand-off with saving and removing. |
+| `core/dock.js` | `RhythiaX.ExodusDock`. Lays Rhythia's own player (map preview, score replay) over a slot of the Exodus page. |
+| `core/shell.js` | `RhythiaX.Exodus`. The header, navigation, search, and the page shown at each address. |
 
 `core/bridge.js` runs in the page's own world (`"world": "MAIN"`) at `document_idle`. It reaches
 Rhythia's map preview for the speed and seek controls.
@@ -57,7 +82,12 @@ Rhythia's map preview for the speed and seek controls.
 |---|---|
 | `pages/home.js` | `/` |
 | `pages/profile.js` | `/player/:id`, `/player/:id/scores` |
-| `pages/compare.js` | The profile's Compare window. |
+| `pages/profile-hero.js` | The profile's top and intro: hero, About and its editor, title map, showcase, friends. |
+| `pages/profile-stats.js` | The profile's Progress and Rankings panes and the activity calendar. |
+| `pages/profile-playstyle.js` | The profile's Playstyle pane: momentum's status guide, Month in review, map types. |
+| `pages/profile-scores.js` | The profile's score lists, their search, filters and menu, and the Scores page's chart. |
+| `pages/profile-style.js` | The profile's CSS, loaded right after the part files. |
+| `pages/compare.js` | The profile's Compare window, with its own CSS. |
 | `pages/board.js` | `/leaderboards`, `/leaderboards/:country` |
 | `pages/score.js` | `/score/:id` |
 | `pages/map.js` | `/maps/:id` |
@@ -69,24 +99,94 @@ Rhythia's map preview for the speed and seek controls.
 | `pages/changelog.js` | `/changelog` and its streams |
 | `pages/support.js` | `/support`. Payment stays in Rhythia's own dialog, and `?paynet=` returns stay with Rhythia. |
 
+Pages come in two kinds. Most register a view in the `ExodusKit.page` registry (`K().page('name', view, css)`),
+and `core/shell.js` mounts the view (from `RhythiaX.ExodusPages`) for the key `viewKey()` (`core/routes.js`)
+gives. The profile, Home and the leaderboards are older and set their own globals, which `core/shell.js` calls
+directly: `RhythiaX.ExodusApp` (profile), `RhythiaX.ExodusHome` and `RhythiaX.ExodusBoard`; `RhythiaX.ExodusCompare`
+is the profile's Compare window, which the profile calls. These four bring their CSS to the shell as the global's
+`.css` (the profile's is set by `pages/profile-style.js`).
+
+The profile is split over five files. `pages/profile.js` keeps the data, the view state, the rendering, the
+actions and the events; the four part files (`profile-hero.js`, `profile-stats.js`, `profile-playstyle.js`,
+`profile-scores.js`) each register a factory on `RhythiaX.ExodusProfileParts` and are loaded right after it.
+`profile.js` calls each factory at mount with one context object and draws what it returns; values that change
+after mount (such as the history) are getters on that object. Only the profile uses `ExodusProfileParts`; the
+shell never calls it.
+
 ### Adding a page
 
 1. Write the view as `function view(host, ctx)`. It returns `{state, idle, relayout, page, destroy}`.
 2. Register it with `K().page('name', view, css)`.
-3. Give it an address in `viewKey()` in `core/shell.js`.
-4. Add the file to the `exodus` group in `../engines.js`.
+3. Give it an address in `viewKey()` in `core/routes.js`.
+4. Add it to `PAGES` in `../shared/settings/schema.js` (the popup's "Pages Exodus takes over"). A page shows
+   only when its entry is in the player's pages list; for sub-addresses (like `/clans/:id`), map their keys to
+   the entry in `pageGroup()` in `core/routes.js`. A player who already saved a pages list keeps it as saved, so
+   the new page stays off for them unless a migration adds it.
+5. Add the file to the `exodus` group in `../engines.js`. A page split into parts lists its part files right
+   after the page file, as the profile does.
+
+## Own themes
+
+Besides Reimagined, Dark and White, a player can make their own themes. In the popup (Appearance, with Exodus
+on), "Your themes" lists them under the built-in ones; "New theme" and a theme's pencil ask the tab in front
+(`rhythiax-theme-editor`) to open `core/theme-editor.js` on the page Exodus shows.
+
+- A theme is a few choices (background colour or gradient, accent, contrast, style) and anything set by hand.
+  `shared/exodus-themes.js` works every other value out from those ("Auto"), with a minimum contrast (text 7:1, other
+  text and text on buttons 4.5:1, the accent 3:1), checked on every colour of a gradient. Basic and Advanced
+  edit the same theme: changing a value sets it, and its Auto button gives it back; the editor says what each
+  Auto value is worked out from.
+- "Keep everything readable" (`fit`, on by default): colours set by hand are moved just far enough to reach
+  those minimums, and the editor shows what was picked and what is used. Off, they are used exactly, and
+  hard-to-read ones are marked with a Fix.
+- The editor's panel is updated in place with `ExodusKit.morph`, so a field being typed in or a slider being
+  dragged is never redrawn.
+- The theme's CSS (`core/own-theme.js`) goes in `<style id="owntheme">`, after Exodus' own styles. It sets the same tokens the
+  built-in themes use (`--page`, `--panel`, `--text`, `--accent`, `--rule`…) and, for parts that have no token
+  yet (top bar, banner, glass plates, buttons), rules over Exodus' own.
+- Saved values end up in CSS, so `ExodusThemes.normalize` keeps only known keys, six-digit colours, numbers
+  in range and known choices. A background is kept only as a `data:` URL of a PNG, JPEG, WebP or GIF
+  (up to 8 MB) or an MP4 or WebM video (up to 20 MB).
+- A video background is a `<video class="ownbg">` at the start of `.exo`. It is muted unless the theme turns
+  sound on, and any other change to `muted` is undone. With sound on, only the tab in front plays it, after the
+  first click on the page; hidden tabs pause it, and so does reduced motion.
+- An uploaded picture or video can be placed (`bgFit`, `bgZoom`, `bgX`, `bgY`, `bgRot`, `bgFlip`): its layer
+  is sized in shares of the screen, never `vw`/`vh` (the editor's zoomed page would shrink those), and turned
+  layers grow by `--own-ar` (height / width, set by `core/own-theme.js`) so they still cover the screen. Darkening is
+  the layer's opacity, so a smaller or turned picture leaves no dark box. In the editor, "Move and resize on
+  the page" puts a layer over the page: drag moves, the wheel resizes, Shift + wheel turns.
+- An uploaded picture (or the video's frame) is read in 12 areas of the screen as it lies there (`bgZones`,
+  the editor's `readPicture` and `ExodusThemes.zonesFrom`). With them, the darkening (`bgDim`) is Auto: just
+  enough for text to read 7:1 on every area's average and 4.5:1 on its dark and light details (strokes,
+  highlights), and secondary text is kept readable on it too. Over a picture the rank plates (`glassA`,
+  `glassBlur`) and panels (`panelClear`, `panelBlur`) are Auto as well: as see-through as text on them allows.
+  "Colours from the picture" takes the page and the accent from it (`fromPicture`).
+- Panels can be see-through (`panelClear`, up to 20%) with blur behind (`panelBlur`, up to 20px). A hidden
+  banner (`bannerMode` none, or others' with "mine") takes its space with it: the hero moves up under the bar.
+- An uploaded picture is its own sheet (`<style id="ownpic">`, `--own-pic`), written only when it changes; the
+  editor paints at most once a frame and `.exo[data-editing]` turns fades off, so dragging stays smooth.
+- Storage: `rhythiaxExodusThemes` (the list, no pictures), `rhythiaxExodusCustomTheme` (the one in use, `''`
+  for a built-in theme) and `rhythiaxExodusThemeImg:<id>` (a theme's picture, written only when saved).
+  Choosing a built-in theme in the popup clears the own one.
+- The page colour is mirrored in page storage (`rhythiax_exodus_page`) and reaches `boot.css` as
+  `--rhythiax-exodus-page`, so the first paint already has it.
 
 ## Rules every page follows
 
 - **Paint at once, then refresh.** A page paints its saved copy at once, then the fresh answer. Later
-  updates go through `morph()`, never a fresh `innerHTML`. That way nothing jumps, flashes or plays
-  its entrance again.
+  updates go through `morph()` where they can, rather than a fresh `innerHTML`. That way nothing jumps,
+  flashes or plays its entrance again. Two places still redraw: Home's quiet refresh mounts it again (keeping
+  the playing video), and the changelog's `refresh()` sets its body and side panel anew.
 - **Pay with Rhythia.** Sign-in, uploads, payments and login changes open Rhythia's own dialogs
   (`ctx.clickNative` or `data-native-click`). The Settings window (`core/account.js`) saves the rest itself and hands these over.
-- **Use the shared limiter.** All requests to Rhythia's API and the VPS go through `shared/net.js` (map files and the Home video come from Rhythia's resource host and are capped in `core/mapkit.js` and `core/data.js` instead):
+- **Use the shared limiter.** All requests to Rhythia's API and the VPS go through `shared/net.js` (player history goes on from there to the background, `background/vps-access.js`). Map files come from Rhythia's resource host and are capped in `core/mapkit.js` instead; the Home video is a plain `<video>` from Rhythia's static host and is not capped. The limits:
   - Rhythia: 16 a second.
   - VPS: within the gateway's per-address limits.
+  - A request that is no use after a while passes `maxWait`, so a paused limit fails it at once instead of
+    holding the page: a profile's history waits at most 3.5 s (`HIST_WAIT` in `core/data.js`), the leaderboard's
+    histories 20 s (`BOARD_WAIT`).
 - **Follow the popup.** `core/shell.js` puts the switches Exodus honours in `RhythiaX.ExodusPrefs`
   (`modules` shared with the Legacy look, `exodus` for its own options) and rebuilds the page when they change.
   A new setting is one entry in `shared/settings/schema.js`, then a read of `RhythiaX.ExodusPrefs` where it applies.
-- **Ask for consent.** Community history is only fetched after the same consent the Legacy client asks for.
+- **Ask for consent.** Community history is only fetched after the player's consent, read through
+  `RhythiaX.Consent` (`shared/consent.js`), the same rule Legacy, the popup and the background use.

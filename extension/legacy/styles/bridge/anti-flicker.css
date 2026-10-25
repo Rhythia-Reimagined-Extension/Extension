@@ -59,45 +59,52 @@
   width: 100%;
 }
 
-/* 4. Hardware-Accelerated Smooth Theme Transitions (no DOM cloning) */
-html.rhythiax-theme-transitioning,
-html.rhythiax-theme-transitioning body,
-html.rhythiax-theme-transitioning #root {
-  transition: background-color 240ms cubic-bezier(.16, 1, .3, 1),
-              border-color 240ms cubic-bezier(.16, 1, .3, 1),
-              color 240ms cubic-bezier(.16, 1, .3, 1) !important;
-}
-
-/* 5. Zero-Flicker Native Section Hiding */
+/* 4. Zero-Flicker Native Section Hiding */
 .rhythiax-native-score-section-hidden {
   display: none !important;
 }
 
-/* Zero-Flicker Native Score Section Suppression from Frame 0 (Profile pages only) */
-html:not([data-rhythiax-module-score-cards="false"]) main:has(img[src*="user-avatar"]) div.overflow-hidden.rounded-xl:has(> .space-y-2):not(.rhythiax-scores-hub):not(.rhythiax-pinned-scores-section),
-html:not([data-rhythiax-module-score-cards="false"])[data-rhythiax-page="profile"] div.overflow-hidden.rounded-xl:has(> .space-y-2):not(.rhythiax-scores-hub):not(.rhythiax-pinned-scores-section) {
+/* Profile pages from frame 0: Rhythia's score list and Statistics body stay hidden until Classic's Scores hub and
+   Statistics panel take their place. Not under Exodus, which hides #root on the pages it takes. They come back
+   when the module is off (core/modules.js writes data-rhythiax-module-score-cards and
+   data-rhythiax-module-advanced-stats) or when Classic did not build its part (data-rhythiax-scores-released and
+   data-rhythiax-stats-released, set by pages/profile/composition.js when a profile load ends, and by
+   content/bootstrap/changelog-early.js 6 s after a page opened on /player/). CSS cannot read the address at
+   document_start, and no marker of Rhythia's markup is known to be unique to profiles, so the rules are not
+   limited to /player/ pages. */
+html:not(.rhythiax-exodus):not([data-rhythiax-module-score-cards="false"]):not([data-rhythiax-scores-released]) main:has(img[src*="user-avatar"]) div.overflow-hidden.rounded-xl:has(> .space-y-2):not(.rhythiax-scores-hub):not(.rhythiax-pinned-scores-section) {
   display: none !important;
 }
 
-/* Zero-Flicker Native Stats Body Suppression (when Reimagined tab is active) */
-html:not([data-rhythiax-stats-tab="official"]) .order-1 > div:not([class*="-mx-4"]):not([class*="-mt-4"]):not(.rhythiax-reimagined-stats-body):not(.rhythiax-stats-tabs):not(.rhythiax-native-stats-body) {
+/* Statistics body while the Reimagined tab is active */
+html:not(.rhythiax-exodus):not([data-rhythiax-module-advanced-stats="false"]):not([data-rhythiax-stats-released]):not([data-rhythiax-stats-tab="official"]) .order-1 > div:not([class*="-mx-4"]):not([class*="-mt-4"]):not(.rhythiax-reimagined-stats-body):not(.rhythiax-stats-tabs):not(.rhythiax-native-stats-body) {
   display: none !important;
 }
 
-/* Zero-Flicker Skeleton Shimmer for Reimagined Stats while scripts mount */
-html:not([data-rhythiax-stats-tab="official"]) .order-1:not(:has(.rhythiax-reimagined-stats-body)) {
+/* Placeholder for the Reimagined Statistics panel while Classic builds it */
+html:not(.rhythiax-exodus):not([data-rhythiax-module-advanced-stats="false"]):not([data-rhythiax-stats-released]):not([data-rhythiax-stats-tab="official"]) .order-1:not(:has(.rhythiax-reimagined-stats-body)) {
   min-height: 220px;
   position: relative;
 }
 
-html:not([data-rhythiax-stats-tab="official"]) .order-1:not(:has(.rhythiax-reimagined-stats-body))::after {
+html:not(.rhythiax-exodus):not([data-rhythiax-module-advanced-stats="false"]):not([data-rhythiax-stats-released]):not([data-rhythiax-stats-tab="official"]) .order-1:not(:has(.rhythiax-reimagined-stats-body))::after {
   content: "";
   position: absolute;
   inset: 60px 16px 16px 16px;
   border-radius: 12px;
   background-color: var(--rhythiax-inner-surface, rgba(255, 255, 255, 0.04));
-  animation: rhythiax-shimmer 1.8s infinite ease-in-out;
+  animation: rhythiax-stats-placeholder-pulse 1.8s infinite ease-in-out;
   pointer-events: none;
+}
+
+/* A solid box with nothing clipping it, so it fades in place; the sliding rhythiax-shimmer would carry it across the column. */
+@keyframes rhythiax-stats-placeholder-pulse {
+  0%, 100% {
+    opacity: 0.6;
+  }
+  50% {
+    opacity: 1;
+  }
 }
 
 /* Ensure smooth crossfade when switching stats tabs */
@@ -114,7 +121,7 @@ html[data-rhythiax-changelog]:not(.rhythiax-exodus) #root div:has(> a[href*="/ch
   grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
 }
 
-html[data-rhythiax-changelog="reimagined"]:not(.rhythiax-exodus) #root article:not(.rhythiax-changelog-entry):not([data-rhythiax-changelog-snapshot]),
+html[data-rhythiax-changelog="reimagined"]:not(.rhythiax-exodus) #root article:not(.rhythiax-changelog-entry),
 html[data-rhythiax-changelog="reimagined"]:not(.rhythiax-exodus) #root div:has(> a[href*="/changelog/public"]) ~ div:has(> a[href="/support"]) {
   display: none !important;
 }

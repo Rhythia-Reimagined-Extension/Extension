@@ -12,14 +12,6 @@ RhythiaX.TitleProgression = RhythiaX.TitleProgression || {};
   const Domain = RhythiaX.TitleProgression.Domain;
   const Icons = RhythiaX.TitleProgression.Icons || {};
 
-  function escapeHtml(str) {
-    return String(str || '')
-      .replace(/&/g, '&amp;')
-      .replace(/</g, '&lt;')
-      .replace(/>/g, '&gt;')
-      .replace(/"/g, '&quot;');
-  }
-
   // 1. RENDER SVG ACTIVE TRACKS VIA DE CASTELJAU
   function renderSvgPaths(rp, rank) {
     const S = Domain.SEGMENTS;
@@ -196,12 +188,8 @@ RhythiaX.TitleProgression = RhythiaX.TitleProgression || {};
   }
 
   // 4. RENDER REIMAGINED HISTORY VIEW
-  function renderHistoryView(playerData, scoreSets) {
-    const histData = Domain.generateHistoryData(playerData, scoreSets);
-    const rp = Domain.parseRp(playerData?.rp);
-    const rank = Domain.parseRank(playerData?.globalRank);
-    const summary = Domain.getStatusSummary(rp, rank);
-    const tierColor = summary.tierColor || '#8A4FA0';
+  function renderHistoryView(playerData) {
+    const histData = Domain.generateHistoryData(playerData);
 
     const legendHtml = `
       <div class="rhythiax-history-top-legend">
@@ -225,7 +213,7 @@ RhythiaX.TitleProgression = RhythiaX.TitleProgression || {};
 
     const xAxisHtml = `
       <div class="rhythiax-x-axis-row">
-        ${histData.dateTicks.map(t => `<span>${escapeHtml(t)}</span>`).join('')}
+        ${histData.dateTicks.map(t => `<span>${RhythiaX.escapeHtml(t)}</span>`).join('')}
       </div>
     `;
 
@@ -236,12 +224,12 @@ RhythiaX.TitleProgression = RhythiaX.TitleProgression || {};
       const tipId = `r-hist-tip-${m.id}`;
       milestoneDots += `
         <circle cx="${m.x}" cy="${m.y}" r="4.5" fill="${m.color}" stroke="#ffffff" stroke-width="1.5"
-                class="rhythiax-history-interactive-dot" tabindex="0" role="img" aria-label="${escapeHtml(m.tooltipText)}" data-tip-id="${tipId}"/>
+                class="rhythiax-history-interactive-dot" tabindex="0" role="img" aria-label="${RhythiaX.escapeHtml(m.tooltipText)}" data-tip-id="${tipId}"/>
       `;
       tooltipsHtml += `
         <div id="${tipId}" class="rhythiax-hist-tooltip-badge" style="left: ${(m.x / 940 * 100).toFixed(1)}%; top: ${(m.y / 220 * 100).toFixed(1)}%; --tag-color: ${m.color};">
           <span class="rhythiax-history-legend-dot" style="background: ${m.color};"></span>
-          <span>${escapeHtml(m.tooltipText)}</span>
+          <span>${RhythiaX.escapeHtml(m.tooltipText)}</span>
         </div>
       `;
     });
@@ -251,12 +239,12 @@ RhythiaX.TitleProgression = RhythiaX.TitleProgression || {};
     const curTipId = 'r-hist-tip-current';
     milestoneDots += `
       <circle cx="${cur.x}" cy="${cur.y}" r="5" fill="${cur.color}" stroke="#ffffff" stroke-width="2"
-              class="rhythiax-history-interactive-dot" tabindex="0" role="img" aria-label="${escapeHtml(cur.tooltipText)}" data-tip-id="${curTipId}"/>
+              class="rhythiax-history-interactive-dot" tabindex="0" role="img" aria-label="${RhythiaX.escapeHtml(cur.tooltipText)}" data-tip-id="${curTipId}"/>
     `;
     tooltipsHtml += `
       <div id="${curTipId}" class="rhythiax-hist-tooltip-badge" style="right: 14px; top: ${(cur.y / 220 * 100).toFixed(1)}%; transform: translateY(-110%); --tag-color: ${cur.color};">
         <span class="rhythiax-history-legend-dot" style="background: ${cur.color};"></span>
-        <span>${escapeHtml(cur.tooltipText)}</span>
+        <span>${RhythiaX.escapeHtml(cur.tooltipText)}</span>
       </div>
     `;
 
@@ -299,7 +287,7 @@ RhythiaX.TitleProgression = RhythiaX.TitleProgression || {};
   }
 
   // 5. MAIN BUILDER: BUILDS THE COMPLETE HTML COMPONENT
-  function buildTitleProgressionCard(playerData, activeView = 'map', scoreSets = null) {
+  function buildTitleProgressionCard(playerData, activeView = 'map') {
     const rp = Domain.parseRp(playerData?.rp);
     const rank = Domain.parseRank(playerData?.globalRank);
     const summary = Domain.getStatusSummary(rp, rank);
@@ -317,7 +305,7 @@ RhythiaX.TitleProgression = RhythiaX.TitleProgression || {};
     const isMapActive = effectiveView === 'map';
 
     return `
-      <div class="rhythiax-title-progression-component" data-view="${effectiveView}" data-rank-title="${escapeHtml(summary.title)}">
+      <div class="rhythiax-title-progression-component" data-view="${effectiveView}" data-rank-title="${RhythiaX.escapeHtml(summary.title)}">
         <!-- Card Header -->
         <div class="rhythiax-title-progression-header">
           <div class="rhythiax-header-title">
@@ -344,7 +332,7 @@ RhythiaX.TitleProgression = RhythiaX.TitleProgression || {};
           </div>
         </div>
 
-        <!-- Adventure Map Canvas View -->
+        <!-- Progression map -->
         ${showProgression ? `
         <div class="rhythiax-title-map-container" style="display: ${isMapActive ? 'block' : 'none'};">
           <div class="rhythiax-title-map-arena">
@@ -359,7 +347,7 @@ RhythiaX.TitleProgression = RhythiaX.TitleProgression || {};
             </svg>
           </div>
 
-          <!-- Bottom Status Summary Footer: Clean centered Goal with modern typography -->
+          <!-- The next goal -->
           <div class="rhythiax-title-progression-footer">
             <div class="rhythiax-footer-goal-centered">
               <span>${rank === 1 ? '<strong class="rhythiax-status-goal text-amber-400">Top Rhythia Player</strong>' : `Goal: <strong class="rhythiax-status-goal">${summary.goalText}</strong>`}</span>
@@ -371,7 +359,7 @@ RhythiaX.TitleProgression = RhythiaX.TitleProgression || {};
         <!-- Reimagined History Chart View -->
         ${showHistory ? `
         <div class="rhythiax-title-history-container" style="display: ${!isMapActive ? 'block' : 'none'};">
-          ${renderHistoryView(playerData, scoreSets)}
+          ${renderHistoryView(playerData)}
         </div>
         ` : ''}
       </div>

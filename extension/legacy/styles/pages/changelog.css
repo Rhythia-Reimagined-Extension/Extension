@@ -31,7 +31,7 @@ body[data-rhythiax-theme] #root [data-rhythiax-changelog-tabs][data-rhythiax-cha
   border-color: transparent !important;
 }
 
-body[data-rhythiax-theme] #root:has([data-rhythiax-changelog-tabs][data-rhythiax-changelog-mode="reimagined"]) article:not(.rhythiax-changelog-entry):not([data-rhythiax-changelog-snapshot]),
+body[data-rhythiax-theme] #root:has([data-rhythiax-changelog-tabs][data-rhythiax-changelog-mode="reimagined"]) article:not(.rhythiax-changelog-entry),
 body[data-rhythiax-theme] #root article[data-rhythiax-changelog-hidden="true"] {
   display: none !important;
 }
@@ -69,15 +69,78 @@ body[data-rhythiax-theme="white"] .rhythiax-changelog-panel {
   background: var(--rhythiax-surface);
 }
 
-/* Release header: arrows either side of the title, like the date row of a native entry */
-.rhythiax-changelog-head {
+/* Reader: the list of versions beside one release */
+.rhythiax-changelog-reader {
   display: grid;
-  grid-template-columns: 36px minmax(0, 1fr) 36px;
+  grid-template-columns: 170px minmax(0, 1fr);
+  gap: 14px;
   align-items: start;
-  gap: 8px;
+}
+
+.rhythiax-changelog-versions {
+  position: sticky;
+  top: 80px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  max-height: calc(100vh - 100px);
+  overflow: auto;
+}
+
+.rhythiax-changelog-v {
+  display: block;
+  width: 100%;
+  padding: 8px 10px;
+  border: 0;
+  border-radius: 8px;
+  background: none;
+  color: var(--rhythiax-cl-text);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.rhythiax-changelog-v:hover { background: color-mix(in srgb, var(--rhythiax-cl-strong) 6%, transparent); }
+.rhythiax-changelog-v.is-on { background: color-mix(in srgb, var(--rhythiax-cl-strong) 10%, transparent); color: var(--rhythiax-cl-strong); }
+
+.rhythiax-changelog-v b {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.rhythiax-changelog-v small {
+  display: block;
+  margin-top: 1px;
+  overflow: hidden;
+  font-size: 12px;
+  color: var(--rhythiax-cl-dim);
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.rhythiax-changelog-dots { display: inline-flex; gap: 4px; }
+.rhythiax-changelog-dots i { width: 7px; height: 7px; border-radius: 50%; background: #38bdf8; }
+.rhythiax-changelog-dots i[data-rhythiax-engine="exodus"] { background: #a78bfa; }
+
+.rhythiax-changelog-v:focus-visible,
+.rhythiax-changelog-step:focus-visible,
+.rhythiax-changelog-looks button:focus-visible {
+  outline: 2px solid var(--rhythiax-accent, #a78bfa);
+  outline-offset: 2px;
+}
+
+/* Release header: number and title, date and counts, and the look switch on the right */
+.rhythiax-changelog-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px 16px;
   padding-bottom: 14px;
   border-bottom: 1px solid var(--rhythiax-cl-rule);
-  text-align: center;
 }
 
 .rhythiax-changelog-title {
@@ -89,118 +152,50 @@ body[data-rhythiax-theme="white"] .rhythiax-changelog-panel {
   color: var(--rhythiax-cl-strong);
 }
 
+.rhythiax-changelog-title span { font-weight: 500; color: var(--rhythiax-cl-dim); }
+
 .rhythiax-changelog-meta {
   display: flex;
   flex-wrap: wrap;
-  justify-content: center;
   gap: 2px 10px;
   margin-top: 4px;
   font-size: 13px;
   color: var(--rhythiax-cl-dim);
 }
 
-.rhythiax-changelog-version {
-  font-weight: 600;
-  color: var(--rhythiax-accent, #a78bfa);
-}
+.rhythiax-changelog-meta span + span::before { content: "·"; margin-right: 10px; }
 
 .rhythiax-changelog-draft { color: #f59e0b; }
 body[data-rhythiax-theme="white"] .rhythiax-changelog-draft { color: #b45309; }
 
-.rhythiax-changelog-jump {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  gap: 4px 18px;
-  margin-top: 10px;
+.rhythiax-changelog-looks {
+  display: inline-flex;
+  padding: 3px;
+  border: 1px solid var(--rhythiax-cl-rule);
+  border-radius: 9px;
+}
+
+.rhythiax-changelog-looks button {
+  padding: 5px 12px;
+  border: 0;
+  border-radius: 6px;
+  background: none;
+  color: var(--rhythiax-cl-dim);
+  font: inherit;
   font-size: 13px;
   font-weight: 600;
-}
-
-.rhythiax-changelog-entry .rhythiax-changelog-jump a {
-  color: var(--rhythiax-cl-text);
-  text-decoration: none;
-}
-
-.rhythiax-changelog-entry .rhythiax-changelog-jump a:hover {
-  color: var(--rhythiax-cl-strong);
-  text-decoration: underline;
-  text-underline-offset: 4px;
-}
-
-.rhythiax-changelog-arrow {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 36px;
-  height: 36px;
-  margin-top: -2px;
-  border: 0;
-  border-radius: 8px;
-  background: none;
-  color: var(--rhythiax-cl-text);
-  font: inherit;
-  font-size: 24px;
-  line-height: 1;
   cursor: pointer;
 }
 
-.rhythiax-changelog-arrow:hover {
-  background: color-mix(in srgb, var(--rhythiax-cl-strong) 8%, transparent);
+.rhythiax-changelog-looks button:hover { color: var(--rhythiax-cl-strong); }
+.rhythiax-changelog-looks button[aria-pressed="true"] {
+  background: color-mix(in srgb, var(--rhythiax-cl-strong) 10%, transparent);
   color: var(--rhythiax-cl-strong);
 }
 
-.rhythiax-changelog-arrow:focus-visible {
-  outline: 2px solid var(--rhythiax-accent, #a78bfa);
-  outline-offset: 2px;
-}
-
-.rhythiax-changelog-arrow.is-disabled { opacity: .25; cursor: default; }
-.rhythiax-changelog-arrow.is-disabled:hover { background: none; }
-
-/* Body: each look under its own heading, a rule between looks */
-.rhythiax-changelog-engine,
+/* Sections: a small heading with the number of items, then a plain list */
 .rhythiax-changelog-section { scroll-margin-top: 80px; }
-
-.rhythiax-changelog-engine + .rhythiax-changelog-engine {
-  margin-top: 24px;
-  padding-top: 4px;
-  border-top: 1px solid var(--rhythiax-cl-rule);
-}
-
-.rhythiax-changelog-entry h3.rhythiax-changelog-engine-title {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: baseline;
-  gap: 4px 10px;
-  margin: 18px 0 0;
-  font-size: 18px;
-  font-weight: 700;
-  color: var(--rhythiax-cl-strong);
-}
-
-.rhythiax-changelog-engine-icon {
-  align-self: center;
-  display: inline-flex;
-  color: var(--rhythiax-cl-dim);
-}
-
-.rhythiax-changelog-engine-icon svg,
-.rhythiax-changelog-category-icon svg {
-  width: 16px;
-  height: 16px;
-  fill: none;
-  stroke: currentColor;
-  stroke-width: 1.9;
-  stroke-linecap: round;
-  stroke-linejoin: round;
-}
-
-.rhythiax-changelog-engine-blurb {
-  font-size: 13px;
-  font-weight: 400;
-  color: var(--rhythiax-cl-dim);
-}
+.rhythiax-changelog-section + .rhythiax-changelog-section { margin-top: 4px; }
 
 .rhythiax-changelog-entry .rhythiax-changelog-category-heading {
   display: flex;
@@ -212,9 +207,25 @@ body[data-rhythiax-theme="white"] .rhythiax-changelog-draft { color: #b45309; }
   color: var(--rhythiax-cl-strong);
 }
 
+.rhythiax-changelog-count {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--rhythiax-cl-dim);
+}
+
 .rhythiax-changelog-category-icon {
   display: inline-flex;
   color: var(--rhythiax-category-color, var(--rhythiax-cl-dim));
+}
+
+.rhythiax-changelog-category-icon svg {
+  width: 16px;
+  height: 16px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.9;
+  stroke-linecap: round;
+  stroke-linejoin: round;
 }
 
 .rhythiax-changelog-category-heading[data-rhythiax-category="featured"] { --rhythiax-category-color: #f472b6; }
@@ -232,8 +243,50 @@ body[data-rhythiax-theme="white"] .rhythiax-changelog-panel .rhythiax-changelog-
   --rhythiax-category-color: #475569;
 }
 
+.rhythiax-changelog-tag {
+  display: inline-block;
+  margin-left: 4px;
+  padding: 0 7px;
+  border: 1px solid var(--rhythiax-cl-rule);
+  border-radius: 6px;
+  font-size: 11.5px;
+  font-weight: 600;
+  line-height: 19px;
+  color: var(--rhythiax-cl-dim);
+  white-space: nowrap;
+}
+
+/* Older and newer release under the notes */
+.rhythiax-changelog-steps {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 20px;
+  padding-top: 14px;
+  border-top: 1px solid var(--rhythiax-cl-rule);
+}
+
+.rhythiax-changelog-step {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  padding: 6px 10px;
+  border: 0;
+  border-radius: 8px;
+  background: none;
+  color: var(--rhythiax-cl-strong);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.rhythiax-changelog-step:last-child { align-items: flex-end; text-align: right; }
+.rhythiax-changelog-step:hover { background: color-mix(in srgb, var(--rhythiax-cl-strong) 6%, transparent); }
+.rhythiax-changelog-step small { font-size: 12px; color: var(--rhythiax-cl-dim); }
+.rhythiax-changelog-step b { font-size: 14px; font-weight: 600; }
+
 .rhythiax-changelog-entry h2:not(.rhythiax-changelog-title),
-.rhythiax-changelog-entry h3:not(.rhythiax-changelog-engine-title),
+.rhythiax-changelog-entry h3:not(.rhythiax-changelog-category-heading),
 .rhythiax-changelog-entry h4:not(.rhythiax-changelog-category-heading) {
   margin: 18px 0 0;
   font-size: 15px;
@@ -275,7 +328,13 @@ body[data-rhythiax-theme="white"] .rhythiax-changelog-panel .rhythiax-changelog-
   text-underline-offset: 4px;
 }
 
-body[data-rhythiax-theme="white"] .rhythiax-changelog-entry a { color: #2563eb; }
+:where(html:not([data-rhythiax-own-theme])) body[data-rhythiax-theme="white"] .rhythiax-changelog-entry a { color: #2563eb; }
+
+/* An own theme's links take its accent. */
+:where(html[data-rhythiax-own-theme]) body[data-rhythiax-theme] .rhythiax-changelog-entry a {
+  color: var(--rhythiax-accent);
+  text-decoration-color: color-mix(in srgb, var(--rhythiax-accent) 40%, transparent);
+}
 
 .rhythiax-changelog-entry code {
   padding: 1px 5px;
@@ -391,8 +450,9 @@ body[data-rhythiax-theme] #root [data-rhythiax-changelog-tabs][data-rhythiax-cha
   body[data-rhythiax-theme] #root [data-rhythiax-changelog-tab] { padding-right: 5px; padding-left: 5px; }
   body[data-rhythiax-theme] #root [data-rhythiax-changelog-tab] .text-base { font-size: 13px; }
   .rhythiax-changelog-entry { padding: 16px; }
-  .rhythiax-changelog-head { grid-template-columns: 32px minmax(0, 1fr) 32px; gap: 4px; }
-  .rhythiax-changelog-arrow { width: 32px; height: 32px; }
+  .rhythiax-changelog-reader { grid-template-columns: minmax(0, 1fr); }
+  .rhythiax-changelog-versions { position: static; flex-direction: row; max-height: none; overflow-x: auto; padding-bottom: 4px; }
+  .rhythiax-changelog-v { flex: none; width: auto; }
   .rhythiax-changelog-title { font-size: 18px; }
 }
 

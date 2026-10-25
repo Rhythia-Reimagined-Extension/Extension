@@ -1,5 +1,11 @@
 /* Reimagined preset additions. Palette values come from
    legacy/core/themes/reimagined.js. */
+
+/* This file is in the page: the background does not insert it again (engines.js addThemeToTab). */
+:root {
+  --rhythiax-theme-css-reimagined: 1;
+}
+
 body[data-rhythiax-theme="rhythia-reimagined"] {
   color-scheme: dark;
   --rhythiax-text-subtle: color-mix(in srgb, var(--rhythiax-text-muted) 72%, transparent);
@@ -58,8 +64,7 @@ body[data-rhythiax-theme="rhythia-reimagined"] #root [class*="from-transparent"]
 
 /* Reimagined media surfaces keep the violet preset visible without sacrificing contrast. */
 body[data-rhythiax-theme="rhythia-reimagined"] #root img[src="/discordicon.png"],
-body[data-rhythiax-theme="rhythia-reimagined"] #root img[src="/supporticon.png"],
-body[data-rhythiax-theme="rhythia-reimagined"] #root img[src="/settingsicon.png"] {
+body[data-rhythiax-theme="rhythia-reimagined"] #root img[src="/supporticon.png"] {
   display: block !important;
   visibility: visible !important;
   opacity: 1 !important;
@@ -110,10 +115,6 @@ body[data-rhythiax-theme="rhythia-reimagined"] #root div:has(> .pointer-events-n
   color: #fff !important;
 }
 
-body[data-rhythiax-theme="rhythia-reimagined"] #root [class*="bg-[#1e1f21]"]:has(img[src*="settingsicon"]),
-body[data-rhythiax-theme="rhythia-reimagined"] #root [class*="bg-control"]:has(img[src*="settingsicon"]),
-body[data-rhythiax-theme="rhythia-reimagined"] #root button:has(img[src*="settingsicon"]),
-body[data-rhythiax-theme="rhythia-reimagined"] #root button[aria-label="Settings"],
 body[data-rhythiax-theme="rhythia-reimagined"] #root button[role="combobox"],
 body[data-rhythiax-theme="rhythia-reimagined"] #root .fixed.top-0 a[href="/changelog"],
 body[data-rhythiax-theme="rhythia-reimagined"] #root .fixed.top-0 a[aria-label="Changelog"],
@@ -124,10 +125,6 @@ body[data-rhythiax-theme="rhythia-reimagined"] #root .fixed.top-0 [class*="bg-[#
   backdrop-filter: blur(12px) !important;
 }
 
-body[data-rhythiax-theme="rhythia-reimagined"] #root [class*="bg-[#1e1f21]"]:has(img[src*="settingsicon"]):hover,
-body[data-rhythiax-theme="rhythia-reimagined"] #root [class*="bg-control"]:has(img[src*="settingsicon"]):hover,
-body[data-rhythiax-theme="rhythia-reimagined"] #root button:has(img[src*="settingsicon"]):hover,
-body[data-rhythiax-theme="rhythia-reimagined"] #root button[aria-label="Settings"]:hover,
 body[data-rhythiax-theme="rhythia-reimagined"] #root button[role="combobox"]:hover,
 body[data-rhythiax-theme="rhythia-reimagined"] #root .fixed.top-0 a[href="/changelog"]:hover,
 body[data-rhythiax-theme="rhythia-reimagined"] #root .fixed.top-0 a[aria-label="Changelog"]:hover,

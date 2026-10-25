@@ -30,12 +30,12 @@ var RhythiaX = RhythiaX || {};
     try {
       const choice = local ? 'local-only' : 'hybrid-no-reports';
       const response = await chrome.runtime.sendMessage({ type: 'rhythiax-community-consent', choice });
-      if (!response?.ok) throw new Error('Your choice could not be saved. Please try again.');
+      if (!response?.ok) throw new Error('Choice not saved. Try again.');
       pending = false;
       remove();
       refreshHistory();
     } catch (_) {
-      card?.setStatus('Your choice could not be saved. Please try again.');
+      card?.setStatus('Choice not saved. Try again.');
     } finally {
       busy = false;
       card?.setBusy(false);
@@ -43,15 +43,15 @@ var RhythiaX = RhythiaX || {};
   }
 
   function mount() {
-    if (!pending || card || RhythiaX.extensionContextInvalidated) return;
+    if (!pending || card || !chrome.runtime?.id) return;
     card = RhythiaX.Notices.show({
       id: ID,
       label: 'Online history',
       title: 'Use online player history?',
       body: [
-        "Load shared player history from Shuriel's community service.",
-        "Requests include the viewed player's public ID. The service and Cloudflare process your IP address to deliver and protect the connection.",
-        'Visit reports are optional and stay off.',
+        "Loads shared player history from Shuriel's community service.",
+        "Each request to rhythia.shuriel.com sends the viewed player's public ID and an anonymous key for this installation. The service and Cloudflare process your IP address to deliver and protect the connection.",
+        'Visit reports stay off unless you turn them on.',
       ],
       actions: [
         { text: 'Use online history', kind: 'primary', run: event => choose(event, false) },
@@ -61,23 +61,31 @@ var RhythiaX = RhythiaX || {};
     });
   }
 
+  // The background answers once the stored data is checked and up to date, for either look. While it
+  // cannot use that data (read-only), it would refuse every choice, so the card stays hidden.
+  function dataReady() {
+    return new Promise(resolve => chrome.runtime.sendMessage({ type: 'rhythiax-data-ready' }, reply => {
+      resolve(!chrome.runtime.lastError && reply?.ok === true);
+    }));
+  }
+
   async function refresh() {
     try {
-      await RhythiaX.dataRepositoryReady;
-      if (RhythiaX.dataStorageReadOnly || RhythiaX.extensionContextInvalidated) return;
+      if (!chrome.runtime?.id || !(await dataReady())) return;
       const result = await new Promise(resolve => chrome.storage.local.get('rhythiaxDataSettings', result => {
         resolve(chrome.runtime.lastError ? null : result);
       }));
       if (!result) return;
       const settings = result?.rhythiaxDataSettings || {};
       const wasPending = pending;
-      pending = settings.communityConsentVersion !== 1;
+      // Without RhythiaX.Consent the choice counts as not made yet: the card shows, and nothing is sent.
+      pending = RhythiaX.Consent?.given(settings) !== true;
       if (pending) mount();
       else { remove(); if (wasPending) refreshHistory(); }
     } catch (_) { /* A failed read never enables community connections. */ }
   }
 
-  RhythiaX.CommunityConsentNotice = { refresh, onChoice: fn => { listeners.push(fn); } };
+  RhythiaX.CommunityConsentNotice = { onChoice: fn => { listeners.push(fn); } };
   chrome.storage.onChanged?.addListener((changes, area) => {
     if (area === 'local' && changes.rhythiaxDataSettings) refresh();
   });

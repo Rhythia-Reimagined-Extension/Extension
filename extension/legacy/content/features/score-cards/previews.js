@@ -20,18 +20,20 @@ var RhythiaX = RhythiaX || {};
     const search = window.location.search;
     pendingPreviews.set(cardEl, request);
     try {
-      const meta = await RhythiaX.resolveBeatmapMeta?.(str);
+      // A card of a page already left stops waiting for its art.
+      const meta = await RhythiaX.resolveBeatmapMeta?.(str, { signal: RhythiaX.beatmapPageSignal?.() });
       // Cards are created detached and mounted synchronously by their caller.
       // Check after awaiting, so cached metadata can still update those cards.
       if (!meta || !cardEl.isConnected || pendingPreviews.get(cardEl) !== request
         || navigationToken !== RhythiaX.navigationToken
         || pathname !== window.location.pathname || search !== window.location.search
         || RhythiaX.extensionContextInvalidated
-        || (RhythiaX.isMasterActive && !RhythiaX.isMasterActive())) return;
+        || RhythiaX.ClassicIdle?.isSuspended?.()) return;
 
       // 1. Background Art
       if (meta.previewUrl) {
-        cardEl.style.setProperty('--card-art-url', `url('${meta.previewUrl}')`);
+        // A quoted string, so a quote or bracket in the address cannot end the url().
+        cardEl.style.setProperty('--card-art-url', `url(${JSON.stringify(String(meta.previewUrl))})`);
 
         const eclipseImg = cardEl.querySelector('.rhythiax-sc-eclipse-img');
         if (eclipseImg) {

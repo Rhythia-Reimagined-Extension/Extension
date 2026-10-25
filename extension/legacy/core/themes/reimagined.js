@@ -19,6 +19,5 @@ RhythiaX.themePresets['rhythia-reimagined'] = {
   chartTrack: 'rgba(255,255,255,.14)',
   shadow: '0 18px 45px rgba(8,3,18,.38)',
   radius: '16px',
-  backgroundImage: '',
 };
 RhythiaX.themePresets.reimagined = RhythiaX.themePresets['rhythia-reimagined'];

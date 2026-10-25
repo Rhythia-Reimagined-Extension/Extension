@@ -45,25 +45,27 @@ body[data-rhythiax-theme="rhythia-reimagined"] .rhythiax-score-replay-fullscreen
   color: #faf5ff !important;
 }
 
-body[data-rhythiax-theme="dark"] .rhythiax-score-replay-fullscreen-button {
+/* Built-in Dark and White only. An own theme built on either stylesheet (theme.js marks <html> with
+   data-rhythiax-own-theme) keeps the button above in its own colours and accent. */
+:where(html:not([data-rhythiax-own-theme])) body[data-rhythiax-theme="dark"] .rhythiax-score-replay-fullscreen-button {
   border-color: rgba(255, 255, 255, .12) !important;
   background: #1d1f22 !important;
   color: #9ca3af !important;
 }
 
-body[data-rhythiax-theme="dark"] .rhythiax-score-replay-fullscreen-button:hover {
+:where(html:not([data-rhythiax-own-theme])) body[data-rhythiax-theme="dark"] .rhythiax-score-replay-fullscreen-button:hover {
   border-color: rgba(255, 255, 255, .24) !important;
   background: rgba(96, 165, 250, .16) !important;
   color: #f8fafc !important;
 }
 
-body[data-rhythiax-theme="white"] .rhythiax-score-replay-fullscreen-button {
+:where(html:not([data-rhythiax-own-theme])) body[data-rhythiax-theme="white"] .rhythiax-score-replay-fullscreen-button {
   border-color: rgba(30, 41, 59, .14) !important;
   background: #f5f7fa !important;
   color: #52525b !important;
 }
 
-body[data-rhythiax-theme="white"] .rhythiax-score-replay-fullscreen-button:hover {
+:where(html:not([data-rhythiax-own-theme])) body[data-rhythiax-theme="white"] .rhythiax-score-replay-fullscreen-button:hover {
   border-color: rgba(30, 41, 59, .24) !important;
   background: rgba(82, 82, 91, .14) !important;
   color: #18181b !important;

@@ -1,6 +1,6 @@
-# Support — Reimagined for Rhythia 1.3.0
+# Support — Reimagined for Rhythia 1.3.1
 
-Something not working? Refresh Rhythia first, then check the version shown in the extension popup. Chrome 116+ and compatible Chromium browsers are supported; the separate Firefox package requires desktop Firefox 140+.
+Something not working? Refresh Rhythia first, then check the version shown in the extension popup. Chrome 116+ and compatible Chromium browsers are supported; the Firefox version requires desktop Firefox 140+.
 
 If community history is unavailable, open the Data tab in the popup and check **Where history comes from**. If you have not chosen yet, use the small online-history card on Rhythia. You can choose **This device** while the service is unavailable.
 

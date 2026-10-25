@@ -8,7 +8,7 @@ var RhythiaX = RhythiaX || {};
 (function () {
 'use strict';
 const K = () => RhythiaX.ExodusKit;
-const {SITE, esc, REDUCED, slugify, dropBroken} = RhythiaX.ExodusKit;
+const {SITE, esc, REDUCED, slugify, plainText, dropBroken} = RhythiaX.ExodusKit;
 
 /* ════════════════════ Wiki ════════════════════ */
 // Rhythia's list of wiki articles lives in its page code; it is read from there (the copy below
@@ -50,11 +50,10 @@ function wikiArticle(slug) {
   }
   return wikiText.get(slug);
 }
-const plainText = t => String(t).replace(/!\[([^\]]*)\]\([^)]*\)/g, '$1').replace(/\[([^\]]+)\]\([^)]*\)/g, '$1').replace(/<[^>]+>/g, ' ').replace(/[#>*_`~|:-]/g, ' ').replace(/\s+/g, ' ').trim();
 
 function wiki(host, ctx) {
   const R = host.shadowRoot, ac = new AbortController(), sig = {signal: ac.signal}, $ = s => R.querySelector(s);
-  const ui = K().shell(R, sig, ctx);
+  const ui = K().shell(R, sig);
   const S = {sections: null, slug: '', text: null, err: '', q: '', index: null, enter: true, seq: 0};
   const pages = () => S.sections.flatMap(s => s.items.map(it => ({...it, section: s})));
   const current = () => pages().find(p => p.slug === S.slug) || pages()[0];
@@ -191,7 +190,6 @@ const css = `
 .w-navd > summary{display:none}
 .w-navd{position:sticky;top:84px}
 .w-nav{display:flex;flex-direction:column;gap:18px;max-height:calc(100vh - 100px);overflow:auto;padding-right:4px}
-.w-gt{display:block;margin:0 0 6px 10px;font-size:11.5px;font-weight:750;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
 .w-entry{display:flex;flex-direction:column;padding:8px 10px;border-radius:10px;transition:background-color .15s}
 .w-entry b{font-size:14px;font-weight:650}
 .w-entry small{font-size:12px;color:var(--muted);line-height:1.35}
@@ -206,9 +204,6 @@ const css = `
 .w-ah{padding-bottom:18px;margin-bottom:22px;border-bottom:1px solid var(--line)}
 .w-ah h2{margin:4px 0 0;font-size:30px;font-weight:800;letter-spacing:-.02em}
 .w-ah p{margin:6px 0 0;color:var(--muted)}
-.w-toc{position:sticky;top:84px;display:flex;flex-direction:column;gap:2px;max-height:calc(100vh - 100px);overflow:auto}
-.w-toc a{display:flex;align-items:center;gap:8px;padding:5px 10px;border-radius:7px;font-size:13px;color:var(--text-2)}
-.w-toc a:hover{color:var(--text);background:var(--panel-2)}
 .w-pn{display:flex;justify-content:space-between;gap:12px;margin-top:40px;padding-top:20px;border-top:1px solid var(--line)}
 .w-pn a{display:flex;flex-direction:column;gap:2px;padding:12px 16px;border-radius:12px;box-shadow:inset 0 0 0 1px var(--line);min-width:0}
 .w-pn a.nx{text-align:right;margin-left:auto}
@@ -216,7 +211,7 @@ const css = `
 .w-pn a b{font-weight:650}
 .w-pn a:hover{box-shadow:inset 0 0 0 1px var(--accent)}
 @media (max-width:1100px){.w-main{grid-template-columns:1fr}.w-main .w-toc{display:none}}
-@media (max-width:860px){.w-layout,.g-layout{grid-template-columns:1fr}.w-navd{position:static;border-radius:12px;background:var(--panel);box-shadow:inset 0 0 0 1px var(--line)}.w-navd > summary{display:flex;flex-direction:column;padding:12px 16px;cursor:pointer;font-weight:650}.w-navd > summary small{font-weight:500;color:var(--muted)}.w-navd[open] > summary{border-bottom:1px solid var(--line)}.w-nav{max-height:none;padding:12px}.g-side{display:none}.c-grid{grid-template-columns:1fr}.c-hero{grid-template-columns:auto minmax(0,1fr)}.c-hspread{grid-column:1/-1}}
+@media (max-width:860px){.w-layout{grid-template-columns:1fr}.w-navd{position:static;border-radius:12px;background:var(--panel);box-shadow:inset 0 0 0 1px var(--line)}.w-navd > summary{display:flex;flex-direction:column;padding:12px 16px;cursor:pointer;font-weight:650}.w-navd > summary small{font-weight:500;color:var(--muted)}.w-navd[open] > summary{border-bottom:1px solid var(--line)}.w-nav{max-height:none;padding:12px}}
 `;
 
 K().page('wiki', wiki, css);

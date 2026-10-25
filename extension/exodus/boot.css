@@ -1,5 +1,5 @@
 /* Exodus takeover, loaded at document_start. exodus/core/shell.js sets
-   html.rhythiax-exodus on a player profile before Rhythia renders anything,
+   html.rhythiax-exodus on every page Exodus takes over, before Rhythia renders anything,
    so Rhythia's React root never paints there and the Exodus root shows instead. */
 html.rhythiax-exodus #root {
   display: none !important;
@@ -13,23 +13,24 @@ html.rhythiax-exodus #rhythiax-exodus-root {
   display: block;
 }
 
-/* The page colour is set before the shadow root exists, so there is no light flash. */
+/* The page colour is set before the shadow root exists, so there is no light flash. An own theme
+   puts its colour in --rhythiax-exodus-page (exodus/core/shell.js). */
 html.rhythiax-exodus,
 html.rhythiax-exodus body {
-  background: #0c0913 !important;
+  background: var(--rhythiax-exodus-page, #0c0913) !important;
 }
 
 html.rhythiax-exodus[data-rhythiax-exodus-theme="dark"],
 html.rhythiax-exodus[data-rhythiax-exodus-theme="dark"] body {
-  background: #090a0c !important;
+  background: var(--rhythiax-exodus-page, #090a0c) !important;
 }
 
 html.rhythiax-exodus[data-rhythiax-exodus-theme="white"],
 html.rhythiax-exodus[data-rhythiax-exodus-theme="white"] body {
-  background: #f4f5f8 !important;
+  background: var(--rhythiax-exodus-page, #f4f5f8) !important;
 }
 
-/* Shown on Rhythia's own profile view after "Show Rhythia's page". */
+/* Shown on Rhythia's own page after "Show Rhythia's page". */
 #rhythiax-exodus-return {
   position: fixed;
   left: 20px;

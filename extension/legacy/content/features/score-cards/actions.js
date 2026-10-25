@@ -28,6 +28,22 @@ var RhythiaX = RhythiaX || {};
       if (e.key === 'Escape') closeActiveMenu();
     });
   }
+  // An open menu goes when Exodus takes the page (RhythiaX.ClassicIdle, core/state.js).
+  RhythiaX.ClassicIdle?.onSuspend?.(closeActiveMenu);
+
+  // Replay files are downloads from another host (Rhythia's file storage): only an https address becomes a link.
+  // A path without a host is read against the page's own origin; javascript: and data: stay what they are and
+  // fail, and no address at all gives no link (it would otherwise read as the origin itself).
+  function httpsUrl(value) {
+    const text = String(value || '').trim();
+    if (!text) return '';
+    try {
+      const url = new URL(text, window.location.origin);
+      return url.protocol === 'https:' ? url.href : '';
+    } catch (_) {
+      return '';
+    }
+  }
 
   function findNativeActionsButton(card, scoreData) {
     if (card) {
@@ -134,7 +150,7 @@ var RhythiaX = RhythiaX || {};
     const rawScore = scoreData?.score || scoreData || {};
     const scoreId = String(rawScore.scoreId || rawScore.id || scoreData?.scoreId || '');
     const scoreHref = scoreData?.scoreHref || rawScore.scoreHref || (scoreId ? `/score/${scoreId}` : '');
-    const replayUrl = scoreData?.replayUrl || rawScore.replayUrl || '';
+    const replayUrl = httpsUrl(scoreData?.replayUrl || rawScore.replayUrl);
     const beatmapId = scoreData?.beatmapId || rawScore.beatmapId || null;
     const mapHref = scoreData?.mapHref || rawScore.mapHref || (beatmapId ? `/maps/${beatmapId}` : '');
 
@@ -268,14 +284,10 @@ var RhythiaX = RhythiaX || {};
     findNativeActionsButton,
     syncNativeScoreActions,
     closeActiveMenu,
-    closeScoreActionsMenu: closeActiveMenu,
     openActionMenu,
-    openScoreActionsMenu: openActionMenu,
     isScorePinned,
     toggleScorePin,
   };
 
   RhythiaX.syncNativeScoreActions = syncNativeScoreActions;
-  RhythiaX.isScorePinned = isScorePinned;
-  RhythiaX.toggleScorePin = toggleScorePin;
 })();

@@ -23,20 +23,6 @@ body[data-rhythiax-theme="rhythia-reimagined"][data-rhythiax-page="support"] #ro
   background-color: transparent !important;
 }
 
-/* The supporter route uses a literal #141116 surface which is not part of
-   the native bridge palette. Translate it in White so its text does not
-   inherit the dark card foreground. */
-body[data-rhythiax-theme="white"][data-rhythiax-page="support"] #root [class*="bg-[#141116]"] {
-  background: linear-gradient(180deg, #ffffff 0%, #f1f3f6 100%) !important;
-  border-color: rgba(30, 41, 59, .16) !important;
-  color: #18181b !important;
-}
-
-body[data-rhythiax-theme="white"][data-rhythiax-page="support"] #root [class*="bg-[#141116]"] [class*="text-white"],
-body[data-rhythiax-theme="white"][data-rhythiax-page="support"] #root [class*="bg-[#141116]"] [class*="text-neutral-"] {
-  color: #18181b !important;
-}
-
 /* Keep the call-to-action distinct from the light supporter cards. */
 body[data-rhythiax-theme="white"][data-rhythiax-page="support"] #root button:has(> svg.lucide-heart) {
   background: linear-gradient(180deg, #ffffff 0%, #e9dff0 100%) !important;

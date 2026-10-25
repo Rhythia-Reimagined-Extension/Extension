@@ -1,7 +1,6 @@
 // =============================================
-// Rhythia X — Playstyle Feature: Scout Engine
+// Reimagined for Rhythia — Playstyle Feature: Scout Engine
 // Rule-based summary (30d) and momentum (14d)
-// Pure SVG vectors, zero unicode emojis, rich analytical summaries
 // =============================================
 
 var RhythiaX = RhythiaX || {};
@@ -58,7 +57,7 @@ var RhythiaX = RhythiaX || {};
     const delta = reference ? reference.rank - rank : 0;
     const days = reference ? Math.round((now - reference.timestamp) / DAY_MS) : 0;
     Object.assign(result, { rankDelta: delta, oldestRank: reference?.rank || rank, comparisonDays: days,
-      sub: reference ? '#' + rank + ' • ' + (delta > 0 ? '+' : '') + delta + ' ranks in ' + days + 'd' : 'Need a 14-day rank comparison' });
+      sub: reference ? '#' + rank + ' • ' + (delta > 0 ? '+' : '') + delta + ' ranks in ' + days + 'd' : 'Needs 14 days of history' });
     if (!reference) {
       result.badge = result.label = 'Not Enough History';
     } else if (delta > 0) {
@@ -182,164 +181,9 @@ var RhythiaX = RhythiaX || {};
     };
   }
 
-  function getAccuracyTier(accNum) {
-    if (accNum >= 99.5) return 'excellent';
-    if (accNum >= 99.0) return 'very good';
-    if (accNum >= 98.0) return 'good';
-    return '';
-  }
-
-  function formatAccuracyTrendText(delta, formattedAcc, avgAcc) {
-    const fAcc = formattedAcc || `${delta > 0 ? '+' : ''}${Number(delta || 0).toFixed(2)}%`;
-    const accStr = avgAcc && avgAcc !== '—' ? `, averaging <strong>${avgAcc}%</strong>` : '';
-    if (Math.abs(delta) <= 0.05) {
-      return `held steady (${fAcc}${accStr})`;
-    }
-    if (delta < -0.05 && delta >= -0.30) {
-      return `held relatively steady with a slight dip (${fAcc}${accStr})`;
-    }
-    if (delta < -0.30) {
-      return `cooled (${fAcc}${accStr})`;
-    }
-    if (delta > 0.05 && delta <= 0.30) {
-      return `improved slightly (${fAcc}${accStr})`;
-    }
-    return `improved (${fAcc}${accStr})`;
-  }
-
-  function formatRpSpreadText(stats) {
-    if (!stats || !stats.count || stats.count < 5) return '';
-
-    const avgStr = `<strong>${stats.avgRp} RP</strong>`;
-    const peakStr = `<strong>${stats.topRp}</strong>`;
-    const floorStr = `<strong>${stats.bottomRp}</strong>`;
-
-    if (stats.curveType === 'topHeavy') {
-      return `Top plays average ${avgStr} (peak ${peakStr}, floor ${floorStr}). High peak scores, but bottom plays need to go higher.`;
-    }
-
-    if (stats.curveType === 'developing') {
-      return `Top plays average ${avgStr} across ${stats.count} scores (peak ${peakStr}, floor ${floorStr}).`;
-    }
-
-    // balanced or progressive
-    return `Top plays average ${avgStr} (peak ${peakStr}, floor ${floorStr}) with balanced score depth.`;
-  }
-
-  function evaluateScoutAdvice({
-    player,
-    scores = [],
-    momentum = {},
-    accTrend = {},
-    speedSummary = {},
-    dominantSpeedKey = '1.00',
-    dominantPct = 0,
-    avgAccNum = 0,
-    fc = {},
-    rpSpread = {},
-    chokeStats = {},
-  }) {
-    const totalScores = scores.length || 0;
-    const status = momentum.status || 'steady';
-    const effectiveRank = domain ? domain.parseNumber(player?.globalRank || player?.position) : null;
-    const speedNum = parseFloat(dominantSpeedKey) || 1.0;
-    const isDownTempo = speedNum < 0.99;
-    const isStandard = Math.abs(speedNum - 1.0) < 0.05;
-    const isMildUpTempo = Math.abs(speedNum - 1.15) < 0.05;
-    const isHighSpeed = speedNum >= 1.20;
-
-    // 1. DROPPING / LEADERBOARD DECAY
-    if (status === 'loss' || (momentum.delta30d && momentum.delta30d <= -4) || (momentum.rankDelta && momentum.rankDelta <= -4)) {
-      if (isHighSpeed && avgAccNum > 0 && avgAccNum < 96.5) {
-        return `Scaling back speed to prioritize clean <strong>98%+ S-ranks</strong> will immediately halt the drop and yield more RP than low-accuracy clears.`;
-      }
-      if (isMildUpTempo && avgAccNum > 0 && avgAccNum < 96.5) {
-        return `Stepping back to standard 1.00x to secure clean <strong>98%+ S-ranks</strong> will stop the slide and build more reliable rank progress.`;
-      }
-      if (chokeStats?.chokeRate >= 45 && fc?.ratio <= 20) {
-        return `Converting frequent <strong>1–2 miss chokes</strong> on familiar charts into full combos will quickly halt the drop and reclaim lost ranks.`;
-      }
-      if (rpSpread?.curveType === 'topHeavy' && rpSpread?.bottomRp > 0) {
-        return `Overwriting bottom top plays (<strong>~${rpSpread.bottomRp} RP floor</strong>) with cleaner runs is the easiest, lowest-effort way to stop leaderboard decay.`;
-      }
-      const floorStr = rpSpread?.bottomRp > 0 ? ` (<strong>~${rpSpread.bottomRp}+ RP</strong>)` : '';
-      return `Overwriting bottom top plays${floorStr} with cleaner runs is the quickest way to stop the drop and stabilize rank.`;
-    }
-
-    // 2. REBOUND
-    if (momentum.delta30d <= -10 && momentum.delta7d >= 3) {
-      return `Cleaning up lowest top plays will help cement this rebound and lock in solid rank gains.`;
-    }
-
-    // 3. STAGNATION / PLATEAU
-    if (status === 'alert' || (momentum.daysUnchanged && momentum.daysUnchanged >= 10)) {
-      if (rpSpread?.curveType === 'topHeavy' && rpSpread?.bottomRp > 0) {
-        return `Refreshing bottom plays (<strong>~${rpSpread.bottomRp} RP</strong>) has the highest immediate upside to jumpstart upward momentum.`;
-      }
-      if (isStandard && avgAccNum >= 98.5) {
-        const rankDisplay = effectiveRank || momentum.currentRank ? ` around #${effectiveRank || momentum.currentRank}` : '';
-        return `Plateaued${rankDisplay}. Accuracy on 1.00x is near peak—experimenting with <strong>1.15x speed multipliers</strong> is the key to breaking past this plateau.`;
-      }
-      return `Pushing 1–2 new personal bests or cleaning up B/A-rank scores into <strong>S-ranks</strong> will restart your climb.`;
-    }
-
-    // 4. DOWN-TEMPO (< 1.00x, e.g. 0.87x, 0.80x, 0.75x)
-    if (isDownTempo) {
-      if (avgAccNum > 0 && avgAccNum < 96.0) {
-        return `Focusing on rhythm consistency on lower-difficulty charts will build the fundamental timing needed to stabilize accuracy.`;
-      }
-      if (avgAccNum >= 97.5) {
-        return `Shows solid control on down-tempo charts; transitioning towards <strong>standard 1.00x speed</strong> will significantly expand your RP potential.`;
-      }
-    }
-
-    // 5. SPEED OVERREACH (Playing high speed with low acc)
-    if (isHighSpeed && avgAccNum > 0 && avgAccNum < 96.5) {
-      return `Pushing fast tempo (<strong>${dominantSpeedKey}x</strong>), but sub-96.5% accuracy is penalizing RP yield. Scaling back speed to secure <strong>98%+ S-ranks</strong> will generate far higher RP than low-accuracy clears.`;
-    }
-    if (isMildUpTempo && avgAccNum > 0 && avgAccNum < 96.5) {
-      return `Stepping back to standard 1.00x to secure clean <strong>98%+ S-ranks</strong> will yield more consistent RP than pushing 1.15x with shaky accuracy.`;
-    }
-
-    // 6. ACCURACY SATURATION ON 1.00x (Needs speed scaling)
-    if (isStandard && dominantPct >= 45 && avgAccNum >= 98.8) {
-      return `Near-flawless accuracy on 1.00x maps has reached saturation. Stepping into <strong>1.15x or 1.25x speed multipliers</strong> is your next major RP ceiling breaker.`;
-    }
-
-    // 7. 1.00x ACCURACY REFINEMENT (Playing 1.00x but acc has room to improve)
-    if (isStandard && avgAccNum > 0 && avgAccNum < 97.5) {
-      return `Standard 1.00x maps scale heavily on accuracy. Polishing familiar charts from 95–97% into clean <strong>98.5%+ S-ranks</strong> will yield faster rank gains than forcing harder clears.`;
-    }
-
-    // 8. CHOKE ARTIST (High acc, but low FC rate due to 1-2 miss chokes)
-    if (avgAccNum >= 97.5 && fc?.ratio <= 18 && totalScores >= 10 && chokeStats?.chokeRate >= 45) {
-      return `High raw accuracy with an <strong>${fc.ratio}% FC rate</strong> indicates runs are ending on isolated 1–2 miss chokes. Practicing ending consistency on slightly shorter charts to lock in full combos will unlock immediate RP jumps.`;
-    }
-
-    // 9. TOP-HEAVY SCORE POOL (Big dropoff from peak to floor)
-    if (rpSpread?.curveType === 'topHeavy' && rpSpread?.bottomRp > 0) {
-      return `Large gap between peak (<strong>${rpSpread.topRp} RP</strong>) and floor (<strong>${rpSpread.bottomRp} RP</strong>)—re-farming your bottom 15–20 top plays is the fastest, lowest-effort rank boost.`;
-    }
-
-    // 10. DEVELOPING POOL (<25 plays)
-    if (totalScores < 25) {
-      return `Score pool is still developing (${totalScores} top plays). Filling out your top 50 score slots with clean passes will generate rapid, compounding rank increases.`;
-    }
-
-    // 11. CLIMBING / BALANCED CEILING PUSH
-    if (status === 'win' || (rpSpread?.curveType === 'balanced' && avgAccNum >= 98.0)) {
-      const peakDisplay = rpSpread?.topRp ? ` beyond <strong>${rpSpread.topRp} RP</strong>` : '';
-      return `Balanced score depth across top plays; focus on challenging higher star difficulty ratings to raise your peak ceiling${peakDisplay}.`;
-    }
-
-    // 12. GENERAL DEFAULT
-    return `Focusing on clean rhythm accuracy and consistent combo streaks on core maps will steadily lift your RP floor.`;
-  }
-
   function generateScoutingSummary({ player = {}, scores = [], momentum = {}, now = Date.now() }) {
     const top = scores.filter(s => s && !s.isReign && !s.isRecent && s.category !== 'reign' && s.category !== 'recent');
     if (!top.length) return '<p>No top scores yet.</p>';
-    const escape = value => String(value).replace(/[&<>"']/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[char]));
     const entries = top.map(score => ({ score, timestamp: timestamp(score.date || score.created_at || score.createdAt) }));
     const dated = entries.filter(e => Number.isFinite(e.timestamp) && e.timestamp <= now);
     const recent = dated.filter(e => now - e.timestamp <= 30 * DAY_MS);
@@ -372,7 +216,7 @@ var RhythiaX = RhythiaX || {};
         sentences.push(delta === 0
           ? 'Total RP has stayed flat over the recorded <strong>' + Math.round(days) + ' days</strong>.'
           : 'Total RP is <strong>' + (delta > 0 ? 'up ' : 'down ') + amount + '</strong> over <strong>' + Math.round(days) + ' days</strong> — about <strong>'
-            + escape(rate) + ' RP/day</strong> ' + (delta > 0 ? 'gained' : 'lost') + ' on average.');
+            + RhythiaX.escapeHtml(rate) + ' RP/day</strong> ' + (delta > 0 ? 'gained' : 'lost') + ' on average.');
       }
     }
 
@@ -404,14 +248,14 @@ var RhythiaX = RhythiaX || {};
       const title = fullTitle.length > 72 ? fullTitle.slice(0, 69).trimEnd() + '…' : fullTitle;
       const id = String(peak.score.scoreId ?? peak.score.id ?? '');
       const label = /^[1-9][0-9]*$/.test(id)
-        ? '<a href="/score/' + id + '" title="' + escape(fullTitle) + '">' + escape(title) + '</a>'
-        : '<strong title="' + escape(fullTitle) + '">' + escape(title) + '</strong>';
+        ? '<a href="/score/' + id + '" title="' + RhythiaX.escapeHtml(fullTitle) + '">' + RhythiaX.escapeHtml(title) + '</a>'
+        : '<strong title="' + RhythiaX.escapeHtml(fullTitle) + '">' + RhythiaX.escapeHtml(title) + '</strong>';
       let when = '';
       if (Number.isFinite(peak.timestamp) && peak.timestamp <= now) {
         const age = Math.floor((now - peak.timestamp) / DAY_MS);
         const date = new Date(peak.timestamp).toLocaleDateString('en-GB', { day: 'numeric', month: 'short',
           ...(new Date(peak.timestamp).getFullYear() !== new Date(now).getFullYear() ? { year: 'numeric' } : {}) });
-        when = ', set <strong>' + (age === 0 ? 'less than a day ago' : age === 1 ? '1 day ago' : age + ' days ago') + '</strong> (' + escape(date) + ')';
+        when = ', set <strong>' + (age === 0 ? 'less than a day ago' : age === 1 ? '1 day ago' : age + ' days ago') + '</strong> (' + RhythiaX.escapeHtml(date) + ')';
       }
       sentences.push('The top play is ' + label + when + '.');
     }
@@ -426,15 +270,15 @@ var RhythiaX = RhythiaX || {};
         const averageRatio = spread.avgRp / spread.topRp;
         const goal = Math.min(spread.topRp, Math.ceil((ratio < 0.4 ? Math.max(spread.bottomRp * 1.1, spread.topRp * 0.25) : spread.bottomRp * 1.1) / 10) * 10);
         if (spread.count < 25) {
-          sentences.push('The top list is still small; add more strong scores alongside improving the bottom plays.');
+          sentences.push('The top list is still short, so any strong new score adds to it.');
         } else if (ratio < 0.4 || averageRatio < 0.6) {
-          sentences.push('The bottom is far behind the best plays; try to raise it toward <strong>' + goal + ' RP</strong> before chasing another big peak.');
+          sentences.push('The bottom is far behind the best plays; raising it toward <strong>' + goal + ' RP</strong> adds the most.');
         } else if (ratio < 0.7) {
-          sentences.push('There is room to strengthen the bottom plays; try to bring them toward <strong>' + goal + ' RP</strong>.');
+          sentences.push('Scores above <strong>' + goal + ' RP</strong> would strengthen the bottom plays.');
         } else if (ratio < 0.9) {
-          sentences.push('The top list already has solid depth; keep nudging the bottom plays toward <strong>' + goal + ' RP</strong> alongside new peaks.');
+          sentences.push('The top list has solid depth; the next step for the bottom plays is <strong>' + goal + ' RP</strong>.');
         } else {
-          sentences.push('The top list is very even; new personal bests can help lift the whole range.');
+          sentences.push('The top list is very even, so only new personal bests near the top will move it much.');
         }
       }
     }
@@ -451,8 +295,7 @@ var RhythiaX = RhythiaX || {};
   const MONTHS_SHORT = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
   function buildStory({ now = Date.now(), history = [], recent = [], top = [], rank = null, rp = null, label = '' } = {}) {
-    const esc = value => String(value).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
-    const em = value => '<em>' + esc(value) + '</em>';
+    const em = value => '<em>' + RhythiaX.escapeHtml(value) + '</em>';
     const fmt = n => Number(n).toLocaleString('en-US', { maximumFractionDigits: 2 });
     const rpText = n => (n > 0 ? '+' : n < 0 ? '−' : '±') + fmt(Math.abs(n)) + ' RP';
     const dayText = t => { const d = new Date(t); return MONTHS_SHORT[d.getMonth()] + ' ' + d.getDate(); };
@@ -593,11 +436,7 @@ var RhythiaX = RhythiaX || {};
     evaluateMomentum,
     evaluateAccuracyTrend,
     evaluateSpeedSummary,
-    evaluateScoutAdvice,
     generateScoutingSummary,
-    getAccuracyTier,
-    formatAccuracyTrendText,
-    formatRpSpreadText,
   };
 
   if (typeof module !== 'undefined' && module.exports) {

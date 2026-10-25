@@ -21,6 +21,10 @@ This license does not apply to code, content, data, design, trademarks, logos,
 or other materials belonging to Rhythia.com, Capo Games, Google Chrome,
 third-party libraries, third-party assets, or other external parties.
 
+It also does not cover the independent player-history service, its API,
+access keys or the data it serves; their use is governed by the history
+service terms (HISTORY-TERMS.md).
+
 ## Permission
 
 Permission is granted, free of charge, to any person obtaining a copy of

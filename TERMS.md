@@ -1,6 +1,6 @@
 # Terms — Reimagined for Rhythia extension
 
-Updated October 20, 2026. These terms describe the current extension service.
+Updated October 21, 2026. These terms describe the current extension service.
 
 Project contact: Shuriel · [contact@shuriel.com](mailto:contact@shuriel.com).
 
@@ -14,6 +14,6 @@ See [Privacy](PRIVACY.md) for browser data and connections and [Data and Sync](D
 
 Exodus is experimental. Actions you take through it, such as editing your profile or adding friends, are sent to Rhythia as if made on rhythia.com and remain subject to Rhythia's terms.
 
-Do not use the extension to disrupt services, bypass access controls or harass players. Report problems through [Support](SUPPORT.md); keep passwords, sessions and recovery codes out of reports and public issues.
+Do not use the extension to disrupt services, bypass access controls, take its access key for other tools or harass players. Report problems through [Support](SUPPORT.md); keep passwords, sessions and recovery codes out of reports and public issues.
 
 The [code licence](LICENSE.md) governs covered project code and documentation. These terms do not replace it or grant rights to game branding, artwork or other third-party materials.

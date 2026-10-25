@@ -13,7 +13,6 @@ RhythiaX.TitleProgression = RhythiaX.TitleProgression || {};
   let activeState = {
     view: 'map', // 'map' or 'history'
     player: null,
-    scoreSets: null,
     mountTarget: null
   };
 
@@ -122,7 +121,9 @@ RhythiaX.TitleProgression = RhythiaX.TitleProgression || {};
     return { nativeHeader, nativeBody, progressBtn, historyBtn };
   }
 
-  function mount(cardElement, playerData, scoreSets) {
+  // The card is drawn from the player alone (rp, globalRank, created_at); callers that still pass the
+  // player's score sets as a third argument have it ignored.
+  function mount(cardElement, playerData) {
     if (!cardElement) return false;
     const showProgression = RhythiaX.isModuleOptionEnabled ? RhythiaX.isModuleOptionEnabled('titleProgression', 'showProgression') : true;
     const showHistory = RhythiaX.isModuleOptionEnabled ? RhythiaX.isModuleOptionEnabled('titleProgression', 'showHistory') : true;
@@ -134,7 +135,6 @@ RhythiaX.TitleProgression = RhythiaX.TitleProgression || {};
     }
 
     activeState.player = playerData || activeState.player;
-    activeState.scoreSets = scoreSets || activeState.scoreSets || RhythiaX.profileHistoryContext?.scoreSets || null;
     activeState.mountTarget = cardElement;
 
     // Check if our host wrapper is already injected
@@ -149,15 +149,18 @@ RhythiaX.TitleProgression = RhythiaX.TitleProgression || {};
     }
     watchFold(fold);
 
-    // Render component markup inside host (both Map and History)
-    host.innerHTML = View.buildTitleProgressionCard(activeState.player, activeState.view, activeState.scoreSets);
+    // Render component markup inside host (both Map and History); the same card is not drawn again.
+    const markup = View.buildTitleProgressionCard(activeState.player, activeState.view);
+    const drawn = RhythiaX.setMarkup(host, markup);
 
     // Sync visibility of views and hide native siblings
     updateViewVisibility(cardElement, activeState.view);
 
-    // Attach tab and tooltip listeners
-    setupTabListeners(host, cardElement);
-    setupTooltipListeners(host);
+    // Listeners belong to the drawn nodes, so only new nodes need them.
+    if (drawn) {
+      setupTabListeners(host, cardElement);
+      setupTooltipListeners(host);
+    }
 
     return true;
   }
@@ -352,11 +355,10 @@ RhythiaX.TitleProgression = RhythiaX.TitleProgression || {};
     });
   }
 
-  function update(playerData, scoreSets) {
+  function update(playerData) {
     if (!activeState.mountTarget) return;
     activeState.player = playerData || activeState.player;
-    activeState.scoreSets = scoreSets || activeState.scoreSets;
-    mount(activeState.mountTarget, activeState.player, activeState.scoreSets);
+    mount(activeState.mountTarget, activeState.player);
   }
 
   function unmount(cardElement = activeState.mountTarget) {

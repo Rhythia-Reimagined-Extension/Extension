@@ -5,16 +5,7 @@ RhythiaX.RhythiaApiBridge = {
   fetchPlayerScoreSets(...args) {
     return RhythiaX.fetchPlayerScoreSets(...args);
   },
-  fetchPlayerScores(...args) {
-    return RhythiaX.fetchPlayerScores(...args);
-  },
   fetchUserProfile(...args) {
     return RhythiaX.fetchUserProfile(...args);
-  },
-  mergeWeightedRp(...args) {
-    return RhythiaX.mergeWeightedRp(...args);
-  },
-  crossVerifyCardsWithApi(...args) {
-    return RhythiaX.crossVerifyCardsWithApi(...args);
   },
 };

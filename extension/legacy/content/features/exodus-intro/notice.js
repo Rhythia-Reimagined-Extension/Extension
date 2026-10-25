@@ -1,5 +1,5 @@
 // Tells Classic players, once, that the experimental Exodus look is out (a card in shared/notices.js).
-// "Try it out" switches the look, as the popup does; "No thanks" keeps Classic. Either answer, or Exodus
+// "Try Exodus" switches the look, as the popup does; "No thanks" keeps Classic. Either answer, or Exodus
 // switched on some other way, is remembered in rhythiaxExodusIntro and the card never comes back.
 var RhythiaX = RhythiaX || {};
 
@@ -19,7 +19,7 @@ var RhythiaX = RhythiaX || {};
     chrome.storage.local.set(values, () => {
       if (chrome.runtime.lastError) {
         card.setBusy(false);
-        card.setStatus('That did not work. Please try again.');
+        card.setStatus('Not saved. Try again.');
         return;
       }
       card.close(); card = null;
@@ -28,31 +28,31 @@ var RhythiaX = RhythiaX || {};
 
   function check() {
     if (RhythiaX.extensionContextInvalidated) return;
-    chrome.storage.local.get({ rhythiaxExodusIntro: null, rhythiaxExodus: false, rhythiaxMasterActive: true }, got => {
+    chrome.storage.local.get({ rhythiaxExodusIntro: null, rhythiaxExodus: false }, got => {
       if (chrome.runtime.lastError || got.rhythiaxExodusIntro === SEEN) return;
       if (got.rhythiaxExodus === true) { chrome.storage.local.set({ rhythiaxExodusIntro: SEEN }); return; }
-      if (got.rhythiaxMasterActive === false || card) return;
+      if (card) return;
       card = RhythiaX.Notices.show({
         id: ID,
         label: 'Experimental',
-        title: 'New experimental Exodus look is out!',
+        title: 'Try the new Exodus look',
         body: [
-          'A redesigned Rhythia: profiles, scores, maps and leaderboards in a new layout.',
-          'You can switch back to Classic at any time in the extension popup.',
+          'A redesign of Rhythia’s profiles, scores, maps and leaderboards.',
+          'Switch back to Classic any time in the extension popup.',
         ],
         actions: [
-          { text: 'Try it out!', kind: 'primary', run: event => answer(event, true) },
+          { text: 'Try Exodus', kind: 'primary', run: event => answer(event, true) },
           { text: 'No thanks', run: event => answer(event, false) },
         ],
       });
     });
   }
 
-  RhythiaX.ExodusIntro = { check };
+  // Marks the notice as set up: the check at the top of this file skips a second run in the same tab.
+  RhythiaX.ExodusIntro = {};
   chrome.storage.onChanged?.addListener((changes, area) => {
     if (area !== 'local' || !card) return;
-    if (changes.rhythiaxExodusIntro?.newValue === SEEN || changes.rhythiaxExodus?.newValue === true
-      || changes.rhythiaxMasterActive?.newValue === false) { card.close(); card = null; }
+    if (changes.rhythiaxExodusIntro?.newValue === SEEN || changes.rhythiaxExodus?.newValue === true) { card.close(); card = null; }
   });
   if (document.body) check();
   else document.addEventListener('DOMContentLoaded', check, { once: true });

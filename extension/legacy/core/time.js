@@ -1,5 +1,5 @@
 // =============================================
-// Rhythia X — Time helpers
+// Reimagined for Rhythia — Time helpers
 // =============================================
 
 var RhythiaX = RhythiaX || {};
@@ -71,12 +71,6 @@ RhythiaX.formatDateWithPattern = function (d, pattern = 'relative') {
       return `${day}-${month}-${year}`;
     case 'yyyy-mm-dd':
       return `${year}-${month}-${day}`;
-    case 'mm/dd/yyyy':
-      return `${month}/${day}/${year}`;
-    case 'dd/mm/yyyy':
-      return `${day}/${month}/${year}`;
-    case 'yyyy/mm/dd':
-      return `${year}/${month}/${day}`;
     default:
       return `${year}-${month}-${day}`;
   }

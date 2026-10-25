@@ -4,7 +4,7 @@
 
    The Rhythia app keeps body.dark enabled for every preset and uses literal
    Tailwind colors in its markup. These rules translate the shared shell and
-   content surfaces to the selected Rhythia X palette without changing the
+   content surfaces to the selected Classic palette without changing the
    page's layout or interactions.
    ============================================= */
 body[data-rhythiax-theme] {
@@ -44,12 +44,6 @@ body[data-rhythiax-theme] #root .fixed.top-0.left-0.w-full.sm\:h-\[60px\] {
 body[data-rhythiax-theme] #root .fixed.top-0.left-0.w-full[class*="h-[60px]"] a,
 body[data-rhythiax-theme] #root .fixed.top-0.left-0.w-full[class*="h-[60px]"] button {
   color: var(--rhythiax-text) !important;
-}
-body[data-rhythiax-theme] #root .fixed.top-0.left-0.w-full[class*="h-[60px]"] a:not(:has(img[src*="navlogo"])):hover,
-body[data-rhythiax-theme] #root .fixed.top-0.left-0.w-full[class*="h-[60px]"] button:hover,
-body[data-rhythiax-theme] #root .fixed.top-0.left-0.w-full.h-\[60px\] [class*="bg-[#2F4184"]],
-body[data-rhythiax-theme] #root .fixed.top-0.left-0.w-full.sm\:h-\[60px\] [class*="bg-[#2F4184"]] {
-  background: var(--rhythiax-nav-hover) !important;
 }
 body[data-rhythiax-theme] #root .top-\[60px\].left-0.overflow-hidden {
   opacity: .22 !important;
@@ -167,11 +161,12 @@ body[data-rhythiax-theme] #root nav button:hover {
   background-color: var(--rhythiax-accent-soft) !important;
   color: var(--rhythiax-text-strong) !important;
 }
+/* --rhythiax-on-accent is set only by an own theme: the text colour that reads on its accent. */
 body[data-rhythiax-theme="white"] #root nav [aria-current="page"],
 body[data-rhythiax-theme="white"] nav[role="navigation"] [aria-current="page"] {
   background-color: var(--rhythiax-accent, #7c3aed) !important;
   border-color: var(--rhythiax-accent, #7c3aed) !important;
-  color: #ffffff !important;
+  color: var(--rhythiax-on-accent, #ffffff) !important;
 }
 body[data-rhythiax-theme="white"] #root > div > div:last-child {
   color: var(--rhythiax-text-muted) !important;
@@ -192,7 +187,17 @@ body[data-rhythiax-theme="white"] #root .bg-blue-500\/10,
 body[data-rhythiax-theme="white"] #root .data-\[state\=checked\]\:bg-blue-500\/10,
 body[data-rhythiax-theme="white"] #root .data-\[state\=checked\]\:hover\:bg-blue-500\/10 {
   background-color: var(--rhythiax-accent-soft) !important;
+}
+/* Text on that tint: White's deep violet, or an own theme's accent darkened towards its text. */
+:where(html:not([data-rhythiax-own-theme])) body[data-rhythiax-theme="white"] #root .bg-blue-500\/10,
+:where(html:not([data-rhythiax-own-theme])) body[data-rhythiax-theme="white"] #root .data-\[state\=checked\]\:bg-blue-500\/10,
+:where(html:not([data-rhythiax-own-theme])) body[data-rhythiax-theme="white"] #root .data-\[state\=checked\]\:hover\:bg-blue-500\/10 {
   color: #4c1d95 !important;
+}
+:where(html[data-rhythiax-own-theme]) body[data-rhythiax-theme="white"] #root .bg-blue-500\/10,
+:where(html[data-rhythiax-own-theme]) body[data-rhythiax-theme="white"] #root .data-\[state\=checked\]\:bg-blue-500\/10,
+:where(html[data-rhythiax-own-theme]) body[data-rhythiax-theme="white"] #root .data-\[state\=checked\]\:hover\:bg-blue-500\/10 {
+  color: color-mix(in srgb, var(--rhythiax-accent) 65%, var(--rhythiax-text-strong)) !important;
 }
 
 @media (max-width: 767px) {

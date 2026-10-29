@@ -41,6 +41,9 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 body[data-size="large"] { width: 420px; }
+/* Opened in a tab to load a file (Firefox, popup.js pickFile): the same panel in the middle of the page; the
+   body's background fills the page around it. */
+body[data-page="tab"] { margin: 48px auto; border-radius: 12px; box-shadow: 0 0 0 1px var(--line-2); }
 button, select { font: inherit; color: inherit; }
 button { cursor: pointer; }
 a { color: inherit; }
@@ -54,8 +57,10 @@ a { color: inherit; }
 .logo { width: 26px; height: 26px; flex: none; }
 .p-brand { flex: 1; min-width: 0; line-height: 1.25; }
 .p-brand b { display: block; font-size: 14px; font-weight: 700; letter-spacing: -.01em; white-space: nowrap; }
-.p-brand small { display: flex; align-items: center; gap: 5px; color: var(--muted); font-size: 11.5px; white-space: nowrap; }
-.badge { display: inline-flex; align-items: center; height: 16px; padding: 0 6px; border-radius: 999px; font-size: 10.5px; font-weight: 700; background: var(--accent-soft); color: var(--accent-2); }
+.p-brand small { display: flex; align-items: center; gap: 5px; min-width: 0; color: var(--muted); font-size: 11.5px; white-space: nowrap; }
+.p-brand #ver { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+[data-look="exodus"] .ver-title { display: none; }
+.badge { flex: none; display: inline-flex; align-items: center; height: 16px; padding: 0 6px; border-radius: 999px; font-size: 10.5px; font-weight: 700; background: var(--accent-soft); color: var(--accent-2); }
 .look { display: inline-flex; flex: none; gap: 2px; padding: 3px; border-radius: 9px; background: var(--field); box-shadow: inset 0 0 0 1px var(--line-2); }
 .look button { height: 28px; padding: 0 11px; border: 0; border-radius: 6px; background: none; color: var(--muted); font-size: 12.5px; font-weight: 650; transition: background-color .2s, color .2s; }
 .look button:hover { color: var(--text); }
@@ -159,6 +164,8 @@ p.alert { background: color-mix(in srgb, var(--bad) 14%, transparent); box-shado
 .tile.src svg { width: 18px; height: 18px; color: var(--muted); }
 .tile.src[aria-pressed="true"] svg { color: var(--accent-2); }
 .tile.src span b { font-weight: 650; }
+/* The text keeps clear of the tick on both sides, so it stays under the icon's middle. */
+.tile.src span { align-self: stretch; padding: 0 16px; }
 .tile.theme .pv { display: flex; flex-direction: column; gap: 4px; height: 38px; padding: 7px; border-radius: 4px; background: var(--pv-bg); box-shadow: inset 0 0 0 1px rgba(128, 128, 128, .28); }
 .tile.theme .pv i { display: block; height: 4px; border-radius: 2px; background: var(--pv-l); }
 .tile.theme .pv i:first-child { width: 58%; background: var(--pv-a); }
@@ -225,17 +232,23 @@ p.alert { background: color-mix(in srgb, var(--bad) 14%, transparent); box-shado
 [data-look="exodus"] .btn { background: none; border-radius: 8px; }
 .btn:hover { background: var(--panel-3); }
 .btn.danger { color: var(--bad); }
-.visits { padding: 4px 12px; }
-[data-look="exodus"] .visits { padding: 4px 0 2px; }
-.visits .sub-l { padding: 6px 0; }
-.v-row { display: flex; align-items: center; gap: 10px; padding: 6px 0; font-size: 12.5px; }
-.v-row + .v-row { border-top: 1px solid var(--line); }
-.v-row b { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 600; }
-.v-row time { color: var(--muted); font-variant-numeric: tabular-nums; }
-.lat { display: inline-flex; align-items: center; justify-content: flex-end; gap: 6px; min-width: 58px; font-variant-numeric: tabular-nums; color: var(--text-2); }
-.lat::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: var(--good); }
-.lat.med::before { background: var(--warn); }
-.lat.bad::before { background: var(--bad); }
+.split { display: flex; gap: 2px; height: 8px; margin: 9px 0 4px; border-radius: 99px; overflow: hidden; background: var(--field); }
+.split i { min-width: 0; transition: flex-grow .5s cubic-bezier(.2, .7, .2, 1); }
+.srow { display: flex; align-items: center; gap: 10px; padding: 9px 0; font-size: 12.5px; color: var(--text-2); }
+.srow + .srow { border-top: 1px solid var(--line); }
+.srows .srow:first-child { padding-top: 10px; }
+.srows .srow:last-child { padding-bottom: 0; }
+.srow .k { flex: 1; min-width: 0; font-size: 13px; font-weight: 650; color: var(--text); }
+.srow .k small { display: block; margin-top: 1px; font-weight: 400; color: var(--muted); font-size: 11.5px; line-height: 1.35; }
+.srow .v { font-variant-numeric: tabular-nums; white-space: nowrap; }
+/* The icon of a kind of data, a backup or the reset: a small tile in the kind's colour. */
+.s-ico { display: grid; place-items: center; flex: none; width: 30px; height: 30px; border-radius: 8px; color: var(--c, var(--text-2)); background: color-mix(in srgb, var(--c, var(--text-2)) 14%, transparent); }
+.s-ico svg { width: 16px; height: 16px; }
+.mod .s-ico { align-self: flex-start; margin-top: 1px; }
+.btn { display: inline-flex; align-items: center; justify-content: center; gap: 7px; }
+.btn svg { width: 15px; height: 15px; }
+.btn.mini { flex: none; height: 30px; padding: 0 12px; }
+.block.acts { margin-top: 0; }
 
 /* Footer */
 .p-foot { display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 7px 14px; border-top: 1px solid var(--line); font-size: 11.5px; color: var(--muted); }

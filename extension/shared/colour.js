@@ -65,17 +65,25 @@ RhythiaX.Colour = (function () {
     for (let i = 0; i < text.length; i++) bytes[i] = text.charCodeAt(i);
     return new Blob([bytes], { type: url.slice(5, url.indexOf(';')) });
   }
+  // Firefox does not let a content script's page parts load a blob: URL the content script made on rhythia.com
+  // ("may not load data from blob:https://www.rhythia.com/…"), so there theme media stay data: URLs, which Firefox
+  // draws at any size. Chrome and extension pages use blob: URLs.
+  const BLOBS = typeof globalThis.URL?.createObjectURL === 'function'
+    && !(/^moz-extension:/.test(globalThis.chrome?.runtime?.getURL?.('') || '') && globalThis.location?.protocol !== 'moz-extension:');
+  // A URL the page can load for a data: URL (a blob: URL where blobs load), and freeing it again.
+  const mediaUrl = media => (BLOBS ? URL.createObjectURL(blobOf(media)) : media);
+  const freeUrl = url => { if (String(url).startsWith('blob:')) URL.revokeObjectURL(url); };
   // Chrome draws no CSS url() longer than 2 MB, which most GIFs (and some pictures) are as data: URLs, so CSS is
-  // given a blob: URL of the same bytes. A holder keeps the blob: URL of the last data: URL it was given and frees
-  // the one before; '' frees it. Without blob: URLs (tests) the data: URL is given back.
+  // given a blob: URL of the same bytes. A holder keeps the URL of the last data: URL it was given and frees the
+  // one before; '' frees it. Where blob: URLs do not load (Firefox, tests) the data: URL is given back.
   function blobHolder() {
     let from = '', url = '';
     return media => {
       media = media || '';
       if (media === from) return url;
-      if (url && url !== from) URL.revokeObjectURL(url);
+      freeUrl(url);
       from = media;
-      url = media && typeof globalThis.URL?.createObjectURL === 'function' ? URL.createObjectURL(blobOf(media)) : media;
+      url = media ? mediaUrl(media) : '';
       return url;
     };
   }
@@ -101,7 +109,7 @@ RhythiaX.Colour = (function () {
   // From a small copy of a picture (a video's first frame): its average colour, the average of its lightest and
   // of its darkest quarter, and its most vivid colour (null for a grey picture). Rejects when it cannot be drawn.
   async function pictureColours(url) {
-    const video = isVideo(url), src = URL.createObjectURL(blobOf(url));
+    const video = isVideo(url), src = mediaUrl(url);
     try {
       const el = video ? Object.assign(document.createElement('video'), { muted: true, preload: 'auto' }) : new Image();
       await new Promise((resolve, reject) => { el[video ? 'onloadeddata' : 'onload'] = resolve; el.onerror = () => reject(new Error('read')); el.src = src; });
@@ -126,7 +134,7 @@ RhythiaX.Colour = (function () {
       const q = Math.max(1, Math.floor(all.length / 4)), top = hues.reduce((m, k) => (k[3] > m[3] ? k : m));
       return { avg: mean(all), dark: mean(all.slice(0, q)), light: mean(all.slice(-q)), vivid: top[3] > 1 ? toHex(top[0] / top[3], top[1] / top[3], top[2] / top[3]) : null };
     } finally {
-      URL.revokeObjectURL(src);
+      freeUrl(src);
     }
   }
 
@@ -148,7 +156,7 @@ RhythiaX.Colour = (function () {
       return { url, video };
     }
     if (!/^image\/(png|jpeg|webp)$/.test(file.type)) throw new Error('type');
-    const src = URL.createObjectURL(file);
+    const src = BLOBS ? URL.createObjectURL(file) : await asDataUrl(file);
     try {
       const img = await new Promise((resolve, reject) => { const i = new Image(); i.onload = () => resolve(i); i.onerror = () => reject(new Error('read')); i.src = src; });
       const k = Math.min(1, 2400 / Math.max(img.naturalWidth, img.naturalHeight)), c = document.createElement('canvas');
@@ -157,10 +165,10 @@ RhythiaX.Colour = (function () {
       let q = .86, out = c.toDataURL('image/jpeg', q);
       while (out.length > 3.5e6 && q > .5) { q -= .1; out = c.toDataURL('image/jpeg', q); }
       return { url: out, video: false };
-    } finally { URL.revokeObjectURL(src); }
+    } finally { freeUrl(src); }
   }
 
-  return { hex, parseColour, rgbs, lum, mix, ratio, minRatio, avg, reach, soften, inkFor, gradient, DIRS, LIMITS, imageOk, isVideo, blobOf, blobHolder, placeLayer, pictureColours, readMedia };
+  return { hex, parseColour, rgbs, lum, mix, ratio, minRatio, avg, reach, soften, inkFor, gradient, DIRS, LIMITS, imageOk, isVideo, blobOf, mediaUrl, freeUrl, blobHolder, placeLayer, pictureColours, readMedia };
 })();
 
 if (typeof module !== 'undefined') module.exports = RhythiaX.Colour;

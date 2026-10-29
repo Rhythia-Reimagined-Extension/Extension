@@ -77,7 +77,13 @@ function loadStyles() {
   const ids = [...new Set(PLAYS.map(s => s.songId))];
   if (ids.every(id => STY.map.has(id))) return;
   let queued = false;
-  const paint = () => { queued = false; if (ac.signal.aborted) return; const el = $('#mtypes'); if (el) morph(el, mapTypes()); };
+  // Map types also feed the notes of the last 14 days and of the month in review.
+  const paint = () => {
+    queued = false; if (ac.signal.aborted) return;
+    const el = $('#mtypes'); if (el) morph(el, mapTypes());
+    const ps = $('#psnotes'), top = MODES[S.mode].top; if (ps && top.length) morph(ps, psNotes(momentum(), Math.min(...top.map(s => s.raw))));
+    const mn = $('#mnotes'); if (mn) { const ym = S.rev, from = ym + '-01', to = nextMonth(ym) + '-01'; morph(mn, monthNotes(ym, agg(from, to), PLAYS.filter(s => dayOf(s) >= from && dayOf(s) < to)).map(n => `<li>${n}</li>`).join('')); }
+  };
   const later = () => { if (!queued) { queued = true; setTimeout(paint, 250); } };
   STY.total = ids.length; STY.done = STY.map.size;
   RhythiaX.ExodusData.mapStyles(ids, ac.signal, (done, total) => { STY.done = done; STY.total = total; later(); })
@@ -119,6 +125,40 @@ function mapTypes() {
     ${lines.length ? `<ul class="notes">${lines.map(l => `<li>${l}</li>`).join('')}</ul>` : ''}`;
 }
 
+// What changed in a period [from, to), from the plays Rhythia still lists: the top plays set in it, on new maps
+// or beating a listed play of the same map; the map types whose accuracy moved against the 30 days before; and
+// a change of main speed. At most three short lines; a line needs enough plays to say something.
+const PCT = .3;
+function progress(from, to, when, withBest) {
+  const inP = s => dayOf(s) >= from && dayOf(s) < to, pre = addDays(from, -30), inB = s => dayOf(s) >= pre && dayOf(s) < from;
+  const label = k => KIND[k][0].toLowerCase(), out = [];
+  const tops = MODES.normal.top.filter(inP);
+  if (tops.length) {
+    const ups = tops.map(s => { const old = PLAYS.filter(p => p.songId === s.songId && p.id !== s.id && p.created_at < s.created_at); return old.length ? {s, gain: s.raw - Math.max(...old.map(p => p.raw))} : null; }).filter(Boolean);
+    const known = tops.filter(kindOf), lead = BAR_KINDS.map(k => [k, known.filter(s => isKind(s, k)).length]).sort((a, b) => b[1] - a[1])[0];
+    let t = `<b>${tops.length}</b> of the top 100 ${tops.length === 1 ? 'was' : 'were'} set ${when}`;
+    if (ups.length) t += `: <b>${tops.length - ups.length}</b> on new maps, <b>${ups.length}</b> beating an earlier play of the same map`;
+    if (known.length >= 4 && lead[1] / known.length >= .6) t += `, mostly <b>${label(lead[0])}</b> (${lead[1]} of ${known.length})`;
+    out.push(t + '.');
+    const big = ups.filter(u => u.gain > 0).sort((a, b) => b.gain - a.gain)[0], best = tops.reduce((m, s) => s.raw > m.raw ? s : m);
+    if (big) out.push(`Biggest improvement: <b>${esc(big.s.beatmapTitle)}</b>, <b>${sgn(big.gain)} RP</b> to ${fmt(big.s.raw)} RP.${withBest && best !== big.s ? ` The best new play: <b>${esc(best.beatmapTitle)}</b>, ${fmt(best.raw)} RP at ${best.speedKey}×.` : ''}`);
+    else if (withBest) out.push(`The best: <b>${esc(best.beatmapTitle)}</b>, ${fmt(best.raw)} RP at ${best.speedKey}×.`);
+  }
+  const now = PLAYS.filter(inP), was = PLAYS.filter(inB);
+  const moved = BAR_KINDS.map(k => { const a = now.filter(s => isKind(s, k)), b = was.filter(s => isKind(s, k)); return a.length >= 4 && b.length >= 4 ? [k, avgAcc(a), avgAcc(b)] : null; })
+    .filter(Boolean).map(([k, a, b]) => ({k, a, b, d: a - b})).sort((x, y) => y.d - x.d);
+  const up = moved[0]?.d >= PCT ? moved[0] : null, down = moved.at(-1)?.d <= -PCT ? moved.at(-1) : null;
+  const acc = m => `${fmt(m.a, 2)}%, ${m.d > 0 ? 'up' : 'down'} from ${fmt(m.b, 2)}%`;
+  if (up && down) out.push(`Better on <b>${label(up.k)}</b> (${acc(up)}) and worse on <b>${label(down.k)}</b> (${acc(down)}), against the 30 days before.`);
+  else if (up || down) out.push(`${up ? 'Better' : 'Worse'} on <b>${label((up || down).k)}</b>: accuracy ${acc(up || down)} in the 30 days before.`);
+  const main = list => Object.keys(SPEED).map(k => [k, list.filter(s => s.speedKey === k).length]).sort((a, b) => b[1] - a[1])[0];
+  if (now.length >= 5 && was.length >= 5) {
+    const [n, nc] = main(now), [b] = main(was);
+    if (n !== b && nc / now.length >= .4) out.push(`Mostly <b>${n}×</b> now (${nc} of ${plural(now.length, 'play')}), after mostly ${b}× before.`);
+  }
+  return out;
+}
+
 // One column per day; a break is marked under its days.
 function strip(ym) {
   const from = ym + '-01', to = nextMonth(ym) + '-01', days = [];
@@ -146,6 +186,8 @@ function monthNotes(ym, a, plays) {
     const back = addDays(b.to, 1);
     if (!b.open && back >= from && back < to) out.push(comeback(b));
   }
+  // What changed in the month comes before its pace: it says more than how busy it was.
+  out.push(...progress(from, to, `in ${name}`, true));
   if (a && a.days >= 5) {
     const w = a.plays / a.days * 7, pm = prevMonth(ym), pa = agg(pm + '-01', from), pn = monthName(pm, {month: 'long'});
     const pw = pa && pa.days >= 7 ? pa.plays / pa.days * 7 : null;
@@ -153,15 +195,13 @@ function monthNotes(ym, a, plays) {
     const busy = c.DAYS.filter(d => d.date >= from && d.date < to).reduce((m, d) => d.plays > m.plays ? d : m, {plays: 0});
     if (busy.plays && a.active >= 3) out.push(`Busiest day: <b>${dm(busy.date)}</b>, ${plural(busy.plays, 'play')}${busy.rp ? ` and ${sgn(busy.rp, 1)} RP` : ''}.`);
   }
-  const inTop = MODES.normal.top.filter(s => dayOf(s) >= from && dayOf(s) < to);
-  if (inTop.length) { const b = inTop.reduce((m, s) => s.raw > m.raw ? s : m); out.push(`<b>${inTop.length}</b> of the top 100 ${inTop.length === 1 ? 'was' : 'were'} set in ${name}. The best: <b>${esc(b.beatmapTitle)}</b>, ${fmt(b.raw)} RP at ${b.speedKey}×.`); }
   if (plays.length >= 5) {
     const top = MODES.normal.top, tried = Object.keys(SPEED).map(k => [k, plays.filter(s => s.speedKey === k).length, top.filter(s => s.speedKey === k).length])
       .filter(([, n, t]) => n >= 3 && n / plays.length >= .25 && t / Math.max(1, top.length) < .1).sort((x, y) => y[1] - x[1])[0];
     if (tried) out.push(`Trying <b>${tried[0]}×</b>: ${tried[1]} of ${plays.length} listed plays, against ${tried[2]} of the top 100.`);
   }
   if (!plays.length && !(a && a.plays)) out.push(`No plays in ${name}.`);
-  return out.slice(0, 5);
+  return out.slice(0, 8);
 }
 
 function monthsOf() {
@@ -179,10 +219,17 @@ function review() {
       <div class="stepper"><button class="iconbtn" type="button" data-rev="-1" ${i > 0 ? '' : 'disabled'} aria-label="Earlier month">‹</button><strong>${monthName(ym)}</strong><button class="iconbtn" type="button" data-rev="1" ${i < c.MONTHS.length - 1 ? '' : 'disabled'} aria-label="Later month">›</button></div></div>
     ${a ? `<div class="mfig">${fig('Plays', fmt(a.plays))}${fig('Active days', `${a.active} of ${a.days}`)}${fig('RP', sgn(a.rp, 1), tone(a.rp))}${fig('Global rank', sgn(a.rank), tone(a.rank))}${fig('Avg. accuracy', sgn(a.accD, 2, ' pp'), tone(a.accD))}</div>` : ''}
     <div class="mbody">
-      <div>${a ? strip(ym) : ''}<ul class="notes">${monthNotes(ym, a, plays).map(n => `<li>${n}</li>`).join('')}</ul></div>
+      <div>${a ? strip(ym) : ''}<ul class="notes" id="mnotes">${monthNotes(ym, a, plays).map(n => `<li>${n}</li>`).join('')}</ul></div>
       <div id="mtypes">${mapTypes()}</div>
     </div>
   </div>`;
+}
+
+// The momentum notes, what changed in the last 14 days (Lock only: the plays listed with a time are Lock's)
+// and the lowest counted play.
+function psNotes(mo, floor) {
+  const last = c.H.at(-1).date, more = S.mode === 'normal' ? progress(addDays(last, -13), addDays(last, 1), 'in the last 14 days') : [];
+  return [...mo.notes, ...more, `Lowest counted play: <b>${fmt(floor)} RP</b>. Anything above it raises the total.`].map(n => `<li>${n}</li>`).join('');
 }
 
 // Playstyle reads the top 100, so it has no period switch; Month in review has its own.
@@ -205,7 +252,7 @@ function playstyle() {
           <div><small>Momentum · last ${mo.days} days</small><strong>${mo.label}${mo.flags.map(f => `<em>${f}</em>`).join('')}</strong>
             <span class="num">#${fmt(last.globalRank)} now · ${mo.delta ? `${sgn(mo.delta)} places` : 'no change'}</span></div>
           ${mo.ref ? `<button class="faq-btn" type="button" data-faq aria-expanded="false" aria-controls="faq">${ico('info')}Status guide</button>` : ''}</div>
-        <ul class="notes">${mo.notes.map(n => `<li>${n}</li>`).join('')}<li>Lowest counted play: <b>${fmt(floor)} RP</b>. Anything above it raises the total.</li></ul>
+        <ul class="notes" id="psnotes">${psNotes(mo, floor)}</ul>
       </div>
       <div class="panel">
         <div class="sigs">

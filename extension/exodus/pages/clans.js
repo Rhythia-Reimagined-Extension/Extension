@@ -84,10 +84,12 @@ function clans(host, ctx) {
     return pageNumbers(S.q.page, Math.ceil(d.total / d.perPage), '', {perPage: d.perPage, total: d.total, noun: 'clans'});
   }
   function render() {
+    if (ac.signal.aborted) return;
     $('#hero').innerHTML = '';
     $('#body').innerHTML = `<div class="b-page v-mpage v-clpage ${S.enter ? 'enter' : ''}">${head()}<div id="v-mbar">${bar()}</div><section class="container v-sec v-mlist"><div id="v-cltab">${table()}</div><div id="v-mpager">${pager()}</div></section><div style="height:96px"></div></div>`;
   }
   function refresh() {
+    if (ac.signal.aborted) return;
     if (!$('.v-clpage')) return render();
     const f = R.activeElement?.id;
     morph($('#v-mbar'), bar()); morph($('#v-cltab'), table()); morph($('#v-mpager'), pager()); morph($('#v-clact'), action());
@@ -161,10 +163,10 @@ function clan(host, ctx) {
   function actions() {
     const d = S.d; if (!d || !S.me) return '';
     const full = d.stats.totalMembers >= d.stats.memberLimit, out = [];
-    // Rhythia's own buttons: its dialogs open above Exodus and do the change.
-    if (canInvite()) out.push(full ? '<button class="btn" type="button" disabled data-tip="<b>Clan is full</b>">Clan full</button>' : '<button class="btn primary" type="button" data-native-click="Invite">Invite</button>');
+    // Invite and Leave are Exodus' own dialogs; Edit (with its picture upload) and Delete open Rhythia's.
+    if (canInvite()) out.push(full ? '<button class="btn" type="button" disabled data-tip="<b>Clan is full</b>">Clan full</button>' : '<button class="btn primary" type="button" data-cl-invite>Invite</button>');
     if (isOwner()) out.push('<button class="btn" type="button" data-native-click="Edit clan">Edit clan</button>', '<button class="btn danger" type="button" data-native-click="Delete clan">Delete clan</button>');
-    else if (isMember() && !canInvite()) out.push('<button class="btn danger" type="button" data-native-click="Leave clan">Leave clan</button>');
+    else if (isMember() && !canInvite()) out.push('<button class="btn danger" type="button" data-cl-leave>Leave clan</button>');
     if (canInvite()) out.push('<button class="btn" type="button" data-native-x data-tip="<b>Rhythia’s clan page</b><small>Remove members, set friends and rivals</small>">Members and relationships</button>');
     return out.join('');
   }
@@ -228,6 +230,7 @@ function clan(host, ctx) {
       ${left > 0 ? `<div class="v-moreb"><button class="btn" type="button" data-more-scores ${S.more ? 'disabled' : ''}>${S.more ? 'Loading scores…' : `Show ${fmt(Math.min(left, 10))} more`}</button></div>` : ''}</section>`;
   }
   function render() {
+    if (ac.signal.aborted) return;
     const d = S.d;
     morph($('#hero'), `<section class="v-hero map ${S.enter ? 'enter' : ''}">${hero()}</section>`);
     morph($('#body'), `<div class="v-page ${S.enter ? 'enter' : ''}">${aboutSec()}${membersSec()}${scoresSec()}<div style="height:96px"></div></div>`);
@@ -272,10 +275,46 @@ function clan(host, ctx) {
 
   // After Rhythia's own dialog (invite, edit, leave) closes, read the clan again.
   const dialog = watchDialog(`/clans/${id}`, () => load(true));
+  // Invite by name and Leave, in the shell's dialog.
+  const dlg = R.getElementById('cmp'), F = {kind: '', name: '', busy: false};
+  const closeX = '<button class="iconbtn" type="button" data-cl-close aria-label="Close"><svg class="ico" aria-hidden="true"><use href="#i-x"/></svg></button>';
+  function clHtml() {
+    const d = S.d;
+    if (F.kind === 'leave') return `<div class="cmp-head"><h2 id="cmp-title">Leave ${esc(d.name)}?</h2>${closeX}</div><div class="cmp-body cd-body"><p>You will no longer be a member. To come back, a member who can invite has to invite you again.</p>
+      <div class="cd-acts"><button class="btn" type="button" data-cl-close>Cancel</button><button class="btn danger" type="button" data-cl-ok ${F.busy ? 'disabled' : ''}>${F.busy ? 'Leaving…' : 'Leave clan'}</button></div></div>`;
+    return `<div class="cmp-head"><h2 id="cmp-title">Invite to ${esc(d.name)}</h2>${closeX}</div><form class="cmp-body cd-body" id="cl-form">
+      <label class="cd-field"><span>Player name</span><input id="cl-name" maxlength="40" required autocomplete="off" value="${esc(F.name)}" placeholder="Their Rhythia name"></label>
+      <p class="cap">${fmt(d.stats.totalMembers)} of ${fmt(d.stats.memberLimit)} members. The invite shows in their notifications.</p>
+      <div class="cd-acts"><button class="btn" type="button" data-cl-close>Cancel</button><button class="btn primary" type="submit" ${F.busy ? 'disabled' : ''}>${F.busy ? 'Sending…' : 'Send invite'}</button></div></form>`;
+  }
+  function openCl(kind) {
+    Object.assign(F, {kind, name: '', busy: false});
+    dlg.setAttribute('aria-labelledby', 'cmp-title'); dlg.classList.add('cd-dlg');
+    dlg.innerHTML = clHtml(); dlg.showModal(); dlg.querySelector('#cl-name')?.focus();
+  }
+  async function clSave() {
+    if (F.busy) return;
+    if (F.kind === 'invite' && !F.name.trim()) { ui.toast('Type the player’s name.'); return; }
+    F.busy = true; morph(dlg, clHtml());
+    try {
+      if (F.kind === 'invite') { await Data().inviteToClan(S.d.id, F.name); dlg.close(); ui.toast(`Invite sent to ${F.name.trim()}.`); }
+      else { await Data().leaveClan(S.d.id); dlg.close(); ui.toast(`You left ${S.d.name}.`); load(true); }
+    } catch (err) {
+      F.busy = false; if (dlg.open) morph(dlg, clHtml());
+      ui.toast(`Could not ${F.kind === 'invite' ? 'invite' : 'leave'}: ${String(err.message || '').replace(/^\w+: /, '')}`);
+    }
+  }
+  dlg.addEventListener('close', () => { if (F.kind) { F.kind = ''; dlg.classList.remove('cd-dlg'); } }, sig);
+  dlg.addEventListener('submit', e => { if (e.target.id === 'cl-form') { e.preventDefault(); clSave(); } }, sig);
+  dlg.addEventListener('input', e => { if (e.target.id === 'cl-name') F.name = e.target.value; }, sig);
 
   R.addEventListener('click', e => {
     if (e.target.closest('[data-native-x]')) { ctx.showNative(); return; }
     if (e.target.closest('[data-native-click]')) { dialog.start(); return; }
+    if (e.target.closest('[data-cl-invite]')) { openCl('invite'); return; }
+    if (e.target.closest('[data-cl-leave]')) { openCl('leave'); return; }
+    if (e.target.closest('[data-cl-close]')) { dlg.close(); return; }
+    if (e.target.closest('[data-cl-ok]')) { clSave(); return; }
     const t = e.target.closest('[data-mode],[data-more-scores]');
     if (!t || t.disabled) return;
     if (t.dataset.mode) {
@@ -292,7 +331,7 @@ function clan(host, ctx) {
   return {
     state: () => ({}), idle: () => !S.more, relayout() {},
     page() { const m = parseMode(new URLSearchParams(location.search).get('mode')); if (m === S.mode) return; S.mode = m; S.ranks = null; load(); },
-    destroy() { ac.abort(); ui.hide(); dialog.stop(); },
+    destroy() { ac.abort(); ui.hide(); dialog.stop(); if (dlg.open) dlg.close(); },
   };
 }
 
@@ -350,7 +389,7 @@ const css = `
 .v-csrow{display:grid;grid-template-columns:44px minmax(0,1fr) 84px 150px 90px 110px;align-items:center;gap:12px;padding:9px 12px;border-radius:10px;transition:background-color .15s}
 .v-csrow .two{display:flex;flex-direction:column;min-width:0}
 .v-csrow .two small{display:flex;align-items:center;gap:6px;font-size:12.5px;font-weight:500;color:var(--text-2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.v-csrow .dot{width:8px;height:8px;flex:none;border-radius:50%;background:var(--c)}
+.v-csrow .dot{width:4px;height:12px;flex:none;border-radius:1px;background:var(--c)}
 .v-csrow .acc{text-align:right;font-weight:650}
 .v-csrow .mods{justify-self:start}
 .v-csrow .at{font-size:12.5px;color:var(--muted);text-align:right}

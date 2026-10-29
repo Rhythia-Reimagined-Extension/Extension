@@ -152,6 +152,22 @@ var RhythiaX = RhythiaX || {};
     };
   }
 
+  // More of each player's top scores: average and best RP, full combos, average map stars and the share played at
+  // 1.45×. null for a value the scores do not carry.
+  function moreStats(scores) {
+    const list = Array.isArray(scores) ? scores : [];
+    const rps = list.map(s => scoreNumber(s, 'rpEarned')).filter(v => v != null && v > 0);
+    const stars = list.map(s => scoreNumber(s, 'beatmapDifficulty')).filter(v => v != null && v > 0);
+    const avg = values => (values.length ? values.reduce((a, b) => a + b, 0) / values.length : null);
+    return {
+      avgRp: avg(rps),
+      bestRp: rps.length ? Math.max(...rps) : null,
+      fullCombos: list.length ? list.filter(s => scoreNumber(s, 'misses') === 0).length : null,
+      stars: avg(stars),
+      fast: list.length ? list.filter(s => Math.abs((scoreNumber(s, 'speed') || 1) - 1.45) < 0.001).length / list.length : null,
+    };
+  }
+
   RhythiaX.CompareMetrics = {
     number,
     scoreNumber,
@@ -160,5 +176,6 @@ var RhythiaX = RhythiaX || {};
     averageSpeed,
     averageMissRate,
     analyzeSharedMaps,
+    moreStats,
   };
 })();

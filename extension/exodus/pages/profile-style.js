@@ -21,13 +21,12 @@ RhythiaX.ExodusApp.css = `
 .intro.solo{grid-template-columns:minmax(0,1fr)}
 .bio{font-size:16px;line-height:1.7;max-width:68ch}
 .rtags{display:flex;flex-wrap:wrap;gap:6px;margin:12px 0 2px}
-.rtag{display:inline-flex;align-items:center;gap:6px;height:26px;padding:0 10px 0 8px;border-radius:8px;font:650 12.5px/1 var(--font);letter-spacing:0;color:var(--c);background:rgba(var(--glass),.78);box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--c) 40%,transparent);backdrop-filter:blur(6px);text-shadow:none;transition:background-color .15s,transform .2s var(--ease)}
-.rtag:hover{transform:translateY(-1px);background:color-mix(in srgb,var(--c) 16%,rgba(var(--glass),.9))}
+.rtag{display:inline-flex;align-items:center;gap:6px;height:26px;padding:0 10px 0 8px;border-radius:4px;font:650 12.5px/1 var(--font);letter-spacing:0;color:var(--text);background:rgba(var(--glass),.78);box-shadow:inset 0 0 0 1px var(--rule-2);backdrop-filter:blur(6px);text-shadow:none;transition:background-color .15s,transform .2s var(--ease)}
+.rtag:hover{transform:translateY(-1px);background:rgba(var(--glass),.92)}
+.rtag svg{color:var(--c)}
 .rtag svg,.rtag img,.rtag .mask{width:15px;height:15px;flex:none;object-fit:contain}
-.rtag .mask{display:block;background:currentColor;-webkit-mask:var(--m) no-repeat center/contain;mask:var(--m) no-repeat center/contain}
-.rtag.sup{color:#f9a8d4}
-[data-theme="white"] .rtag{background:#fff;color:color-mix(in srgb,var(--c) 78%,#0f172a)}
-[data-theme="white"] .rtag.sup{color:#db2777}
+.rtag .mask{display:block;background:var(--c);-webkit-mask:var(--m) no-repeat center/contain;mask:var(--m) no-repeat center/contain}
+[data-theme="white"] .rtag{background:#fff}
 .items{margin:0 0 22px}
 .items-head{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:10px;font-size:13px;font-weight:600;color:var(--muted)}
 .items-row{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:10px}
@@ -51,7 +50,7 @@ RhythiaX.ExodusApp.css = `
 .pick-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(128px,1fr));gap:14px;max-height:52vh;overflow:auto;padding:2px}
 .pick-grid .item[disabled]{opacity:.4;cursor:default}
 @media (max-width:640px){.items-row{grid-template-columns:repeat(3,minmax(0,1fr))}}
-.avatar.sup{border:3px solid transparent;background-origin:padding-box,border-box;background-clip:padding-box,border-box;background-size:cover,cover;background-position:center,center}
+.avatar.sup{border:5px solid transparent;background-origin:padding-box,border-box;background-clip:padding-box,border-box;background-size:cover,cover;background-position:center,center}
 .sup-heart{position:absolute;left:-8px;bottom:-8px;display:grid;place-items:center;width:30px;height:30px;border-radius:50%;background:#2a0f22;box-shadow:0 0 0 3px var(--page),inset 0 0 0 1.5px #f472b6;transition:transform .2s var(--ease)}
 .sup-heart:hover{transform:scale(1.08)}
 .sup-heart img{width:17px;height:auto}
@@ -88,8 +87,10 @@ RhythiaX.ExodusApp.css = `
 .bio a{color:var(--accent-2);text-decoration:underline;text-underline-offset:2px}
 .hero-main{grid-template-columns:120px minmax(0,1fr) auto}
 .name-row{display:flex;align-items:center;gap:12px 16px;flex-wrap:wrap}
-.name-row>.btn{position:relative;top:5px}
-@media (max-width:760px){.name-row>.btn{top:3px}}
+/* Buttons beside the name: a frosted plate like the rank box, never see-through over the banner. They sit on the middle of the name's letters as drawn (pages/profile.js alignName, --name-mid). */
+.name-row > .btn:not(.primary){background:rgba(var(--glass),.78);-webkit-backdrop-filter:blur(16px) saturate(1.2);backdrop-filter:blur(16px) saturate(1.2);box-shadow:inset 0 0 0 1px rgba(var(--ink),.12)}
+.name-row > .btn:not(.primary):not(:disabled):hover{background:rgba(var(--glass),.92);box-shadow:inset 0 0 0 1px rgba(var(--ink),.2)}
+.name-row > .btn,.name .prev-btn{position:relative;top:var(--name-mid,0px)}
 .btn.mini{height:32px;padding:0 12px;gap:6px;font-size:13px}
 .btn.mini .ico{width:15px;height:15px}
 .rtags{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin:12px 0 2px}
@@ -99,16 +100,34 @@ RhythiaX.ExodusApp.css = `
 .rtag.sup{background:linear-gradient(110deg,rgba(244,114,182,.16) 35%,rgba(255,255,255,.2) 50%,rgba(244,114,182,.16) 65%) 0 0/260% 100%,rgba(var(--glass),.78);animation:supShine 5s ease-in-out infinite}
 @keyframes supShine{0%,55%{background-position:100% 0,0 0}100%{background-position:-60% 0,0 0}}
 .ranks-wrap{display:flex;flex-direction:column;align-items:stretch;gap:10px}
-.ranks-head{display:flex;align-items:center;justify-content:flex-end;gap:8px}
-.pills.mini{height:32px;padding:2px;align-items:stretch}
-.pills.mini button{height:auto;padding:0 10px;font-size:13px}
-.pills.mini img{height:14px}
-.hero .ranks-head .pills,.hero .ranks-head .btn:not(.primary){background:rgba(var(--glass),.82);box-shadow:inset 0 0 0 1px var(--line-2),0 6px 20px rgba(0,0,0,calc(.28 * var(--sh)));-webkit-backdrop-filter:blur(14px) saturate(1.4);backdrop-filter:blur(14px) saturate(1.4)}
-.hero .ranks-head .btn:not(.primary):hover{background:rgba(var(--glass),.95)}
-.hero .ranks-head .pills button{color:var(--text-2)}
-.hero .ranks-head .pills button:hover,.hero .ranks-head .pills button[aria-pressed="true"]{color:var(--text)}
-.hero .ranks-head .pills button[aria-pressed="true"]{background:var(--panel-3)}
-.hero .ranks-head .pills img{opacity:.9}
+/* On wide screens the rank box is as tall as the avatar, so its top and bottom line up with the avatar's. */
+@media (min-width:1001px){.ranks-wrap{align-self:stretch}.ranks-wrap > .ranks{flex:1}}
+/* The game mode is a column at the left of the rank box, beside the numbers it switches; the mark slides
+   to the chosen mode (pages/profile.js switchMode). */
+.ranks{grid-template-columns:auto repeat(3,auto)}
+.ranks > .ranks-modes{position:relative;display:flex;flex-direction:column;justify-content:center;align-self:stretch;padding:0 20px 0 18px;border-left:0;border-right:1px solid var(--line-2);text-align:left}
+.ranks > .ranks-modes + div{border-left:0}
+.ranks-modes button{height:26px;padding:0 0 0 12px;border:0;background:none;color:var(--muted);font:inherit;font-size:13px;font-weight:650;text-align:left;cursor:pointer;transition:color .2s}
+.ranks-modes button:hover{color:var(--text-2)}
+.ranks-modes button[aria-pressed="true"]{color:var(--text)}
+.ranks-modes .mk{position:absolute;left:18px;top:calc(50% - 39px + 5px);width:2px;height:16px;border-radius:2px;background:var(--accent);transform:translateY(calc(var(--i) * 26px));pointer-events:none}
+.ranks strong{font-variant-numeric:tabular-nums}
+.ranks .rp strong{min-width:9ch}
+/* A little smaller on wide screens, so a long line of facts under the name keeps Compare on it. */
+@media (min-width:1001px){.ranks{padding:12px 4px}.ranks > div{padding:0 18px}.ranks strong{font-size:26px}.ranks .rp strong{min-width:8ch}.ranks > .ranks-modes{padding:0 16px 0 14px}.ranks-modes .mk{left:14px}}
+/* Each number sits over a hidden copy of it in every mode (.rk-sz), so the box is as wide as the widest. */
+.ranks > div:not(.ranks-modes){display:grid;align-content:center}
+.ranks > div > strong{grid-row:2;grid-column:1}
+.rk-sz{grid-row:2;grid-column:1;display:flex;flex-direction:column;height:0;overflow:hidden;visibility:hidden}
+.ranks .rk-sz strong{margin-top:0}
+/* The country rank opens that country's leaderboard. */
+.rk-ct{position:relative}
+.rk-ct > :not(.rk-go){position:relative;pointer-events:none}
+.rk-go{position:absolute;inset:-10px 6px;border-radius:12px;transition:background-color .15s}
+.rk-go:hover,.rk-go:focus-visible{background:rgba(var(--ink),.06)}
+.rk-ct:hover .cap{color:var(--accent-2)}
+/* "New" beside a section tab after an update (pages/profile-hero.js newTag). */
+.tab-new{align-self:center;padding:0 6px;border-radius:5px;font-size:10.5px;font-weight:750;line-height:17px;letter-spacing:.04em;text-transform:uppercase;color:var(--accent-2);background:var(--accent-soft)}
 .friends-btn{display:inline-flex;align-items:center;gap:7px;padding:0;border:0;background:none;color:inherit;font:inherit;text-shadow:inherit;cursor:pointer;border-radius:6px}
 .friends-btn:hover{color:var(--text);text-decoration:underline;text-underline-offset:3px}
 .friends-btn:focus-visible{outline:2px solid var(--accent);outline-offset:3px}
@@ -168,8 +187,9 @@ a.fr-row:hover{background:var(--panel-2)}
 .mods{height:30px}
 .mc img{width:22px;height:22px}
 .spdc{font-size:12px}
-@media (max-width:1000px){.hero-main{grid-template-columns:minmax(0,1fr)}.ranks-head{justify-content:flex-start}.strip{grid-template-columns:repeat(3,minmax(0,1fr))}}
-@media (max-width:640px){.strip{grid-template-columns:repeat(2,minmax(0,1fr))}.ranks-head{flex-wrap:wrap}.ranks-head .pills{flex:1}.ranks-head .pills button{flex:1;justify-content:center}}
+@media (max-width:1000px){.hero-main{grid-template-columns:minmax(0,1fr)}.strip{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media (max-width:640px){.strip{grid-template-columns:repeat(2,minmax(0,1fr))}.ranks > .ranks-modes{padding:0 12px 0 0}.ranks-modes .mk{left:0}}
+@media (max-width:760px){.ranks{grid-template-columns:auto repeat(3,minmax(0,1fr))}.ranks strong{justify-content:flex-start;align-items:flex-start}.ranks .rp strong{min-width:0}}
 @media (prefers-reduced-motion:reduce){.avatar.sup,.rtag.sup,.hero.settled .avatar.sup,.hero.settled .pf{animation:none!important}}
 /* Playstyle: bars draw left to right as one piece; Month in review */
 .exo{--k-stream:#38bdf8;--k-jump:#f59e0b;--k-tech:#f472b6;--k-varied:#a78bfa;--k-quantum:#34d399}
@@ -223,4 +243,149 @@ a.fr-row:hover{background:var(--panel-2)}
   [data-variant="lines"] .ps > .wide + .panel + .panel{padding:26px 0 28px 32px;border-left:1px solid var(--rule)}
 }
 @media (prefers-reduced-motion:reduce){.reveal.in .stack,.reveal.in .mcols,.mbody{animation:none}}
+/* Near this rank: players below (amber), this player (text), players above (accent), as in Compare. One bar
+   style and one motion (the bar grows) everywhere in it; nothing in it is clickable. */
+.exo{--nb:var(--p2-text);--na:var(--accent)}
+#near[hidden]{display:none}
+#near:has(> .near-only){margin-top:40px;padding-top:20px}
+/* Online history offered where This device leaves a place empty (profile.js onlineOffer). */
+.online-offer{display:flex;flex-direction:column;align-items:center;gap:14px;margin-top:6px}
+.online-offer > span{max-width:540px;text-wrap:balance;font-size:13.5px;line-height:1.5;color:var(--muted)}
+.online-offer .btn{flex:none;color:var(--text);height:36px;padding:0 16px;font-size:13.5px;background:var(--panel-2);box-shadow:inset 0 0 0 1px var(--line-2)}
+.online-offer .btn:hover{background:var(--panel-3)}
+.online-offer .btn .ico{width:16px;height:16px}
+.near-off{padding:28px 16px;text-align:center}
+.near-off > b{display:block;color:var(--text);font-size:15px;font-weight:650}
+#near:has(> .near-off){margin-top:40px}
+.near-only{display:flex;align-items:center;gap:6px;margin:0;font-size:13.5px;color:var(--text-2)}
+.near-only b{color:var(--text);font-weight:650}
+.near-i{display:inline-flex;color:var(--muted);cursor:help}.near-i svg{width:15px;height:15px}
+#near > .panel{margin-top:12px}
+.near-stats,.ns,.nt,.nx{padding:18px 20px}
+.nt-key{display:flex;flex-wrap:wrap;gap:12px;font-size:12.5px;color:var(--text-2)}
+.nt-key span::before{content:"";display:inline-block;width:9px;height:9px;margin-right:6px;border-radius:3px;background:var(--c)}
+.nt-key .b{--c:var(--nb)}.nt-key .y{--c:var(--text)}.nt-key .a{--c:var(--na)}
+/* The same shapes as on the stat lines: ▲ above, ● this player, ▼ below. */
+.nt-key .a::before{border-radius:0;clip-path:polygon(50% 0,100% 100%,0 100%)}.nt-key .b::before{border-radius:0;clip-path:polygon(0 0,100% 0,50% 100%)}.nt-key .y::before{border-radius:50%}
+.nt-key .kind::before{width:4px;height:12px;border-radius:0;vertical-align:-1px}
+/* The stats in a grid of cells with lines between them, so each one reads on its own. */
+.nm-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr))}
+.nm{padding:18px 22px;border-top:1px solid var(--line);border-left:1px solid var(--line)}
+.nm:nth-child(3n+1){border-left:0;padding-left:0}
+.nm:nth-child(3n){padding-right:0}
+.nm:nth-child(-n+3){border-top:0;padding-top:4px}
+.nm header{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:8px}
+.nm header > span:first-child{font-size:13.5px;font-weight:650}
+/* The verdict as a chip like the others, its colour in the bar: green or red, the above or below group's colour
+   when closer to one of them, the player's own colour (the ● on the line) when the player is the most or least of
+   the three on a stat where neither is better, and the quiet text colour when in between. */
+.nm .dpill{gap:7px;height:24px;padding:0 9px;border-radius:4px;font-weight:600;color:var(--text);background:rgba(var(--glass),.55);box-shadow:inset 0 0 0 1px var(--rule-2)}
+.nm .dpill{padding-left:0;overflow:hidden}
+.nm .dpill::before{content:"";flex:none;align-self:stretch;width:6px;background:var(--c)}
+.nm .dpill.up{--c:var(--good)}.nm .dpill.down{--c:var(--bad)}.nm .dpill.near-a{--c:var(--na)}.nm .dpill.near-b{--c:var(--nb)}
+.nm .dpill.edge{--c:var(--text)}.nm .dpill.flat{--c:var(--muted);color:var(--text-2)}
+.nm-main{display:flex;justify-content:space-between;align-items:flex-end;gap:10px;margin-bottom:10px}
+.nm-main > b{font-size:24px;font-weight:750;line-height:1.1}
+.nm-others{display:flex;flex-direction:column;align-items:flex-end;gap:2px;font-size:12px;color:var(--muted);white-space:nowrap}
+.nm-others b{margin-left:6px;font-size:13px;font-weight:650}
+.nm-others .a b{color:var(--na)}.nm-others .b b{color:var(--nb)}
+/* One line from the lowest value to the highest; the groups sit over and under it, this player on it. */
+.nm-axis{position:relative;height:30px}
+.nm-axis::before{content:"";position:absolute;left:0;right:0;top:50%;height:2px;margin-top:-1px;border-radius:2px;background:var(--panel-3)}
+.nm-m{position:absolute;top:50%;width:12px;height:10px;margin-left:-6px;transition:left .5s var(--ease)}
+.nm-m.a{margin-top:-13px;background:var(--na);clip-path:polygon(50% 0,100% 100%,0 100%)}
+.nm-m.b{margin-top:3px;background:var(--nb);clip-path:polygon(0 0,100% 0,50% 100%)}
+.nm-m.y{width:14px;height:14px;margin:-7px 0 0 -7px;border-radius:50%;background:var(--text);box-shadow:0 0 0 3px var(--panel)}
+.nm-bar,.nl-bar,.nx-bar{display:block;height:6px;border-radius:999px;background:var(--panel-3);overflow:hidden}
+.nm-bar i,.nl-bar i,.nx-bar i{display:block;height:100%;border-radius:inherit;transform-origin:left;animation:bar .7s var(--ease) both}
+.nx-bar i{background:var(--text-2)}
+.ns-bar{height:12px;margin:2px 0 14px}
+.ns-bar i.below{background:var(--nb)}.ns-bar i.at{background:var(--panel-3)}.ns-bar i.above{background:var(--na)}
+.ns-sets{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}
+.ns-sets > div{display:flex;flex-direction:column;gap:2px}
+.ns-sets b{font-size:22px;font-weight:750;line-height:1.2}
+.ns-sets b small{font-size:13px;font-weight:500;color:var(--muted)}
+.ns-sets .below b{color:var(--nb)}.ns-sets .above b{color:var(--na)}
+.ns-sets span{font-size:13px;color:var(--text-2)}
+.nt .ps-who.below{color:var(--nb)}.nt .ps-who.above{color:var(--na)}
+.nx-pair{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin-top:12px}
+.nx-pair > .panel{margin-top:0!important}
+.nx-row{display:grid;grid-template-columns:minmax(0,1fr) 130px;align-items:center;gap:16px;padding:10px 0;border-top:1px solid var(--line)}
+.nx .panel-head + .nx-row{border-top:0}
+.nx-t{min-width:0}.nx-t b,.nx-t small{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.nx-t b{font-size:14px;font-weight:650}.nx-t small{font-size:12px;color:var(--muted)}
+.nx-n{display:flex;flex-direction:column;gap:4px;font-size:12px;color:var(--muted)}
+.nx-n b{color:var(--text)}
+/* Near this rank on each top play: the nearby value under this play's, and one bar for the place */
+.nd{display:block;margin-top:2px;font-size:11.5px;font-weight:500;color:var(--muted)}
+.nl{display:flex;flex-direction:column;gap:5px;min-width:0;cursor:help}
+.nl-bar i{background:var(--accent)}
+.nl-cap{font-size:12px;color:var(--muted)}.nl-cap b{color:var(--text);font-weight:700}
+.nl.none{cursor:default}
+.list-panel.near .cols,.list-panel.near .row{grid-template-columns:36px 64px minmax(0,1fr) 44px 92px 64px 64px 88px 150px 40px}
+.tile-near{margin-top:14px;padding-top:12px;border-top:1px solid var(--line)}
+@media (max-width:1000px){.nm-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.nm,.nm:nth-child(n){border-top:1px solid var(--line);border-left:1px solid var(--line);padding:18px 22px}.nm:nth-child(2n+1){border-left:0;padding-left:0}.nm:nth-child(2n){padding-right:0}.nm:nth-child(-n+2){border-top:0;padding-top:4px}.list-panel.near .cols,.list-panel.near .row{grid-template-columns:32px 56px minmax(0,1fr) 40px 96px 72px 96px 36px}.list-panel.near .row .nl{grid-column:3/-1}}
+@media (max-width:640px){.nm-grid,.ns-sets{grid-template-columns:1fr}.nm:nth-child(n){border-left:0;padding:16px 0;border-top:1px solid var(--line)}.nm:first-child{border-top:0;padding-top:4px}.nx-pair,.nx-row{grid-template-columns:1fr}}
+@media (prefers-reduced-motion:reduce){.nm-bar i,.nl-bar i,.nx-bar i{animation:none}}
+/* The More menu beside Compare and the Report dialog */
+.btn.mini.sq{width:32px;padding:0;justify-content:center}
+dialog.cmp.rp-dlg{width:min(460px,calc(100vw - 32px))}
+.rp-body{display:flex;flex-direction:column;gap:16px}
+.rp-body p{margin:0;line-height:1.6;color:var(--text-2)}
+.rp-body fieldset{display:flex;flex-direction:column;gap:2px;margin:0;padding:0;border:0}
+.rp-body legend{margin-bottom:6px;font-size:13px;font-weight:650}
+.rp-opt{display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:9px;cursor:pointer}
+.rp-opt:hover{background:var(--panel-2)}
+.rp-opt input{accent-color:var(--accent);margin:0}
+.rp-note{display:flex;flex-direction:column;gap:6px;font-size:13px;font-weight:650}
+.rp-note textarea{resize:vertical;min-height:72px;padding:10px 12px;border:0;border-radius:10px;font:inherit;font-weight:400;color:var(--text);background:var(--field);box-shadow:inset 0 0 0 1px var(--line-2)}
+.rp-note textarea:focus{outline:2px solid var(--accent);outline-offset:0}
+.rp-acts{display:flex;justify-content:flex-end;gap:8px}
+/* Maps, Skins and Inventory (pages/profile-tabs.js); the map tiles and skin cards are the Maps and Skins pages' own */
+#ptab{margin-top:48px}
+#ptab h2 .cap{font-size:15px;font-weight:500;margin-left:4px}
+#ptab .tabs.seg .cap{font-size:12px;margin-left:2px}
+#ptab .pager{margin-top:20px}
+.pt-empty{padding:72px 16px}
+.pt-emptyact{margin-top:16px}
+.iv-grid{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(300px,1fr);gap:20px;align-items:start}
+.iv-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(128px,1fr));gap:10px;padding:16px}
+.iv-item{display:flex;flex-direction:column;min-width:0;padding:0;border:0;border-radius:12px;overflow:hidden;text-align:left;background:var(--panel-2);box-shadow:inset 0 0 0 1px var(--line);transition:box-shadow .15s}
+.iv-item.wide{grid-column:span 2}
+.iv-item:hover{box-shadow:inset 0 0 0 1px var(--line-2)}
+.iv-item[aria-pressed="true"]{box-shadow:inset 0 0 0 2px var(--accent)}
+.iv-art{position:relative;display:grid;place-items:center;height:96px;overflow:hidden;background:var(--field)}
+.iv-name{padding:8px 10px 10px;font-size:12.5px;font-weight:600;line-height:1.3;color:var(--text-2)}
+.iv-on{position:absolute;right:6px;bottom:6px;display:grid;place-items:center;width:20px;height:20px;border-radius:50%;font-size:11px;font-weight:800;color:#052e16;background:var(--good)}
+.iv-qty{position:absolute;left:6px;top:6px;padding:0 6px;border-radius:5px;font-size:11.5px;font-weight:700;color:#fff;background:rgba(0,0,0,.6)}
+.iv-banner{position:absolute;inset:0;background:var(--panel-3) center/cover no-repeat}
+.iv-banner.sup{display:grid;place-items:center;background:linear-gradient(120deg,#5b2a6e,#8a3a74 55%,#3b2a6e)}
+.iv-banner.sup img{height:44%;width:auto}
+.iv-aa{font-size:34px;font-weight:850;letter-spacing:-.02em;color:var(--accent-2)}
+.iv-aa.name{color:var(--accent-2)}
+.iv-detail{display:flex;flex-direction:column;gap:0;padding:0;overflow:hidden}
+.iv-prev{position:relative;display:grid;place-items:center;height:200px;overflow:hidden;background:var(--field);border-bottom:1px solid var(--line)}
+.iv-prev.solo .iv-aa{max-width:90%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:30px}
+.iv-plate{position:absolute;left:16px;bottom:16px;display:flex;align-items:center;gap:10px;max-width:calc(100% - 32px);padding:8px 14px 8px 8px;border-radius:12px;background:rgba(10,12,16,.58);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);box-shadow:inset 0 0 0 1px rgba(255,255,255,.08)}
+.iv-plate .v-av{width:36px;height:36px}
+.iv-plate span{display:flex;flex-direction:column;min-width:0}
+.iv-plate b{font-size:15px;font-weight:750;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.iv-plate small{font-size:12px;color:rgba(255,255,255,.75)}
+.iv-info{display:flex;flex-direction:column;gap:10px;padding:20px 22px 22px}
+.iv-title{display:flex;align-items:baseline;justify-content:space-between;gap:12px}
+.iv-title h3{margin:0;font-size:18px;font-weight:750}
+.iv-worn{flex:none;font-size:12.5px;font-weight:700;color:var(--good)}
+.iv-info .cap{margin:0}
+.iv-info .cap a{color:var(--accent-2)}
+.iv-desc{margin:0;font-size:14px;line-height:1.55;color:var(--text-2);white-space:pre-wrap;overflow-wrap:anywhere}
+.iv-tint{display:flex;flex-direction:column;gap:8px;font-size:13px;font-weight:650}
+.iv-tint input{-webkit-appearance:none;appearance:none;width:100%;height:12px;border-radius:999px;background:var(--track);cursor:pointer}
+.iv-tint input::-webkit-slider-thumb{-webkit-appearance:none;width:20px;height:20px;border-radius:50%;background:var(--thumb);border:2px solid #fff;box-shadow:0 1px 3px rgba(0,0,0,.4)}
+.iv-tint input::-moz-range-thumb{width:16px;height:16px;border-radius:50%;background:var(--thumb);border:2px solid #fff}
+.iv-acts{display:flex;gap:8px;padding-top:12px;border-top:1px solid var(--line)}
+.iv-acts .btn{flex:1}
+.iv-note{font-size:12.5px}
+[data-theme="white"] .iv-qty{background:rgba(15,23,42,.7)}
+@media (max-width:900px){.iv-grid{grid-template-columns:1fr}}
+@media (max-width:560px){.iv-list{grid-template-columns:repeat(2,minmax(0,1fr))}.iv-item.wide{grid-column:span 2}}
 `;

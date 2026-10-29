@@ -99,9 +99,9 @@ body[data-rhythiax-theme="dark"] #root div:has(> .pointer-events-none[class*="bg
   opacity: .9 !important;
 }
 
-/* Built-in Dark keeps the profile's Friends, Add friend and Compare buttons neutral until hovered. An own
-   theme built on this stylesheet gets the bridge's accent tint at rest instead (bridge/native-final.css,
-   components/compare/base.css), as one built on the white stylesheet does. */
+/* Built-in Dark draws the profile's Friends, Add friend and Compare buttons with its own neutral border and
+   shadow. Every theme keeps them neutral at rest; an own theme takes the bridge's (bridge/native-final.css,
+   components/compare/base.css). */
 :where(html:not([data-rhythiax-own-theme])) body[data-rhythiax-theme="dark"] .rhythiax-compare-profile-button,
 :where(html:not([data-rhythiax-own-theme])) body[data-rhythiax-theme="dark"] #root .rhythiax-friends-quick-trigger,
 :where(html:not([data-rhythiax-own-theme])) body[data-rhythiax-theme="dark"] #root div:has(> svg.lucide-users-round),

@@ -4,8 +4,9 @@
 // theme from html[data-rhythiax-theme]). Each look's colours are its skin, a string of rules it registers
 // in RhythiaX.NoticeSkins before this file runs (legacy/core/notice-skin.js, exodus/core/notice-skin.js);
 // a look without one gets plain system colours.
-//   RhythiaX.Notices.show({ id, label, title, body: [paragraphs], actions: [{ text, kind, run(event) }], link })
-//   returns { setStatus(text), setBusy(on), close() }; actions run only on trusted clicks.
+//   RhythiaX.Notices.show({ id, label, title, body: [paragraphs], actions: [{ text, kind, run(event) }], check, link })
+//   returns { setStatus(text), setBusy(on), checked(), close() }; actions run only on trusted clicks. check: { text }
+//   adds a checkbox under the buttons, read with checked().
 var RhythiaX = RhythiaX || {};
 
 (function () {
@@ -34,6 +35,8 @@ var RhythiaX = RhythiaX || {};
     .act:disabled { opacity: .6; cursor: wait; }
     a { display: inline-block; margin-top: 10px; font-size: 12px; text-decoration: none; }
     a:hover { text-decoration: underline; }
+    .check { display: flex; align-items: center; gap: 8px; margin-top: 10px; font-size: 12px; cursor: pointer; user-select: none; }
+    .check input { flex: none; width: 14px; height: 14px; margin: 0; cursor: pointer; }
     .status { margin-top: 8px; }
     .status:empty { display: none; }
   `;
@@ -46,6 +49,7 @@ var RhythiaX = RhythiaX || {};
     :host([data-look="${look}"]) .act { border: 1px solid ButtonBorder; border-radius: 8px; background: ButtonFace; color: ButtonText; }
     :host([data-look="${look}"]) .act.primary { border-color: Highlight; background: Highlight; color: HighlightText; }
     :host([data-look="${look}"]) a { color: LinkText; }
+    :host([data-look="${look}"]) .check input { accent-color: Highlight; }
     :host([data-look="${look}"]) :focus-visible { outline: 2px solid Highlight; outline-offset: 2px; }
   `;
   const skinOf = look => { const s = RhythiaX.NoticeSkins?.[look]; return typeof s === 'string' ? s : ''; };
@@ -150,6 +154,14 @@ var RhythiaX = RhythiaX || {};
       }
       card.appendChild(row);
     }
+    let box = null;
+    if (spec.check) {
+      const label = el('label', 'check');
+      box = document.createElement('input');
+      box.type = 'checkbox';
+      label.append(box, document.createTextNode(spec.check.text));
+      card.appendChild(label);
+    }
     const status = el('div', 'status');
     status.setAttribute('role', 'status');
     status.setAttribute('aria-live', 'polite');
@@ -162,6 +174,7 @@ var RhythiaX = RhythiaX || {};
     const handle = {
       setStatus: text => { status.textContent = text || ''; },
       setBusy: on => { for (const b of buttons) b.disabled = Boolean(on); },
+      checked: () => Boolean(box?.checked),
       close: () => close(id),
     };
     card.handle = handle;

@@ -132,55 +132,147 @@ html[data-rhythiax-own-theme] body[data-rhythiax-theme] .rhythiax-sc-row { --sc-
 .rhythiax-scores-list:not(.is-grid):has(> .rhythiax-sc-row-d, > .rhythiax-sc-row-e),
 .rhythiax-pinned-list:not(.is-grid):has(> .rhythiax-sc-row-d, > .rhythiax-sc-row-e) { gap: 8px; }
 
-/* ---------- D: row ---------- */
-.rhythiax-sc-row-d { contain-intrinsic-size: 64px; }
+/* ---------- D: Rhythia's own row ---------- */
+/* As rhythia.com draws a score: the left edge in the map's difficulty colour, grade and accuracy on a raised
+   plate, the title and when, then speed, misses in a red box, weighted RP leading into RP, and the actions.
+   Added: the map's art and its mapper. */
+.rhythiax-sc-row-d {
+  contain-intrinsic-size: 64px;
+  border-left: 5px solid var(--rx-diff-edge, #404040);
+  transition: border-color .2s, background-color .2s;
+}
+
+.rhythiax-sc-row-d:hover { border-color: var(--rx-diff-edge, #404040); }
 
 .rhythiax-sc-row-d .rhythiax-sc-row-body {
   gap: 12px;
-  min-height: 64px;
-  padding-right: 8px;
+  min-height: 60px;
+  padding: 8px 8px 8px 0;
 }
 
 .rhythiax-sc-row-d .rhythiax-sc-row-grade {
-  flex: 0 0 112px;
+  flex: 0 0 106px;
+  align-self: center;
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding-left: 14px;
-  border-left: 4px solid var(--grade-color);
+  height: 60px;
+  margin: -8px 0;
+  padding-left: 10px;
   border-right: 1px solid var(--sc-border);
+  border-radius: 0 8px 8px 0;
   background: var(--sc-inner-bg);
 }
 
 .rhythiax-sc-row-d .rhythiax-sc-row-grade b {
-  font-size: 19px;
+  width: 23px;
+  font-size: 20px;
   font-weight: 800;
   color: var(--grade-color);
 }
 
 .rhythiax-sc-row-d .rhythiax-sc-row-grade .rhythiax-sc-acc {
-  font-size: 17px;
+  font-size: 18px;
   font-weight: 700;
   font-variant-numeric: tabular-nums;
   color: var(--sc-text-strong);
 }
 
-.rhythiax-sc-row-d .is-rp { min-width: 128px; }
-.rhythiax-sc-row-d .is-rp .rhythiax-sc-row-value { color: var(--sc-row-rp); }
+.rhythiax-sc-row-d .rhythiax-sc-title { font-size: 14px; font-weight: 500; }
+.rhythiax-sc-row-d .rhythiax-sc-meta-line { color: var(--sc-text-muted); }
 
-@container (max-width: 720px) {
-  .rhythiax-sc-row-d .is-hits { display: none; }
+.rhythiax-sc-row-d .rhythiax-sc-row-controls { gap: 6px; }
+.rhythiax-sc-row-d .rhythiax-sc-row-mods { margin-right: 2px; }
+.rhythiax-sc-row-d .rhythiax-sc-mod-pill.has-icon.icon-only { width: 41px; height: 41px; padding: 0; border: 0; background: none; }
+.rhythiax-sc-row-d .rhythiax-sc-mod-pill.has-icon .rhythiax-sc-mod-icon,
+.rhythiax-sc-row-d .rhythiax-sc-mod-pill.has-icon.icon-only .rhythiax-sc-mod-icon { width: 41px; height: 41px; }
+
+.rhythiax-sc-rd-miss,
+.rhythiax-sc-rd-rp {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 41px;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
 }
 
-@container (max-width: 560px) {
-  .rhythiax-sc-row-d .rhythiax-sc-row-body { flex-wrap: wrap; gap: 4px 10px; padding: 10px 6px 10px 0; }
-  .rhythiax-sc-row-d .rhythiax-sc-row-grade { flex: 0 0 auto; flex-direction: column; align-items: flex-start; gap: 0; padding: 0 0 0 10px; border-right: 0; background: none; }
-  .rhythiax-sc-row-d .rhythiax-sc-row-grade b { font-size: 15px; line-height: 1.1; }
-  .rhythiax-sc-row-d .rhythiax-sc-row-grade .rhythiax-sc-acc { font-size: 14px; }
+.rhythiax-sc-rd-miss {
+  min-width: 49px;
+  padding: 0 12px;
+  border: 1px solid rgba(248, 113, 113, .35);
+  border-radius: 8px;
+  background: rgba(239, 68, 68, .1);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--sc-text-strong);
+}
+
+.rhythiax-sc-rd-miss-icon { display: flex; height: 16px; align-items: center; color: #f87171; }
+.rhythiax-sc-rd-miss.is-fc { border-color: rgba(74, 222, 128, .35); background: rgba(34, 197, 94, .1); }
+.rhythiax-sc-rd-miss-fc { font-size: 14px; font-weight: 700; color: var(--fc-color, #4ade80); }
+
+.rhythiax-sc-rd-rps { display: flex; align-items: stretch; }
+
+.rhythiax-sc-rd-rp { position: relative; padding: 0 12px; }
+.rhythiax-sc-rd-rp-label { height: 16px; display: flex; align-items: center; font-size: 14px; font-weight: 600; color: var(--sc-text-muted); }
+.rhythiax-sc-rd-rp-value { font-size: 13px; font-weight: 600; line-height: 1.25; color: var(--sc-text-strong); }
+
+/* Weighted RP on a raised box that points into RP. */
+.rhythiax-sc-rd-rp.is-weighted {
+  border: 1px solid var(--sc-border);
+  border-right: 0;
+  border-radius: 8px 0 0 8px;
+  background: var(--sc-inner-bg);
+}
+
+.rhythiax-sc-rd-rp.is-weighted::after {
+  content: "";
+  position: absolute;
+  top: -1px;
+  bottom: -1px;
+  right: -9px;
+  width: 9px;
+  background: var(--sc-border);
+  clip-path: polygon(0 0, 100% 50%, 0 100%);
+}
+
+.rhythiax-sc-rd-rp.is-weighted::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  right: -8px;
+  z-index: 1;
+  width: 8px;
+  background: var(--sc-inner-bg);
+  clip-path: polygon(0 0, 100% 50%, 0 100%);
+}
+
+.rhythiax-sc-rd-rp.is-raw {
+  min-width: 60px;
+  padding-left: 20px;
+  border: 1px solid color-mix(in srgb, var(--sc-row-rp) 25%, transparent);
+  border-left: 0;
+  border-radius: 0 8px 8px 0;
+  background: color-mix(in srgb, var(--sc-row-rp) 10%, transparent);
+}
+
+.rhythiax-sc-rd-rp.is-raw.is-alone { padding-left: 12px; border-left: 1px solid color-mix(in srgb, var(--sc-row-rp) 25%, transparent); border-radius: 8px; }
+.rhythiax-sc-rd-rp.is-raw .rhythiax-sc-rd-rp-label { color: var(--sc-row-rp); }
+
+.rhythiax-sc-row-d .rhythiax-sc-action-btn { width: 36px; height: 36px; margin-left: 0; color: var(--sc-text-muted); }
+
+@container (max-width: 640px) {
   .rhythiax-sc-row-d .rhythiax-sc-row-thumb { display: none; }
-  .rhythiax-sc-row-d .rhythiax-sc-row-controls { width: 100%; padding-left: 14px; gap: 16px; }
-  .rhythiax-sc-row-d .rhythiax-sc-row-stat { align-items: flex-start; }
-  .rhythiax-sc-row-d .is-rp { min-width: 0; margin-right: auto; }
+}
+
+@container (max-width: 520px) {
+  .rhythiax-sc-row-d .rhythiax-sc-row-body { flex-wrap: wrap; gap: 6px 10px; padding: 8px 6px 8px 0; }
+  .rhythiax-sc-row-d .rhythiax-sc-row-grade { flex: 0 0 auto; height: auto; margin: 0; padding: 4px 10px; border-right: 0; background: none; }
+  .rhythiax-sc-row-d .rhythiax-sc-row-main { flex: 1 1 60%; }
+  .rhythiax-sc-row-d .rhythiax-sc-row-controls { width: 100%; padding-left: 10px; }
+  .rhythiax-sc-row-d .rhythiax-sc-action-btn { margin-left: auto; }
 }
 
 /* ---------- E: art ---------- */

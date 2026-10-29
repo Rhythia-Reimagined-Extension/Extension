@@ -72,14 +72,20 @@ function changelog(host, ctx) {
   function release(e) {
     const looks = REL().looksOf(e), look = looks.length ? S.look : 'all', shown = REL().forLook(REL().sections(e), look);
     const inline = (text, n) => RhythiaX.ExodusMarkdown.md(text, {idPrefix: `g-${e.key}-${n}-`}).trim().replace(/^<p>([\s\S]*)<\/p>$/, '$1');
-    const tag = i => (look === 'all' ? (i.look ? REL().LOOKS[i.look].label : '') : !i.look && looks.length ? 'Both looks' : '');
-    const item = (i, n) => `<li>${inline(i.text, n)}${tag(i) ? ` <span class="g-tag" data-look="${i.look || 'both'}">${tag(i)}</span>` : ''}</li>`;
+    const tag = i => { const t = REL().tagOf(i, look, looks); return t ? `<span class="g-tag" data-look="${i.look || 'both'}">${t}</span>` : ''; };
+    // Each change on its own row: a short title over its text when it has one.
+    const text = (i, n) => (i.title ? `<b class="g-it">${inline(i.title, n)}</b><span class="g-ib">${inline(i.body, n)}</span>` : `<span class="g-ib">${inline(i.text, n)}</span>`);
+    const item = (i, n) => `<li class="g-row"><div class="g-li">${text(i, n)}</div>${tag(i)}</li>`;
+    // Featured: a card per item, before the other sections.
+    const feat = s => `<section class="g-sec g-feat" data-cat="featured"><h3 class="g-cat"><span class="g-cat-i" aria-hidden="true">${REL().ICONS.featured}</span>${esc(s.label)}</h3>
+      <div class="g-cards">${s.items.map(i => `<div class="g-card md">${i.title ? `<h4>${inline(i.title, n)}</h4><p>${inline(i.body, n++)}</p>` : `<p>${inline(i.text, n++)}</p>`}${tag(i)}</div>`).join('')}</div></section>`;
+    const sec = s => (s.cat === 'featured' ? feat(s) : `<section class="g-sec" data-cat="${esc(s.cat)}"><h3 class="g-cat"><span class="g-cat-i" aria-hidden="true">${REL().ICONS[s.cat] || ''}</span>${esc(s.label)}<small class="num">${s.items.length}</small></h3><ul class="md">${s.items.map(i => item(i, n++)).join('')}</ul></section>`);
     const sum = REL().summary(shown), all = entries(), at = all.findIndex(x => x.version === e.version), older = all[at + 1], newer = all[at - 1];
     const step = (t, dir) => (t ? `<a href="${entryUrl(t)}" class="g-step ${dir}"><small>${dir === 'older' ? 'Older' : 'Newer'}</small><b class="num">${esc(t.version)}${t.title ? ` · ${esc(t.title)}` : ''}</b></a>` : '<span></span>');
     let n = 0;
-    return `<article class="g-entry g-rel" id="g-${esc(e.key)}"><header class="g-rel-h"><div><h2><span class="num">${esc(e.version)}</span>${e.title ? ` <span class="g-rel-t">${esc(e.title)}</span>` : ''}${e.draft ? ' <span class="g-chip g-draft" style="--c:var(--muted)" data-tip="Shown only when the extension is loaded from a folder">Draft</span>' : ''}</h2><p>${esc(longDate(e.date))}${sum ? ` · ${sum}` : ''}</p></div>
+    return `<article class="g-entry g-rel${S.anim ? ' in' : ''}" id="g-${esc(e.key)}"><header class="g-rel-h"><div><h2><span class="num">${esc(e.version)}</span>${e.title ? ` <span class="g-rel-t">${esc(e.title)}</span>` : ''}${e.draft ? ' <span class="g-chip g-draft" style="--c:var(--muted)" data-tip="Shown only when the extension is loaded from a folder">Draft</span>' : ''}</h2><p>${esc(longDate(e.date))}${sum ? ` · ${sum}` : ''}</p></div>
         ${looks.length ? `<div class="pills g-looks" role="group" aria-label="Changes for">${[['exodus', 'Exodus'], ['legacy', 'Classic'], ['all', 'All']].map(([k, l]) => `<button type="button" data-look="${k}" aria-pressed="${look === k}">${l}</button>`).join('')}</div>` : ''}</header>
-      ${shown.length ? shown.map(s => `<section class="g-sec"><h3 class="g-cat" data-cat="${esc(s.cat)}"><span class="g-cat-i" aria-hidden="true">${REL().ICONS[s.cat] || ''}</span>${esc(s.label)}<small class="num">${s.items.length}</small></h3><ul class="md">${s.items.map(i => item(i, n++)).join('')}</ul></section>`).join('')
+      ${shown.length ? shown.map(sec).join('')
         : `<div class="empty"><b>Nothing changed in ${esc(REL().LOOKS[look]?.label || look)} in this version.</b><div style="margin-top:14px"><button class="btn" type="button" data-look="all">Show all changes</button></div></div>`}
       <footer class="g-rel-f">${step(older, 'older')}${step(newer, 'newer')}</footer></article>`;
   }
@@ -103,6 +109,7 @@ function changelog(host, ctx) {
     return list.length > 1 ? `<span class="w-gt">Entries</span>${list.map(e => `<a href="#g-${esc(e.key)}"><i style="--c:${STREAMS[e.type][1]}"></i>${esc(e.version || longDate(e.date))}</a>`).join('')}` : '';
   }
   function render() {
+    if (ac.signal.aborted) return;
     $('#hero').innerHTML = '';
     $('#body').innerHTML = `<div class="b-page g-page ${S.enter ? 'enter' : ''}">${head()}
       <div class="container v-mbar"><div class="v-mrow">${streams()}<label class="field v-mq g-q"><svg class="ico" aria-hidden="true"><use href="#i-search"/></svg><span class="sr">Search the changelog</span><input id="g-q" type="search" placeholder="Search the changelog" value="${esc(S.q)}" autocomplete="off"></label></div></div>
@@ -117,6 +124,7 @@ function changelog(host, ctx) {
     $('#g-side').className = reader ? 'g-side g-vers' : 'w-toc g-side';
   }
   function refresh() {
+    if (ac.signal.aborted) return;
     if (!$('.g-page')) return render();
     const s = $('.g-streams'); if (s) s.outerHTML = streams();
     $('#g-body').innerHTML = body(); $('#g-side').innerHTML = side(); layout();
@@ -149,7 +157,7 @@ function changelog(host, ctx) {
     if (e.target.closest('[data-older]')) older();
     // Only the look switch and the empty state's button; the look tags on items are labels.
     const look = e.target.closest('.g-looks [data-look], .empty [data-look]');
-    if (look) { S.look = look.dataset.look; $('#g-body').innerHTML = body(); }
+    if (look) { S.look = look.dataset.look; S.anim = true; $('#g-body').innerHTML = body(); S.anim = false; }
   }, sig);
   let typing = 0;
   R.addEventListener('input', e => { if (e.target.id !== 'g-q') return; const v = e.target.value.trim(); clearTimeout(typing); typing = setTimeout(() => { S.q = v; S.shown = 20; $('#g-body').innerHTML = body(); $('#g-side').innerHTML = side(); }, 200); }, sig);
@@ -160,7 +168,7 @@ function changelog(host, ctx) {
 
   return {
     state: () => ({}), idle: () => !S.busy, relayout() {},
-    page() { const r = parse(); if (JSON.stringify(r) === JSON.stringify(S.route)) return; S.route = r; S.shown = 20; S.look = 'exodus'; refresh(); scrollTo({top: 0}); },
+    page() { const r = parse(); if (JSON.stringify(r) === JSON.stringify(S.route)) return; S.route = r; S.shown = 20; S.look = 'exodus'; S.anim = true; refresh(); S.anim = false; scrollTo({top: 0}); },
     destroy() { ac.abort(); ui.hide(); clearTimeout(typing); },
   };
 }
@@ -175,12 +183,14 @@ const css = `
 .g-q{flex:1 1 220px;height:52px}
 .g-q input{flex:1;min-width:0;border:0;background:none;color:var(--text);font:inherit;outline:none}
 .g-layout{display:grid;grid-template-columns:200px minmax(0,1fr);gap:28px;margin-top:28px;align-items:start}
-.g-side a i{width:8px;height:8px;flex:none;border-radius:50%;background:var(--c)}
+.g-side a i{width:4px;height:14px;flex:none;border-radius:1px;background:var(--c)}
 .g-entry{padding:24px 26px;margin-bottom:16px;border-radius:18px;background:var(--panel);box-shadow:inset 0 0 0 1px var(--line);scroll-margin-top:90px}
 .g-entry header{display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px;padding-bottom:14px;margin-bottom:16px;border-bottom:1px solid var(--line)}
 .g-entry header h2{margin:0;font-size:20px;font-weight:750}
 .g-entry header a:hover h2{color:var(--accent-2)}
-.g-chip{display:inline-flex;align-items:center;height:24px;padding:0 9px;border-radius:7px;font-size:12px;font-weight:700;color:var(--c);background:color-mix(in srgb,var(--c) 12%,transparent);box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--c) 40%,transparent)}
+.g-chip{display:inline-flex;align-items:center;gap:7px;height:26px;padding:0 10px;border-radius:4px;font-size:12px;font-weight:600;color:var(--text);background:rgba(var(--glass),.55);box-shadow:inset 0 0 0 1px var(--rule-2)}
+.g-chip{padding-left:0;overflow:hidden}
+.g-chip::before{content:"";flex:none;align-self:stretch;width:6px;background:var(--c)}
 .g-reader{grid-template-columns:220px minmax(0,1fr)}
 .g-vers{position:sticky;top:84px;display:flex;flex-direction:column;gap:2px;max-height:calc(100vh - 100px);overflow:auto}
 .g-v{display:block;padding:8px 10px;border-radius:9px;color:var(--text-2)}
@@ -189,26 +199,42 @@ const css = `
 .g-v b{display:flex;align-items:center;gap:8px;font-size:14px;font-weight:700}
 .g-v small{display:block;margin-top:1px;font-size:12px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .g-dots{display:inline-flex;gap:4px}
-.g-dots i{width:7px;height:7px;border-radius:50%;background:var(--c)}
+.g-dots i{width:4px;height:12px;border-radius:1px;background:var(--c)}
 .g-rel-h{justify-content:space-between;align-items:flex-start!important}
 .g-rel-h h2{display:flex;flex-wrap:wrap;align-items:center;gap:6px 10px;margin:0;font-size:22px;font-weight:800}
 .g-rel-t{font-weight:600;color:var(--text-2)}
 .g-rel-h p{margin:4px 0 0;font-size:13.5px;color:var(--muted)}
-.g-sec + .g-sec{margin-top:22px}
-.g-cat{--cc:var(--muted);display:flex;align-items:center;gap:8px;margin:0 0 6px;font-size:15px;font-weight:750;color:var(--text)}
+/* A release: Featured cards first, then each section's changes one per row, a small mark in the section's colour. */
+.g-rel.in{animation:exoEnter .45s var(--ease) both}
+.g-sec{--cc:var(--muted)}
+.g-sec + .g-sec{margin-top:26px}
+.g-cat{display:flex;align-items:center;gap:8px;margin:0 0 4px;font-size:15px;font-weight:750;color:var(--text)}
 .g-cat-i{display:inline-flex;color:var(--cc)}
 .g-cat-i svg{width:17px;height:17px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
 .g-cat small{font-size:12px;font-weight:600;color:var(--muted)}
-.g-cat[data-cat="featured"]{--cc:#fb7185}
-.g-cat[data-cat="added"]{--cc:#38bdf8}
-.g-cat[data-cat="improved"]{--cc:#818cf8}
-.g-cat[data-cat="changed"]{--cc:#c084fc}
-.g-cat[data-cat="fixed"]{--cc:#4ade80}
-.g-cat[data-cat="removed"]{--cc:#f87171}
-.g-cat[data-cat="notes"]{--cc:#fbbf24}
-.g-sec ul{margin:0;padding-left:22px}
-.g-sec li{margin:0;padding:5px 0}
-.g-tag{display:inline-block;margin-left:4px;padding:0 7px;border-radius:6px;font-size:11.5px;font-weight:650;line-height:20px;white-space:nowrap;color:var(--muted);background:var(--panel-2);box-shadow:inset 0 0 0 1px var(--line)}
+.g-sec[data-cat="featured"]{--cc:#f472b6}
+.g-sec[data-cat="added"]{--cc:#38bdf8}
+.g-sec[data-cat="improved"]{--cc:#818cf8}
+.g-sec[data-cat="changed"]{--cc:#c084fc}
+.g-sec[data-cat="fixed"]{--cc:#4ade80}
+.g-sec[data-cat="removed"]{--cc:#f87171}
+.g-sec[data-cat="notes"]{--cc:#fbbf24}
+.g-sec ul{margin:0;padding:0;list-style:none}
+.g-sec li.g-row{position:relative;display:flex;align-items:flex-start;gap:14px;margin:0;padding:13px 0 13px 18px;border-top:1px solid var(--line)}
+.g-sec li.g-row:first-child{border-top:0}
+.g-sec li.g-row::before{content:"";position:absolute;left:1px;top:21px;width:6px;height:6px;border-radius:2px;background:var(--cc)}
+.g-li{flex:1;min-width:0}
+.g-it{display:block;font-size:15px;font-weight:700;line-height:1.4;color:var(--text)}
+.g-ib{display:block;margin-top:3px;font-size:14px;line-height:1.6;color:var(--text-2)}
+.g-li > .g-ib:only-child{margin-top:0;font-size:14.5px;color:var(--text)}
+.g-cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,300px),1fr));gap:12px;margin-top:10px}
+.g-card{position:relative;padding:18px 20px;border-radius:14px;background:var(--panel-2);box-shadow:inset 0 0 0 1px var(--line);border-top:3px solid var(--cc)}
+.g-card h4{margin:0;font-size:17px;font-weight:750;line-height:1.35;color:var(--text)}
+.g-card p{margin:6px 0 0;font-size:14px;line-height:1.6}
+.g-card .g-tag{margin:12px 0 0}
+.g-tag{display:inline-block;flex:none;margin-top:1px;padding:0 7px;border-radius:6px;font-size:11.5px;font-weight:650;line-height:20px;white-space:nowrap;color:var(--muted);background:var(--panel-3);box-shadow:inset 0 0 0 1px var(--line)}
+.g-tag[data-look="exodus"]{color:var(--accent-2)}
+@media (prefers-reduced-motion:reduce){.g-rel.in{animation:none}}
 .g-rel-f{display:flex;justify-content:space-between;gap:12px;margin-top:24px;padding-top:16px;border-top:1px solid var(--line)}
 .g-step{display:flex;flex-direction:column;min-width:0;padding:6px 10px;border-radius:9px}
 .g-step:hover{background:var(--panel-2)}

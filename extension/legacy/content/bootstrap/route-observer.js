@@ -125,8 +125,6 @@ RhythiaX.ContentBootstrap = (function () {
     if (RhythiaX.PageRouteContext.type() === 'profile') {
       RhythiaX.injectProfileCreatorBadge?.();
       if (RhythiaX.isModuleEnabled?.('scoreCards')) {
-        RhythiaX.injectProfileCrown?.();
-        RhythiaX.injectProfileAvatarEffects?.();
         RhythiaX.ScoreCardService?.updateScoresHubVisibility?.();
         if (RhythiaX.profileHistoryContext?.scoreSets) {
           const hub = document.querySelector('.rhythiax-scores-hub');

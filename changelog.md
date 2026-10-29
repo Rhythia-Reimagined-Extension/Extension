@@ -3,6 +3,117 @@
 All notable user-facing changes are documented in this file.
 
 ---
+version: 1.4.0
+date: 2026-10-29
+title: Within Reach
+listed: yes
+---
+
+## 1.4.0 - Within Reach - 2026-10-29
+
+## Added
+
+- Backup: The popup saves the settings and own themes of both looks to a file and loads them back, for another browser or computer.
+- Online history: With history on This device, a small card now and then says what online history adds, with Turn on and Not now; from its second time it has Don’t show again. Empty history in both looks, and Near your rank in Exodus, has a Turn on button, and Classic's history from this browser has a small Use online history button under it.
+
+## Changed
+
+- Popup Data tab: Shows what is saved in this browser by kind, each with its size and a way to clear or open it. Recent profile visits are a count with Clear instead of a list, and Reset settings has its own place at the bottom.
+- Changelog: Each change is on its own line with a short title, and a release's main features are shown first, under Featured, in both looks, each marked with the look it belongs to.
+- Online history text: The popup, the online history card and the Turn on buttons say in one line what is sent, with the privacy policy for the rest.
+- Popup: Opens on the tab it was last closed on.
+
+## Fixed
+
+- Popup: With Exodus on, the Experimental label no longer runs into the Classic and Exodus switch.
+- Own themes in Firefox: Your own picture, GIF or video shows behind the page in both looks; before, only the built-in pictures did.
+
+## Removed
+
+- Removed Herobrine.
+
+## Notes
+
+- Some of these changes came from your feedback. Thank you!
+
+# Exodus
+
+## Featured
+
+- Near Your Rank: Scores compares your top 100 with the players ranked just above and below you: accuracy, misses, RP, full combos, how often they play, map difficulty and length, speed and map types, the maps they play that are missing from your top, and your maps they rarely play. For players in the top 5,000 with online history on.
+- Exodus Expansion: A profile's Maps, Skins and Inventory tabs are now part of Exodus, and a bell next to Settings shows Rhythia's notifications, clan invites included.
+- Reimagined Search: The map list has a Reimagined Search tab, Reimagined's own search of Ranked and Qualified maps, not Rhythia's: by map type (jumps, streams, techs or varied), quantum, difficulty, length, mapper and title, and it can leave out the maps in your top 100. It searches Reimagined's copy of Rhythia's Ranked and Qualified lists, read once a day, so results can differ from Rhythia. It needs online history; with it, the map cards in All maps show their type too.
+
+## Added
+
+- Nearby on each play: In Top, each play shows the value of the middle player near your rank on the same map and how many of them you beat. The Nearby filter shows the maps where you beat the players above, are in between, or the players below score higher, and Top can be put in order by most room to improve or best against players near you.
+- Neighbours in Compare: Compare suggests the two players ranked just above and the two just below.
+- Country leaderboards on maps: A map's leaderboard can show one country, as on Rhythia: Global or any country, with yours first.
+- Ranked statuses: The map list can show Rhythia's ranked statuses: Ranked, Qualified, Unranked and Legacy. This replaces the Gives RP switch.
+- Recent searches: The search (Ctrl K) lists the last 5 players, maps and clans you opened from it, and while you type, the last 2 that match. They are kept in this browser only, and Clear removes them.
+- Scores order and map types: Scores can be put in order by newest, oldest, accuracy, RP or difficulty, and filtered by map type: jumps, streams, techs, varied or quantum.
+- Country leaderboard from a profile: The country rank on a profile opens that country's leaderboard.
+- New on tabs: A profile tab shows New after an update adds to it, until you open it or for 7 days.
+- Supporters: The supporter heart on a profile and on the leaderboard beats, and the ring around a supporter's avatar is thicker.
+- Replay speed: A score's replay can be watched at 1×, 0.75× or 0.5× of the speed it was played at.
+- Readable picture: The theme editor has a button that sets the picture's blur and darkening (lightening on a white theme) so text reads on it. Both can be changed after.
+- Profile Maps: A profile's Maps tab lists the maps the player uploaded, with All maps, Ranked, Qualified and Unranked.
+- Profile Skins: A profile's Skins tab lists the player's shared skins, cursors, notes, borders and colorsets, with Download and Copy link.
+- Profile Inventory: A profile's Inventory tab shows the player's items and what they wear; on your own profile you can equip or take off a banner, set your name colour's tint, and use a Name Change.
+- Ranked countdown: A qualified map shows when it gets ranked, who qualified it and when, and any vetos with their reasons.
+- Add to collection: A map page has Add to collection, which lists your collections.
+- Remove friend: The friend button on a profile can remove the player from your friends.
+- Notifications: A bell next to Settings shows Rhythia's notifications; clan invites can be accepted or declined there, and other notices marked as read.
+- Report player: The More button next to Compare has Report player, with Rhythia's reasons and a note, and Copy profile link.
+- Collections: Creating, editing and removing a collection happen in Exodus.
+- Clans: Inviting a player and leaving a clan happen in Exodus.
+- Team Ranked: Players with the Team Ranked badge can qualify a map and veto a qualified one from the map page.
+
+## Changed
+
+- Rank box: Lock, Spin and VR are a column at the left of the rank box, and the box keeps one size in every mode. It lines up with the avatar, and the buttons next to the name line up with it.
+- Compare button: Compare is a button next to the player's name, beside the friend button. Both sit on a frosted plate over the banner.
+- Activity: Rank shows the global place at the end of each day, week or month, with how far it moved under it.
+- Profile switches: Progress, Rankings and Playstyle, and Top, Reigning and Recent, are the same size as the other switches, with brighter text and a clearer chosen tab.
+- Scores filters: Grade, mods, speed and map type are in their own row under the search. Filters in use are outlined, and Clear filters resets them.
+- Playstyle: The last 14 days and Month in review say how many new top plays were on new maps and how many beat an earlier play of the same map, the biggest improvement, the map types where accuracy rose or fell, and a change of main speed.
+- Preview speed: A map's preview plays at 0.25×, 0.5× or the game's speed mods from 0.75× to 1.45×. 1.5×, 1.75× and 2× are gone.
+- Own themes: The popup and the theme editor take the colours of the own theme in use.
+- Tags: Map types, statuses, difficulties, changelog tags and profile roles look like the buttons, with their colour as a bar on the left edge or in an icon instead of a coloured outline.
+
+## Improved
+
+- Own themes: On a light or busy picture, text that sits straight on it has a soft shadow in the page's colour, links and coloured numbers are easier to read, and names next to a coloured number stay in the text colour.
+- Map types: With online history on, Playstyle, Scores and Compare get the types of maps the history service already knows from it, so fewer map files are downloaded.
+
+## Fixed
+
+- Own themes: With two accent colours, the chosen tab of a switch no longer sits on the accent gradient, where its text was hard to read.
+- Score replay: Going from a score to a profile stops the replay's music.
+- Progress: With less than a day of history, the chart title says today only instead of last 0 days.
+- Profiles: After Clear history or choosing This device, a profile opened again no longer fails to draw before it loads.
+- Exodus style: With an own theme in use, Lines and Floating in the popup change that theme's style.
+- Own themes: With a gradient, picture or video behind the page, a score's replay and a map's preview no longer cover the top bar when you scroll.
+
+# Classic
+
+## Added
+
+- Compare: A second row compares average and best RP, full combos, map difficulty and how much each player plays at 1.45×.
+- Map types: With online history on, Playstyle shows the types of the maps in the top plays: jumps, streams, techs or varied.
+- Reimagined Search: Under Explore maps, the map list has Reimagined Search, Reimagined's own search of Ranked and Qualified maps, not Rhythia's: by map type, quantum, difficulty, length, title and mapper. It searches Reimagined's copy of Rhythia's Ranked and Qualified lists, read once a day, so results can differ from Rhythia. It needs online history.
+- Recent searches: While its box is empty, Rhythia's search lists the last 5 players, maps and clans you opened from it, with Clear. They are kept in this browser only.
+
+## Changed
+
+- Profile buttons: Compare, the friends button, Edit, Score report and the other profile buttons are no brighter than the rest of the page; the accent shows when you point at them.
+- Rhythia row: The Rhythia row card style looks like Rhythia's own score row, with misses in their box and weighted RP leading into RP, and adds the map's art and mapper. Hits show when you point at the misses, and the left edge has the map's difficulty colour. The popup's picture of it matches.
+
+## Fixed
+
+- Changelog: Switching between Public and Web no longer makes the page jump while the notes load.
+
+---
 version: 1.3.1
 date: 2026-10-25
 title: Custom Themes

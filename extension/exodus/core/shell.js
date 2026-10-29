@@ -69,7 +69,7 @@ RhythiaX.Exodus = (function () {
   // ─── Shell ──────────────────────
   function shellMarkup() {
     const A = RhythiaX.ExodusAssets;
-    return `<style>${A.css}</style><style>${RhythiaX.ExodusApp?.css || ''}${RhythiaX.ExodusCompare?.css || ''}${RhythiaX.ExodusHome?.css || ''}${RhythiaX.ExodusBoard?.css || ''}${RhythiaX.ExodusKit?.css || ''}${RhythiaX.ExodusMarkdown?.css || ''}${RhythiaX.ExodusAccount?.css || ''}
+    return `<style>${A.css}</style><style>${RhythiaX.ExodusApp?.css || ''}${RhythiaX.ExodusCompare?.css || ''}${RhythiaX.ExodusHome?.css || ''}${RhythiaX.ExodusBoard?.css || ''}${RhythiaX.ExodusKit?.css || ''}${RhythiaX.ExodusMarkdown?.css || ''}${RhythiaX.ExodusAccount?.css || ''}${RhythiaX.ExodusFlair?.css || ''}${RhythiaX.ExodusNotify?.css || ''}
       .exo{min-height:100vh}
       .exo[data-editing],.exo[data-editing] *,.exo[data-editing] *::before,.exo[data-editing] *::after{transition:none!important}
       .site .me{display:flex;align-items:center;gap:8px;flex:none}
@@ -108,6 +108,8 @@ RhythiaX.Exodus = (function () {
       root.addEventListener('input', onShellInput);
       // The settings (and an own theme) can be read before the shell exists: paint them into it now.
       applyLook();
+      RhythiaX.ExodusFlair?.start(root);
+      RhythiaX.ExodusNotify?.start(root, { toast });
     }
     if (host.parentNode !== document.body) document.body.appendChild(host);
     return true;
@@ -131,11 +133,12 @@ RhythiaX.Exodus = (function () {
       slot.dataset.who = who;
       // Signed in: account settings (core/account.js) and the profile. Signed out: Rhythia's sign-in.
       slot.innerHTML = me
-        ? `<button class="iconbtn" type="button" data-account aria-label="Account settings" data-tip="Settings">${GEAR}</button>
+        ? `<span class="nt-slot" id="bell"></span><button class="iconbtn" type="button" data-account aria-label="Account settings" data-tip="Settings">${GEAR}</button>
          <a class="av" href="/player/${esc(me.id)}" aria-label="Your profile" data-tip="<b>${esc(me.username)}</b>" style="background-image:${cssUrl(me.avatar_url)}"></a>`
         : me === null ? '<button class="btn" type="button" data-signin>Sign in</button>' : '';
     }
     meId = me?.id || '';
+    RhythiaX.ExodusNotify?.setMe(meId);
     markOwn();
   }
 
@@ -177,6 +180,7 @@ RhythiaX.Exodus = (function () {
 
   function onShellClick(e) {
     const a = e.target.closest?.('a[href]');
+    if (a?.dataset.rk && a.closest('#find-res')) keepRecent(a.dataset);
     if (a && !a.target && !e.defaultPrevented && e.button === 0 && !e.metaKey && !e.ctrlKey && !e.shiftKey && !e.altKey) {
       const href = a.getAttribute('href');
       if (href.startsWith('/')) { e.preventDefault(); navigate(href); return; }
@@ -184,6 +188,7 @@ RhythiaX.Exodus = (function () {
     if (e.target.closest?.('.site [data-account]')) accountSettings();
     if (e.target.closest?.('.site [data-signin]') && !clickNative('Sign in')) toast('Rhythia is still loading. Try again in a moment.');
     if (e.target.closest?.('[data-find]')) openFind();
+    if (e.target.closest?.('[data-find-clear]')) { try { localStorage.removeItem(RECENT_KEY); } catch (_) {} runFind(root?.getElementById('find-q')?.value || ''); }
     // A click on the backdrop closes the search.
     if (e.target.id === 'find' && e.target.tagName === 'DIALOG') e.target.close();
     // A click on the backdrop closes the showcase picker.
@@ -207,11 +212,34 @@ RhythiaX.Exodus = (function () {
   const mark = (v, q) => { const s = String(v || ''), i = s.toLowerCase().indexOf(q); return i < 0 ? esc(s) : esc(s.slice(0, i)) + '<mark>' + esc(s.slice(i, i + q.length)) + '</mark>' + esc(s.slice(i + q.length)); };
   const FIND_HINT = '<p class="cap" style="margin:12px 8px">Type at least two letters.</p>';
   let findTimer = 0, findSeq = 0;
+  // What was opened from the search lately (players, maps, clans), newest first, kept in this browser only:
+  // the last 5 show when the search opens, and the last 2 that match while typing.
+  const RECENT_KEY = 'rhythiax_exodus_find_recent', RECENT_MAX = 5;
+  const RECENT_PATH = { player: '/player/', map: '/maps/', clan: '/clans/' };
+  function recents() {
+    try {
+      const list = JSON.parse(localStorage.getItem(RECENT_KEY) || '[]');
+      return Array.isArray(list) ? list.filter(x => RECENT_PATH[x?.k] && /^[\w-]{1,64}$/.test(String(x.id))).slice(0, RECENT_MAX) : [];
+    } catch (_) { return []; }
+  }
+  function keepRecent(d) {
+    const x = { k: d.rk, id: String(d.rid), name: String(d.rname || '').slice(0, 120), img: String(d.rimg || '').slice(0, 600), sub: String(d.rsub || '').slice(0, 120), tag: String(d.rtag || '').slice(0, 40), flag: /^[A-Z]{2}$/.test(d.rflag || '') ? d.rflag : '' };
+    if (!RECENT_PATH[x.k]) return;
+    const list = [x, ...recents().filter(r => !(r.k === x.k && r.id === x.id))].slice(0, RECENT_MAX);
+    try { localStorage.setItem(RECENT_KEY, JSON.stringify(list)); } catch (_) {}
+  }
+  // A result row; rec carries what the recent list keeps of it.
+  const findRow = (rec, title, round) => `<a href="${RECENT_PATH[rec.k]}${esc(rec.id)}" data-rk="${rec.k}" data-rid="${esc(rec.id)}" data-rname="${esc(rec.name)}" data-rimg="${esc(rec.img)}" data-rsub="${esc(rec.sub)}" data-rtag="${esc(rec.tag)}" data-rflag="${esc(rec.flag || '')}"><i ${round ? 'class="round" ' : ''}style="background-image:${cssUrl(rec.img)}"></i><span>${title}<small>${esc(rec.sub)}${rec.flag ? ` · <img src="https://www.rhythia.com/flags/${esc(rec.flag)}.svg" alt="" style="width:14px;vertical-align:-1px"> ${esc(rec.flag)}` : ''}</small></span><em>${esc(rec.tag)}</em></a>`;
+  function recentHtml(q) {
+    const lq = q.trim().toLowerCase(), list = lq ? recents().filter(r => r.name.toLowerCase().includes(lq)).slice(0, 2) : recents();
+    if (!list.length) return '';
+    return `<h4>Recent${lq ? '' : '<button type="button" class="link" data-find-clear>Clear</button>'}</h4>${list.map(r => findRow(r, lq ? mark(r.name, lq) : esc(r.name), r.k === 'player')).join('')}`;
+  }
   function openFind() {
     const dlg = root?.getElementById('find');
     if (!dlg || dlg.open) return;
     dlg.innerHTML = `<div class="find-body"><label class="field"><svg class="ico" aria-hidden="true"><use href="#i-search"/></svg><span class="sr">Search Rhythia</span><input id="find-q" type="search" placeholder="Players, maps or clans" autocomplete="off"></label>
-      <div class="find-res" id="find-res">${FIND_HINT}</div></div>`;
+      <div class="find-res" id="find-res">${recentHtml('') || FIND_HINT}</div></div>`;
     dlg.classList.remove('closing');
     dlg.showModal();
     root.getElementById('find-q').focus();
@@ -219,16 +247,17 @@ RhythiaX.Exodus = (function () {
   async function runFind(q) {
     const box = root?.getElementById('find-res'), seq = ++findSeq;
     if (!box) return;
-    if (q.trim().length < 2) { box.innerHTML = FIND_HINT; return; }
-    box.innerHTML = '<div class="skeleton" style="margin:16px 8px;width:50%"></div><div class="skeleton" style="margin:10px 8px;width:35%"></div>';
+    if (q.trim().length < 2) { box.innerHTML = recentHtml('') || FIND_HINT; return; }
+    const recent = recentHtml(q);
+    box.innerHTML = recent + '<div class="skeleton" style="margin:16px 8px;width:50%"></div><div class="skeleton" style="margin:10px 8px;width:35%"></div>';
     try {
       const r = await RhythiaX.ExodusData.post('enhancedSearch', { text: q.trim(), limit: 5 });
       if (seq !== findSeq) return;
-      const lq = q.trim().toLowerCase(), hl = v => mark(v, lq), site = 'https://www.rhythia.com';
-      const users = (r.users || []).map(u => `<a href="/player/${esc(u.id)}"><i class="round" style="background-image:${cssUrl(u.avatar_url)}"></i><span>${hl(u.username)}<small>Player${u.flag ? ` · <img src="${site}/flags/${esc(u.flag)}.svg" alt="" style="width:14px;vertical-align:-1px"> ${esc(u.flag)}` : ''}</small></span><em>Profile →</em></a>`).join('');
-      const maps = (r.beatmaps || []).map(b => `<a href="/maps/${esc(b.id)}"><i style="background-image:${cssUrl(b.previewImage?.small || b.image)}"></i><span>${hl(b.title)}<small>by ${esc(b.ownerUsername)} · ★ ${fmt(b.starRating)}</small></span><em>${esc(String(b.status || '').toLowerCase())}</em></a>`).join('');
-      const clans = (r.clans || []).map(c => `<a href="/clans/${esc(c.id)}"><i style="background-image:${cssUrl(c.avatar_url)}"></i><span>${hl(c.name)}<small>Clan · [${esc(c.acronym)}]</small></span><em>Clan →</em></a>`).join('');
-      box.innerHTML = (users ? `<h4>Players</h4>${users}` : '') + (maps ? `<h4>Maps</h4>${maps}` : '') + (clans ? `<h4>Clans</h4>${clans}` : '') || '<p class="cap" style="margin:12px 8px">Nothing found.</p>';
+      const lq = q.trim().toLowerCase(), hl = v => mark(v, lq);
+      const users = (r.users || []).map(u => findRow({ k: 'player', id: u.id, name: u.username, img: u.avatar_url, sub: 'Player', flag: /^[A-Z]{2}$/.test(u.flag || '') ? u.flag : '', tag: 'Profile →' }, hl(u.username), true)).join('');
+      const maps = (r.beatmaps || []).map(b => findRow({ k: 'map', id: b.id, name: b.title, img: b.previewImage?.small || b.image, sub: `by ${b.ownerUsername} · ★ ${fmt(b.starRating)}`, tag: String(b.status || '').toLowerCase() }, hl(b.title))).join('');
+      const clans = (r.clans || []).map(c => findRow({ k: 'clan', id: c.id, name: c.name, img: c.avatar_url, sub: `Clan · [${c.acronym}]`, tag: 'Clan →' }, hl(c.name))).join('');
+      box.innerHTML = recent + ((users ? `<h4>Players</h4>${users}` : '') + (maps ? `<h4>Maps</h4>${maps}` : '') + (clans ? `<h4>Clans</h4>${clans}` : '') || '<p class="cap" style="margin:12px 8px">Nothing found.</p>');
     } catch (e) {
       if (seq === findSeq) box.innerHTML = `<p class="cap" style="margin:12px 8px">Search failed (${esc(e.message)}).</p>`;
     }
@@ -396,7 +425,9 @@ RhythiaX.Exodus = (function () {
     return {
       owner: v.owner,
       signedIn: v.me,
-      actions: { saveAbout: mine(a.saveAbout), setPinned: mine(a.setPinned), addFriend: forgetting(a.addFriend, id), setShowcase: mine(a.setShowcase), searchShowcase: RhythiaX.ExodusData.searchShowcase },
+      actions: { saveAbout: mine(a.saveAbout), setPinned: mine(a.setPinned), addFriend: forgetting(a.addFriend, id), removeFriend: forgetting(a.removeFriend, id), report: a.report, setShowcase: mine(a.setShowcase), searchShowcase: RhythiaX.ExodusData.searchShowcase, equip: mine(RhythiaX.ExodusData.equip) },
+      // The header's Settings window (core/account.js), where a Name Change item is used.
+      account: accountSettings,
       // Map art for lists shown later (Spin, VR); it also goes into the data this tab keeps.
       moreMeta: ids => RhythiaX.ExodusData.mapMetaFor(ids, view?.signal).then(meta => { Object.assign(D.meta, meta); return meta; }),
       showNative,
@@ -701,10 +732,12 @@ RhythiaX.Exodus = (function () {
     const theme = THEMES.includes(result.rhythiaxTheme) ? result.rhythiaxTheme : 'reimagined';
     look = { theme, style: result.rhythiaxExodusStyle === 'float' ? 'float' : 'lines' };
     const prefs = {
-      modules: Object.fromEntries(['playerCompare', 'statHistory', 'titleProgression', 'advancedStats', 'friendsList'].map(k => [k, X.read(result, `modules.${k}`) !== false])),
+      modules: Object.fromEntries(['playerCompare', 'statHistory', 'titleProgression', 'advancedStats', 'friendsList', 'easterEggs'].map(k => [k, X.read(result, `modules.${k}`) !== false])),
       exodus: X.exodusOptions(result),
     };
     RhythiaX.ExodusPrefs = prefs;
+    // How often the Easter eggs play (core/flair.js) is read as it goes; changing it redraws nothing.
+    const eggs = X.read(result, 'options.easterEggs.frequency');
     pages = prefs.exodus.pages;
     readOwnTheme(result);
     settled = true;
@@ -716,6 +749,7 @@ RhythiaX.Exodus = (function () {
     applyLook();
     // A changed feature switch rebuilds the page on screen from its kept copy.
     const seen = JSON.stringify(prefs);
+    prefs.eggs = eggs;
     const changed = prefsSeen && seen !== prefsSeen;
     prefsSeen = seen;
     if (changed && app) { reshow(); return; }
@@ -750,7 +784,7 @@ RhythiaX.Exodus = (function () {
     reshow();
   });
 
-  const KEYS = { rhythiaxExodus: false, rhythiaxExodusStyle: 'lines', rhythiaxTheme: 'reimagined', rhythiaxModules: {}, rhythiaxExodusOptions: {},
+  const KEYS = { rhythiaxExodus: false, rhythiaxExodusStyle: 'lines', rhythiaxTheme: 'reimagined', rhythiaxModules: {}, rhythiaxModuleOptions: {}, rhythiaxExodusOptions: {},
     [RhythiaX.ExodusThemes.LIST_KEY]: [], [RhythiaX.ExodusThemes.ACTIVE_KEY]: '' };
   if (typeof chrome !== 'undefined' && chrome.storage?.local) {
     chrome.storage.local.get(KEYS, readSettings);

@@ -9,14 +9,14 @@ var RhythiaX = RhythiaX || {};
 (function () {
 'use strict';
 const K = () => RhythiaX.ExodusKit;
-const {SITE, Data, Kit, esc, cssUrl, fmt, REDUCED, when, ago, fullDate, diff, status, grade, GRADE_C, MODES, mods, av, accTxt, shell, slot, playsHtml, playsNote, row, morph} = RhythiaX.ExodusKit;
+const {SITE, Data, Kit, esc, cssUrl, fmt, REDUCED, when, ago, fullDate, diff, status, grade, GRADE_C, MODES, mods, av, accTxt, shell, slot, playsHtml, playsNote, REPLAY_SPEEDS, speedLabel, ask, row, morph} = RhythiaX.ExodusKit;
 
 /* ════════════════════ Score ════════════════════ */
 function score(host, ctx) {
   const R = host.shadowRoot, ac = new AbortController(), sig = {signal: ac.signal}, $ = s => R.querySelector(s);
   const ui = shell(R, sig);
   const id = ctx.id;
-  const S = {d: null, hist: undefined, allowed: false, plays: null, playsErr: '', enter: true, dock: null};
+  const S = {d: null, hist: undefined, allowed: false, plays: null, playsErr: '', enter: true, dock: null, live: false, speed: 0};
 
   function hero(d) {
     // The score as data.js keeps it carries no letter of Rhythia's own; a play marked as failed is F.
@@ -76,6 +76,15 @@ function score(host, ctx) {
       <span class="num">#${fmt(before.globalRank)} → #${fmt(after.globalRank)}${dRank ? ` (${dRank > 0 ? '▲' : '▼'} ${fmt(Math.abs(dRank))})` : ''}</span>
       <p class="cap">${esc(before.date)} to ${esc(after.date)}, counting every play that day.</p>`;
   }
+  // Watching a replay slower: its own speed change, from the speed the play was set at (a 1.45× play at 0.5× runs
+  // at 0.725×). Shown once the replay's controls answer.
+  const recorded = () => S.d?.score.speed || 1;
+  function speedBar() {
+    if (!S.live) return '<div class="v-pbar" id="v-pbar" hidden></div>';
+    const rec = recorded();
+    return `<div class="v-pbar" id="v-pbar"><span class="cap">Replay speed</span><div class="pills" aria-label="Replay speed">${REPLAY_SPEEDS.map(f => `<button type="button" data-rspeed="${f}" aria-pressed="${Math.abs(S.speed - rec * f) < .005}">${speedLabel(f)}×</button>`).join('')}</div>
+      <span class="cap num">Played at ${speedLabel(Number(rec.toFixed(2)))}×</span></div>`;
+  }
   function playsSec(d) {
     const body = S.plays ? playsHtml(S.plays, d.score.speed || 1) : S.playsErr ? `<p class="cap">${esc(S.playsErr)}</p>` : '<div class="skeleton" style="height:120px;border-radius:14px"></div>';
     return `<section class="container v-sec" id="v-plays-sec"><div class="sec-head"><div><h2>What the map asks</h2><p class="lede">${playsNote}${d.score.speed !== 1 ? ` Speeds are shown at this play’s ${fmt(d.score.speed, 2)}×.` : ''}</p></div>${d.map ? `<a class="v-more" href="/maps/${esc(d.map.id)}">Map page →</a>` : ''}</div>${body}</section>`;
@@ -92,13 +101,23 @@ function score(host, ctx) {
     if (!d) return;
     morph($('#hero'), hero(d));
     morph($('#body'), `<div class="v-page ${S.enter ? 'enter' : ''}">${stands(d)}
-      <section class="container v-sec"><div class="sec-head"><div><h2>Replay</h2></div></div>${slot()}</section>
+      <section class="container v-sec"><div class="sec-head"><div><h2>Replay</h2></div></div>${slot()}${speedBar()}</section>
       ${playsSec(d)}${topSec(d)}<div style="height:96px"></div></div>`);
     S.dock?.release();
     S.dock = ctx.dock($('#v-dock'));
     if (S.enter && !REDUCED) requestAnimationFrame(() => requestAnimationFrame(() => { const fg = R.querySelector('.v-ring .fg'); if (fg) fg.style.strokeDashoffset = fg.style.getPropertyValue('--off'); }));
   }
   function redraw(sel, html) { morph.outer($(sel), html); S.dock?.refresh(); }
+  // Follow the replay: show the speed row once its controls answer, and keep it in step.
+  let poll = 0;
+  async function watchReplay() {
+    const r = await ask('state');
+    if (ac.signal.aborted) return;
+    const live = Boolean(r.ok) && Boolean(S.d), speed = r.speed || 0;
+    if (live !== S.live || Math.abs(speed - S.speed) > .001) { S.live = live; S.speed = speed; const b = $('#v-pbar'); if (b) { morph.outer(b, speedBar()); S.dock?.refresh(); } }
+    poll = setTimeout(watchReplay, live ? 1500 : 1000);
+  }
+  const watchNow = () => { clearTimeout(poll); watchReplay(); };
 
   async function load() {
     const snap = await Data().pageSnapshot(`score:${id}`).catch(() => null);
@@ -128,12 +147,17 @@ function score(host, ctx) {
     } else S.playsErr = 'Rhythia did not send the map file.';
     if (!ac.signal.aborted) redraw('#v-plays-sec', playsSec(d));
   }
-  R.addEventListener('click', e => { if (e.target.closest('[data-native-x]')) ctx.showNative(); }, sig);
+  R.addEventListener('click', e => {
+    if (e.target.closest('[data-native-x]')) return ctx.showNative();
+    const sp = e.target.closest('[data-rspeed]');
+    if (sp) ask('speed', recorded() * Number(sp.dataset.rspeed)).then(() => setTimeout(watchNow, 120));
+  }, sig);
   load();
+  watchReplay();
 
   return {
     state: () => ({}), idle: () => true, relayout() {}, page() {},
-    destroy() { ac.abort(); ui.hide(); S.dock?.release(); },
+    destroy() { ac.abort(); clearTimeout(poll); ui.hide(); S.dock?.release(); },
   };
 }
 

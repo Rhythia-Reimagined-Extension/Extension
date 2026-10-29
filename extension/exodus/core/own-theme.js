@@ -11,7 +11,24 @@ var RhythiaX = RhythiaX || {};
 RhythiaX.ExodusOwnTheme = (function () {
   'use strict';
 
-  const { rgbs, imageOk, isVideo, blobOf, blobHolder } = RhythiaX.Colour;
+  const { rgbs, mix, imageOk, isVideo, mediaUrl, freeUrl, blobHolder } = RhythiaX.Colour;
+  // The climb, drop and miss colours of the built-in looks (core/assets.js), lifted on a light or busy picture.
+  const TONES = { dark: { good: '#4ade80', bad: '#f87171', miss: '#fb7185' }, white: { good: '#15803d', bad: '#dc2626', miss: '#e11d48' } };
+
+  // What draws a background of its own behind its text, on every page: text in it keeps no halo (css(), D.bare).
+  // Chips that are only a light tint of their colour (.v-chip, .v-tag) are not in it: their text is on the picture.
+  // FLOAT_BG have one only in Floating: Lines draws them as outlines, so their text lies on the picture too.
+  const FLOAT_BG = ['.panel', '.strip', '.kpi', '.tile', '.faq-item', '.faq-btn', '.sig', '.social', '.pages button[aria-current="page"]', '.ed-pins li',
+    '.h-com', '.b-me', '.b-hl', '.v-card', '.v-facts > div', '.v-com', '.c-card', '.g-entry'];
+  const OWN_BG = ['.site', '.tip', '.toast', '.menu', 'dialog', '.btn', '.iconbtn', '.pills', '.tabs.seg', '.field', 'input', 'textarea', 'select',
+    '.ranks', '.rtag', '.showcase', '.plate', '.faq', '.bcard', '.suggest', '.mods', '.grade', '.ach', '.duelist', '.dpill', '.clash', '.spill',
+    '.item', '.online-offer', '.try-card', '.try-tag', '.k-card', '.b-cp-pop', '.v-chip.plain', '.v-mini', '.v-dock',
+    '.v-zr', '.v-trophy', '.v-mine', '.v-form', '.v-notice', '.v-owner', '.v-skin', '.v-skbig',
+    '.c-chips span', '.c-warn', '.w-res', '.w-entry.on', '.g-stream', '.g-chip', '.g-card', '.g-tag', '.g-v.on', '.s-hero',
+    '.s-quote', '.s-cta', '.s-status', '.s-band', '.s-card', '.md code', '.md pre', '.md-box', '.ac-sec', '.ct', '.find-res',
+    '.bio code', '.item-x', '.spdc', '.h-stage', '.h-me', '.h-who', '.h-lb-row.me', '.h-rel code', '.h-map', '.h-diff', '.h-star',
+    '.b-row.me', '.b-row.sup', '.b-cp-btn', '.b-fl.code', '.v-row.me', '.v-skmeta span', '.v-clrow.me', '.v-mrow2.me', '.v-clrel',
+    '.v-clcty span', '.w-navd', '.s-tw', '.md th', '.ac-size', '.ac-plate', '.ac-pick', '.ac-confirm', '.ac-chip'];
 
   // The CSS this theme adds to Exodus' shadow root. Own themes write every token, built-in ones nothing.
   // R: what ExodusThemes.resolve() returned for the theme.
@@ -32,9 +49,11 @@ RhythiaX.ExodusOwnTheme = (function () {
     // The page background: the colour or gradient, and over it the picture or video with its blur, darkening and fade.
     // Layers, back to front: the colour or gradient (::before), then the video or the picture (::after). Darkening
     // lets the background show through the picture, so a smaller or turned picture never leaves a dark box.
+    // .exo is no stacking context of its own: the bar, its menus and tips must stay above Rhythia's docked player
+    // (core/dock.js), which lies outside it. The page's body is see-through instead (backdrop, exodus/boot.css).
     const img = imageCss();
-    if (pageStops().length > 1 || img || video) {
-      r.push(`.exo.exo{background:transparent;isolation:isolate}.exo::before{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;background:${pageBg()}}`);
+    if (backdrop(R)) {
+      r.push(`.exo.exo{background:transparent}.exo::before{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;background:${pageBg()}}`);
       const b = v('bgBlur'), solid = 100 - v('bgFadeLen');
       const mask = { none: '', bottom: `linear-gradient(to bottom,#000 ${solid}%,transparent)`, top: `linear-gradient(to top,#000 ${solid}%,transparent)`,
         left: `linear-gradient(to left,#000 ${solid}%,transparent)`, right: `linear-gradient(to right,#000 ${solid}%,transparent)`,
@@ -67,6 +86,34 @@ RhythiaX.ExodusOwnTheme = (function () {
       // Lines draws pills, tabs and fields as outlines: over a picture they get the glass plate the buttons have.
       if (lines) r.push(`.exo :is(.pills,.tabs.seg,.field){background-color:rgba(var(--glass),${v('glassA') / 100});-webkit-backdrop-filter:blur(${v('glassBlur')}px) saturate(1.2);backdrop-filter:blur(${v('glassBlur')}px) saturate(1.2)}`,
         '.exo :is(.pills button:not([aria-pressed="true"]),.pills a,.tabs.seg button:not([aria-selected="true"]),.field){color:var(--text-2)}');
+      // Text with no panel behind it, on a picture: links in a colour that reads there, and on a picture too light
+      // or busy for that (D.bare), a soft halo of the glass colour hugging the letters, as strong as text there
+      // needs. It is set once on the page and inherited, so every page's bare text has it, and taken off again in
+      // everything that draws its own background (OWN_BG: buttons, chips, menus, cards; FLOAT_BG: panels in Floating,
+      // which in Lines are only outlines with the picture behind their text). Large headings
+      // get a wider, lighter halo, small text a tighter one. No boxes: Lines draws no panels behind text.
+      const BARE_LINKS = ':is(.v-more,.lede-link,.sec-head .link,.tab-new,.b-link,.bio a,.played em b)';
+      if (D.link) r.push(`.exo ${BARE_LINKS}{color:${D.link}}`);
+      if (D.bare) {
+        const a = D.bare, t = Math.min(.9, .6 + a * .4), w = Math.min(.7, .4 + a * .4), g = x => `rgba(var(--glass),${+x.toFixed(2)})`;
+        // Small and thin text gets the closest, darkest halo; on a light theme the halo is light, so only a tight
+        // edge, as a wide one would look like a glow.
+        const small = D.base === 'white' ? `0 0 2px ${g(t)},0 1px 3px ${g(t)}` : `0 0 2px ${g(t)},0 1px 3px ${g(t)},0 0 10px ${g(w)}`;
+        const large = D.base === 'white' ? small : `0 1px 4px ${g(t * .85)},0 0 20px ${g(w)}`;
+        const ink = D.base === 'white' ? '#000000' : '#ffffff', tone = TONES[D.base === 'white' ? 'white' : 'dark'];
+        const own = (lines ? OWN_BG : [...OWN_BG, ...FLOAT_BG]).join(',');
+        r.push(`.exo{text-shadow:${small}}`,
+          `.exo :is(${own}){text-shadow:none}`,
+          // Coloured text is lifted as the links are, at most 40% of the way to white (black on a light theme): chips,
+          // and the climb, drop and miss colours, so an arrow or a number carries the colour while names stay in the
+          // text colour.
+          `.exo :is(.v-chip:not(.plain),.v-tag){color:color-mix(in srgb,var(--c,var(--text-2)) 60%,${ink})}`,
+          `.exo.exo[data-theme]{--good:${mix(tone.good, ink, .35)};--bad:${mix(tone.bad, ink, .35)};--miss:${mix(tone.miss, ink, .35)}}`,
+          '.exo :is(.b-hl-who,.b-hl-who b){color:var(--text)}',
+          // Headings and the profile's name and its line (which bring a shadow of their own for the banner).
+          `.exo :is(h1,h2,.name):not(:is(${own}) *){text-shadow:${large}}`,
+          `.exo .meta:not(:is(${own}) *){text-shadow:${small}}`);
+      }
     }
     r.push(`.site{background:rgba(${rgbs(v('head'))},${v('headA') / 100});-webkit-backdrop-filter:blur(${v('headBlur')}px);backdrop-filter:blur(${v('headBlur')}px)}`);
     // A hidden banner leaves no empty space (the name, picture and ranks move up under the top bar), or with
@@ -78,23 +125,26 @@ RhythiaX.ExodusOwnTheme = (function () {
       if (v('bannerMode') === 'mine') r.push(noBanner('.exo:not([data-own])'));
       r.push(`.hero .banner{filter:blur(${v('bannerBlur')}px) opacity(${v('bannerO') / 100})}`);
     }
-    r.push(`.ranks,.rtag,.hero .ranks-head .pills,.hero .ranks-head .btn:not(.primary){background:rgba(var(--glass),${v('glassA') / 100});-webkit-backdrop-filter:blur(${v('glassBlur')}px) saturate(1.2);backdrop-filter:blur(${v('glassBlur')}px) saturate(1.2)}`);
-    r.push(`.exo .btn:not(.primary),.exo .hero .ranks-head .btn:not(.primary){background:rgba(${rgbs(v('btnBg'))},${v('btnA') / 100});color:${v('btnText')};box-shadow:inset 0 0 0 1px rgba(${rgbs(v('btnLine'))},${v('btnLineA') / 100})}`);
+    r.push(`.ranks,.rtag{background:rgba(var(--glass),${v('glassA') / 100});-webkit-backdrop-filter:blur(${v('glassBlur')}px) saturate(1.2);backdrop-filter:blur(${v('glassBlur')}px) saturate(1.2)}`);
+    r.push(`.exo .btn:not(.primary){background:rgba(${rgbs(v('btnBg'))},${v('btnA') / 100});color:${v('btnText')};box-shadow:inset 0 0 0 1px rgba(${rgbs(v('btnLine'))},${v('btnLineA') / 100})}`);
     r.push(`.exo .btn{border-radius:${v('btnR')}px}`);
     if (v('btnSize') === 's') r.push('.exo .btn{height:32px;padding:0 12px;font-size:13px}.exo .btn.mini{height:28px;padding:0 10px}');
     if (v('btnSize') === 'l') r.push('.exo .btn{height:44px;padding:0 20px;font-size:15px}.exo .btn.mini{height:38px;padding:0 15px;font-size:14px}');
     if (accentStops().length > 1) {
       const g = accentBg();
       r.push(`.exo .btn.primary{background:${g}}.exo .btn.primary:hover{background:${g};filter:brightness(1.08)}`,
-        `.exo .tabs .ink{background:${g}}`, `.exo .rp b{background:${g};-webkit-background-clip:text;background-clip:text;color:transparent}`);
+        // Only the underline of plain tabs: a chosen segment carries text, which would not read on the gradient.
+        `.exo .tabs:not(.seg) .ink{background:${g}}`, `.exo .rp b{background:${g};-webkit-background-clip:text;background-clip:text;color:transparent}`);
     }
     return `.exo.exo[data-theme]{${t.join(';')}}\n${r.join('\n')}`;
   }
 
   // The uploaded picture itself, apart from css(): it is large, so it is written again only when it changes,
-  // not on every move of a slider. url: where the page reads it from, the blob: URL of R.image (shared/colour.js
-  // blobHolder), as Chrome draws no data: URL over 2 MB in CSS.
-  const hasPicture = R => Boolean(R.val('bgImg')?.local && !R.video && imageOk(R.image) && !isVideo(R.image));
+  // not on every move of a slider. url: where the page reads it from (shared/colour.js blobHolder): a blob: URL
+  // of R.image in Chrome, which draws no data: URL over 2 MB in CSS, and R.image itself in Firefox.
+  // A gradient, picture or video drawn behind the page in layers of its own.
+  const backdrop = R => R.pageStops().length > 1 || Boolean(R.imageCss()) || Boolean(R.video);
+  const hasPicture = R =>Boolean(R.val('bgImg')?.local && !R.video && imageOk(R.image) && !isVideo(R.image));
   function pictureCss(R, url = R.image) {
     return hasPicture(R) ? `.exo.exo{--own-pic:url("${url}")}` : '';
   }
@@ -119,6 +169,7 @@ RhythiaX.ExodusOwnTheme = (function () {
       const theme = own ? own.base : look.theme, style = own ? shown.theme.style : look.style;
       html.dataset.rhythiaxExodusTheme = theme;
       if (own) html.style.setProperty('--rhythiax-exodus-page', own.val('page')); else html.style.removeProperty('--rhythiax-exodus-page');
+      html.classList.toggle('rhythiax-exodus-backdrop', Boolean(own && backdrop(own)));
       if (!root) return;
       const exo = root.querySelector('.exo');
       const relayout = exo.dataset.theme !== theme || exo.dataset.variant !== style;
@@ -164,12 +215,12 @@ RhythiaX.ExodusOwnTheme = (function () {
       const exo = env.root()?.querySelector('.exo');
       if (!exo || !own?.video) {
         if (bgVideo) { bgVideo.pause(); bgVideo.remove(); bgVideo = null; }
-        if (bgVideoUrl) { URL.revokeObjectURL(bgVideoUrl); bgVideoUrl = ''; bgVideoFor = ''; }
+        if (bgVideoUrl) { freeUrl(bgVideoUrl); bgVideoUrl = ''; bgVideoFor = ''; }
         return;
       }
       if (bgVideoFor !== media) {
-        if (bgVideoUrl) URL.revokeObjectURL(bgVideoUrl);
-        bgVideoUrl = URL.createObjectURL(blobOf(media));
+        if (bgVideoUrl) freeUrl(bgVideoUrl);
+        bgVideoUrl = mediaUrl(media);
         bgVideoFor = media;
         if (bgVideo) bgVideo.src = bgVideoUrl;
       }

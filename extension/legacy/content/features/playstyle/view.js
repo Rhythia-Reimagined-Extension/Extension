@@ -53,6 +53,11 @@ var RhythiaX = RhythiaX || {};
   const setTone = (card, tone) => { if (tone) card.dataset.tone = tone; else delete card.dataset.tone; };
 
   let lastRenderCall = null;
+  // Map types from the history service (online history only), in the colours Exodus uses for them. A newer
+  // render drops an older one's late answer.
+  const MAP_TYPE_NAMES = { jump: 'Jumps', stream: 'Streams', tech: 'Techs', varied: 'Varied' };
+  const MAP_TYPE_COLORS = { Jumps: '#f59e0b', Streams: '#38bdf8', Techs: '#f472b6', Varied: '#a78bfa' };
+  let mapTypesGen = 0;
 
   // Statistics variant B tells what happened from ranked plays and history (scout.buildStory).
   function storyHtml(story, status) {
@@ -371,6 +376,24 @@ var RhythiaX = RhythiaX || {};
       );
     }
     breakdownPanel.append(breakdownHeader, breakdownSections);
+    // With online history, the types of the maps in these plays from the history service, added once they arrive.
+    const typesGen = ++mapTypesGen;
+    RhythiaX.fetchVpsMapKinds?.(scores.map(s => s.songId || s.beatmapHash), null).then(kinds => {
+      if (typesGen !== mapTypesGen || !breakdownSections.isConnected || !kinds?.size) return;
+      const buckets = {};
+      let known = 0;
+      scores.forEach(s => {
+        const k = kinds.get(s.songId || s.beatmapHash);
+        if (!k || !MAP_TYPE_NAMES[k.kind]) return;
+        buckets[MAP_TYPE_NAMES[k.kind]] = (buckets[MAP_TYPE_NAMES[k.kind]] || 0) + 1;
+        known++;
+      });
+      if (!known) return;
+      const keys = Object.values(MAP_TYPE_NAMES);
+      breakdownSections.append(variantB
+        ? stackedBar('Map types', keys, buckets, MAP_TYPE_COLORS, '', known)
+        : createBreakdownSection('Map types', keys, buckets, MAP_TYPE_COLORS, ''));
+    }, () => {});
 
     // Right Panel: Best Maps Box (3 Centered Records)
     let bestMapsBox = null;

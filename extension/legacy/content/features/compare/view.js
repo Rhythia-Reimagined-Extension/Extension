@@ -285,7 +285,8 @@ var RhythiaX = RhythiaX || {};
 
     const p1Coords = template.getDiamondCoords(p1Acc, p1Spd, p1Miss?.cleanliness ?? 95, p1WinsRatio);
     const p2Coords = template.getDiamondCoords(p2Acc, p2Spd, p2Miss?.cleanliness ?? 90, p2WinsRatio);
-    const model = { p1, p2, p1Acc, p2Acc, p1Spd, p2Spd, p1Miss, p2Miss, battle, p1Coords, p2Coords };
+    const p1More = metrics.moreStats(p1Scores), p2More = metrics.moreStats(p2Scores);
+    const model = { p1, p2, p1Acc, p2Acc, p1Spd, p2Spd, p1Miss, p2Miss, battle, p1Coords, p2Coords, p1More, p2More };
 
     const dialog = document.createElement('div');
     dialog.className = 'rhythiax-compare-dialog';

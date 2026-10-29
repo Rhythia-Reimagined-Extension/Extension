@@ -30,6 +30,12 @@ html.rhythiax-exodus[data-rhythiax-exodus-theme="white"] body {
   background: var(--rhythiax-exodus-page, #f4f5f8) !important;
 }
 
+/* An own theme's gradient, picture or video lies behind the page (exodus/core/own-theme.js); the body would
+   cover it, so only the page itself keeps the colour. */
+html.rhythiax-exodus.rhythiax-exodus-backdrop body {
+  background: transparent !important;
+}
+
 /* Shown on Rhythia's own page after "Show Rhythia's page". */
 #rhythiax-exodus-return {
   position: fixed;
@@ -95,7 +101,7 @@ html.rhythiax-exodus.rhythiax-exodus-dock #root [data-rhythiax-dock]:not(:fullsc
 }
 
 /* The preview's speed icon has art only for its own eight speeds; for the others Exodus sets
-   (0.25×, 0.5×, 1.5×, 1.75×, 2×) it would be empty, so the plain speed icon stands in. */
+   (0.25× and 0.5× in the preview, a slowed replay) it would be empty, so the plain speed icon stands in. */
 html.rhythiax-exodus.rhythiax-exodus-dock #root [data-rhythiax-dock] button img:not([src]) {
   content: url("https://www.rhythia.com/modspeed.png");
 }

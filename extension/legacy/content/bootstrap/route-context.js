@@ -7,6 +7,8 @@ RhythiaX.PageRouteContext = {
     if (/^\/score\/[^/]+\/?$/.test(path)) return RhythiaX.exodusShowing?.() ? 'exodus' : 'score-replay';
     if (/^\/player\/[^/]+\/scores(?:\/|$)/.test(path)) return RhythiaX.exodusShowing?.() ? 'exodus' : 'scores';
     if (/^\/player\/[^/]+\/?$/.test(path)) return RhythiaX.exodusShowing?.() ? 'exodus' : 'profile';
+    // The map list gets the map search by type (features/map-search); a map's own page is left to Rhythia.
+    if (/^\/maps\/?$/.test(path)) return RhythiaX.exodusShowing?.() ? 'exodus' : 'map-list';
     if (/^\/maps(?:\/|$)/.test(path)) return 'maps';
     if (/^\/changelog(?:\/|$)/.test(path)) return RhythiaX.exodusShowing?.() ? 'exodus' : 'changelog';
     return 'unknown';

@@ -12,12 +12,12 @@ RhythiaX.ExodusProfileParts.stats = function mountProfileStats(c) {
 'use strict';
 // What this part takes from pages/profile.js. The daily history can be replaced after mount (fresh data),
 // so it is read from c each time: c.FIRST and c.LAST.
-const {U, esc, fmt, COUNTRY, cssUrl, sgn, tone, ago, utc, dm, dayName, MODES, S, rangeDays, win, kpi, addDays,
+const {U, esc, fmt, onlineOffer, COUNTRY, cssUrl, sgn, tone, ago, utc, dm, dayName, MODES, S, rangeDays, win, kpi, addDays,
   mondayOf, nextMonth, prevMonth, isoWeek, monthName, agg} = c;
 
 /* ── Chart (labels in HTML so they never stretch) ── */
 function chart(points, {invert = false, f = v => fmt(v), label = '', anim = ''} = {}) {
-  if (points.length < 2) return `<div class="empty"><b>Not enough history yet</b></div>`;
+  if (points.length < 2) return `<div class="empty"><b>Not enough history yet</b>${S.offline ? onlineOffer(`Online history fills this chart with the daily history kept for the top ${fmt(5000)} players.`) : ''}</div>`;
   const W = 1000, Hh = 230, T = 12, B = 12;
   const vals = points.map(p => p.v), lo = Math.min(...vals), hi = Math.max(...vals), pad = (hi - lo) * .15 || Math.max(1, Math.abs(hi) * .001), a = lo - pad, b = hi + pad;
   const x = i => i * W / (points.length - 1);
@@ -42,6 +42,8 @@ const M = {
   playCount: ['Play count', v => fmt(v), v => fmt(v), 0, ' plays'],
   squaresHit: ['Squares hit', v => fmt(v), v => fmt(v), 0, ''],
 };
+// The span a chart covers, in its title (less than a day of history: today only).
+const spanOf = days => (days < 1 ? 'today only' : `${S.range === 0 ? 'all' : 'last'} ${days} ${days === 1 ? 'day' : 'days'}`);
 // Progress shows change in the period as the headline; lifetime totals live in the hero.
 function progress(anim) {
   const w = win(), first = w[0], last = w.at(-1), days = w.length - 1, mt = M[S.metric];
@@ -50,7 +52,7 @@ function progress(anim) {
       return kpi(k, m[0], `<span class="${tone(dv)}">${sgn(dv, m[3], k === 'avgAccuracy' ? ' pp' : '')}</span>`, `${m[1](last[k])} now`);
     }).join('')}</div>
     <div class="chart-panel panel">
-      <div class="panel-head"><h3>${mt[0]} <span>· ${S.range === 0 ? `all ${days} days` : `last ${days} days`}</span></h3>${rangePills()}</div>
+      <div class="panel-head"><h3>${mt[0]} <span>· ${spanOf(days)}</span></h3>${rangePills()}</div>
       ${chart(w.map(d => ({d: d.date, v: d[S.metric]})), {f: mt[2], label: mt[0] + ' over time', anim: anim === 'chart' ? 'quick' : ''})}
     </div>
     <div id="activity">${activity()}</div>`;
@@ -68,7 +70,9 @@ const selKey = () => S.gran === 'day' ? S.selDate : S.gran === 'week' ? mondayOf
 const ACT = {
   plays: {label: 'Plays', v: a => a.plays, f: v => v ? `${fmt(v)}<span class="u"> play${v === 1 ? '' : 's'}</span>` : '—', tint: 'var(--accent)'},
   rp: {label: 'RP', v: a => a.rp, f: v => v ? `${sgn(v, 1)}<span class="u"> RP</span>` : '—', tint: 'var(--accent)'},
-  rank: {label: 'Rank', v: a => a.rank, f: v => v ? `${sgn(v)}<span class="u"> place${Math.abs(v) === 1 ? '' : 's'}</span>` : '—', tint: 'var(--good)'},
+  // Rank shows the global place at the period's last record, with how far it moved under it.
+  rank: {label: 'Rank', v: a => a.rank, f: v => v ? `${sgn(v)} place${Math.abs(v) === 1 ? '' : 's'}` : 'No change', tint: 'var(--good)',
+    big: a => a.end?.globalRank ? `#${fmt(a.end.globalRank)}` : '—'},
 };
 function tiles() {
   const m = ACT[S.act], cur = S.gran === 'month' ? S.cur.slice(0, 4) : S.cur;
@@ -90,8 +94,9 @@ function tiles() {
     if (!x.a) return `<button type="button" class="ct off" disabled><span class="n">${x.n}</span>${x.s ? `<small>${x.s}</small>` : ''}<small>${x.future ? '' : 'Not tracked'}</small></button>`;
     const v = m.v(x.a), lv = v ? Math.min(4, Math.ceil(Math.abs(v) / max * 4)) : 0;
     const tint = S.act === 'rank' && v < 0 ? 'var(--bad)' : m.tint;
-    return `<button type="button" class="ct" style="--lv:${lv};--tint:${tint}" data-sel="${x.key}" aria-pressed="${sel === x.key}" data-tip="<b>${esc(period(S.gran, x.key).title)}</b><small>${fmt(x.a.plays)} plays · ${sgn(x.a.rp, 1)} RP · rank ${sgn(x.a.rank)}</small>">
-      <span class="n">${x.n}</span>${x.s ? `<small>${x.s}</small>` : ''}<b class="num ${S.act !== 'plays' ? tone(v) : ''}">${m.f(v, true)}</b>${long ? `<small>${x.a.active} of ${x.a.days} day${x.a.days === 1 ? '' : 's'} active</small>` : ''}</button>`;
+    const value = m.big ? `<b class="num">${m.big(x.a)}</b><small class="num mv ${tone(v)}">${m.f(v)}</small>` : `<b class="num ${S.act !== 'plays' ? tone(v) : ''}">${m.f(v, true)}</b>`;
+    return `<button type="button" class="ct" style="--lv:${lv};--tint:${tint}" data-sel="${x.key}" aria-pressed="${sel === x.key}" data-tip="<b>${esc(period(S.gran, x.key).title)}</b><small>${fmt(x.a.plays)} plays · ${sgn(x.a.rp, 1)} RP · ${x.a.end?.globalRank ? `#${fmt(x.a.end.globalRank)} global, ` : ''}${sgn(x.a.rank)} rank</small>">
+      <span class="n">${x.n}</span>${x.s ? `<small>${x.s}</small>` : ''}${value}${long ? `<small>${x.a.active} of ${x.a.days} day${x.a.days === 1 ? '' : 's'} active</small>` : ''}</button>`;
   }).join('');
 }
 function activity(anim) {
@@ -148,7 +153,7 @@ function rankings(anim) {
       ${kpi('b', 'Best in period', '#' + fmt(best), `lowest #${fmt(worst)}`, {selectable: false})}
       ${kpi('s', 'Spin global', MODES.spin.rank ? '#' + fmt(MODES.spin.rank) : '—', `${fmt(MODES.spin.rp, 1)} RP`, {selectable: false})}
     </div>
-    <div class="chart-panel panel"><div class="panel-head"><h3>${S.rankMetric === 'globalRank' ? 'Global rank' : COUNTRY + ' rank'} <span>· ${S.range === 0 ? `all ${days} days` : `last ${days} days`}</span></h3>${rangePills()}</div>
+    <div class="chart-panel panel"><div class="panel-head"><h3>${S.rankMetric === 'globalRank' ? 'Global rank' : COUNTRY + ' rank'} <span>· ${spanOf(days)}</span></h3>${rangePills()}</div>
       ${chart(w.map(d => ({d: d.date, v: d[S.rankMetric]})), {invert: true, f: v => '#' + fmt(v), label: 'Rank over time', anim: anim === 'chart' ? 'quick' : ''})}</div>`;
 }
 

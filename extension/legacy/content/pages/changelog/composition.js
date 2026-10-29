@@ -293,13 +293,21 @@ var RhythiaX = RhythiaX || {};
     const shownLook = looks.length ? look : 'all';
     const shown = RhythiaX.Releases.forLook(RhythiaX.Releases.sections(entry), shownLook);
     const summary = RhythiaX.Releases.summary(shown);
-    const tag = item => (shownLook === 'all' ? (item.look ? RhythiaX.Releases.LOOKS[item.look].label : '') : !item.look && looks.length ? 'Both looks' : '');
-    const itemHtml = item => `<li>${inlineMarkdown(item.text)}${tag(item) ? ` <span class="rhythiax-changelog-tag">${RhythiaX.escapeHtml(tag(item))}</span>` : ''}</li>`;
+    const tagHtml = item => {
+      const tag = RhythiaX.Releases.tagOf(item, shownLook, looks);
+      return tag ? `<span class="rhythiax-changelog-tag">${RhythiaX.escapeHtml(tag)}</span>` : '';
+    };
+    // Each change on its own row: a short title over its text when it has one. Featured items are cards.
+    const textHtml = item => (item.title
+      ? `<strong class="rhythiax-changelog-item-title">${inlineMarkdown(item.title)}</strong><span class="rhythiax-changelog-item-text">${inlineMarkdown(item.body)}</span>`
+      : `<span class="rhythiax-changelog-item-text">${inlineMarkdown(item.text)}</span>`);
+    const itemHtml = item => `<li><div class="rhythiax-changelog-item">${textHtml(item)}</div>${tagHtml(item)}</li>`;
+    const cardHtml = item => `<div class="rhythiax-changelog-card">${textHtml(item)}${tagHtml(item)}</div>`;
     const switchHtml = looks.length ? `<div class="rhythiax-changelog-looks" role="group" aria-label="Changes for">${[['legacy', 'Classic'], ['exodus', 'Exodus'], ['all', 'All']].map(([key, label]) =>
       `<button type="button" data-rhythiax-changelog-look="${key}" aria-pressed="${shownLook === key}">${label}</button>`).join('')}</div>` : '';
     const contentHtml = shown.length ? shown.map(section => `<section class="rhythiax-changelog-section" data-rhythiax-section="${RhythiaX.escapeHtml(section.cat)}">
         <h3 class="rhythiax-changelog-category-heading" data-rhythiax-category="${RhythiaX.escapeHtml(section.cat)}">${CHANGELOG_CATEGORY_ICONS[section.cat] ? `<span class="rhythiax-changelog-category-icon" aria-hidden="true">${CHANGELOG_CATEGORY_ICONS[section.cat]}</span>` : ''}<span class="rhythiax-changelog-category-title">${RhythiaX.escapeHtml(section.label)}</span><span class="rhythiax-changelog-count">${section.items.length}</span></h3>
-        <ul>${section.items.map(itemHtml).join('')}</ul></section>`).join('')
+        ${section.cat === 'featured' ? `<div class="rhythiax-changelog-cards">${section.items.map(cardHtml).join('')}</div>` : `<ul>${section.items.map(itemHtml).join('')}</ul>`}</section>`).join('')
       : `<div class="rhythiax-changelog-empty"><strong>Nothing changed in ${RhythiaX.escapeHtml(RhythiaX.Releases.LOOKS[shownLook]?.label || shownLook)} in this version.</strong><button type="button" class="rhythiax-changelog-retry-btn" data-rhythiax-changelog-look="all">Show all changes</button></div>`;
     return `<div class="rhythiax-changelog-reader">
         ${versionsMarkup(entries, entry)}
@@ -460,6 +468,30 @@ var RhythiaX = RhythiaX || {};
     requestedReimagined = false;
     requestedEntry = '';
     markView('official');
+    holdHeight();
+  }
+
+  // Rhythia draws a short placeholder while a stream's notes load, so the page jumped up and back on every
+  // Public or Web click. The notes keep their height until the placeholder is gone (at most 4 s).
+  let held = null;
+  function holdHeight() {
+    releaseHeight();
+    // Rhythia replaces the list itself, so the height is kept on the page column around it.
+    const box = officialArticles()[0]?.parentElement?.parentElement;
+    if (!box || typeof MutationObserver === 'undefined') return;
+    box.style.minHeight = `${box.offsetHeight}px`;
+    const watch = new MutationObserver(() => {
+      if (officialArticles().length && !box.querySelector('article [class*="animate-pulse"]')) releaseHeight();
+    });
+    watch.observe(box, { childList: true, subtree: true });
+    held = { box, watch, timer: setTimeout(releaseHeight, 4000) };
+  }
+  function releaseHeight() {
+    if (!held) return;
+    held.watch.disconnect();
+    clearTimeout(held.timer);
+    held.box.style.removeProperty('min-height');
+    held = null;
   }
 
   function handlePopState() {

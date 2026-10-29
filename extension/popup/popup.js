@@ -32,7 +32,13 @@
   let store = {};
   let V = {};
   let look = 'classic';
+  // The popup opens on the tab it was closed on (kept in this browser only).
+  const TAB_KEY = 'rhythiaxPopupTab';
   let tab = 'features';
+  try { const t = localStorage.getItem(TAB_KEY); if (t && document.querySelector(`#tabs [data-tab="${CSS.escape(t)}"]`)) tab = t; } catch (_) {}
+  // Opened as a browser tab (popup.html?tab=data, see pickFile): that tab first, the panel centred on the page.
+  const PAGE_TAB = new URLSearchParams(location.search).get('tab');
+  if ([...document.querySelectorAll('#tabs [data-tab]')].some(b => b.dataset.tab === PAGE_TAB)) { tab = PAGE_TAB; document.body.dataset.page = 'tab'; }
   let logs = [];
   // Set while the background cannot use stored history and refuses history writes: 'damaged' (Repair can set the
   // damaged entries aside) or 'locked' (stored by a version this one does not know). Only the history settings
@@ -48,6 +54,14 @@
     device: '<rect x="6" y="2" width="12" height="20" rx="2"/><path d="M11 18h2"/>',
     both: '<rect x="2" y="8" width="8" height="13" rx="1.5"/><path d="M14 17h5.5a3.5 3.5 0 0 0 .4-7A5 5 0 0 0 10.6 9"/>',
     pencil: '<path d="M4 20h4L19 9l-4-4L4 16z"/>',
+    // The Data tab: one for each kind of saved data, the backup and the reset.
+    history: '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
+    pages: '<path d="M7 3h7l5 5v11a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z"/><path d="M14 3v5h5M9 13h6M9 17h4"/>',
+    themes: '<path d="M12 3a9 9 0 0 0 0 18c1.1 0 1.8-.8 1.8-1.8 0-.5-.2-.9-.5-1.2-.3-.3-.5-.7-.5-1.2 0-1 .8-1.8 1.8-1.8H17a4 4 0 0 0 4-4C21 6.6 17 3 12 3z"/><circle cx="7.5" cy="11" r="1"/><circle cx="10" cy="7" r="1"/><circle cx="15" cy="7.5" r="1"/>',
+    visits: '<path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/>',
+    save: '<path d="M12 3v12M7 10l5 5 5-5M5 21h14"/>',
+    load: '<path d="M12 21V9M7 14l5-5 5 5M5 3h14"/>',
+    reset: '<path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/>',
   };
   const svg = k => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${I[k] || ''}</svg>`;
   const esc = v => String(v ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -76,6 +90,9 @@
     store.rhythiaxDataSettings = { ...DEFAULT_DATA_SETTINGS, ...(store.rhythiaxDataSettings || {}) };
     const next = {};
     X.walk(X.SETTINGS, s => { if ('default' in s || X.ROOT[s.key]) next[s.key] = X.read(store, s.key); });
+    // An own Exodus theme carries its own style (see write()).
+    const own = TH.active(store);
+    if (own) next['exodus.style'] = own.style;
     // Until the community choice is made, history stays on this device and nothing is reported.
     if (!hasCommunityConsent()) { next['data.syncMode'] = 'local-only'; next['data.telemetryEnabled'] = false; }
     look = X.read(store, 'look');
@@ -168,8 +185,17 @@
       store.rhythiaxExodus = value === 'exodus';
       await chrome.storage.local.set({ rhythiaxExodus: store.rhythiaxExodus });
     } else if (key === 'exodus.style') {
-      store.rhythiaxExodusStyle = value;
-      await chrome.storage.local.set({ rhythiaxExodusStyle: value });
+      // With an own theme in use the style is the theme's own, the one its editor shows, so it is written there.
+      const own = TH.active(store);
+      if (own) {
+        const got = await chrome.storage.local.get([TH.LIST_KEY]);
+        const list = TH.list(got).map(t => (t.id === own.id ? { ...t, style: value } : t));
+        store[TH.LIST_KEY] = list;
+        await chrome.storage.local.set({ [TH.LIST_KEY]: list });
+      } else {
+        store.rhythiaxExodusStyle = value;
+        await chrome.storage.local.set({ rhythiaxExodusStyle: value });
+      }
     } else if (head === 'modules') {
       const modules = { ...(store.rhythiaxModules || {}) };
       if (a === 'statHistory') { modules.statHistory = value; modules.rankingHistory = value; } else modules[a] = value;
@@ -233,10 +259,12 @@
     cardC: rows([3, 23], y => R(1, y, 94, 18, 'card', 2.5) + R(3.5, y + 8, 2.5, 1.6, 'm') + R(8, y + 4.5, 8, 9, 'gb', 1.2) + G(12, y + 11.4, 6.5)
       + R(19.5, y + 3.5, 26, 2.4, 't') + R(19.5, y + 8, 18, 1.4, 'm') + R(19.5, y + 11.5, 4, 3.6, 'bx', 0.7)
       + box(51, y + 4.5, 8, 8, 'g') + box(60.5, y + 4.5, 9, 8, 't') + box(71, y + 4.5, 7, 8, 'r') + box(79.5, y + 4.5, 8, 8, 'a') + R(89.5, y + 6.5, 3.5, 4.5, 'bx', 0.8)),
-    // D: Rhythia's own row: grade and accuracy first, small map art, misses, hits and RP on the right.
-    cardD: rows([2, 16, 30], (y, i) => R(1, y, 94, 12, 'card', 2) + R(1, y, 1.3, 12, 'g', 0.6) + G(5.4, y + 7.7, 4.4, third(i)) + R(8, y + 4.8, 9, 2.4, 't')
-      + R(19.5, y + 1.5, 0.5, 9, 'm', 0) + R(22, y + 2, 8, 8, 'art', 1) + R(33, y + 3, 24, 2.2, 't') + R(33, y + 7, 16, 1.4, 'm')
-      + R(60, y + 3.5, 4.5, 4.5, 'bx', 0.8) + R(68, y + 5, 4, 2, 'r') + R(75, y + 5, 8, 2, 't') + R(86, y + 3, 5, 2.4, 'b') + R(84, y + 7.2, 7, 1.3, 'm')),
+    // D: Rhythia's own row: a grey edge, grade and accuracy on a plate, small map art, then speed, misses in a red box,
+    // weighted RP into RP, and the actions.
+    cardD: rows([2, 16, 30], (y, i) => R(1, y, 94, 12, 'card', 2) + R(1, y, 1.3, 12, 'm', 0.6) + R(2.6, y + 1.5, 16.5, 9, 'bx', 1) + G(5.6, y + 7.7, 4.4, third(i))
+      + R(8.6, y + 4.8, 8.5, 2.4, 't') + R(22, y + 2, 8, 8, 'art', 1) + R(33, y + 3, 22, 2.2, 't') + R(33, y + 7, 15, 1.4, 'm')
+      + R(58, y + 3, 6, 6, 'bx', 0.8) + R(66, y + 3, 6, 6, 'bx', 0.8) + R(67.5, y + 6.4, 3, 1.4, 'r') + R(74, y + 3, 7, 6, 'bx', 0.8) + R(75.5, y + 6.4, 4, 1.4, 't')
+      + R(81.6, y + 3, 7, 6, 'bx', 0.8) + R(83, y + 4.2, 4, 1.2, 'b') + R(83, y + 6.6, 4, 1.4, 't') + R(90.5, y + 5.2, 2.6, 1.6, 'm')),
     // E: map art behind the row, large grade, accuracy · misses · hits on one line, RP on the right.
     cardE: rows([2, 16, 30], (y, i) => R(1, y, 94, 12, 'card', 2) + R(38, y, 57, 12, 'fade', 2) + R(1, y, 1.3, 12, 'g', 0.6) + G(6.5, y + 8.8, 7, third(i))
       + R(12, y + 2.3, 27, 2.3, 't') + R(12, y + 5.8, 17, 1.3, 'm') + R(12, y + 8.6, 6, 1.6, 'g') + R(20, y + 8.6, 7, 1.6, 'r') + R(29, y + 8.6, 11, 1.6, 'm')
@@ -358,35 +386,32 @@
       + (shows.length ? `<div class="opt"><span class="opt-l">Show</span><div class="cks ${shows.length > 2 ? 'two' : ''}">${shows.map(k => checkbox(k.key, '', k.title, V[k.key] === true)).join('')}</div></div>` : '');
   }
 
+  // What is saved in this browser, by kind: a bar split by size, then a row for each kind with its icon, what it
+  // holds, its size and a way to clear it. Filled by loadStorageStats().
   function storageCard(i) {
     return `<div class="item" style="--i:${i}" data-key="storage"><div class="store">
-        <div class="kv"><span class="k">Profile history</span><span class="v" id="storeSize">…</span></div>
-        <div class="bar"><i id="storeBar"></i></div>
-        <p class="sub-l" id="storeCount">Counting profiles…</p>
-        <div class="kv pages" id="pagesRow" hidden><span class="k">Saved Exodus pages<small>Opens pages faster. Saved again on the next visit.</small></span><span class="v" id="pagesSize"></span><button type="button" class="lnk" data-act="clear-pages">Clear</button></div>
-        <div class="acts"><button class="btn" type="button" data-act="clear"${dataLock ? LOCKED : ''}>Clear history</button><button class="btn danger" type="button" data-act="reset"${dataLock ? LOCKED : ''}>Reset settings</button></div>
+        <div class="kv"><span class="k">Saved in this browser</span><span class="v" id="storeTotal">…</span></div>
+        <div class="split" id="storeSplit" aria-hidden="true"></div>
+        <div class="srows" id="storeRows"><p class="sub-l">Counting…</p></div>
       </div></div>`;
   }
 
-  // rhythiax_connection_logs is kept newest first (legacy/core/vps-client.js adds each visit to the front, 30 at most).
-  function visitsCard(i) {
-    const list = logs.slice(0, 5);
-    const rows = list.map(e => {
-      const name = e.username || (typeof e.visited === 'string' ? e.visited.replace(/\s*\(#\d+\)/, '') : '') || `Player #${e.playerId || '?'}`;
-      let ms = Number(e.latencyMs);
-      if (!Number.isFinite(ms) && typeof e.timeToReach === 'string') ms = parseFloat(e.timeToReach) * 1000;
-      const status = String(e.statusText || e.status || '');
-      const failed = !Number.isFinite(ms) || e.status === 'error' || /Offline|Timeout|Failed/.test(status);
-      const cls = failed ? 'bad' : (/Not in DB/.test(status) || e.status === 'warning' || ms > 600) ? 'med' : '';
-      const time = e.timestamp ? new Date(e.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '';
-      return `<div class="v-row"><b>${esc(name)}</b><time>${esc(time)}</time><span class="lat ${cls}" title="${esc(status)}">${failed ? 'Failed' : `${(ms / 1000).toFixed(2)} s`}</span></div>`;
-    }).join('');
-    return `<div class="item" style="--i:${i}" data-key="visits"><div class="visits">${rows || '<p class="sub-l">No profiles opened yet.</p>'}</div></div>`;
+  function backupCard(i) {
+    return `<div class="item" style="--i:${i}" data-key="backup">
+      <div class="mod"><span class="s-ico">${svg('save')}</span><span class="tx"><b>Settings and themes</b><small>Both looks in one file, to move them to another browser or computer. History is not in it.</small></span></div>
+      <div class="block acts">${['export', 'import'].map(a => `<button class="btn" type="button" data-act="${a}">${svg(a === 'export' ? 'save' : 'load')}${a === 'export' ? 'Save to a file' : 'Load a file'}</button>`).join('')}</div>
+      <input type="file" id="importFile" accept=".json,application/json" hidden></div>`;
+  }
+
+  function resetCard(i) {
+    return `<div class="item" style="--i:${i}" data-key="reset"><div class="mod"><span class="s-ico">${svg('reset')}</span><span class="tx"><b>Reset settings</b><small>Every setting back to its default. Own themes, history and the online history choice stay.</small></span>
+      <button class="btn mini danger" type="button" data-act="reset"${dataLock ? LOCKED : ''}>Reset</button></div></div>`;
   }
 
   function item(s, i) {
     if (s.type === 'storage') return storageCard(i);
-    if (s.type === 'visits') return visitsCard(i);
+    if (s.type === 'backup') return backupCard(i);
+    if (s.type === 'reset') return resetCard(i);
     const kids = (s.children || []).filter(fits);
     const block = BLOCK.includes(s.type);
     let desc = s.desc || '';
@@ -406,14 +431,22 @@
     const groups = [...new Set(items.map(s => s.group))];
     let i = 0;
     const scroll = body.scrollTop;
-    body.innerHTML = groups.map(g => `<section class="group"><h3>${esc(g)}${g === 'Recent profile visits' ? '<small>how fast history loaded</small>' : ''}</h3><div class="items">${items.filter(s => s.group === g).map(s => item(s, animate ? i++ : 0)).join('')}</div></section>`).join('');
+    body.innerHTML = groups.map(g => `<section class="group"><h3>${esc(g)}</h3><div class="items">${items.filter(s => s.group === g).map(s => item(s, animate ? i++ : 0)).join('')}</div></section>`).join('');
     if (!animate) { body.querySelectorAll('.item').forEach(r => { r.style.animation = 'none'; }); body.scrollTop = scroll; }
     if (tab === 'data') loadStorageStats();
     paintChrome();
   }
 
+  // An own Exodus theme in use colours the popup as well: its base (dark or white) with the theme's own colours over
+  // it (ExodusThemes resolve().ui()). Painted again whenever the theme in use or its colours change (storage.onChanged
+  // redraws). "Keep everything readable" is on for it here, so a hand-set colour never makes the popup hard to read.
+  let ownPainted = [];
   function paintChrome() {
-    root.dataset.theme = V.theme || 'reimagined';
+    const own = look === 'exodus' ? TH.active(store) : null, R = own && TH.resolve({ ...own, fit: true }), tokens = R ? R.ui() : {};
+    root.dataset.theme = R ? (R.base === 'white' ? 'white' : 'dark') : V.theme || 'reimagined';
+    for (const k of ownPainted) if (!(k in tokens)) root.style.removeProperty(k);
+    for (const [k, v] of Object.entries(tokens)) root.style.setProperty(k, v);
+    ownPainted = Object.keys(tokens);
     root.dataset.size = V.popupSize || 'default';
     root.dataset.look = look;
     document.querySelectorAll('#look [data-look]').forEach(b => b.setAttribute('aria-checked', String(b.dataset.look === look)));
@@ -461,6 +494,7 @@
   function setTab(next) {
     if (next === tab) return;
     tab = next;
+    try { localStorage.setItem(TAB_KEY, next); } catch (_) {}
     paintChrome();
     swap(() => {});
   }
@@ -481,12 +515,14 @@
       // A built-in theme replaces the own theme in use (write()), whose tile sits in the next group.
       if (s.type === 'themes') body.querySelectorAll('[data-own-theme]').forEach(b => b.setAttribute('aria-pressed', 'false'));
       if (key.startsWith('data.')) group.forEach(b => { b.disabled = true; });
+      const style = V['exodus.style'];
       const ok = await set(key, t.dataset.val);
       group.forEach(b => { b.disabled = false; });
       if (!ok) return;
       const note = body.querySelector(`[data-note="${key}"]`);
       if (note) note.innerHTML = syncNote(s);
-      if (key === 'data.syncMode') render(false);
+      // A built-in theme in place of an own one brings back the built-in Exodus style (write(), readAll()).
+      if (key === 'data.syncMode' || V['exodus.style'] !== style) render(false);
     } else if (s.type === 'checks') {
       const on = V[key].includes(t.dataset.val);
       if (on && V[key].length === 1) { toast('Keep at least one page, or switch to Classic.'); return; }
@@ -506,7 +542,10 @@
     if (t.dataset.act === 'repair') return repairData(t);
     if (t.dataset.act === 'clear') return clearCache();
     if (t.dataset.act === 'clear-pages') return clearPages();
+    if (t.dataset.act === 'clear-visits') return clearVisits();
     if (t.dataset.act === 'reset') return resetDefaults();
+    if (t.dataset.act === 'export') return exportBackup();
+    if (t.dataset.act === 'import') return pickFile();
     if (e.target.closest('[data-own-edit]')) return openThemeEditor(e.target.closest('[data-own-edit]').dataset.ownEdit);
     if (t.dataset.ownTheme) return useOwnTheme(t.dataset.ownTheme);
     if ('ownNew' in t.dataset) return openThemeEditor('');
@@ -549,24 +588,154 @@
     return sizeOf(Object.entries(await local.get(keys)));
   }
 
+  // The kinds of saved data, in the order of the rows. Player history is Classic's records and both looks' copies of
+  // community history; saved pages are Exodus' copies of pages; themes are both looks' own themes, their pictures
+  // and the recent uploads (shared/uploads.js); visits are Classic's list of recent profile visits.
+  const THEME_KEY = k => k === TH.LIST_KEY || k === CT.LIST_KEY || k.startsWith('rhythiaxExodusThemeImg:') || k.startsWith('rhythiaxClassicThemeImg:')
+    || k === 'rhythiaxUploads' || k.startsWith('rhythiaxUpload:');
+  const HISTORY_KEY = k => k.startsWith(DATA_ENTRY_PREFIX) || k.startsWith(QUARANTINE_PREFIX) || k.startsWith('rhythiaxVpsHistoryCache:')
+    || k.startsWith('rhythiax_ps_hist_') || k.startsWith('rhythiaxExodusHist:');
+  const KIND_OF = k => (HISTORY_KEY(k) ? 'history' : isPageCache(k) ? 'pages' : THEME_KEY(k) ? 'themes' : k === 'rhythiax_connection_logs' ? 'visits' : 'other');
+  const KIND_COLOUR = { history: 'var(--accent)', pages: 'var(--rp)', themes: '#f472b6', visits: 'var(--warn)', other: 'var(--muted)' };
+  const plural = (n, one, many = one + 's') => `${n} ${n === 1 ? one : many}`;
+
   async function loadStorageStats() {
     try {
       const { keys, all } = await storedKeys();
-      const entries = keys.filter(k => k.startsWith(DATA_ENTRY_PREFIX));
-      const pages = keys.filter(isPageCache);
-      const [bytes, pageBytes] = await Promise.all([bytesOf(entries, all), bytesOf(pages, all)]);
-      const max = (store.rhythiaxDataSettings?.maxStorageMb || 25) * 1024 * 1024;
+      const by = { history: [], pages: [], themes: [], visits: [], other: [] };
+      for (const k of keys) by[KIND_OF(k)].push(k);
+      const size = {};
+      await Promise.all(Object.entries(by).map(async ([kind, list]) => { size[kind] = await bytesOf(list, all); }));
+      const total = Object.values(size).reduce((a, b) => a + b, 0) || 1;
       const el = id => document.getElementById(id);
-      if (!el('storeSize')) return;
-      el('storeSize').textContent = `${mb(bytes)} of ${Math.round(max / 1048576)} MB`;
-      el('storeBar').style.width = `${Math.min(100, Math.max(1, Math.round(bytes / max * 100)))}%`;
-      el('storeCount').textContent = `${entries.length} ${entries.length === 1 ? 'profile' : 'profiles'}, kept up to ${store.rhythiaxDataSettings?.retentionDays || 90} days`;
-      // Saved Exodus pages are not history: Exodus saves them again on the next visit.
-      el('pagesRow').hidden = look !== 'exodus' && !pages.length;
-      el('pagesSize').textContent = pages.length ? mb(pageBytes) : 'None';
-      el('pagesRow').querySelector('[data-act]').hidden = !pages.length;
+      if (!el('storeRows')) return;
+      const got = await chrome.storage.local.get([TH.LIST_KEY, CT.LIST_KEY, 'rhythiaxUploads']);
+      const themes = TH.list(got).length + CT.list(got).length, uploads = Array.isArray(got.rhythiaxUploads) ? got.rhythiaxUploads.length : 0;
+      const profiles = by.history.filter(k => k.startsWith(DATA_ENTRY_PREFIX)).length, players = by.history.filter(k => k.startsWith('rhythiaxExodusHist:')).length;
+      const pages = by.pages.length;
+      const rows = [
+        { kind: 'history', icon: 'history', title: 'Player history', act: 'clear',
+          note: (look === 'exodus' ? [`${plural(players, 'player')} from the community, read again after 3 days`, profiles && `${plural(profiles, 'profile')} from Classic`]
+          : [`${plural(profiles, 'profile')}, each kept up to 90 days`, players && `${plural(players, 'player')} saved by Exodus`]).filter(Boolean).join(', ') },
+        { kind: 'pages', icon: 'pages', title: 'Saved pages', act: 'clear-pages', show: look === 'exodus' || pages, note: `${plural(pages, 'page')}, so they open at once` },
+        { kind: 'themes', icon: 'themes', title: 'Themes and pictures', go: 'look', note: `${plural(themes, 'own theme')}, ${plural(uploads, 'upload')}` },
+        { kind: 'visits', icon: 'visits', title: 'Recent profile visits', act: 'clear-visits', show: look === 'classic', note: `The last ${plural(logs.length, 'profile')} you opened` },
+      ].filter(r => r.show !== false && r.show !== 0);
+      el('storeTotal').textContent = mb(total);
+      el('storeSplit').innerHTML = [...rows.map(r => r.kind), 'other'].map(k => `<i style="flex:${size[k] || 0};background:${KIND_COLOUR[k]}"></i>`).join('');
+      el('storeRows').innerHTML = rows.map(r => {
+        const empty = !size[r.kind] || size[r.kind] < 3;
+        const button = r.go ? `<button type="button" class="lnk" data-go="${r.go}">Open</button>`
+          : `<button type="button" class="lnk" data-act="${r.act}"${empty ? ' hidden' : ''}${dataLock && r.act === 'clear' ? LOCKED : ''}>Clear</button>`;
+        return `<div class="srow"><span class="s-ico" style="--c:${KIND_COLOUR[r.kind]}">${svg(r.icon)}</span><span class="k">${esc(r.title)}<small>${esc(r.note)}</small></span><span class="v">${empty ? 'None' : mb(size[r.kind])}</span>${button}</div>`;
+      }).join('');
     } catch (err) {
       console.warn('RhythiaX: Failed to calculate storage stats:', err);
+    }
+  }
+
+  async function clearVisits() {
+    try {
+      await chrome.storage.local.remove('rhythiax_connection_logs');
+      logs = [];
+      await loadStorageStats();
+      toast('Recent profile visits cleared.');
+    } catch (err) {
+      toast(`Visits not cleared: ${err.message}`);
+    }
+  }
+
+  // ─── Backup ───
+  // Settings of both looks and their own themes (with each theme's picture or video) in one file. Loading one goes
+  // through the same checks as the popup's own controls and the theme editors (shared/*-themes.js normalize), so a
+  // file can only hold values the extension could have saved itself; history and the online history choice are left out.
+  const BACKUP = 'Reimagined for Rhythia';
+  const BACKUP_KEYS = ['rhythiaxTheme', 'rhythiaxPopupSize', 'rhythiaxModules', 'rhythiaxModuleOptions', 'rhythiaxExodus', 'rhythiaxExodusStyle',
+    X.EXODUS_KEY, TH.LIST_KEY, TH.ACTIVE_KEY, CT.LIST_KEY, CT.ACTIVE_KEY];
+  const imageKeys = got => [...TH.list(got).filter(t => t.image).map(t => TH.imageKey(t.id)), ...CT.list(got).map(t => CT.imageKey(t.id))];
+
+  async function exportBackup() {
+    try {
+      const settings = await chrome.storage.local.get(BACKUP_KEYS);
+      const pics = imageKeys(settings);
+      const images = pics.length ? await chrome.storage.local.get(pics) : {};
+      const file = { app: BACKUP, kind: 'settings', version: manifest.version || '', saved: new Date().toISOString(), settings, images };
+      const url = URL.createObjectURL(new Blob([JSON.stringify(file)], { type: 'application/json' }));
+      const a = document.createElement('a');
+      a.href = url; a.download = `reimagined-settings-${new Date().toISOString().slice(0, 10)}.json`;
+      document.body.append(a); a.click(); a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 10000);
+      toast('Settings and themes saved to a file.');
+    } catch (err) {
+      toast(`Not saved: ${err.message}`);
+    }
+  }
+
+  // Firefox on a computer closes the popup as soon as a file picker opens (Bugzilla 1292701), so the chosen file
+  // never arrives: there the popup opens itself in a tab on this tab, where the picker works. Android shows the
+  // popup as a page already. getBrowserInfo exists only in Firefox.
+  async function pickFile() {
+    const input = document.getElementById('importFile');
+    const firefox = typeof browser !== 'undefined' && typeof browser.runtime?.getBrowserInfo === 'function';
+    if (firefox && !PAGE_TAB && chrome.tabs?.create) {
+      const os = await Promise.resolve(chrome.runtime.getPlatformInfo?.()).then(p => p?.os, () => '');
+      if (os !== 'android') {
+        await chrome.tabs.create({ url: chrome.runtime.getURL('popup/popup.html?tab=data') });
+        window.close();
+        return;
+      }
+    }
+    input?.click();
+  }
+
+  // A value a setting allows, else undefined.
+  function allowed(s, v) {
+    if (s.type === 'switch') return typeof v === 'boolean' ? v : undefined;
+    if (s.type === 'checks') return Array.isArray(v) && v.length && v.every(x => s.options.some(o => o[0] === x)) ? v : undefined;
+    if (Array.isArray(s.options)) return s.options.some(o => o[0] === v) ? v : undefined;
+    return undefined;
+  }
+
+  async function importBackup(file) {
+    let data = null;
+    try { data = JSON.parse(await file.text()); } catch (_) {}
+    if (data?.app !== BACKUP || data.kind !== 'settings' || !data.settings || typeof data.settings !== 'object') { toast('This file is not a Reimagined settings file.'); return; }
+    if (!confirm('Load the settings and themes from this file?\n\nYour settings are replaced, and the own themes in it are added to yours. History and your online history choice stay as they are.')) return;
+    const src = data.settings, images = data.images && typeof data.images === 'object' ? data.images : {};
+    try {
+      // Own themes in use are put aside in both looks first, so the file's style is not written into one of them;
+      // the file may choose them again below.
+      await chrome.storage.local.set({ [TH.ACTIVE_KEY]: '', [CT.ACTIVE_KEY]: '' });
+      store[TH.ACTIVE_KEY] = ''; store[CT.ACTIVE_KEY] = '';
+      // The built-in theme first: choosing it clears an own theme in use, which the file may set again below.
+      const order = [];
+      X.walk(X.SETTINGS, s => { if ('default' in s && !s.key.startsWith('data.')) order.push(s); });
+      order.sort((a, b) => (b.key === 'theme') - (a.key === 'theme'));
+      for (const s of order) {
+        const v = allowed(s, X.read(src, s.key));
+        if (v !== undefined) await write(s.key, v);
+      }
+      if (typeof src.rhythiaxExodus === 'boolean') await write('look', src.rhythiaxExodus ? 'exodus' : 'classic');
+      // Own themes from the file join the ones here (the ones here win for the same id), up to each look's limit.
+      const cur = await chrome.storage.local.get([TH.LIST_KEY, CT.LIST_KEY]);
+      const set = {};
+      for (const M of [TH, CT]) {
+        const mine = M.list(cur), ids = new Set(mine.map(t => t.id));
+        const added = M.list(src).filter(t => !ids.has(t.id)).slice(0, Math.max(0, M.MAX_THEMES - mine.length));
+        set[M.LIST_KEY] = [...mine, ...added];
+        for (const t of added) { const k = M.imageKey(t.id); if (RhythiaX.Colour.imageOk(images[k])) set[k] = images[k]; }
+        const on = src[M.ACTIVE_KEY];
+        if (typeof on === 'string' && set[M.LIST_KEY].some(t => t.id === on)) set[M.ACTIVE_KEY] = on;
+      }
+      await chrome.storage.local.set(set);
+      Object.assign(store, await chrome.storage.local.get(STORE_KEYS));
+      readAll();
+      notifyActiveTabs({ type: 'rhythiax-theme-changed', theme: V.theme });
+      render(false);
+      toast('Settings and themes loaded.');
+    } catch (err) {
+      toast(`Not loaded: ${err.message}`);
+      await loadState();
     }
   }
 
@@ -640,9 +809,10 @@
   chrome.storage.onChanged.addListener((changes, area) => {
     if (area !== 'local' || root.inert) return;
     if (!STORE_KEYS.some(k => k in changes)) return;
+    // Taken before the change is applied, so a change to the themes themselves redraws too.
+    const before = JSON.stringify([V, look, store[TH.LIST_KEY], store[TH.ACTIVE_KEY], store[CT.LIST_KEY], store[CT.ACTIVE_KEY]]);
     for (const [k, c] of Object.entries(changes)) if (STORE_KEYS.includes(k)) store[k] = c.newValue;
     if ('rhythiax_connection_logs' in changes) logs = store.rhythiax_connection_logs || [];
-    const before = JSON.stringify([V, look, store[TH.LIST_KEY], store[TH.ACTIVE_KEY], store[CT.LIST_KEY], store[CT.ACTIVE_KEY]]);
     readAll();
     if (JSON.stringify([V, look, store[TH.LIST_KEY], store[TH.ACTIVE_KEY], store[CT.LIST_KEY], store[CT.ACTIVE_KEY]]) !== before) render(false);
   });
@@ -655,8 +825,19 @@
     const lines = block => block.split(/\r?\n/).map(l => l.trim());
     const entry = text.split(/^---\s*$/m).map(lines).find(b => b.includes(`version: ${manifest.version}`));
     const title = entry?.find(l => l.startsWith('title: '))?.slice(7).trim();
-    if (title) verEl.textContent = `${manifest.version} · ${title}`;
+    if (!title) return;
+    // The release title gives way to the Experimental badge under Exodus (popup.css); the tooltip keeps it.
+    verEl.innerHTML = '';
+    const t = document.createElement('span');
+    t.className = 'ver-title'; t.textContent = ` · ${title}`;
+    verEl.append(manifest.version || '', t);
+    verEl.title = `${manifest.version} · ${title}`;
   }).catch(() => {});
+  document.addEventListener('change', e => {
+    if (e.target.id !== 'importFile' || !e.target.files?.[0]) return;
+    importBackup(e.target.files[0]);
+    e.target.value = '';
+  });
   addEventListener('resize', ink);
   document.fonts?.ready?.then(ink);
 

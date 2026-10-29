@@ -104,7 +104,8 @@ body[data-rhythiax-theme] #root button:has(svg.lucide-flag):hover {
   color: #ffffff !important;
 }
 
-/* Profile action buttons (Friends counter, Add friend, Unfriend) & secondary action controls */
+/* Profile action buttons (Friends counter, Add friend, Unfriend) & secondary action controls: at rest the
+   page's inner surface, as every other control; the accent tint comes on hover. */
 body[data-rhythiax-theme] #root .rhythiax-friends-quick-trigger,
 body[data-rhythiax-theme] #root div:has(> svg.lucide-users-round),
 body[data-rhythiax-theme] #root button:has(svg.lucide-user-round-plus),
@@ -112,7 +113,7 @@ body[data-rhythiax-theme] #root button:has(svg.lucide-user-round-minus),
 body[data-rhythiax-theme] #root button.bg-control,
 body[data-rhythiax-theme] #root a.bg-control,
 body[data-rhythiax-theme] #root [role="button"].bg-control {
-  background-color: color-mix(in srgb, var(--rhythiax-accent) 18%, var(--rhythiax-inner-surface)) !important;
+  background-color: var(--rhythiax-inner-surface) !important;
   border: 1px solid var(--rhythiax-border-strong) !important;
   color: var(--rhythiax-text-strong) !important;
   height: 36px !important;
@@ -136,8 +137,8 @@ body[data-rhythiax-theme] #root button:has(svg.lucide-user-round-minus):hover,
 body[data-rhythiax-theme] #root button.bg-control:hover,
 body[data-rhythiax-theme] #root a.bg-control:hover,
 body[data-rhythiax-theme] #root [role="button"].bg-control:hover {
-  background-color: color-mix(in srgb, var(--rhythiax-accent) 28%, var(--rhythiax-inner-surface)) !important;
-  border-color: var(--rhythiax-accent) !important;
+  background-color: color-mix(in srgb, var(--rhythiax-accent) 16%, var(--rhythiax-inner-surface)) !important;
+  border-color: color-mix(in srgb, var(--rhythiax-accent) 60%, transparent) !important;
   color: var(--rhythiax-text-strong) !important;
 }
 body[data-rhythiax-theme] #root .rhythiax-friends-quick-trigger svg,

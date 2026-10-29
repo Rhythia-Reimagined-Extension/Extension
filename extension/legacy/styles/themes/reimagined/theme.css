@@ -142,6 +142,8 @@ body[data-rhythiax-theme="rhythia-reimagined"] #root .fixed.top-0 a[aria-label="
   opacity: .95 !important;
 }
 
+/* The profile's action buttons (Compare, friends, Edit, Score report and the like) rest on the inner surface
+   like the other controls, so they do not stand out brighter than the page; the accent comes on hover. */
 body[data-rhythiax-theme="rhythia-reimagined"] .rhythiax-compare-profile-button,
 body[data-rhythiax-theme="rhythia-reimagined"] #root .rhythiax-friends-quick-trigger,
 body[data-rhythiax-theme="rhythia-reimagined"] #root div:has(> svg.lucide-users-round),
@@ -150,9 +152,9 @@ body[data-rhythiax-theme="rhythia-reimagined"] #root button:has(svg.lucide-user-
 body[data-rhythiax-theme="rhythia-reimagined"] #root button.bg-control,
 body[data-rhythiax-theme="rhythia-reimagined"] #root a.bg-control,
 body[data-rhythiax-theme="rhythia-reimagined"] #root [role="button"].bg-control {
-  background: color-mix(in srgb, var(--rhythiax-accent) 24%, var(--rhythiax-inner-surface)) !important;
-  border: 1px solid color-mix(in srgb, var(--rhythiax-accent) 42%, var(--rhythiax-border-strong)) !important;
-  color: #ffffff !important;
+  background: var(--rhythiax-inner-surface) !important;
+  border: 1px solid color-mix(in srgb, var(--rhythiax-accent) 22%, var(--rhythiax-border-strong)) !important;
+  color: var(--rhythiax-text-strong) !important;
   backdrop-filter: blur(12px) !important;
   box-shadow: 0 2px 8px rgba(10, 4, 18, 0.35) !important;
 }
@@ -166,10 +168,10 @@ body[data-rhythiax-theme="rhythia-reimagined"] #root button:has(svg.lucide-user-
 body[data-rhythiax-theme="rhythia-reimagined"] #root button.bg-control:hover,
 body[data-rhythiax-theme="rhythia-reimagined"] #root a.bg-control:hover,
 body[data-rhythiax-theme="rhythia-reimagined"] #root [role="button"].bg-control:hover {
-  background: color-mix(in srgb, var(--rhythiax-accent) 36%, var(--rhythiax-inner-surface)) !important;
-  border-color: var(--rhythiax-accent) !important;
+  background: color-mix(in srgb, var(--rhythiax-accent) 18%, var(--rhythiax-inner-surface)) !important;
+  border-color: color-mix(in srgb, var(--rhythiax-accent) 65%, transparent) !important;
   color: #ffffff !important;
-  box-shadow: 0 0 12px color-mix(in srgb, var(--rhythiax-accent) 35%, transparent) !important;
+  box-shadow: 0 2px 8px rgba(10, 4, 18, 0.35) !important;
 }
 
 body[data-rhythiax-theme="rhythia-reimagined"] #root .rhythiax-friends-quick-trigger svg,

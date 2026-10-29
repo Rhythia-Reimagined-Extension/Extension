@@ -166,7 +166,10 @@ RhythiaX.ExodusThemes = (function () {
     // A picture behind the page (bgZones): it is darkened (or, on a light theme, lightened) toward the page
     // just enough for text to read on every area of it, 7:1, and text is kept readable on it too.
     // Text reads 7:1 on each area's average and 4.5:1 on its dark and light details (strokes, highlights).
-    const zones = (man.bgZones || []).map(z => ({ c: z.slice(0, 7), a: parseInt(z.slice(7, 9), 16) / 255, dark: z.slice(9, 16) || z.slice(0, 7), light: z.slice(16, 23) || z.slice(0, 7) }));
+    // A blurred picture shows its details smoothed into its areas' colours, fully from a blur of 12px.
+    const smooth = Math.min(1, ('bgBlur' in man ? man.bgBlur : EFFECT.bgBlur) / 12);
+    const zones = (man.bgZones || []).map(z => ({ c: z.slice(0, 7), a: parseInt(z.slice(7, 9), 16) / 255, dark: z.slice(9, 16) || z.slice(0, 7), light: z.slice(16, 23) || z.slice(0, 7) }))
+      .map(z => ({ ...z, dark: mix(z.dark, z.c, smooth), light: mix(z.light, z.c, smooth) }));
     const shown = (dim, key = 'c') => zones.map(z => mix(mid, z[key], z.a * (1 - dim / 100)));
     const details = dim => [...shown(dim, 'dark'), ...shown(dim, 'light')];
     const base = reach(mix(mid, ink, .9), stops, L.text, ink);
@@ -202,6 +205,27 @@ RhythiaX.ExodusThemes = (function () {
       for (glassAuto = 35; glassAuto < 90 && minRatio(d.text, under(d.glass, glassAuto / 100)) < 7; glassAuto += 5);
       for (clearAuto = 20; clearAuto > 0 && minRatio(d.text, under(d.panel, 1 - clearAuto / 100)) < 7; clearAuto -= 5);
     }
+    // Text with no panel behind it (section headings, the score's numbers, the profile's tabs) lies on the picture
+    // itself. Where the picture is too light or too busy for it, bare text gets a halo of the glass colour
+    // (exodus/core/own-theme.js; bare: how strong, 0 to .9, worked out as if the picture behind the text were
+    // mixed that far toward the glass colour): needed once text reads under 4.5:1 on an area (3:1
+    // on its details) or other text under 4.5:1, then as much as text needs for 7:1 (4.5:1 on details) and other
+    // text for 4.5:1. 0 on a picture text already reads on. Links (link) are then lifted just far enough to read
+    // 4.5:1 on what is behind them; where that would take them more than 40% of the way to white (black on a
+    // light theme), and they would no longer look like the accent, the halo is made stronger instead.
+    d.link = null; d.bare = 0;
+    if (zones.length) {
+      const accent2 = mix(d.accent, light ? '#000000' : '#ffffff', .28), back = (cs, s) => cs.map(c => mix(c, d.glass, s));
+      const reads = (s, main, det, other) => minRatio(d.text, back(d.onPicture, s)) >= main && minRatio(d.text, back(d.pictureDetails, s)) >= det
+        && [d.text2, d.muted].every(c => minRatio(c, back(d.onPicture, s)) >= other);
+      const linkAt = s => reach(accent2, back(d.onPicture, s), 4.5, ink);
+      let s = 0;
+      if (!reads(0, 4.5, 3, 4.5)) for (s = .1; s < .9 && !reads(s, 7, 4.5, 4.5); s += .05);
+      while (s < .9 && minRatio(mix(accent2, ink, .4), back(d.onPicture, s)) < 4.5) s = s ? s + .05 : .1;
+      d.bare = +Math.min(.9, s).toFixed(2);
+      const link = linkAt(d.bare);
+      if (link !== accent2) d.link = link;
+    }
     d.glassA = pick('glassA', glassAuto);
     d.glassBlur = pick('glassBlur', zones.length ? 24 : EFFECT.glassBlur);
     d.panelClear = pick('panelClear', clearAuto);
@@ -217,6 +241,21 @@ RhythiaX.ExodusThemes = (function () {
     const fill = mix(page, d.btnBg, d.btnA / 100);
     d.btnText = pick('btnText', reach(d.text, [fill], 4.5, inkFor([fill])), [fill], 4.5);
     return d;
+  }
+  // The picture settings with which text reads on the theme's picture, for the editor's button (filled in once, then
+  // the player's own): a blur from how busy the picture is (how far its dark and light details lie apart in any area),
+  // then the least darkening (or lightening) with which text reads 7:1 on every area and nothing on the picture needs
+  // a halo (derive()'s bare). A dark, calm picture gets little or none. null without a picture read in areas.
+  function readablePicture(T) {
+    const zs = T.manual?.bgZones || [];
+    if (!zs.length) return null;
+    const busy = Math.max(...zs.map(z => Math.abs(lum(z.slice(16, 23) || z.slice(0, 7)) - lum(z.slice(9, 16) || z.slice(0, 7)))));
+    const bgBlur = busy < .2 ? 0 : Math.min(16, Math.round(4 + busy * 12));
+    for (let bgDim = 0; bgDim < 90; bgDim += 5) {
+      const D = derive({ ...T, manual: { ...T.manual, bgBlur, bgDim } });
+      if (!D.bare && minRatio(D.text, D.onPicture) >= 7) return { bgBlur, bgDim };
+    }
+    return { bgBlur, bgDim: 90 };
   }
   // The values derive() works out; every other key is a plain setting with a default (EFFECT).
   const DERIVED = ['text', 'text2', 'muted', 'panel', 'field', 'glass', 'head', 'lineCol', 'lineS', 'btnBg', 'btnA', 'btnLine', 'btnLineA', 'btnR', 'btnText', 'bgDim', 'glassA', 'glassBlur', 'panelClear', 'panelBlur'];
@@ -278,16 +317,25 @@ RhythiaX.ExodusThemes = (function () {
     };
     const layer = b => placeLayer(frame(), b);
 
+    // The colours a page of controls takes from the theme (the popup, the theme editor): solid, without the picture,
+    // as CSS custom properties over the dark or the white look (base).
+    const ui = () => {
+      const white = base === 'white', panel = val('panel'), text = val('text'), line = RhythiaX.Colour.rgbs(val('lineCol')), accent = val('accent');
+      return { '--page': val('page'), '--bg': val('page'), '--panel': panel, '--panel-2': mix(panel, text, .04), '--panel-3': mix(panel, text, .08),
+        '--field': val('field'), '--dialog': panel, '--line': `rgba(${line},${white ? .1 : .08})`, '--line-2': `rgba(${line},${white ? .18 : .15})`,
+        '--text': text, '--text-2': val('text2'), '--muted': val('muted'), '--accent': accent, '--accent-2': mix(accent, white ? '#000000' : '#ffffff', .28),
+        '--accent-soft': `rgba(${RhythiaX.Colour.rgbs(accent)},${white ? .09 : .14})`, '--on-accent': onAccent() };
+    };
     // Small previews for the popup's theme tiles.
     const preview = () => ({ page: pageBg(), panel: val('panel'), accent: accentBg() });
     // How loud the background video may be: 0 unless the theme turned sound on.
     const sound = () => (video && val('bgSound') === 'on' ? val('bgVolume') / 100 : 0);
     // imageCss, layer and image: what exodus/core/own-theme.js writes this theme's CSS from.
-    return { T, D, base, val, isAuto, picked, pageStops, accentStops, pageBg, accentBg, onAccent, btnFill, checks, checkRatio, imageCss, layer, image, preview, video, sound, frame };
+    return { T, D, base, val, isAuto, picked, pageStops, accentStops, pageBg, accentBg, onAccent, btnFill, checks, checkRatio, imageCss, layer, image, preview, ui, video, sound, frame };
   }
 
   // The colour maths and the picture checks (shared/colour.js) come with it, as the same functions.
-  return { ...RhythiaX.Colour, LIST_KEY, ACTIVE_KEY, MAX_THEMES, PRESETS, QUICK, SAMPLES, LEVEL, SEEDED, DERIVED, FRAME, zonesFrom, fromPicture,
+  return { ...RhythiaX.Colour, LIST_KEY, ACTIVE_KEY, MAX_THEMES, PRESETS, QUICK, SAMPLES, LEVEL, SEEDED, DERIVED, FRAME, zonesFrom, fromPicture, readablePicture,
     seedFrom, create, normalize, list, active, imageKey, resolve };
 })();
 

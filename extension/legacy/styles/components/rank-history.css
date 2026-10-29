@@ -461,3 +461,13 @@ th.rhythiax-col-focused {
 @media (max-width: 640px) {
   .rhythiax-rank-history-weekly { gap: 12px 24px; }
 }
+/* This device: online history offered under the history panes (statistics/history-tables.js appendOnlineOffer). */
+.rhythiax-online-offer { display: flex; flex-direction: column; align-items: center; gap: 12px; padding: 0 16px 28px; text-align: center; }
+.rhythiax-online-offer > span { max-width: 460px; font-size: 13px; line-height: 1.5; color: var(--rhythiax-text-muted, #a1a1aa); text-wrap: balance; }
+.rhythiax-online-offer button { display: inline-flex; align-items: center; gap: 8px; height: 34px; padding: 0 14px; border-radius: 9px; border: 1.5px solid var(--rhythiax-border-strong, rgba(216,180,254,.22)); background: var(--rhythiax-inner-surface, #221634); color: var(--rhythiax-text, #faf5ff); font: inherit; font-size: 13px; font-weight: 600; cursor: pointer; transition: filter .15s; }
+.rhythiax-online-offer button:hover:not(:disabled) { filter: brightness(1.12); }
+.rhythiax-online-offer button:disabled { opacity: .6; cursor: wait; }
+.rhythiax-online-offer.quiet { flex-direction: row; justify-content: flex-end; gap: 10px; padding: 12px 4px 0; text-align: right; }
+.rhythiax-online-offer.quiet > span { font-size: 12px; }
+.rhythiax-online-offer.quiet button { height: 28px; padding: 0 10px; gap: 6px; border-width: 1px; font-size: 12px; }
+.rhythiax-online-offer.quiet svg { width: 13px; height: 13px; }

@@ -46,15 +46,15 @@
   box-shadow: 0 4px 14px color-mix(in srgb, var(--rhythiax-accent, #c084fc) 30%, transparent);
 }
 
-/* An own theme: the button rests with a light tint of its accent and hovers like the Friends and Add friend
-   buttons beside it (bridge/native-final.css). */
+/* An own theme: the button rests and hovers like the Friends and Add friend buttons beside it
+   (bridge/native-final.css). */
 :where(html[data-rhythiax-own-theme]) .rhythiax-compare-profile-button:not(.is-active) {
-  background: color-mix(in srgb, var(--rhythiax-accent) 18%, var(--rhythiax-inner-surface));
+  background: var(--rhythiax-inner-surface);
 }
 
 :where(html[data-rhythiax-own-theme]) .rhythiax-compare-profile-button:not(.is-active):hover {
-  border-color: var(--rhythiax-accent);
-  background: color-mix(in srgb, var(--rhythiax-accent) 28%, var(--rhythiax-inner-surface));
+  border-color: color-mix(in srgb, var(--rhythiax-accent) 60%, transparent);
+  background: color-mix(in srgb, var(--rhythiax-accent) 16%, var(--rhythiax-inner-surface));
 }
 
 .rhythiax-compare-profile-button:focus-visible {

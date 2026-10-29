@@ -11,7 +11,8 @@
 // A refusal (429), or a busy answer (503) to a profile visit report, pauses that budget for as long as the
 // server asks (Retry-After, at most six hours), or a while when it does not say. Player history goes through
 // the background (background/vps-access.js), which adds this installation's key; the page never sees it, and
-// without the background it is not sent.
+// without the background it is not sent. Map types (maps/kinds) and the map search (maps/types, maps/search) go
+// the same way, in the VPS API budget.
 // A caller that would rather fail than wait passes maxWait (ms): when the budget's wait or the answer would
 // take longer, the request fails with an Error named MaxWaitError (retryAt: when the budget has a request
 // again, when known), and a budget wait that long sends nothing. Loaded first by both Exodus and
@@ -30,7 +31,7 @@ RhythiaX.Net = RhythiaX.Net || (function () {
   };
   const PAUSE = { rhythia: 2000, vps: 30000, bulk: 60000, telemetry: 60000 };
   const MAX_PAUSE = 6 * 3600 * 1000;
-  const HISTORY = /^https:\/\/rhythia\.shuriel\.com\/api\/(player\/\d{1,7}\/history|players\/history)$/;
+  const HISTORY = /^https:\/\/rhythia\.shuriel\.com\/api\/(player\/\d{1,7}\/(history|compare\?mode=(lock|spin|vr))|players\/history|maps\/(kinds|types|search))$/;
   const KEY = 'rhythiax_net_';
   const mem = {};
   // History failures that mean the history server could not be reached (the background says so).

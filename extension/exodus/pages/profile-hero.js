@@ -49,7 +49,6 @@ function supporterLeft() {
   const days = Math.ceil((new Date(U.verificationDeadline) - Date.now()) / 864e5);
   return days <= 0 ? 'Expired' : days >= 365 ? `${Math.round(days / 365)} year${Math.round(days / 365) > 1 ? 's' : ''} left` : days >= 30 ? `${Math.round(days / 30)} month${Math.round(days / 30) > 1 ? 's' : ''} left` : `${days} day${days > 1 ? 's' : ''} left`;
 }
-const CREATOR_SVG = `<svg viewBox="0 0 512 512" aria-hidden="true"><defs><linearGradient id="cr-g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#c084fc"/><stop offset="1" stop-color="#6b21a8"/></linearGradient></defs><rect x="16" y="16" width="480" height="480" rx="120" fill="url(#cr-g)"/><path fill="#fff" d="M119 74h177c75 0 126 41 126 111 0 48-24 82-67 99l80 118H304l-66-105h-44v105H119V74Zm75 65v95h94c39 0 59-17 59-48 0-31-20-47-59-47h-94Z" transform="translate(40 40) scale(.84)"/></svg>`;
 
 /* ── Title ── */
 // A player Rhythia lists without a global rank has no place to count to the top 30 from.
@@ -121,8 +120,11 @@ function titleMap() {
 function friendButton() {
   if (!S.friend) return '';
   if (S.friend === 'none') return `<button class="btn primary mini" type="button" data-friend ${S.busy ? 'disabled' : ''}>${ico('user')}Add friend</button>`;
-  const label = S.friend === 'added' ? 'Friend added' : S.friend[0].toUpperCase() + S.friend.slice(1);
-  return `<button class="btn mini" type="button" disabled>${ico('user')}${esc(label)}</button>`;
+  // A friend can be removed, as on Rhythia (any state but "none"): the first click asks, the second removes.
+  const label = S.friend === 'added' ? 'Friends' : S.friend[0].toUpperCase() + S.friend.slice(1);
+  return S.unfriend
+    ? `<button class="btn mini danger" type="button" data-unfriend ${S.busy ? 'disabled' : ''}>${ico('user')}Remove friend?</button>`
+    : `<button class="btn mini" type="button" data-unfriend ${S.busy ? 'disabled' : ''} data-tip="<b>On your friends list</b><small>Click to remove</small>">${ico('user')}${esc(label)}</button>`;
 }
 // Every badge in one row, all the same height: Supporter, Rhythia's roles (icon and name)
 // and event badges (their art only, named in the tooltip).
@@ -136,11 +138,24 @@ function badgeRow() {
     const r = ROLE[b]; if (!r) continue;
     out.push(`<span class="rtag" tabindex="0" style="--c:${r.c}" data-tip="<b>${esc(r.tip || r.label || b)}</b><small>Rhythia role</small>">${r.icon}${esc(r.label || b)}</span>`);
   }
-  if (U.id === 255585) out.push(`<span class="rtag ev" tabindex="0" data-tip="<b>Creator of Reimagined</b><small>Made the Reimagined for Rhythia extension</small>">${CREATOR_SVG}</span>`);
+  if (U.id === 255585) out.push(`<span class="rtag ev" tabindex="0" data-tip="<b>Creator of Reimagined</b><small>Made the Reimagined for Rhythia extension</small>"><img src="${RhythiaX.APP_ICON || ''}" alt="Creator of Reimagined"></span>`);
   for (const b of (U.badges || []).filter(b => EVENT[b])) out.push(`<span class="rtag ev" tabindex="0" data-tip="<b>${esc(EVENT[b][1] || b)}</b><small>Event badge</small>"><img src="${SITE}${EVENT[b][0]}" alt="${esc(b)}"></span>`);
   return out.length ? `<div class="rtags">${out.join('')}</div>` : '';
 }
 // Hearts and squares from Rhythia's supporter card, drifting up a supporter's banner.
+// "New" beside a section tab after an update that added to it, until the section is first opened or for 7 days
+// after this browser got the update (the stores publish a version days apart, so the days count from here).
+const NEW_IN = {scores: {version: '1.4', tip: 'Near your rank, a new order and map types'}};
+const NEW_KEY = 'rhythiax_exodus_new', NEW_DAYS = 7;
+const RUNNING = (() => { try { return chrome.runtime.getManifest().version.split('.').slice(0, 2).join('.'); } catch (_) { return ''; } })();
+function newTag(sec) {
+  const n = NEW_IN[sec]; if (!n || n.version !== RUNNING) return '';
+  let seen = {}; try { seen = JSON.parse(localStorage.getItem(NEW_KEY) || '{}') || {}; } catch (_) {}
+  const k = `${sec}@${n.version}`, now = Date.now(), was = seen[k];
+  seen[k] = S.section === sec ? -1 : was || now;
+  if (seen[k] !== was) try { localStorage.setItem(NEW_KEY, JSON.stringify(seen)); } catch (_) {}
+  return seen[k] > 0 && now - seen[k] < NEW_DAYS * 864e5 ? `<span class="tab-new" data-tip="<b>New in ${n.version}</b><small>${n.tip}</small>">New</span>` : '';
+}
 const SUP_FLOAT = Array.from({length: 10}, (_, i) => `<i class="pf ${i % 3 ? 'h' : 'q'}" style="--x:${(i * 41 + 7) % 100}%;--d:${11 + (i * 7) % 8}s;--w:${-((i * 13) % 17)}s;--s:${.55 + ((i * 5) % 6) / 10}"></i>`).join('');
 function hero() {
   const m = MODES[S.mode], lock = S.mode === 'normal';
@@ -151,6 +166,11 @@ function hero() {
   const ch = k => (yday ? yday[k] - last[k] : 0);
   const r1 = ch('globalRank'), c1 = ch('countryRank'), rp1 = -ch('skillPoints');
   const d = (n, f = 0) => lock && n && ON('statHistory') ? `<span class="d ${tone(n)}" data-tip="Change since yesterday">${n > 0 ? '▲' : '▼'} ${fmt(Math.abs(n), f)}</span>` : '';
+  // Under each number, hidden, the same number in every mode: the box keeps the widest one's size, so switching
+  // the mode does not move what was just clicked.
+  const dd = (n, f = 0) => n && ON('statHistory') ? `<span class="d">${n > 0 ? '▲' : '▼'} ${fmt(Math.abs(n), f)}</span>` : '';
+  const size = f => `<span class="rk-sz" aria-hidden="true">${Object.keys(MODES).map(k => `<strong class="num">${f(MODES[k], k === 'normal')}</strong>`).join('')}</span>`;
+  const board = U.flag ? `/leaderboards/${esc(U.flag)}${S.mode === 'normal' ? '' : `?mode=${S.mode}`}${m.country > 50 ? `${S.mode === 'normal' ? '?' : '&'}page=${Math.ceil(m.country / 50)}` : ''}` : '';
   const prev = (U.previous_usernames || []).map(p => `${esc(p.username)} <small>until ${new Date(p.changed_at).toLocaleDateString('en-GB', {month:'short', year:'numeric'})}</small>`).join('');
   const pt = U.playTime || 0, h = Math.floor(pt / 3600), mi = Math.floor(pt % 3600 / 60);
   const clanId = U.clans?.id ?? U.clan;
@@ -163,7 +183,7 @@ function hero() {
       <div class="hero-main">
         <div class="avatar ${U.verified ? 'sup' : ''}" style="background-image:${cssUrl(U.avatar_url)}${U.verified ? ',linear-gradient(135deg,#fbcfe8,#e879f9 30%,#f472b6 55%,#c084fc 80%,#fbcfe8)' : ''}" role="img" aria-label="${esc(U.username)}">${U.is_online ? '<span class="dot" data-tip="Online now"></span>' : ''}${U.verified ? `<a class="sup-heart" href="/support" data-tip="<b>Rhythia Supporter</b><small>Supports Rhythia’s development</small>"><img src="${SITE}/supporterheart.png" alt="Rhythia Supporter"></a>` : ''}</div>
         <div class="who" style="min-width:0">
-          <div class="name-row"><h1 class="name">${esc(U.username)}${prev ? `<button class="prev-btn" type="button" aria-label="Previous usernames" data-tip="<b>Previous names</b><small>${esc(prev).replace(/&lt;(\/?)small&gt;/g, '<$1small>')}</small>">${ico('hist')}</button>` : ''}</h1>${S.viewer === 'owner' ? '' : friendButton()}</div>
+          <div class="name-row"><h1 class="name">${esc(U.username)}${prev ? `<button class="prev-btn" type="button" aria-label="Previous usernames" data-tip="<b>Previous names</b><small>${esc(prev).replace(/&lt;(\/?)small&gt;/g, '<$1small>')}</small>">${ico('hist')}</button>` : ''}</h1>${S.viewer === 'owner' ? '' : friendButton()}${ON('playerCompare') ? `<button class="btn mini" type="button" data-compare data-tip="<b>Compare</b><small>${esc(U.username)} against another player</small>">${ico('cmp')}Compare</button>` : ''}${S.viewer === 'owner' ? '' : `<button class="btn mini sq" type="button" data-menu="profile" aria-haspopup="menu" aria-expanded="false" aria-label="More" data-tip="More">${ico('more')}</button>`}</div>
           ${badgeRow()}
           <div class="meta">
             ${U.flag ? `<span><img class="flag" src="${SITE}/flags/${esc(U.flag)}.svg" alt="">${esc(COUNTRY)}</span>` : ''}
@@ -173,14 +193,11 @@ function hero() {
           </div>
         </div>
         <div class="ranks-wrap">
-          <div class="ranks-head">
-            <div class="pills mini" aria-label="Game mode">${Object.entries(MODES).map(([k, v]) => `<button type="button" aria-pressed="${S.mode === k}" data-mode="${k}"><img src="${SITE}/${v.icon}" alt="">${v.label}</button>`).join('')}</div>
-            ${ON('playerCompare') ? `<button class="btn mini" type="button" data-compare data-tip="<b>Compare</b><small>${esc(U.username)} against another player</small>">${ico('cmp')}Compare</button>` : ''}
-          </div>
           <div class="ranks">
-            <div><span class="cap">Global</span><strong class="num">${m.rank ? counter(m.rank, 0, '#') : '—'}${d(r1)}</strong></div>
-            <div><span class="cap">${esc(COUNTRY)}</span><strong class="num">${m.country ? counter(m.country, 0, '#') : '—'}${d(c1)}</strong></div>
-            <div class="rp"><span class="cap">Rhythm points</span><strong class="num">${counter(m.rp, 2)}${d(rp1, 1)}</strong></div>
+            <div class="ranks-modes" role="group" aria-label="Game mode" style="--i:${Object.keys(MODES).indexOf(S.mode)}">${Object.entries(MODES).map(([k, v]) => `<button type="button" aria-pressed="${S.mode === k}" data-mode="${k}">${v.label}</button>`).join('')}<i class="mk" aria-hidden="true"></i></div>
+            <div><span class="cap">Global</span><strong class="num">${m.rank ? counter(m.rank, 0, '#') : '—'}${d(r1)}</strong>${size((x, l) => (x.rank ? '#' + fmt(x.rank) : '—') + (l ? dd(r1) : ''))}</div>
+            <div class="${board ? 'rk-ct' : ''}">${board ? `<a class="rk-go" href="${board}" aria-label="${esc(COUNTRY)} leaderboard" data-tip="<b>${esc(COUNTRY)} leaderboard</b><small>Opens on ${S.viewer === 'owner' ? 'your' : 'this player’s'} page of it</small>"></a>` : ''}<span class="cap">${esc(COUNTRY)}</span><strong class="num">${m.country ? counter(m.country, 0, '#') : '—'}${d(c1)}</strong>${size((x, l) => (x.country ? '#' + fmt(x.country) : '—') + (l ? dd(c1) : ''))}</div>
+            <div class="rp"><span class="cap">Rhythm points</span><strong class="num">${counter(m.rp, 2)}${d(rp1, 1)}</strong>${size((x, l) => fmt(x.rp || 0, 2) + (l ? dd(rp1, 1) : ''))}</div>
           </div>
         </div>
       </div>
@@ -194,7 +211,7 @@ function hero() {
       </div>
       <div class="hero-bar">
         <div class="tabs" role="tablist" aria-label="Profile sections" data-ink="sections">${[['profile','Profile'],['scores','Scores'],['maps','Maps'],['skins','Skins'],['inventory','Inventory'],['achievements','Achievements']].map(([k, l]) =>
-          `<button role="tab" type="button" aria-selected="${S.section === k}" data-section="${k}">${l}</button>`).join('')}</div>
+          `<button role="tab" type="button" aria-selected="${S.section === k}" data-section="${k}">${l}${newTag(k)}</button>`).join('')}</div>
       </div>
     </div>
   </section>`;

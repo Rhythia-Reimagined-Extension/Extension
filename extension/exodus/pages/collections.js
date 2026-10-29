@@ -8,9 +8,51 @@ var RhythiaX = RhythiaX || {};
 (function () {
 'use strict';
 const K = () => RhythiaX.ExodusKit;
-const {SITE, Data, esc, cssUrl, fmt, REDUCED, pager, watchDialog, spreadHtml, hoursMin, avgStars, morph} = RhythiaX.ExodusKit;
+const {SITE, Data, esc, cssUrl, fmt, REDUCED, pager, spreadHtml, hoursMin, avgStars, morph} = RhythiaX.ExodusKit;
 
 /* ════════════════════ Collections ════════════════════ */
+// Make, change or remove a collection in the shell's dialog, with Rhythia's own fields: a name for a new one;
+// name, description and Is List (a ranked list instead of a grid) for one's own; a confirm before removing.
+// done(result) runs after Rhythia saved it.
+function collectionDialog(R, sig, {kind, d = {}, toast, done}) {
+  const {esc} = RhythiaX.ExodusKit, dlg = R.getElementById('cmp');
+  const F = {title: d.title || '', description: d.description || '', isList: Boolean(d.isList), busy: false};
+  const close = '<button class="iconbtn" type="button" data-cd-close aria-label="Close"><svg class="ico" aria-hidden="true"><use href="#i-x"/></svg></button>';
+  const html = () => kind === 'remove'
+    ? `<div class="cmp-head"><h2 id="cmp-title">Remove this collection?</h2>${close}</div><div class="cmp-body cd-body"><p>${esc(F.title)} will be removed for good, with its list of maps. The maps stay on Rhythia.</p>
+      <div class="cd-acts"><button class="btn" type="button" data-cd-close>Cancel</button><button class="btn danger" type="button" data-cd-ok ${F.busy ? 'disabled' : ''}>${F.busy ? 'Removing…' : 'Remove collection'}</button></div></div>`
+    : `<div class="cmp-head"><h2 id="cmp-title">${kind === 'create' ? 'New collection' : 'Edit collection'}</h2>${close}</div>
+      <form class="cmp-body cd-body" id="cd-form"><label class="cd-field"><span>Name</span><input id="cd-title" maxlength="100" required value="${esc(F.title)}" autocomplete="off" placeholder="My favourite streams"></label>
+      ${kind === 'edit' ? `<label class="cd-field"><span>Description</span><textarea id="cd-desc" rows="4" maxlength="2000">${esc(F.description)}</textarea></label>
+      <label class="b-switch cd-switch"><input type="checkbox" id="cd-list" ${F.isList ? 'checked' : ''}><i aria-hidden="true"></i><span>Is List <small class="cap">A ranked list instead of a grid</small></span></label>` : ''}
+      <div class="cd-acts"><button class="btn" type="button" data-cd-close>Cancel</button><button class="btn primary" type="submit" ${F.busy ? 'disabled' : ''}>${F.busy ? 'Saving…' : kind === 'create' ? 'Create' : 'Save'}</button></div></form>`;
+  const ac = new AbortController(), on = {signal: ac.signal};
+  sig?.signal?.addEventListener('abort', () => ac.abort());
+  const redraw = () => RhythiaX.ExodusKit.morph(dlg, html());
+  async function save() {
+    if (F.busy) return;
+    if (kind !== 'remove' && !F.title.trim()) { toast('Give the collection a name.'); return; }
+    F.busy = true; redraw();
+    try {
+      const D = RhythiaX.ExodusData;
+      const r = kind === 'create' ? await D.createCollection(F.title.trim())
+        : kind === 'edit' ? await D.editCollection(d.id, {title: F.title.trim(), description: F.description, isList: F.isList})
+        : await D.deleteCollection(d.id);
+      dlg.close(); done?.(r);
+    } catch (err) {
+      F.busy = false; redraw();
+      toast(`Could not save: ${String(err.message || '').replace(/^\w+: /, '')}`);
+    }
+  }
+  dlg.addEventListener('click', e => { if (e.target.closest('[data-cd-close]')) dlg.close(); else if (e.target.closest('[data-cd-ok]')) save(); }, on);
+  dlg.addEventListener('submit', e => { e.preventDefault(); save(); }, on);
+  dlg.addEventListener('input', e => { if (e.target.id === 'cd-title') F.title = e.target.value; if (e.target.id === 'cd-desc') F.description = e.target.value; if (e.target.id === 'cd-list') F.isList = e.target.checked; }, on);
+  dlg.addEventListener('close', () => { ac.abort(); dlg.classList.remove('cd-dlg'); }, on);
+  dlg.setAttribute('aria-labelledby', 'cmp-title'); dlg.classList.add('cd-dlg');
+  dlg.innerHTML = html(); dlg.showModal();
+  dlg.querySelector('#cd-title')?.focus();
+}
+
 function collections(host, ctx) {
   const R = host.shadowRoot, ac = new AbortController(), sig = {signal: ac.signal}, $ = s => R.querySelector(s);
   const ui = K().shell(R, sig);
@@ -35,7 +77,7 @@ function collections(host, ctx) {
       ? ['owncollections.png', 'Own Collections', 'Create and organize your map collections', 'Create, organize, and share your personal map collections.']
       : ['collections.png', 'Collections', 'Browse and create community collections', 'Discover community collections and organize your favorite maps.'];
     const acts = S.me === undefined ? '' : S.me
-      ? `${own ? '<a class="btn" href="/collections">All collections</a>' : '<a class="btn" href="/collections/own">Your collections</a>'}<button class="btn primary" type="button" data-native-click="Create collection">Create collection</button>`
+      ? `${own ? '<a class="btn" href="/collections">All collections</a>' : '<a class="btn" href="/collections/own">Your collections</a>'}<button class="btn primary" type="button" data-cd-create>Create collection</button>`
       : '<button class="btn" type="button" data-native-click="Sign in">Sign in</button>';
     return `<section class="container b-head"><div class="b-title"><img src="${SITE}/${mascot}" alt="" class="b-mascot"><div><span class="cap">${cap}</span><h1>${h1}</h1><p>${p}</p></div></div>
       <aside class="v-maps-links" id="c-acts">${acts}</aside></section>`;
@@ -56,10 +98,12 @@ function collections(host, ctx) {
       ${spreadHtml(c.spread)}</a>`).join('')}</div>`;
   }
   function render() {
+    if (ac.signal.aborted) return;
     $('#hero').innerHTML = '';
     $('#body').innerHTML = `<div class="b-page v-mpage c-page ${S.enter ? 'enter' : ''}">${head()}<div id="v-mbar">${bar()}</div><section class="container v-sec v-mlist"><div id="c-grid">${grid()}</div><div id="v-mpager">${S.data ? pager(S.q.page, S.data.pages) : ''}</div></section><div style="height:96px"></div></div>`;
   }
   function refresh() {
+    if (ac.signal.aborted) return;
     if (!$('.c-page')) return render();
     morph($('#c-grid'), grid()); morph($('#v-mpager'), S.data ? pager(S.q.page, S.data.pages) : '');
     morph.outer($('.b-head'), head());
@@ -86,6 +130,7 @@ function collections(host, ctx) {
   }
 
   R.addEventListener('click', e => {
+    if (e.target.closest('[data-cd-create]')) { collectionDialog(R, sig, {kind: 'create', toast: ui.toast, done: newId => { ui.toast('Collection created.'); ctx.go(`/collections/${newId}`); }}); return; }
     const t = e.target.closest('[data-page]');
     if (!t || t.disabled) return;
     go({page: Number(t.dataset.page)});
@@ -134,7 +179,7 @@ function collection(host, ctx) {
     const ranked = maps.filter(m => statusOf(m) === 'RANKED').length, total = maps.reduce((s, m) => s + (m.length || 0), 0);
     const art = maps.slice(0, 4).map(m => `<i style="background-image:${cssUrl(m.img || '')}"></i>`).join('');
     const acts = [`<button class="btn primary" type="button" data-native-click="Download all" data-tip="<b>Download all</b><small>One .zip with every map</small>"><svg class="ico" aria-hidden="true"><use href="#i-dl"/></svg>Download all</button>`];
-    if (isOwner()) acts.push('<button class="btn" type="button" data-native-click="Edit collection" data-watch>Edit collection</button>', '<button class="btn danger" type="button" data-native-click="Remove collection" data-watch>Remove collection</button>');
+    if (isOwner()) acts.push('<button class="btn" type="button" data-cd-edit>Edit collection</button>', '<button class="btn danger" type="button" data-cd-remove>Remove collection</button>');
     return `<div class="container c-hero">
         <div class="c-art n${Math.min(4, maps.length)}">${art}</div>
         <div class="v-who"><a class="c-back" href="/collections">Go back to all collections</a>
@@ -177,6 +222,7 @@ function collection(host, ctx) {
       ${list.length > S.shown ? `<div class="v-moreb"><button class="btn" type="button" data-more>Show ${fmt(Math.min(30, list.length - S.shown))} more</button></div>` : ''}</section>`;
   }
   function render() {
+    if (ac.signal.aborted) return;
     morph($('#hero'), `<section class="v-hero c-h ${S.enter ? 'enter' : ''}"><div class="v-banner" style="background-image:${cssUrl(S.d.maps[0]?.img || '')}"></div>${hero()}</section>`);
     morph($('#body'), `<div class="v-page ${S.enter ? 'enter' : ''}">${mapsSec()}<div style="height:96px"></div></div>`);
     document.title = `${S.d.title} | Rhythia`;
@@ -210,12 +256,11 @@ function collection(host, ctx) {
     S.removing = 0;
     render();
   }
-  // After Rhythia's own dialog (edit, remove) closes, read the collection again.
-  const dialog = watchDialog(`/collections/${id}`, () => load());
-
   R.addEventListener('click', e => {
     if (e.target.closest('[data-native-x]')) { ctx.showNative(); return; }
-    if (e.target.closest('[data-watch]')) { dialog.start(); return; }
+    const own = {id, title: S.d?.title, description: S.d?.description, isList: S.d?.isList};
+    if (e.target.closest('[data-cd-edit]')) { collectionDialog(R, sig, {kind: 'edit', d: own, toast: ui.toast, done: () => { ui.toast('Collection saved.'); load(); }}); return; }
+    if (e.target.closest('[data-cd-remove]')) { collectionDialog(R, sig, {kind: 'remove', d: own, toast: ui.toast, done: () => { ui.toast(`${own.title} was removed.`); ctx.go('/collections/own'); }}); return; }
     const t = e.target.closest('[data-status],[data-sort],[data-dir],[data-more],[data-remove]');
     if (!t || t.disabled) return;
     const d = t.dataset;
@@ -231,7 +276,7 @@ function collection(host, ctx) {
 
   return {
     state: () => ({}), idle: () => !S.removing, relayout() {}, page() {},
-    destroy() { ac.abort(); ui.hide(); dialog.stop(); },
+    destroy() { ac.abort(); ui.hide(); const dl = R.getElementById('cmp'); if (dl?.open) dl.close(); },
   };
 }
 

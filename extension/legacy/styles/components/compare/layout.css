@@ -656,3 +656,9 @@
     grid-template-columns: 1fr;
   }
 }
+
+/* More from both players' top scores: a row of smaller cards under the four above. */
+.rhythiax-bento-more {
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+  margin: 12px 0 22px;
+}

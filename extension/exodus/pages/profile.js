@@ -4,7 +4,7 @@
 // Renders one player into the Exodus shell (a shadow root) and returns a handle
 // to tear it down on navigation. This file holds the data, the view state (S), the rendering and the
 // events; the markup of each area comes from a part file made at mount (pages/profile-hero.js,
-// profile-stats.js, profile-playstyle.js and profile-scores.js, see "The parts" below).
+// profile-stats.js, profile-playstyle.js, profile-scores.js and profile-tabs.js, see "The parts" below).
 
 var RhythiaX = RhythiaX || {};
 
@@ -79,7 +79,11 @@ function fillHistory(list) {
 }
 const daysOf = H => H.slice(1).map((d, i) => ({date: d.date, plays: d.playCount - H[i].playCount, rp: d.skillPoints - H[i].skillPoints,
   rank: H[i].globalRank - d.globalRank, accD: d.avgAccuracy - H[i].avgAccuracy, sq: d.squaresHit - H[i].squaresHit, t: d}));
-let H = fillHistory(D.history);
+// A saved copy whose history was taken out (Clear history, This device) still has the profile's own numbers for today,
+// as core/data.js withToday gives fresh data.
+const ownDay = () => ({date: new Date().toISOString().slice(0, 10), skillPoints: U.skill_points, globalRank: U.position, countryRank: U.country_position,
+  playCount: U.play_count, squaresHit: U.squares_hit, avgAccuracy: D.scores?.stats?.averageAccuracy ?? 0});
+let H = fillHistory(D.history?.length ? D.history : [ownDay()]);
 let DAYS = daysOf(H);
 let lastActive = [...DAYS].reverse().find(d => d.plays > 0);
 // Maps per week, the extension's formula: lifetime plays over weeks since joining.
@@ -228,8 +232,7 @@ function momentum() {
   else if (gain < 0) r.notes.push(`Total RP is down: ${rpText}.`);
   else if (r.delta < 0) r.notes.push(`RP is growing, but rank is falling: ${rpText}. Players nearby are gaining faster.`);
   else r.notes.push(`RP is growing: ${rpText}.`);
-  const newTop = MODES.normal.top.filter(s => NOW - new Date(s.created_at) <= 14 * 864e5).length;
-  if (newTop) r.notes.push(`<b>${newTop}</b> of the current top 100 ${newTop === 1 ? 'was' : 'were'} set in the last 14 days.`);
+  // New top plays, map types and speed in these 14 days: the Playstyle pane adds them (pages/profile-playstyle.js progress).
   // Breaks and pace, from the daily history.
   const gap = BREAKS.at(-1);
   if (gap?.open) r.notes.unshift(`No plays for <b>${gap.days} days</b>, since ${dm(gap.from)}.`);
@@ -303,6 +306,37 @@ function renderHero(first) {
   if (first) h.querySelectorAll('[data-count]').forEach(countUp);
   else { h.classList.add('settled'); h.querySelectorAll('[data-count]').forEach(el => delete el.dataset.count); }
   inks($('#hero'));
+  alignName();
+}
+// The buttons beside the name (and the previous-names icon) sit on the middle of its letters as drawn: from the
+// top of the tallest to the bottom of the lowest, a g or y included. That middle differs from name to name and
+// with the font, so it is measured, and the row moves them by its distance from the middle of the name's line.
+function alignName() {
+  const name = $('#hero .name'), text = name?.firstChild;
+  if (!text || text.nodeType !== 3 || !text.textContent.trim()) return;
+  const cs = getComputedStyle(name), c = document.createElement('canvas').getContext?.('2d');
+  if (!c?.measureText) return;
+  c.font = `${cs.fontStyle} ${cs.fontWeight} ${cs.fontSize} ${cs.fontFamily}`;
+  const m = c.measureText(text.textContent), r = document.createRange();
+  r.selectNodeContents(text);
+  const line = r.getBoundingClientRect(), box = name.getBoundingClientRect();
+  if (!line.height || !m.fontBoundingBoxAscent) return;
+  const base = line.top + m.fontBoundingBoxAscent, mid = base + (m.actualBoundingBoxDescent - m.actualBoundingBoxAscent) / 2;
+  name.parentElement.style.setProperty('--name-mid', `${(mid - (box.top + box.height / 2)).toFixed(1)}px`);
+}
+document.fonts?.ready?.then(() => { if (!ac.signal.aborted) alignName(); });
+addEventListener('resize', alignName, sig);
+// Another game mode: the rank box keeps its size (pages/profile-hero.js sizes it for every mode), the mark
+// slides to the mode and the numbers rise into place.
+function switchMode(mode) {
+  const box = $('#hero .ranks'), was = Object.keys(MODES).indexOf(S.mode);
+  S.mode = mode; S.page = 1; S.speed = ''; S.mod = ''; wantMeta(S.mode);
+  renderHero();
+  const now = $('#hero .ranks');
+  if (REDUCED || !box || !now) return;
+  const ease = 'cubic-bezier(.2,.7,.2,1)';
+  now.querySelector('.mk')?.animate([{transform: `translateY(${was * 26}px)`}, {transform: `translateY(${Object.keys(MODES).indexOf(mode) * 26}px)`}], {duration: 280, easing: ease});
+  now.querySelectorAll(':scope > div:not(.ranks-modes)').forEach((el, i) => el.animate([{opacity: 0, transform: 'translateY(6px)'}, {opacity: 1, transform: 'none'}], {duration: 260, delay: i * 40, easing: ease, fill: 'backwards'}));
 }
 const renderAct = anim => { $('#activity').innerHTML = activity(anim); };
 let endWanted = false;
@@ -314,6 +348,8 @@ function renderScores(anim, keepFocus) {
   if (keepFocus) { $('#score-body').innerHTML = scoreBody(false); return; }
   put(el, scores(anim), anim); inks(el);
 }
+// After a filter or the order changes: the bar redrawn as it is, the rows coming in.
+function refilter() { renderScores(false); const b = $('#score-body'); if (b) b.innerHTML = scoreBody(true); }
 const settleTitle = () => R.querySelector('#tmap .tmap')?.classList.add('settled');
 function refreshIntro() { const el = $('#intro'); if (!el) return; el.classList.add('in'); morph.outer(el, intro()); settleTitle(); toEnd(); foldBio(); }
 // A bio taller than the fold shows Show more; pictures in it can change that once they load.
@@ -326,14 +362,16 @@ const SCORES_ALL = () => [...Object.values(MODES).flatMap(m => [...m.top, ...m.r
 function renderBody() {
   let html;
   if (S.section === 'profile') html = intro() + `${STAT_TABS.length ? '<section class="container section reveal" id="stats" aria-label="Statistics"></section>' : ''}<section class="container section reveal" id="scores" aria-label="Scores"></section>`;
-  else if (S.section === 'scores') html = `<section class="container section reveal" id="rp" aria-label="Top plays"></section><section class="container section reveal" id="scores" aria-label="Scores"></section>`;
+  else if (S.section === 'scores') html = `<section class="container section reveal" id="rp" aria-label="Top plays"></section><section class="container section reveal" id="near" aria-label="Near this rank"></section><section class="container section reveal" id="scores" aria-label="Scores"></section>`;
   else if (S.section === 'achievements') html = achievements();
+  else if (tabs.has(S.section)) html = tabs.html(S.section);
   else html = `<div class="container reveal"><div class="empty" style="padding:96px 0"><b>${S.section[0].toUpperCase() + S.section.slice(1)}</b>This tab is not part of Exodus yet.<div style="margin-top:14px"><button class="btn" type="button" data-native>Open it in Rhythia’s view</button></div></div></div>`;
   put($('#body'), html + '<div style="height:96px"></div>', !soft);
   renderStats(); renderRp(); renderScores();
+  if (tabs.has(S.section)) { inks(); tabs.open(S.section); }
   watch($('#body')); toEnd(); foldBio();
 }
-function renderRp() { const el = $('#rp'); if (el) put(el, rpChart()); }
+function renderRp() { const el = $('#rp'); if (el) put(el, rpChart()); const n = $('#near'); if (n) { const h = nearSection(); n.hidden = !h; put(n, h); } }
 // Profile and Scores are two addresses on Rhythia; the other tabs stay on the profile's.
 function setSection(sec, push) {
   S.section = sec; S.page = 1; hideTip();
@@ -389,6 +427,64 @@ async function addFriend() {
   }
   if (!ac.signal.aborted) renderHero();
 }
+// The first click on Friends asks (for four seconds), the second removes.
+let unfriendTimer = 0;
+async function removeFriend() {
+  if (S.busy) return;
+  if (!S.unfriend) { S.unfriend = true; renderHero(); clearTimeout(unfriendTimer); unfriendTimer = setTimeout(() => { S.unfriend = false; if (!ac.signal.aborted) renderHero(); }, 4000); return; }
+  clearTimeout(unfriendTimer); S.unfriend = false; S.busy = true; renderHero();
+  try {
+    await ctx.actions.removeFriend(U.id);
+    S.friend = 'none'; U.friend_count = Math.max(0, (U.friend_count || 1) - 1);
+    toast(`${U.username} is no longer on your friends list.`);
+  } catch (err) {
+    toast(`Could not remove ${U.username}: ${err.message}`);
+  } finally {
+    S.busy = false;
+  }
+  if (!ac.signal.aborted) renderHero();
+}
+// The More menu beside Compare: the profile's link and Rhythia's report (its own reasons, with a note).
+function openMore(btn) {
+  const open = btn.getAttribute('aria-expanded') === 'true';
+  closeMenu(); if (open) return;
+  const r = btn.getBoundingClientRect(), m = document.createElement('div');
+  m.className = 'menu'; m.setAttribute('role', 'menu');
+  m.innerHTML = `<button role="menuitem" type="button" data-copy-profile>${ico('ext')}Copy profile link</button><button role="menuitem" type="button" data-report>${ico('info')}Report player</button>`;
+  m.style.top = `${r.bottom + scrollY + 6}px`; m.style.left = `${Math.max(12, r.right + scrollX - 220)}px`;
+  $('.exo').appendChild(m); btn.setAttribute('aria-expanded', 'true');
+  m.querySelector('button').focus({preventScroll: true});
+}
+const REPORT_REASONS = ['Cheating', 'Inappropriate profile content', 'Harassment', 'Scam', 'Impersonation', 'Other'];
+const report = {reason: '', note: '', busy: false, sent: false};
+function reportHtml() {
+  const close = `<button class="iconbtn" type="button" data-report-close aria-label="Close">${ico('x')}</button>`;
+  if (report.sent) return `<div class="cmp-head"><h2 id="cmp-title">Report sent</h2>${close}</div><div class="cmp-body rp-body"><p>Thank you. Rhythia's moderators will look at ${esc(U.username)}’s profile.</p><div class="rp-acts"><button class="btn primary" type="button" data-report-close>Close</button></div></div>`;
+  return `<div class="cmp-head"><h2 id="cmp-title">Report ${esc(U.username)}</h2>${close}</div>
+    <form class="cmp-body rp-body" id="rp-form"><fieldset><legend>Reason</legend>${REPORT_REASONS.map(x => `<label class="rp-opt"><input type="radio" name="rp-reason" value="${esc(x)}" ${report.reason === x ? 'checked' : ''}><span>${esc(x)}</span></label>`).join('')}</fieldset>
+      <label class="rp-note"><span>Details <small class="cap">optional</small></span><textarea id="rp-note" rows="3" maxlength="1000" placeholder="What happened, with a link if there is one">${esc(report.note)}</textarea></label>
+      <div class="rp-acts"><button class="btn" type="button" data-report-close>Cancel</button><button class="btn primary" type="submit" ${!report.reason || report.busy ? 'disabled' : ''}>${report.busy ? 'Sending…' : 'Send report'}</button></div></form>`;
+}
+function openReport() {
+  closeMenu();
+  if (!RhythiaX.ExodusData.session()) return toast('Sign in to Rhythia to report a player.');
+  Object.assign(report, {reason: '', note: '', busy: false, sent: false});
+  const dlg = $('#cmp'); dlg.setAttribute('aria-labelledby', 'cmp-title'); dlg.classList.add('rp-dlg');
+  dlg.innerHTML = reportHtml(); dlg.showModal();
+}
+const redrawReport = () => { const dlg = $('#cmp'); if (dlg.open && dlg.classList.contains('rp-dlg')) morph(dlg, reportHtml()); };
+async function sendReport() {
+  if (!report.reason || report.busy) return;
+  report.busy = true; redrawReport();
+  try {
+    await ctx.actions.report(U.id, report.reason, report.note.trim());
+    report.sent = true;
+  } catch (err) {
+    toast(`Could not send the report: ${String(err.message || '').replace(/^reportProfile: /, '')}`);
+  }
+  report.busy = false;
+  if (!ac.signal.aborted) redrawReport();
+}
 // Bio and links are one about_me write; pins removed in the editor are unpinned one by one.
 async function saveProfile(btn) {
   if (S.busy) return;
@@ -427,14 +523,18 @@ async function saveProfile(btn) {
   refreshIntro(); renderScores(false);
 }
 
-/* ── The parts: pages/profile-hero.js, profile-stats.js, profile-playstyle.js and profile-scores.js ── */
+/* ── The parts: pages/profile-hero.js, profile-stats.js, profile-playstyle.js, profile-scores.js and profile-tabs.js ── */
 // Each part is made once per mount from this context. What never changes after mount is passed as it is;
 // the daily history and what is worked out from it are set again when fresh history arrives (setHistory),
 // so the parts read those through getters and always see the current ones.
-const c = {R, D, ctx, ac, U, ICONS, SITE, esc, fmt, REDUCED, TITLES, COUNTRY, $, cssUrl, sgn, tone, ico, ago, utc, dm,
+// With This device (no online history) the places that need it offer it: a line and a button, which
+// the click handler below turns into the consent card's Turn on. S.offline is known after the first paint.
+const onlineOffer = text => `<div class="online-offer"><span>${text}</span><button class="btn" type="button" data-online data-tip="<b>Online history</b><small>Turns it on everywhere. Sends player and map IDs, Reimagined Search filters and an anonymous key for this installation to Shuriel’s service (rhythia.shuriel.com). More in the privacy policy.</small>">${ico('hist')}Turn on online history</button></div>`;
+RhythiaX.ExodusData.historyAllowed().then(ok => { if (!ok && !ac.signal.aborted) { S.offline = true; renderStats(); renderRp(); } }, () => {});
+const c = {R, D, ctx, ac, U, ICONS, SITE, esc, fmt, REDUCED, TITLES, COUNTRY, $, cssUrl, sgn, tone, ico, ago, utc, dm, onlineOffer,
   dayName, SPEED, GRADES, prepare, MODES, MPW, ON, S, OWN, WHOSE, whose, rangeDays, win, toast, counter, pinnedScores,
   md, bioText, socialLinks, kpi, addDays, mondayOf, nextMonth, prevMonth, isoWeek, monthName, agg, TREND, momentum,
-  plural, playsIn, morph, SCORES_ALL, refreshIntro,
+  plural, playsIn, morph, SCORES_ALL, refreshIntro, redrawScores: () => renderScores(false), inks,
   get H() { return H; }, get DAYS() { return DAYS; }, get last7() { return last7; }, get FIRST() { return FIRST; },
   get LAST() { return LAST; }, get DAY() { return DAY; }, get BREAKS() { return BREAKS; },
   get MONTHS() { return MONTHS; }};
@@ -442,12 +542,13 @@ const parts = RhythiaX.ExodusProfileParts;
 const {hero, intro, titleMap, refreshEdPins, SHOWCASE_MAX, saveShowcase, openFriends, picker, openPicker, runPicker} = parts.hero(c);
 const {progress, rankings, activity, detail, period} = parts.stats(c);
 const {playstyle, loadStyles, review, faq, KIND, BAR_KINDS, monthsOf} = parts.playstyle(c);
-const {scores, scoreBody, rpChart, suggest, pickSuggestion, sug, closeMenu, openMenu} = parts.scores(c);
+const {scores, scoreBody, rpChart, nearSection, suggest, pickSuggestion, sug, closeMenu, openMenu} = parts.scores(c);
+const tabs = parts.tabs(c);
 let MONTHS = monthsOf();
 if (!MONTHS.includes(S.rev)) S.rev = MONTHS.at(-1);
 
 /* ── Compare: pages/compare.js ── */
-const compare = RhythiaX.ExodusCompare(R, {U, MODES, prepare, ico, sgn, tone, hideTip, sig, KIND, BAR_KINDS});
+const compare = RhythiaX.ExodusCompare(R, {U, MODES, prepare, ico, sgn, tone, hideTip, sig, KIND, BAR_KINDS, OWN});
 
 /* ── Events ── */
 function toggleFaq(force) {
@@ -458,13 +559,19 @@ function toggleFaq(force) {
 R.addEventListener('click', e => {
   if (!e.target.closest('.menu,[data-menu]')) closeMenu();
   if ($('#faq') && !e.target.closest('#faq,[data-faq]')) toggleFaq(false);
-  const t = e.target.closest('[data-section],[data-mode],[data-stat],[data-rev],[data-range],[data-metric],[data-rank-metric],[data-act],[data-gran],[data-step],[data-sel],[data-all-scores],[data-suggest],[data-tier],[data-pin],[data-pin-step],[data-pin-drop],[data-faq],[data-edit-bio],[data-bio],[data-list],[data-view],[data-page],[data-menu],[data-compare],[data-friend],[data-friends],[data-native],[data-item-add],[data-item-drop],[data-pick-close],[data-pick-kind],[data-pick-mine],[data-pick-item],[data-pick-page],[data-bio-more]');
+  const t = e.target.closest('[data-section],[data-mode],[data-stat],[data-rev],[data-range],[data-metric],[data-rank-metric],[data-act],[data-gran],[data-step],[data-sel],[data-all-scores],[data-suggest],[data-tier],[data-pin],[data-pin-step],[data-pin-drop],[data-faq],[data-edit-bio],[data-bio],[data-list],[data-view],[data-page],[data-menu],[data-compare],[data-friend],[data-unfriend],[data-report],[data-report-close],[data-copy-profile],[data-friends],[data-native],[data-item-add],[data-item-drop],[data-pick-close],[data-pick-kind],[data-pick-mine],[data-pick-item],[data-pick-page],[data-bio-more],[data-online]');
   if (!t || t.disabled) return;
   const d = t.dataset;
   if (t.hasAttribute('data-compare')) { closeMenu(); return compare.open(); }
-  if (d.menu) return openMenu(t, d.menu);
+  if (d.menu) return d.menu === 'profile' ? openMore(t) : openMenu(t, d.menu);
+  if (t.hasAttribute('data-report')) return openReport();
+  if (t.hasAttribute('data-report-close')) return $('#cmp').close();
+  if (t.hasAttribute('data-copy-profile')) { closeMenu(); const url = `https://www.rhythia.com/player/${U.id}`; navigator.clipboard?.writeText(url).then(() => toast('Profile link copied.'), () => toast(url)); return; }
+  // Online history from a page that needs it: the same choice as the card (shared/community-consent.js), and the
+  // shell draws the profile again with it.
+  if ('online' in d) { t.disabled = true; RhythiaX.CommunityConsentNotice?.turnOn?.(e).then(ok => { if (!ok) { t.disabled = false; toast('Online history not turned on. Try again.'); } }); return; }
   if (d.section) { if (S.section === d.section) return; return setSection(d.section, true); }
-  if (d.mode) { if (S.mode === d.mode) return; S.mode = d.mode; S.page = 1; S.speed = ''; S.mod = ''; wantMeta(S.mode); renderHero(); renderStats('pane'); renderRp(); return renderScores(true); }
+  if (d.mode) { if (S.mode === d.mode) return; switchMode(d.mode); renderStats('pane'); renderRp(); return renderScores(true); }
   if (d.stat) { if (S.stat === d.stat) return; S.stat = d.stat; return renderStats('pane'); }
   if (d.rev) {
     const i = MONTHS.indexOf(S.rev) + Number(d.rev); if (!MONTHS[i]) return;
@@ -490,6 +597,7 @@ R.addEventListener('click', e => {
   if (d.tier !== undefined) { const k = Number(d.tier); S.tier = S.tier === k ? null : k; hideTip(); const box = $('#tmap'); box.innerHTML = titleMap(); box.firstElementChild.classList.add('settled'); return; }
   if (t.hasAttribute('data-native')) return ctx.showNative();
   if (t.hasAttribute('data-friend')) return addFriend();
+  if (t.hasAttribute('data-unfriend')) return removeFriend();
   if (t.hasAttribute('data-friends')) return openFriends();
   if (t.hasAttribute('data-item-add')) { picker.q = ''; picker.page = 1; return openPicker(); }
   if (d.itemDrop !== undefined) { const next = S.items.filter((_, i) => i !== Number(d.itemDrop)); return saveShowcase(next, () => toast('Removed from your showcase.')); }
@@ -521,18 +629,23 @@ R.addEventListener('click', e => {
   }
   if (d.list) { if (S.list === d.list) return; S.list = d.list; S.page = 1; S.speed = ''; S.mod = ''; return renderScores(true); }
   if (d.view) { S.view = d.view; S.page = 1; return renderScores(true); }
+  if (t.hasAttribute('data-clear-filters')) { S.grade = S.mod = S.speed = S.kind = S.nearSet = ''; S.page = 1; return refilter(); }
   if (d.page) { S.page = Number(d.page); $('#score-body').innerHTML = scoreBody(true); const el = $('#scores'); scrollTo({top: el.getBoundingClientRect().top + scrollY - 72, behavior: REDUCED ? 'auto' : 'smooth'}); }
 }, sig);
+R.addEventListener('submit', e => { if (e.target.id === 'rp-form') { e.preventDefault(); sendReport(); } }, sig);
+$('#cmp')?.addEventListener('close', e => e.target.classList.remove('rp-dlg'), sig);
 R.addEventListener('input', e => {
+  if (e.target.id === 'rp-note') report.note = e.target.value;
   if (e.target.id === 'bio-input') { S.draft.bio = e.target.value; $('#bio-count').textContent = `${fmt(e.target.value.length)} / 10,000`; }
   if (/^link-[01]$/.test(e.target.id)) S.draft.links[Number(e.target.id.slice(5))] = e.target.value;
   if (e.target.id === 'q') { S.q = e.target.value; S.page = 1; renderScores(false, true); suggest(e.target.value); }
   if (e.target.id === 'pick-q') { clearTimeout(picker.timer); picker.q = e.target.value; picker.page = 1; picker.timer = setTimeout(runPicker, 250); }
 }, sig);
 R.addEventListener('change', e => {
-  if (e.target.id === 'speed') { S.speed = e.target.value; S.page = 1; $('#score-body').innerHTML = scoreBody(true); }
-  if (e.target.id === 'mod') { S.mod = e.target.value; S.page = 1; $('#score-body').innerHTML = scoreBody(true); }
-  if (e.target.id === 'grade') { S.grade = e.target.value; S.page = 1; $('#score-body').innerHTML = scoreBody(true); }
+  if (e.target.name === 'rp-reason') { report.reason = e.target.value; redrawReport(); }
+  // A filter or the order: the list part is drawn again, so the filter bar shows what is in use.
+  if (e.target.id === 'nearset') { S.nearSet = e.target.value; S.page = 1; refilter(); $('#nearset')?.focus(); }
+  if (['speed', 'mod', 'grade', 'kind', 'sort'].includes(e.target.id)) { const id = e.target.id; S[id] = e.target.value; S.page = 1; refilter(); $('#' + id)?.focus(); }
   if (e.target.id === 'pick-skin') { picker.skinType = e.target.value; picker.page = 1; runPicker(); }
 }, sig);
 document.addEventListener('keydown', e => {
@@ -595,7 +708,7 @@ return {
     if (!R.querySelector('#stats .faq')) renderStats();
   },
   destroy() {
-    ac.abort(); io?.disconnect(); closeMenu(); hideTip();
+    ac.abort(); io?.disconnect(); closeMenu(); hideTip(); clearTimeout(unfriendTimer);
     R.querySelectorAll('dialog[open]').forEach(dl => dl.close());
   },
 };

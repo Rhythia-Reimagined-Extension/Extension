@@ -6,22 +6,6 @@
 var RhythiaX = RhythiaX || {};
 
 RhythiaX.profileHistoryContext = null;
-const PROFILE_EASTER_EGG_CHANCE_PERCENT = 10;
-const PROFILE_EASTER_EGG_OVERRIDES = {
-  '255585': 1,
-};
-
-function getProfileEasterEggChance(playerId) {
-  const key = String(playerId);
-  const configuredPercent = Object.prototype.hasOwnProperty.call(PROFILE_EASTER_EGG_OVERRIDES, key)
-    ? Number(PROFILE_EASTER_EGG_OVERRIDES[key])
-    : PROFILE_EASTER_EGG_CHANCE_PERCENT;
-  const percent = Number.isFinite(configuredPercent)
-    ? Math.min(100, Math.max(0, configuredPercent))
-    : PROFILE_EASTER_EGG_CHANCE_PERCENT;
-  return percent / 100;
-}
-
 function profileDisplayNumber(value) {
   const text = RhythiaX.cleanStatValueString ? RhythiaX.cleanStatValueString(value) : String(value ?? '').trim();
   if (!/\d/.test(text)) return '';
@@ -223,30 +207,6 @@ RhythiaX.enhanceProfileHeader = function () {
   }
 };
 
-// ─── Shuriel's crown Easter egg ───────────────
-RhythiaX.injectProfileCrown = function () {
-  if (RhythiaX.isModuleEnabled?.('easterEggs') === false) return;
-  const path = window.location.pathname;
-  if (!/^\/player\/255585(?:\/|$)/.test(path)) return;
-  if (RhythiaX.profileCrownRollPath !== path) {
-    RhythiaX.profileCrownRollPath = path;
-    RhythiaX.profileCrownEnabled = Math.random() < getProfileEasterEggChance('255585');
-  }
-  if (!RhythiaX.profileCrownEnabled) return;
-  if (RhythiaX.qs('.rhythiax-profile-crown')) return;
-
-  const avatar = RhythiaX.qsa('img[src*="user-avatar"][src*="-255585"]')
-    .find(img => img.closest('.relative.shrink-0'));
-  const avatarWrapper = avatar?.closest('.relative');
-  if (!avatarWrapper) return;
-
-  const crown = document.createElement('div');
-  crown.className = 'rhythiax-profile-crown';
-  crown.setAttribute('aria-label', 'Crown');
-  crown.innerHTML = '<svg viewBox="0 0 64 48" aria-hidden="true"><path d="M5 10 17 20 32 5l15 15 12-10-5 30H10L5 10Z"></path><path class="rhythiax-profile-crown__base" d="M9 37h46v6H9z"></path><circle cx="5" cy="10" r="3"></circle><circle cx="32" cy="5" r="3"></circle><circle cx="59" cy="10" r="3"></circle></svg>';
-  avatarWrapper.appendChild(crown);
-};
-
 // ─── Creator of Reimagined Badge (Easter egg) ─
 RhythiaX.injectProfileCreatorBadge = function () {
   const path = window.location.pathname;
@@ -269,41 +229,7 @@ RhythiaX.injectProfileCreatorBadge = function () {
   badge.setAttribute('aria-label', 'Creator of Reimagined');
   badge.innerHTML = `
     <div class="rhythiax-creator-badge__icon-wrap">
-      <svg class="rhythiax-creator-badge__icon" viewBox="0 0 512 512" aria-hidden="true">
-        <defs>
-          <path id="rhythiax-creator-r" d="M119 74h177c75 0 126 41 126 111 0 48-24 82-67 99l80 118H304l-66-105h-44v105H119V74Zm75 65v95h94c39 0 59-17 59-48 0-31-20-47-59-47h-94Z"/>
-          <linearGradient id="rhythiax-creator-rim-t" x1="0" y1="0" x2="1" y2="1">
-            <stop offset="0%" stop-color="#ffffff"/>
-            <stop offset="40%" stop-color="#d8b4fe"/>
-            <stop offset="100%" stop-color="#9333ea"/>
-          </linearGradient>
-          <linearGradient id="rhythiax-creator-rim-b" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stop-color="#6b21a8"/>
-            <stop offset="100%" stop-color="#19022b"/>
-          </linearGradient>
-          <linearGradient id="rhythiax-creator-center" x1="0" y1="0" x2="1" y2="1">
-            <stop offset="0%" stop-color="#a855f7"/>
-            <stop offset="50%" stop-color="#7e22ce"/>
-            <stop offset="100%" stop-color="#4c1d95"/>
-          </linearGradient>
-          <linearGradient id="rhythiax-creator-r-gradient" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stop-color="#ffffff"/>
-            <stop offset="60%" stop-color="#fdf4ff"/>
-            <stop offset="100%" stop-color="#f3e8ff"/>
-          </linearGradient>
-        </defs>
-        <polygon points="256,40 472,256 256,472 40,256" fill="#000000" opacity="0.6" transform="translate(0, 16)"/>
-        <polygon points="256,36 476,256 256,476 36,256" fill="url(#rhythiax-creator-rim-b)"/>
-        <polygon points="256,36 476,256 410,256 256,102 102,256 36,256" fill="url(#rhythiax-creator-rim-t)"/>
-        <polygon points="256,36 476,256 256,476 36,256" fill="none" stroke="#e9d5ff" stroke-width="4" opacity="0.85"/>
-        <polygon points="256,96 416,256 256,416 96,256" fill="#140224"/>
-        <polygon points="256,102 410,256 256,410 102,256" fill="url(#rhythiax-creator-center)"/>
-        <polyline points="108,256 256,108 404,256" fill="none" stroke="#ffffff" stroke-width="4" opacity="0.6"/>
-        <use href="#rhythiax-creator-r" fill="#0b0117" transform="translate(0, 12)"/>
-        <use href="#rhythiax-creator-r" fill="none" stroke="#120224" stroke-width="24" stroke-linejoin="round"/>
-        <use href="#rhythiax-creator-r" fill="url(#rhythiax-creator-r-gradient)"/>
-        <path d="M119 74h177c75 0 126 41 126 111 0 6 0 12-2 18-8-60-56-96-124-96H119V74Z" fill="#ffffff" opacity="0.9"/>
-      </svg>
+      <img class="rhythiax-creator-badge__icon" src="${RhythiaX.APP_ICON || ''}" alt="">
     </div>
     <div class="rhythiax-creator-badge__tooltip" role="tooltip">
       <span class="rhythiax-creator-badge__text">Creator of <span class="rhythiax-creator-badge__highlight">Reimagined</span></span>
@@ -315,38 +241,6 @@ RhythiaX.injectProfileCreatorBadge = function () {
   } else {
     metaRow.appendChild(badge);
   }
-};
-
-// ─── Player-specific profile effects ────────────
-RhythiaX.injectProfileAvatarEffects = function () {
-  if (RhythiaX.isModuleEnabled?.('easterEggs') === false) return;
-  const playerId = window.location.pathname.match(/^\/player\/([^/]+)/)?.[1];
-  if (playerId !== '5602' && playerId !== '147') return;
-  if (RhythiaX.profileAvatarEffectRollPath !== window.location.pathname) {
-    RhythiaX.profileAvatarEffectRollPath = window.location.pathname;
-    RhythiaX.profileAvatarEffectEnabled = Math.random() < getProfileEasterEggChance(playerId);
-  }
-  if (!RhythiaX.profileAvatarEffectEnabled) return;
-  if (RhythiaX.qs(`.rhythiax-profile-avatar-effect[data-player-id="${playerId}"]`)) return;
-
-  const avatar = RhythiaX.qsa('img[src*="user-avatar"]')
-    .find(img => img.closest('.relative.shrink-0'));
-  const avatarWrapper = avatar?.closest('.relative');
-  if (!avatarWrapper) return;
-
-  const effect = document.createElement('div');
-  effect.className = `rhythiax-profile-avatar-effect rhythiax-profile-avatar-effect--${playerId === '5602' ? 'uwu' : 'hair'}`;
-  effect.dataset.playerId = playerId;
-  effect.setAttribute('aria-hidden', 'true');
-
-  if (playerId === '5602') {
-    effect.innerHTML = '<span class="rhythiax-profile-uwu-label"><span class="rhythiax-profile-uwu-face"><span class="rhythiax-profile-uwu-text">UwU...</span></span></span><i class="rhythiax-profile-uwu-spark rhythiax-profile-uwu-spark--a"></i><i class="rhythiax-profile-uwu-spark rhythiax-profile-uwu-spark--b"></i><i class="rhythiax-profile-uwu-spark rhythiax-profile-uwu-spark--c"></i>';
-  } else {
-    effect.innerHTML = '<span class="rhythiax-profile-wind-line rhythiax-profile-wind-line--one"></span><span class="rhythiax-profile-wind-line rhythiax-profile-wind-line--two"></span><span class="rhythiax-profile-wind-line rhythiax-profile-wind-line--three"></span><svg class="rhythiax-profile-hair" viewBox="0 0 240 170" aria-hidden="true"><defs><linearGradient id="rhythiax-profile-hair-red" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ffb066"></stop><stop offset=".32" stop-color="#e95747"></stop><stop offset=".72" stop-color="#a3223b"></stop><stop offset="1" stop-color="#54152e"></stop></linearGradient><linearGradient id="rhythiax-profile-hair-light" x1="0" y1="0" x2="1" y2="0"><stop stop-color="#ffd18a" stop-opacity=".95"></stop><stop offset="1" stop-color="#ee6471" stop-opacity=".05"></stop></linearGradient></defs><path class="rhythiax-profile-hair-lock rhythiax-profile-hair-lock--one" fill="url(#rhythiax-profile-hair-red)" stroke="#6f1c32" stroke-width="2" d="M39 121C17 98 18 58 46 33 65 16 91 15 111 27 87 40 76 57 79 77c3 23-9 42-40 44Z"></path><path class="rhythiax-profile-hair-lock rhythiax-profile-hair-lock--two" fill="url(#rhythiax-profile-hair-red)" stroke="#741b31" stroke-width="2" d="M58 113C43 84 51 43 81 22c24-17 52-12 67 1-24 9-37 28-35 49 3 27-19 42-55 41Z"></path><path class="rhythiax-profile-hair-lock rhythiax-profile-hair-lock--three" fill="url(#rhythiax-profile-hair-red)" stroke="#7d1f34" stroke-width="2" d="M88 102C76 69 91 27 123 17c27-8 50 7 57 24-26 0-42 17-41 40 1 17-17 29-51 21Z"></path><path class="rhythiax-profile-hair-lock rhythiax-profile-hair-lock--four" fill="url(#rhythiax-profile-hair-red)" stroke="#68192f" stroke-width="2" d="M118 102c-2-27 15-56 43-64 27-8 47 7 48 24-22 6-31 22-27 42 3 16-24 24-64-2Z"></path><path class="rhythiax-profile-hair-lock rhythiax-profile-hair-lock--five" fill="url(#rhythiax-profile-hair-red)" stroke="#5e172d" stroke-width="2" d="M147 117c12-25 32-41 62-41 17 0 27 11 24 23-24 2-37 13-44 31-7 17-28 13-42-13Z"></path><path class="rhythiax-profile-hair-shine" fill="none" stroke="url(#rhythiax-profile-hair-light)" stroke-linecap="round" stroke-width="5" d="M56 66c17-27 37-37 60-39M91 74c11-25 27-36 48-41M137 76c9-17 22-26 39-29"></path></svg>';
-  }
-
-  avatarWrapper.classList.add('rhythiax-profile-avatar-effect-host');
-  avatarWrapper.appendChild(effect);
 };
 
 RhythiaX.enhanceHeaderDeltas = function (playerId) {
@@ -523,9 +417,7 @@ RhythiaX.injectProfile = function () {
         }
         RhythiaX.enhanceTitleProgression?.(renderPlayer, data);
         RhythiaX.enhanceProfileHeader?.();
-        RhythiaX.injectProfileCrown?.();
         RhythiaX.injectProfileCreatorBadge?.();
-        RhythiaX.injectProfileAvatarEffects?.();
         RhythiaX.enhanceOwnFriendsCounter?.();
         RhythiaX.injectDeferredStatsProfiles?.(renderScores, data.ratingScores, 'profile');
       };

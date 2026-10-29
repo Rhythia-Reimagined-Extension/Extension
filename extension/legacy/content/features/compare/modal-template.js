@@ -63,6 +63,34 @@ var RhythiaX = RhythiaX || {};
     };
   }
 
+  // More from both players' top scores, each in a small card with the gap from the reference player's side:
+  // average and best RP, full combos, average map stars and the share played at 1.45×.
+  function moreHtml(model, isRefP1) {
+    const { p1, p2, p1More: a, p2More: b } = model;
+    if (!a || !b) return '';
+    const fmt = (v, d) => Number(v).toLocaleString('en-US', { minimumFractionDigits: d, maximumFractionDigits: d });
+    const rp = v => `${fmt(v, 0)} RP`, pct = v => `${fmt(v * 100, 0)}%`;
+    const rows = [
+      ['Average Play', a.avgRp, b.avgRp, rp, rp],
+      ['Best Play', a.bestRp, b.bestRp, rp, rp],
+      ['Full Combos', a.fullCombos, b.fullCombos, v => fmt(v, 0), v => fmt(v, 0)],
+      ['Map Difficulty', a.stars, b.stars, v => `★ ${fmt(v, 2)}`, v => fmt(v, 2)],
+      ['Played at 1.45×', a.fast, b.fast, pct, pct],
+    ].filter(([, x, y]) => x != null && y != null);
+    if (!rows.length) return '';
+    const name = p => RhythiaX.escapeHtml(p.username);
+    return `<div class="rhythiax-bento-grid rhythiax-bento-more">${rows.map(([title, x, y, show, gap]) => {
+      const d = isRefP1 ? x - y : y - x;
+      return `<div class="rhythiax-bento-card">
+        <div class="rhythiax-bento-header"><span class="rhythiax-bento-title">${title}</span>
+          <span class="rhythiax-bento-pill ${d >= 0 ? 'is-pos' : 'is-neg'}">${d >= 0 ? '+' : '−'}${gap(Math.abs(d))}</span></div>
+        <div class="rhythiax-bento-comparison">
+          <div class="rhythiax-player-metric"><span class="rhythiax-player-metric-tag">${name(p1)}</span><span class="rhythiax-player-metric-val ${x >= y ? 'is-leader' : ''}">${show(x)}</span></div>
+          <div class="rhythiax-player-metric" style="text-align:right;"><span class="rhythiax-player-metric-tag">${name(p2)}</span><span class="rhythiax-player-metric-val ${y > x ? 'is-leader' : ''}">${show(y)}</span></div>
+        </div></div>`;
+    }).join('')}</div>`;
+  }
+
   // The whole window for one perspective (activeRef 0 or 1): header, both player cards, the
   // diamond and the four metric cards, and the shared maps toolbar over an empty list.
   function modalHtml(model, activeRef) {
@@ -284,6 +312,8 @@ var RhythiaX = RhythiaX || {};
             </div>
           </div>
         </div>
+
+        ${moreHtml(model, isRefP1)}
 
         <!-- Shared Maps -->
         <div>

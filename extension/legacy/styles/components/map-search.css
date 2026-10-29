@@ -1,0 +1,178 @@
+/* ==========================================================================
+   Reimagined for Rhythia — Classic Reimagined Search (content/features/map-search/view.js) and recent
+   searches in Rhythia's own search (recent.js). Classic's theme tokens, so every theme and own theme applies.
+   ========================================================================== */
+
+.rhythiax-msearch {
+  margin: 16px 0;
+  border: 1px solid var(--rhythiax-border, rgba(216, 180, 254, .16));
+  border-radius: 12px;
+  background: var(--rhythiax-surface, #1a1128);
+  color: var(--rhythiax-text, #e9e2f5);
+}
+
+.rhythiax-msearch-head {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 16px;
+  border: 0;
+  background: none;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.rhythiax-msearch-head span { display: flex; flex-direction: column; gap: 2px; }
+.rhythiax-msearch-head b { font-size: 15px; font-weight: 700; color: var(--rhythiax-text-strong, #faf5ff); }
+.rhythiax-msearch-head small { font-size: 12.5px; color: var(--rhythiax-text-muted, #a99bbf); }
+.rhythiax-msearch-head svg { flex: none; transition: transform .2s; }
+.rhythiax-msearch.is-open .rhythiax-msearch-head svg { transform: rotate(180deg); }
+
+.rhythiax-msearch-body {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 0 16px 16px;
+}
+
+.rhythiax-msearch-body[hidden] { display: none; }
+
+.rhythiax-msearch-note {
+  margin: 0;
+  padding: 10px 12px;
+  border: 1px solid var(--rhythiax-border, rgba(216, 180, 254, .16));
+  border-radius: 8px;
+  background: var(--rhythiax-inner-surface, #221634);
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--rhythiax-text-muted, #a99bbf);
+}
+
+.rhythiax-msearch-note p { margin: 0 0 4px; }
+.rhythiax-msearch-note b { color: var(--rhythiax-text-strong, #faf5ff); }
+.rhythiax-msearch-note ul { margin: 0; padding-left: 18px; list-style: disc; }
+
+.rhythiax-msearch-row { display: flex; flex-wrap: wrap; align-items: stretch; gap: 8px 10px; }
+.rhythiax-msearch-order { display: inline-flex; gap: 8px; }
+
+.rhythiax-msearch-row input {
+  flex: 1 1 180px;
+  min-width: 0;
+  height: 38px;
+  padding: 0 12px;
+  border: 1px solid var(--rhythiax-border, rgba(216, 180, 254, .16));
+  border-radius: 8px;
+  background: var(--rhythiax-inner-surface, #221634);
+  color: var(--rhythiax-text-strong, #faf5ff);
+  font: inherit;
+  font-size: 13.5px;
+  outline: none;
+}
+
+.rhythiax-msearch-row input:focus { border-color: var(--rhythiax-accent, #c084fc); }
+
+.rhythiax-msearch-seg {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 2px;
+  padding: 3px;
+  border: 1px solid var(--rhythiax-border, rgba(216, 180, 254, .16));
+  border-radius: 8px;
+  background: var(--rhythiax-inner-surface, #221634);
+}
+
+.rhythiax-msearch-seg button,
+.rhythiax-msearch-btn {
+  min-height: 30px;
+  padding: 0 11px;
+  border: 0;
+  border-radius: 6px;
+  background: none;
+  color: var(--rhythiax-text-muted, #a99bbf);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.rhythiax-msearch-seg button:hover { color: var(--rhythiax-text-strong, #faf5ff); }
+.rhythiax-msearch-seg button[aria-pressed="true"] { background: var(--rhythiax-surface, #1a1128); color: var(--rhythiax-text-strong, #faf5ff); box-shadow: inset 0 0 0 1px var(--rhythiax-border-strong, rgba(216, 180, 254, .3)); }
+
+.rhythiax-msearch-btn {
+  min-height: 38px;
+  border: 1px solid var(--rhythiax-border, rgba(216, 180, 254, .16));
+  border-radius: 8px;
+  background: var(--rhythiax-inner-surface, #221634);
+  color: var(--rhythiax-text-strong, #faf5ff);
+}
+
+.rhythiax-msearch-btn:disabled { opacity: .45; cursor: default; }
+
+.rhythiax-msearch-wait { margin: 18px 0; text-align: center; color: var(--rhythiax-text-muted, #a99bbf); }
+
+.rhythiax-msearch-need { display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 12px 0 4px; text-align: center; }
+.rhythiax-msearch-need b { color: var(--rhythiax-text-strong, #faf5ff); }
+.rhythiax-msearch-need p { max-width: 520px; margin: 0 0 4px; font-size: 13px; line-height: 1.5; color: var(--rhythiax-text-muted, #a99bbf); }
+
+.rhythiax-msearch-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 12px;
+  transition: opacity .2s;
+}
+
+.rhythiax-msearch-grid.is-busy { opacity: .6; }
+
+.rhythiax-msearch-card {
+  position: relative;
+  display: block;
+  aspect-ratio: 4 / 3.1;
+  overflow: hidden;
+  border: 1px solid var(--rhythiax-border, rgba(216, 180, 254, .16));
+  border-radius: 10px;
+  background: var(--rhythiax-inner-surface, #221634);
+  color: #f4f5f7;
+  text-decoration: none;
+  isolation: isolate;
+}
+
+.rhythiax-msearch-art { position: absolute; inset: 0; z-index: -1; background: center / cover no-repeat; transition: transform .5s; }
+.rhythiax-msearch-card:hover .rhythiax-msearch-art { transform: scale(1.05); }
+
+/* Text over map art sits on a dark plate. */
+.rhythiax-msearch-tags { position: absolute; top: 8px; left: 8px; right: 8px; display: flex; justify-content: space-between; gap: 6px; }
+.rhythiax-msearch-tags span { padding: 3px 8px; border-radius: 4px; background: rgba(10, 11, 14, .84); font-size: 12px; font-weight: 700; white-space: nowrap; }
+
+.rhythiax-msearch-plate {
+  position: absolute;
+  left: 6px;
+  right: 6px;
+  bottom: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: rgba(10, 11, 14, .82);
+}
+
+.rhythiax-msearch-plate b { overflow: hidden; font-size: 13.5px; text-overflow: ellipsis; white-space: nowrap; }
+.rhythiax-msearch-plate small { display: flex; gap: 8px; overflow: hidden; font-size: 11.5px; color: #b8c0cc; white-space: nowrap; }
+
+.rhythiax-msearch-pager { display: flex; align-items: center; justify-content: center; gap: 14px; font-size: 13px; color: var(--rhythiax-text-muted, #a99bbf); }
+
+/* Recent searches at the top of Rhythia's search while its box is empty. */
+.rhythiax-find-recent { padding: 6px; border-bottom: 1px solid var(--rhythiax-border, rgba(255, 255, 255, .1)); }
+.rhythiax-find-recent-head { display: flex; align-items: center; justify-content: space-between; padding: 4px 8px 6px; font-size: 12px; font-weight: 600; color: var(--rhythiax-text-muted, #a3a3a3); }
+.rhythiax-find-recent-head button { border: 0; background: none; color: inherit; font: inherit; cursor: pointer; }
+.rhythiax-find-recent-head button:hover { color: var(--rhythiax-text-strong, #fff); }
+.rhythiax-find-recent-item { display: flex; align-items: center; gap: 10px; padding: 6px 8px; border-radius: 6px; color: inherit; text-decoration: none; }
+.rhythiax-find-recent-item:hover { background: rgba(255, 255, 255, .06); }
+.rhythiax-find-recent-item img,
+.rhythiax-find-recent-item i { flex: none; width: 32px; height: 32px; border-radius: 6px; object-fit: cover; background: rgba(255, 255, 255, .08); }
+.rhythiax-find-recent-item span { display: flex; flex-direction: column; min-width: 0; }
+.rhythiax-find-recent-item b { overflow: hidden; font-size: 13.5px; font-weight: 600; text-overflow: ellipsis; white-space: nowrap; }
+.rhythiax-find-recent-item small { font-size: 12px; color: var(--rhythiax-text-muted, #a3a3a3); }

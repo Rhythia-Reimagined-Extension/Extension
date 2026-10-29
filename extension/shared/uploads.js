@@ -23,7 +23,7 @@ RhythiaX.Uploads = (function () {
   const THUMB = 160;
   const fileKey = id => FILE_PREFIX + id;
   const area = () => chrome.storage.local;
-  const { imageOk, isVideo, blobOf } = RhythiaX.Colour;
+  const { imageOk, isVideo, mediaUrl, freeUrl } = RhythiaX.Colour;
 
   const kindOf = media => (isVideo(media) ? 'video' : media.startsWith('data:image/gif') ? 'gif' : 'picture');
   const entryOk = u => Boolean(u) && /^[0-9a-f]{12}$/.test(u.id) && ['picture', 'gif', 'video'].includes(u.kind)
@@ -48,7 +48,7 @@ RhythiaX.Uploads = (function () {
     const video = isVideo(media);
     let src = '';
     try {
-      src = URL.createObjectURL(blobOf(media));
+      src = mediaUrl(media);
       const el = video ? Object.assign(document.createElement('video'), { muted: true, preload: 'auto' }) : new Image();
       await Promise.race([
         new Promise((resolve, reject) => { el[video ? 'onloadeddata' : 'onload'] = resolve; el.onerror = reject; el.src = src; }),
@@ -63,7 +63,7 @@ RhythiaX.Uploads = (function () {
     } catch (_) {
       return '';
     } finally {
-      if (src) URL.revokeObjectURL(src);
+      if (src) freeUrl(src);
     }
   }
 

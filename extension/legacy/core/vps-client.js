@@ -86,6 +86,61 @@ var RhythiaX = RhythiaX || {};
     }
   }
 
+  // How the given maps play, from the history service's map catalog (POST /api/maps/kinds, up to 100 maps a
+  // request, carried by the background with this installation's key). Online history only; maps the service has
+  // not read are left out, and nothing is downloaded here. Map key -> { kind, quantum }.
+  const KINDS_BODY = 15000;
+  RhythiaX.fetchVpsMapKinds = async function (keys, signal) {
+    const out = new Map();
+    const list = [...new Set(keys)].filter(key => typeof key === 'string' && key && key.length <= 512);
+    if (!list.length || (await getSyncMode()) === 'local-only' || !RhythiaX.Net?.fetch) return out;
+    for (let i = 0; i < list.length;) {
+      const chunk = [];
+      for (let size = 12; i < list.length && chunk.length < 100 && size + JSON.stringify(list[i]).length < KINDS_BODY; i++) {
+        size += JSON.stringify(list[i]).length + 1;
+        chunk.push(list[i]);
+      }
+      try {
+        const res = await RhythiaX.Net.fetch(`${VPS_BASE_URL}/api/maps/kinds`, {
+          method: 'POST', headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+          body: JSON.stringify({ keys: chunk }), signal, maxWait: LATE_ANSWER_MS,
+        });
+        if (!res.ok) break;
+        const maps = (await res.json())?.maps || {};
+        for (const key of chunk) if (maps[key]?.kind) out.set(key, { kind: maps[key].kind, quantum: maps[key].quantum === true });
+      } catch (_) {
+        break;
+      }
+    }
+    return out;
+  };
+
+  // The map search by type on the history service (Ranked and Qualified maps only): what it filters by and the
+  // note shown above its results (GET /api/maps/types), and one page of results (POST /api/maps/search, with the
+  // key). Online history only: null without it. A refused or failed search throws with a sentence to show.
+  let mapSearchTypes = null;
+  RhythiaX.fetchVpsMapSearchTypes = async function (signal) {
+    if ((await getSyncMode()) === 'local-only' || !RhythiaX.Net?.fetch) return null;
+    if (mapSearchTypes) return mapSearchTypes;
+    const res = await RhythiaX.Net.fetch(`${VPS_BASE_URL}/api/maps/types`, { method: 'GET', headers: { Accept: 'application/json' }, signal, maxWait: LATE_ANSWER_MS });
+    if (!res.ok) throw new Error(`The history service did not answer (HTTP ${res.status}).`);
+    const body = await res.json();
+    if (!Array.isArray(body?.types) || !Array.isArray(body?.statuses)) throw new Error('The history service sent an unexpected answer.');
+    mapSearchTypes = body;
+    return body;
+  };
+  RhythiaX.fetchVpsMapSearch = async function (query, signal) {
+    if ((await getSyncMode()) === 'local-only' || !RhythiaX.Net?.fetch) return null;
+    const res = await RhythiaX.Net.fetch(`${VPS_BASE_URL}/api/maps/search`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+      body: JSON.stringify(query), signal, maxWait: LATE_ANSWER_MS,
+    });
+    if (res.status === 429) throw new Error('Too many map searches for now. Try again a little later.');
+    if (res.status === 403) throw new Error('This browser has no access key for the history service yet. Try again later.');
+    if (!res.ok) throw new Error(`The history service did not answer (HTTP ${res.status}).`);
+    return res.json();
+  };
+
   /**
    * Fetch a player's daily history from the history service (GET /api/player/:id/history). shared/net.js
    * carries the request through the background, which adds this installation's key when it has one. The

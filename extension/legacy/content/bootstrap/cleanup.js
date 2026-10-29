@@ -42,9 +42,6 @@ RhythiaX.cleanupStaleElements = function (preserveCards) {
     el.style.removeProperty('display');
   });
   RhythiaX.qsa('.rhythiax-pinned-scores-section').forEach(el => el.remove());
-  RhythiaX.qsa('.rhythiax-profile-crown').forEach(el => el.remove());
-  RhythiaX.qsa('.rhythiax-profile-avatar-effect').forEach(el => el.remove());
-  RhythiaX.qsa('.rhythiax-profile-avatar-effect-host').forEach(el => el.classList.remove('rhythiax-profile-avatar-effect-host'));
   if (!/^\/player\/255585(?:\/|$)/.test(window.location.pathname)) {
     RhythiaX.qsa('.rhythiax-creator-badge').forEach(el => el.remove());
   }

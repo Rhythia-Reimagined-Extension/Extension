@@ -99,7 +99,7 @@ function formatHistoryDateLabel(dateStr) {
 // full history to installations with a key. Cloud + Local fills in the older days from this device, so the
 // label names the online part. Both layouts use these (history-view.js draws the default one).
 const HISTORY_RECENT_ONLY_LABEL = 'Online: last 3 days';
-const HISTORY_RECENT_ONLY_NOTE = 'Only the last 3 days are available without an installation key';
+const HISTORY_RECENT_ONLY_NOTE = 'Only the last 3 days could be loaded';
 function historyRecentOnlyBadge(recentOnly) {
   return recentOnly
     ? `<span class="rhythiax-cloud-badge" style="display: inline-flex; align-items: center; font-size: 11px; font-weight: 500; color: var(--rhythiax-text-muted, #a1a1aa); margin-left: 8px;" title="${HISTORY_RECENT_ONLY_NOTE}">${HISTORY_RECENT_ONLY_LABEL}</span>`
@@ -604,6 +604,33 @@ const INLINE_HISTORY_KINDS = {
   progress: { render: renderProgressHistoryTable, open: true, noun: 'progress', failure: 'VPS progress history fetch failed, using local fallback:' }
 };
 
+// This device: what online history adds, under the pane. With nothing to show, a line and a button; under
+// history from this browser, one quiet line, left out after Don't show again on the online card
+// (shared/community-consent.js). The button is that card's Turn on (Both, without visit reports).
+const ONLINE_ICON = '<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M12 7v5l4 2"/></svg>';
+async function appendOnlineOffer(container, empty) {
+  const consent = RhythiaX.CommunityConsentNotice;
+  if (!consent?.turnOn || container.isConnected === false) return;
+  if (!empty && await consent.offerHidden?.()) return;
+  container.querySelector(':scope > .rhythiax-online-offer')?.remove();
+  const box = document.createElement('div');
+  box.className = empty ? 'rhythiax-online-offer' : 'rhythiax-online-offer quiet';
+  const text = document.createElement('span');
+  text.textContent = empty
+    ? 'Online history fills this with the daily history kept for the top 5,000 players.'
+    : 'History from this browser only.';
+  const button = document.createElement('button');
+  button.type = 'button';
+  button.title = 'Turns it on everywhere. Sends player and map IDs, Reimagined Search filters and an anonymous key for this installation to Shuriel’s service (rhythia.shuriel.com). More in the privacy policy.';
+  button.innerHTML = `${ONLINE_ICON}<span>${empty ? 'Turn on online history' : 'Use online history'}</span>`;
+  button.addEventListener('click', async event => {
+    button.disabled = true;
+    if (!(await consent.turnOn(event))) { button.disabled = false; button.lastChild.textContent = 'Not turned on. Try again'; }
+  });
+  box.append(text, button);
+  container.appendChild(box);
+}
+
 async function renderInlineHistory(container, playerId, kind, options = {}) {
   const pane = INLINE_HISTORY_KINDS[kind];
   container.setAttribute('data-rhythiax-history-rendered', kind);
@@ -647,8 +674,9 @@ async function renderInlineHistory(container, playerId, kind, options = {}) {
   // If local-only mode, stop here without querying VPS!
   if (syncMode === 'local-only') {
     if (!hasRendered) {
-      container.innerHTML = `<div class="rhythiax-rank-history-empty" style="padding: 32px 16px; text-align: center; color: var(--rhythiax-text-muted, #a1a1aa); font-size: 13px;">No ${pane.noun} history on this device yet.</div>`;
+      container.innerHTML = `<div class="rhythiax-rank-history-empty" style="padding: 32px 16px 16px; text-align: center; color: var(--rhythiax-text-muted, #a1a1aa); font-size: 13px;">No ${pane.noun} history on this device yet.</div>`;
     }
+    await appendOnlineOffer(container, !hasRendered);
     return;
   }
 

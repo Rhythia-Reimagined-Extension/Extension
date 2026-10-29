@@ -16,7 +16,7 @@ div:has(> svg.lucide-users-round) {
   border: 1px solid var(--rhythiax-border-strong);
   border-radius: .375rem;
   color: var(--rhythiax-text-strong);
-  background: color-mix(in srgb, var(--rhythiax-accent) 18%, var(--rhythiax-inner-surface));
+  background: var(--rhythiax-inner-surface);
   font: inherit;
   font-size: .875rem;
   font-weight: 600;
@@ -25,7 +25,7 @@ div:has(> svg.lucide-users-round) {
 }
 .rhythiax-friends-quick-trigger svg { width: 19px; height: 19px; color: currentColor; }
 .rhythiax-friends-quick-trigger:hover,
-div:has(> svg.lucide-users-round):hover { background: color-mix(in srgb, var(--rhythiax-accent) 28%, var(--rhythiax-inner-surface)) !important; border-color: var(--rhythiax-accent) !important; cursor: pointer; }
+div:has(> svg.lucide-users-round):hover { background: color-mix(in srgb, var(--rhythiax-accent) 16%, var(--rhythiax-inner-surface)) !important; border-color: color-mix(in srgb, var(--rhythiax-accent) 60%, transparent) !important; cursor: pointer; }
 .rhythiax-friends-quick-trigger:active { transform: translateY(1px); }
 .rhythiax-friends-quick-trigger:focus-visible,
 .rhythiax-friends-quick-close:focus-visible { outline: 2px solid var(--rhythiax-accent); outline-offset: 2px; }

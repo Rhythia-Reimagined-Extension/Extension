@@ -21,6 +21,7 @@ RhythiaX.MODULE_SETTING_DEFAULTS = {
   statHistory: { layout: 'variant_b' },
   titleProgression: { showProgression: true, showHistory: true, crownMode: '3d' },
   playerCompare: {},
+  easterEggs: { frequency: 'normal' },
 };
 
 RhythiaX.moduleSettings = { ...RhythiaX.MODULE_DEFAULTS };

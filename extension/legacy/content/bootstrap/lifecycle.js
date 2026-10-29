@@ -21,11 +21,11 @@ RhythiaX.ContentLifecycle = (function () {
     if (!RhythiaX.PageRouteContext.isInjectable()) return false;
     try {
       if (pageType === 'profile') {
-        RhythiaX.injectProfileCrown?.();
         RhythiaX.injectProfileCreatorBadge?.();
       }
       if (pageType === 'score-replay') return RhythiaX.injectScoreReplay?.() || false;
       if (pageType === 'changelog') return RhythiaX.injectChangelog?.() || false;
+      if (pageType === 'map-list') return RhythiaX.injectMapSearch?.() || false;
       if (pageType === 'scores') {
         const ready = RhythiaX.enhanceScoreCards?.() === true;
         RhythiaX.injected = ready;
@@ -46,6 +46,7 @@ RhythiaX.ContentLifecycle = (function () {
     const pageType = RhythiaX.PageRouteContext.type();
     if (pageType === 'score-replay') return Boolean(document.querySelector('.rhythiax-score-replay-fullscreen-button'));
     if (pageType === 'changelog') return Boolean(document.querySelector('[data-rhythiax-changelog-tab]'));
+    if (pageType === 'map-list') return Boolean(document.querySelector('.rhythiax-msearch'));
     if (pageType === 'scores') {
       if (RhythiaX.isModuleEnabled?.('scoreCards') === false
         || RhythiaX.isModuleOptionEnabled?.('scoreCards', 'customCards') === false) return true;
@@ -96,12 +97,9 @@ RhythiaX.ContentLifecycle = (function () {
     RhythiaX.CompareLoader?.reset();
     RhythiaX.cleanupScoreReplay?.();
     RhythiaX.cleanupChangelog?.();
+    RhythiaX.cleanupMapSearch?.();
     clearTimers();
     RhythiaX.injected = false;
-    RhythiaX.profileCrownRollPath = null;
-    RhythiaX.profileCrownEnabled = false;
-    RhythiaX.profileAvatarEffectRollPath = null;
-    RhythiaX.profileAvatarEffectEnabled = false;
     RhythiaX.cleanupStaleElements();
     if (RhythiaX.PageRouteContext.type() === 'maps') return;
     const nextPlayerId = typeof window !== 'undefined' ? window.location.pathname.match(/\/player\/(\d+)/)?.[1] : null;

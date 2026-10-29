@@ -10,27 +10,26 @@ var RhythiaX = RhythiaX || {};
   const EGG_CLASS = 'rhythiax-number-egg';
   const ACTIVE_CLASS = 'rhythiax-number-egg--active';
 
-  const DURATION = {
-    '67': 4000,
-    '69': 4000,
-    '420': 2000,
+  // Each number plays for 2 s: first 5-20 s after a page opens, then again every 20-40 s, each on its own timer.
+  // The popup's How often (options.easterEggs.frequency): Frequent is twice as often and plays twice in a row,
+  // Rare half as often.
+  const DURATION = 2000;
+  const PACE = {
+    frequent: { first: [2500, 10000], again: [10000, 20000], plays: 2 },
+    normal: { first: [5000, 20000], again: [20000, 40000], plays: 1 },
+    rare: { first: [10000, 40000], again: [40000, 80000], plays: 1 },
   };
-
-  const INTERVALS = {
-    '67': 10000,
-    '69': 30000,
-    '420': 30000,
-  };
-
-  const INITIAL_DELAY = 5000;
+  const pace = () => PACE[RhythiaX.moduleOptionSettings?.easterEggs?.frequency] || PACE.normal;
+  const NUMBERS = ['67', '69', '420'];
+  const between = ([lo, hi]) => lo + Math.random() * (hi - lo);
 
   let currentPath = typeof window !== 'undefined' && window.location ? window.location.pathname : '';
-  let initialTimeoutId = null;
   let observer = null;
-  let intervalIds = [];
+  let timers = {};
   let animationTimeoutIds = [];
   let isRunning = false;
 
+  // A number standing on its own: not part of a bigger number (1,067, 4.20, 6 7) or of a word (S67, x69).
   const IGNORED_TAGS = new Set([
     'SCRIPT', 'STYLE', 'NOSCRIPT', 'TEXTAREA', 'INPUT', 'SELECT', 'OPTION', 'CODE', 'PRE', 'SVG', 'PATH'
   ]);
@@ -65,11 +64,11 @@ var RhythiaX = RhythiaX || {};
       }
 
       const text = textNode.nodeValue;
-      if (!text || !/(?<![\d,.\-]|\d\s+)(?:67|69|420)(?![\d,.]|\s+\d)/.test(text)) {
+      if (!text || !/(?<![\w,.\-]|\d\s+)(?:67|69|420)(?![\w,.]|\s+\d)/.test(text)) {
         return;
       }
 
-      const regex = /(?<![\d,.\-]|\d\s+)(67|69|420)(?![\d,.]|\s+\d)/g;
+      const regex = /(?<![\w,.\-]|\d\s+)(67|69|420)(?![\w,.]|\s+\d)/g;
       let match;
       let lastIndex = 0;
       const fragment = document.createDocumentFragment();
@@ -130,7 +129,7 @@ var RhythiaX = RhythiaX || {};
                 if (!p || IGNORED_TAGS.has(p.nodeName) || p.closest?.(`.${EGG_CLASS}`)) {
                   return FILTER_REJECT;
                 }
-                if (/(?<![\d,.\-]|\d\s+)(?:67|69|420)(?![\d,.]|\s+\d)/.test(node?.nodeValue || '')) {
+                if (/(?<![\w,.\-]|\d\s+)(?:67|69|420)(?![\w,.]|\s+\d)/.test(node?.nodeValue || '')) {
                   return FILTER_ACCEPT;
                 }
                 return FILTER_SKIP;
@@ -161,11 +160,12 @@ var RhythiaX = RhythiaX || {};
       const eggs = document.querySelectorAll(`.${EGG_CLASS}[data-rhythiax-egg="${number}"]`);
       if (!eggs.length) return;
 
-      const duration = DURATION[number] || 2000;
+      const plays = pace().plays, duration = DURATION * plays;
       // Restart the animation in the next frame for all eggs at once, without forcing a layout per egg.
       eggs.forEach(egg => egg.classList.remove(ACTIVE_CLASS));
       requestAnimationFrame(() => requestAnimationFrame(() => eggs.forEach(egg => {
         if (!egg || !egg.isConnected || !isRunning) return;
+        egg.style.setProperty('--rhythiax-egg-plays', String(plays));
         egg.classList.add(ACTIVE_CLASS);
         const tid = window.setTimeout(() => {
           try {
@@ -181,17 +181,18 @@ var RhythiaX = RhythiaX || {};
     } catch (_) {}
   }
 
-  function scheduleInitialPulse() {
-    if (initialTimeoutId) {
-      window.clearTimeout(initialTimeoutId);
-      initialTimeoutId = null;
-    }
+  // The next play of one number, after a random gap; a new page starts every number over.
+  function schedule(number, which) {
+    window.clearTimeout(timers[number]);
     if (!isRunning) return;
-    initialTimeoutId = window.setTimeout(() => {
-      initialTimeoutId = null;
-      if (!isRunning) return;
-      ['67', '69', '420'].forEach(num => triggerEggAnimation(num));
-    }, INITIAL_DELAY);
+    timers[number] = window.setTimeout(() => {
+      triggerEggAnimation(number);
+      schedule(number, 'again');
+    }, between(pace()[which]));
+  }
+
+  function scheduleInitialPulse() {
+    NUMBERS.forEach(number => schedule(number, 'first'));
   }
 
   function handleRouteChange() {
@@ -224,24 +225,6 @@ var RhythiaX = RhythiaX || {};
 
   function startAnimationLoops() {
     scheduleInitialPulse();
-
-    intervalIds.push(
-      window.setInterval(() => {
-        triggerEggAnimation('67');
-      }, INTERVALS['67'])
-    );
-
-    intervalIds.push(
-      window.setInterval(() => {
-        triggerEggAnimation('69');
-      }, INTERVALS['69'])
-    );
-
-    intervalIds.push(
-      window.setInterval(() => {
-        triggerEggAnimation('420');
-      }, INTERVALS['420'])
-    );
   }
 
   function removeEggs() {
@@ -262,12 +245,8 @@ var RhythiaX = RhythiaX || {};
   }
 
   function clearAllTimers() {
-    if (initialTimeoutId) {
-      window.clearTimeout(initialTimeoutId);
-      initialTimeoutId = null;
-    }
-    intervalIds.forEach(id => window.clearInterval(id));
-    intervalIds = [];
+    Object.values(timers).forEach(id => window.clearTimeout(id));
+    timers = {};
     animationTimeoutIds.forEach(id => window.clearTimeout(id));
     animationTimeoutIds = [];
   }

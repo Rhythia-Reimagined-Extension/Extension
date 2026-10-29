@@ -253,12 +253,12 @@ var RhythiaX = RhythiaX || {};
   function paintVideo(media) {
     if (!media) {
       if (ownVideo) { ownVideo.pause(); ownVideo.remove(); ownVideo = null; }
-      if (ownVideoUrl) { URL.revokeObjectURL(ownVideoUrl); ownVideoUrl = ''; ownVideoFor = ''; }
+      if (ownVideoUrl) { RhythiaX.Colour.freeUrl(ownVideoUrl); ownVideoUrl = ''; ownVideoFor = ''; }
       return;
     }
     if (ownVideoFor !== media) {
-      if (ownVideoUrl) URL.revokeObjectURL(ownVideoUrl);
-      ownVideoUrl = URL.createObjectURL(RhythiaX.Colour.blobOf(media));
+      if (ownVideoUrl) RhythiaX.Colour.freeUrl(ownVideoUrl);
+      ownVideoUrl = RhythiaX.Colour.mediaUrl(media);
       ownVideoFor = media;
       if (ownVideo) ownVideo.src = ownVideoUrl;
     }

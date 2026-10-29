@@ -27,6 +27,9 @@ RhythiaX.NoticeSkins.classic = `
     :host([data-look="classic"]) .act:hover:not(:disabled) { filter: brightness(1.12); }
     :host([data-look="classic"]) a { color: var(--rhythiax-accent, #c084fc); }
     :host([data-look="classic"][data-theme="white"]) a { color: #6d28d9; }
+    :host([data-look="classic"]) .check { color: var(--rhythiax-text-muted, #c4b5d8); }
+    :host([data-look="classic"]) .check input { accent-color: var(--rhythiax-accent, #c084fc); }
+    :host([data-look="classic"][data-theme="white"]) .check input { accent-color: #6d28d9; }
     :host([data-look="classic"]) .status { color: var(--rhythiax-danger, #ef4444); }
     :host([data-look="classic"]) :focus-visible { outline: 2px solid var(--rhythiax-accent, #c084fc); outline-offset: 2px; }
 `;

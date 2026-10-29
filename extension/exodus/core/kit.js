@@ -34,7 +34,7 @@ const mmss = ms => { const s = Math.max(0, Math.round((ms || 0) / 1000)); return
 // Rhythia's difficulty badges: 1 Easy, 2 Medium, 3 Hard, 5 Tasukete, 0 N/A, anything else Logic.
 const DIFF = {0: ['N/A', 'var(--muted)'], 1: ['Easy', '#3bbf7d'], 2: ['Medium', '#d8970a'], 3: ['Hard', '#e5484d'], 5: ['Tasukete', '#cbd5e1']};
 const diff = n => DIFF[n] || ['Logic', '#a26bdc'];
-const STATUS = {RANKED: ['Ranked', '#60a5fa'], QUALIFIED: ['Qualified', '#a78bfa'], UNRANKED: ['Unranked', 'var(--muted)']};
+const STATUS = {RANKED: ['Ranked', '#60a5fa'], QUALIFIED: ['Qualified', '#a78bfa'], UNRANKED: ['Unranked', 'var(--muted)'], LEGACY: ['Legacy', 'var(--muted)']};
 const status = m => STATUS[m?.qualified && m.status !== 'RANKED' ? 'QUALIFIED' : m?.status] || STATUS.UNRANKED;
 // A score's grade by the rule both looks share (shared/grades.js): Rhythia's own letter when it sent one,
 // F for a play marked as failed, otherwise the letter for the accuracy and misses.
@@ -80,6 +80,82 @@ function mods(s) {
   return out.length ? `<span class="mods">${out.join('')}</span>` : '<span class="cap">—</span>';
 }
 const flag = c => c ? `<img class="v-flag" src="${SITE}/flags/${esc(c)}.svg" alt="${esc(c)}">` : '';
+
+// ─── Country picker (leaderboards, map leaderboards) ───
+const CODES = 'AD AE AF AG AI AL AM AO AQ AR AS AT AU AW AX AZ BA BB BD BE BF BG BH BI BJ BL BM BN BO BQ BR BS BT BV BW BY BZ CA CC CD CF CG CH CI CK CL CM CN CO CR CU CV CW CX CY CZ DE DJ DK DM DO DZ EC EE EG EH ER ES ET FI FJ FK FM FO FR GA GB GD GE GF GG GH GI GL GM GN GP GQ GR GS GT GU GW GY HK HM HN HR HT HU ID IE IL IM IN IO IQ IR IS IT JE JM JO JP KE KG KH KI KM KN KP KR KW KY KZ LA LB LC LI LK LR LS LT LU LV LY MA MC MD ME MF MG MH MK ML MM MN MO MP MQ MR MS MT MU MV MW MX MY MZ NA NC NE NF NG NI NL NO NP NR NU NZ OM PA PE PF PG PH PK PL PM PN PR PS PT PW PY QA RE RO RS RU RW SA SB SC SD SE SG SH SI SJ SK SL SM SN SO SR SS ST SV SX SY SZ TC TD TF TG TH TJ TK TL TM TN TO TR TT TV TW TZ UA UG UM US UY UZ VA VC VE VG VI VN VU WF WS XK YE YT ZA ZM ZW'.split(' ');
+const REGION = (() => { try { return new Intl.DisplayNames(['en'], {type: 'region'}); } catch (_) { return null; } })();
+const countryName = c => { try { return REGION?.of(c) || c; } catch (_) { return c; } };
+let COUNTRIES = null;
+// Line icons only: a globe for Global, a chevron, a check for the chosen country.
+const GLOBE = '<svg class="b-globe" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.5 2.7 3.8 5.7 3.8 9s-1.3 6.3-3.8 9c-2.5-2.7-3.8-5.7-3.8-9S9.5 5.7 12 3z"/></svg>';
+const CHEVRON = '<svg class="b-chev" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>';
+const CHECK = '<svg class="b-check" viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12.5 4.5 4.5L19 7.5"/></svg>';
+const flagImg = c => c ? `<img class="b-fl" src="${SITE}/flags/${esc(c)}.svg" alt="" data-code="${esc(c)}">` : GLOBE;
+// Global and every country, searchable, the player's own country first. R: the shadow root; current() and
+// mine() give the chosen and the player's country ('' is Global); pick(code) is called with a new choice;
+// redraw() repaints the part that holds html(). One picker per page.
+function countryPicker(R, {current, mine = () => '', pick, redraw, signal}) {
+  let st = {open: false, q: '', i: -1};
+  const $ = s => R.querySelector(s);
+  function items() {
+    COUNTRIES ||= CODES.map(c => [c, countryName(c)]).sort((a, b) => a[1].localeCompare(b[1]));
+    const qq = st.q.trim().toLowerCase(), cur = current(), own = mine();
+    const match = ([c, n]) => !qq || n.toLowerCase().includes(qq) || c.toLowerCase() === qq;
+    const item = (c, n) => `<button type="button" role="option" class="b-cp-item" aria-selected="${cur === c}" data-flag="${esc(c)}">${flagImg(c)}<span>${esc(n)}</span>${cur === c ? CHECK : ''}</button>`;
+    const head = t => `<div class="b-cp-sec">${t}</div>`;
+    let out = '';
+    if (!qq || 'global'.includes(qq)) out += item('', 'Global');
+    if (own && match([own, countryName(own)])) out += head('Your country') + item(own, countryName(own));
+    const all = COUNTRIES.filter(match);
+    if (all.length) out += head(qq ? `${all.length} ${all.length === 1 ? 'country' : 'countries'}` : 'All countries') + all.map(([c, n]) => item(c, n)).join('');
+    return out || '<p class="cap b-cp-none">No country matches.</p>';
+  }
+  function html() {
+    const c = current(), label = c ? esc(countryName(c)) : 'Global';
+    return `<div class="b-cp ${st.open ? 'open' : ''}"><button class="b-cp-btn" type="button" data-cp aria-haspopup="listbox" aria-expanded="${st.open}" aria-label="Country: ${label}">${flagImg(c)}<span>${label}</span>${CHEVRON}</button>${st.open ? `<div class="b-cp-pop" role="dialog" aria-label="Choose a country">
+      <label class="field b-cp-q"><svg class="ico" aria-hidden="true"><use href="#i-search"/></svg><span class="sr">Search countries</span><input id="b-cp-q" type="search" placeholder="Search countries" autocomplete="off" value="${esc(st.q)}"></label>
+      <div class="b-cp-list" role="listbox" id="b-cp-list">${items()}</div></div>` : ''}</div>`;
+  }
+  function open(v) {
+    st = {open: v, q: '', i: -1};
+    redraw();
+    if (!v) return;
+    $('#b-cp-q')?.focus();
+    $('.b-cp-item[aria-selected="true"]')?.scrollIntoView({block: 'center'});
+  }
+  function move(step) {
+    const list = [...R.querySelectorAll('.b-cp-item')];
+    if (!list.length) return;
+    st.i = (st.i + step + list.length) % list.length;
+    list.forEach((b, i) => b.classList.toggle('on', i === st.i));
+    list[st.i].scrollIntoView({block: 'nearest'});
+  }
+  R.addEventListener('click', e => {
+    if (st.open && !e.target.closest('.b-cp')) open(false);
+    if (e.target.closest('[data-cp]')) return open(!st.open);
+    const f = e.target.closest('.b-cp-item[data-flag]');
+    if (f) { const c = f.dataset.flag; open(false); if (c !== current()) pick(c); }
+  }, {signal});
+  R.addEventListener('input', e => {
+    if (e.target.id !== 'b-cp-q') return;
+    st.q = e.target.value; st.i = -1;
+    $('#b-cp-list').innerHTML = items();
+  }, {signal});
+  R.addEventListener('keydown', e => {
+    if (!st.open) return;
+    if (e.key === 'ArrowDown' || e.key === 'ArrowUp') { e.preventDefault(); return move(e.key === 'ArrowDown' ? 1 : -1); }
+    if (e.key === 'Enter') { e.preventDefault(); const list = R.querySelectorAll('.b-cp-item'); (list[st.i] || (st.q ? list[0] : null))?.click(); return; }
+    if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); open(false); $('[data-cp]')?.focus(); }
+  }, {signal});
+  // A flag Rhythia does not have shows its code instead.
+  R.addEventListener('error', e => {
+    const img = e.target;
+    if (img?.tagName !== 'IMG' || !img.classList.contains('b-fl')) return;
+    const b = document.createElement('b'); b.className = 'b-fl code'; b.textContent = img.dataset.code || ''; img.replaceWith(b);
+  }, {capture: true, signal});
+  return {html, open, get isOpen() { return st.open; }};
+}
+
 // A picture's address as a whole CSS url("…") token for a style attribute: escaped for a double-quoted
 // CSS string first (backslash, quote, line breaks and other control characters), then for the attribute,
 // so no address can close the string and add declarations of its own.
@@ -189,8 +265,13 @@ function playsHtml(a, speed = 1) {
 }
 const playsNote = 'Shares are by note count.';
 
-// Rhythia's map preview, reached through the page-world bridge (core/bridge.js).
-const PREVIEW_SPEEDS = [.25, .5, .75, 1, 1.25, 1.5, 1.75, 2];
+// Rhythia's map preview and score replay, reached through the page-world bridge (core/bridge.js).
+// The preview's speeds: half and a quarter speed for slow practice, then the game's own speed mods (SPEED_ART).
+const PREVIEW_SPEEDS = [.25, .5, .75, .8, .87, 1, 1.15, 1.25, 1.35, 1.45];
+// A replay plays at the speed it was played at; these slow it down from there (a 1.45× play at 0.5× runs at 0.725×).
+const REPLAY_SPEEDS = [1, .75, .5];
+// A speed as the game writes it: its mods with two decimals (0.80×), others as they are (0.5×).
+const speedLabel = v => (Number(v).toFixed(2) in SPEED_ART ? Number(v).toFixed(2) : String(Number(v)));
 function ask(op, value, extra = {}) {
   return new Promise(done => {
     const id = Math.random().toString(36).slice(2);
@@ -218,6 +299,14 @@ function row(x, place, me = false) {
 const slugify = t => String(t).toLowerCase().replace(/[^a-z0-9\s-]/g, '').trim().replace(/\s+/g, '-');
 // Markdown flattened to plain words, for search (the wiki and the changelog).
 const plainText = t => String(t).replace(/!\[([^\]]*)\]\([^)]*\)/g, '$1').replace(/\[([^\]]+)\]\([^)]*\)/g, '$1').replace(/<[^>]+>/g, ' ').replace(/[#>*_`~|:-]/g, ' ').replace(/\s+/g, ' ').trim();
+
+// One map in a grid of map tiles (the map list and a profile's Maps): art, difficulty and stars, the status
+// when it is not Ranked, and the title on its plate.
+const mapTile = (m, i) => { const [dl, dc] = diff(m.difficulty), [sl, sc] = status(m), flag = m.status !== 'RANKED' || m.qualified; return `<a class="h-map" href="/maps/${esc(m.id)}" style="--i:${Math.min(i, 24)}">
+  <span class="art" style="background-image:${cssUrl(m.img)}"></span>
+  <span class="chips"><span class="h-diff" style="--c:${dc}">${dl}</span><span class="h-right"><span class="h-star num">★ ${fmt(m.stars, 2)}</span>${m.typeLabel ? `<span class="h-star" title="Map type, worked out by Reimagined">${esc(m.typeLabel)}${m.quantum ? ' · Quantum' : ''}</span>` : ''}</span></span>
+  ${flag || m.explicit ? `<span class="v-mflags">${flag ? `<span class="h-diff" style="--c:${sc}">${sl}</span>` : ''}${m.explicit ? '<span class="h-diff" style="--c:var(--bad)">Explicit</span>' : ''}</span>` : ''}
+  <span class="plate"><b title="${esc(m.title)}">${esc(m.title)}</b><small><span>by ${esc(m.mapper || 'Unknown')}</span><span class="num">${mmss(m.length)}</span><span class="num">${fmt(m.plays)} plays</span></small></span></a>`; };
 
 // Page numbers under a list. range ({perPage, total, noun}) names the rows shown instead of the page, as the
 // leaderboard, maps, clans and skins do: "51–100 of 1,234 maps".
@@ -305,13 +394,27 @@ const page = (name, view, css) => { pages[name] = view; if (css) styles.push(css
 const css = `
 /* Shared by the list pages: the map tiles (home, maps, collections), the page head and switch (leaderboard,
    maps, clans, skins, collections, wiki, changelog), the dialogs and the side list (wiki, changelog). */
+/* A small form or confirm in the shell's #cmp dialog (collections, clans) */
+dialog.cmp.cd-dlg{width:min(480px,calc(100vw - 32px))}
+.cd-body{display:flex;flex-direction:column;gap:16px}
+.cd-body p{margin:0;line-height:1.6;color:var(--text-2)}
+.cd-field{display:flex;flex-direction:column;gap:6px;font-size:13px;font-weight:650}
+.cd-field input,.cd-field textarea{padding:10px 12px;border:0;border-radius:10px;font:inherit;font-weight:400;color:var(--text);background:var(--field);box-shadow:inset 0 0 0 1px var(--line-2)}
+.cd-field textarea{resize:vertical;min-height:90px}
+.cd-field input:focus,.cd-field textarea:focus{outline:2px solid var(--accent);outline-offset:0}
+.cd-switch span{display:flex;flex-direction:column}
+.cd-acts{display:flex;justify-content:flex-end;gap:8px}
 .h-maps{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:16px}
 .h-map{position:relative;display:block;aspect-ratio:4/3.2;border-radius:16px;overflow:hidden;background:var(--panel-2);isolation:isolate;box-shadow:inset 0 0 0 1px var(--line);content-visibility:auto;contain-intrinsic-size:auto 240px}
 .h-map .art{position:absolute;inset:0;z-index:-1;background:center/cover;transition:transform .7s var(--ease)}
 .h-map:hover .art{transform:scale(1.06)}
 .h-map .chips{position:absolute;top:10px;left:10px;right:10px;display:flex;justify-content:space-between;gap:6px}
-.h-diff,.h-star{display:inline-flex;align-items:center;height:24px;padding:0 9px;border-radius:7px;font-size:12px;font-weight:700;background:rgba(10,11,14,.84);color:#f4f5f7}
-.h-diff{color:var(--c);box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--c) 45%,transparent)}
+.h-diff,.h-star{display:inline-flex;align-items:center;height:24px;padding:0 9px;border-radius:4px;font-size:12px;font-weight:700;background:rgba(10,11,14,.84);color:#f4f5f7}
+.h-diff{gap:7px;box-shadow:inset 0 0 0 1px rgba(255,255,255,.14)}
+.h-diff{padding-left:0;overflow:hidden}
+.h-diff::before{content:"";flex:none;align-self:stretch;width:6px;background:var(--c)}
+.h-map .h-right{display:flex;flex-direction:column;align-items:flex-end;gap:6px;min-width:0}
+.h-diff,.h-star{white-space:nowrap}
 .h-map .plate{position:absolute;left:8px;right:8px;bottom:8px;display:flex;flex-direction:column;gap:3px;padding:10px 12px;border-radius:11px;background:rgba(10,11,14,.8);color:#f4f5f7}
 .h-map .plate b{font-size:14.5px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .h-map .plate small{display:flex;gap:10px;font-size:12px;color:#b8c0cc;white-space:nowrap}
@@ -360,8 +463,13 @@ const css = `
 .v-av.lg{width:48px;height:48px;border-radius:14px}
 .v-chips{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin-top:14px}
 .v-hero.map .v-chips{margin:0}
-.v-chip{display:inline-flex;align-items:center;gap:6px;height:26px;padding:0 10px;border-radius:8px;font-size:12.5px;font-weight:700;color:var(--c);background:color-mix(in srgb,var(--c) 12%,transparent);box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--c) 40%,transparent)}
-.v-chip.plain{--c:var(--text-2);background:var(--panel-2);box-shadow:inset 0 0 0 1px var(--line)}
+/* Chips look like the outline buttons: the page text on a quiet plate, the colour only in a bar down the left edge. */
+.v-chip{display:inline-flex;align-items:center;gap:8px;height:28px;padding:0 11px;border-radius:4px;font-size:12.5px;font-weight:600;color:var(--text);background:rgba(var(--glass),.55);box-shadow:inset 0 0 0 1px var(--rule-2)}
+.v-chip,.v-tag{padding-left:0;overflow:hidden}
+.v-chip::before,.v-tag::before{content:"";flex:none;align-self:stretch;width:6px;background:var(--c)}
+.v-chip.plain{color:var(--text-2)}
+.v-chip.plain{padding-left:11px}
+.v-chip.plain::before{display:none}
 .v-chip img{width:15px;height:15px;object-fit:contain}
 [data-theme="white"] .v-chip img{filter:invert(1)}
 .v-cover{width:150px;height:150px;flex:none;border-radius:22px;background:var(--panel-3) center/cover;box-shadow:0 0 0 1px var(--line-2),0 20px 50px rgba(0,0,0,calc(.35 * var(--sh)))}
@@ -411,13 +519,13 @@ const css = `
 .v-dock.docked > span{display:none}
 .v-plays{display:flex;flex-direction:column;gap:14px}
 .v-tags{display:flex;flex-wrap:wrap;gap:6px}
-.v-tag{display:inline-flex;align-items:center;height:28px;padding:0 12px;border-radius:9px;font-size:13px;font-weight:700;color:var(--c,var(--text-2));background:color-mix(in srgb,var(--c,var(--text-2)) 12%,transparent);box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--c,var(--text-2)) 38%,transparent)}
-.k-jump{--c:#f59e0b}.k-stream{--c:#38bdf8}.k-tech{--c:#f472b6}.k-other{--c:#a78bfa}.k-quantum{--c:#34d399}.k-stamina{--c:#fb7185}
+.v-tag{display:inline-flex;align-items:center;gap:8px;height:30px;padding:0 12px 0 0;border-radius:4px;font-size:13px;font-weight:600;color:var(--text);background:rgba(var(--glass),.55);box-shadow:inset 0 0 0 1px var(--rule-2)}
+.k-jump{--c:#f59e0b}.k-stream{--c:#38bdf8}.k-tech{--c:#f472b6}.k-other{--c:#a78bfa}.k-quantum{--c:#34d399}.k-stamina{--c:#818cf8}
 .v-pbar{display:flex;align-items:center;flex-wrap:wrap;gap:8px 14px;margin-top:14px}
 .v-pbar[hidden]{display:none}
 .v-pbar .pills{height:40px;padding:3px;align-items:stretch;flex-wrap:wrap}
 .v-pbar .pills button{height:auto;padding:0 11px}
-[data-theme="white"] .k-jump{--c:#d97706}[data-theme="white"] .k-stream{--c:#0284c7}[data-theme="white"] .k-tech{--c:#db2777}[data-theme="white"] .k-other{--c:#7c3aed}[data-theme="white"] .k-quantum{--c:#059669}
+[data-theme="white"] .k-stamina{--c:#4f46e5}[data-theme="white"] .k-jump{--c:#d97706}[data-theme="white"] .k-stream{--c:#0284c7}[data-theme="white"] .k-tech{--c:#db2777}[data-theme="white"] .k-other{--c:#7c3aed}[data-theme="white"] .k-quantum{--c:#059669}
 .v-share{display:flex;gap:3px;height:12px;border-radius:6px;overflow:hidden}
 .v-share i{display:block;background:var(--c);min-width:3px}
 .v-legend{display:flex;flex-wrap:wrap;gap:6px 18px;font-size:13px;font-weight:600;color:var(--text-2)}
@@ -437,6 +545,31 @@ const css = `
 .v-zt{display:flex;justify-content:space-between;margin-top:4px;font-size:11.5px;color:var(--muted)}
 .v-about p{margin:0;max-width:80ch;line-height:1.65;color:var(--text-2)}
 .v-tagrow{display:flex;flex-wrap:wrap;gap:6px;margin-top:12px}
+/* Country picker (countryPicker) */
+.b-cp{position:relative}
+.b-cp-btn{display:flex;align-items:center;gap:10px;height:40px;min-width:220px;padding:0 12px;border:0;border-radius:10px;background:var(--field);box-shadow:inset 0 0 0 1px var(--line-2);color:var(--text);font:inherit;font-weight:600;text-align:left;cursor:pointer;transition:box-shadow .15s}
+.b-cp-btn:hover,.b-cp.open .b-cp-btn{box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--accent) 55%,transparent)}
+.b-cp-btn span{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.b-fl{width:22px;height:16px;flex:none;object-fit:cover;border-radius:3px;box-shadow:0 0 0 1px rgba(var(--ink),.08)}
+.b-fl.code{display:grid;place-items:center;font-size:9.5px;font-weight:700;color:var(--muted);background:var(--panel-3)}
+.b-globe,.b-chev,.b-check{width:18px;height:18px;flex:none;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.b-globe{width:20px;height:20px;color:var(--accent-2)}
+.b-chev{color:var(--muted);transition:transform .2s var(--ease)}
+.b-cp.open .b-chev{transform:rotate(180deg)}
+.b-check{color:var(--accent-2);margin-left:auto}
+.b-cp-pop{position:absolute;z-index:30;top:calc(100% + 6px);left:0;width:300px;padding:8px;border-radius:14px;background:var(--dialog);box-shadow:0 0 0 1px var(--line-2),0 18px 40px rgba(0,0,0,calc(.45 * var(--sh)));animation:exoEnter .2s var(--ease) both}
+.b-cp-q{display:flex;align-items:center;gap:8px;height:38px;padding:0 10px}
+.b-cp-q input{flex:1;min-width:0;border:0;background:none;color:var(--text);font:inherit;outline:none}
+.b-cp-list{max-height:340px;overflow:auto;margin-top:6px;padding-right:2px;scrollbar-width:thin}
+.b-cp-sec{padding:10px 10px 4px;font-size:11.5px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--muted)}
+.b-cp-item{display:flex;align-items:center;gap:10px;width:100%;height:36px;padding:0 10px;border:0;border-radius:8px;background:none;color:var(--text-2);font:inherit;font-weight:550;text-align:left;cursor:pointer}
+.b-cp-item span{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.b-cp-item:hover,.b-cp-item.on{background:rgba(var(--ink),.06);color:var(--text)}
+.b-cp-item[aria-selected="true"]{color:var(--text);font-weight:650}
+.b-cp-none{margin:14px 10px}
+.v-bctl{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.v-bctl .b-cp-btn{min-width:180px;height:36px}
+.v-bctl .b-cp-pop{left:auto;right:0}
 .v-top{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:12px;margin-bottom:14px}
 .v-trophy{display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;gap:6px 14px;padding:14px 18px;border-radius:16px;background:linear-gradient(100deg,rgba(234,179,8,.14),rgba(234,179,8,.03) 60%);box-shadow:inset 0 0 0 1px rgba(234,179,8,.35)}
 .v-trophy > small{grid-column:1/-1;font-size:11.5px;font-weight:750;letter-spacing:.05em;text-transform:uppercase;color:#eab308}
@@ -514,6 +647,20 @@ const css = `
 .v-mgrid.busy{opacity:.6;transition:opacity .2s .35s}
 .v-mgrid.anim .h-map{animation:hRise .5s var(--ease) both;animation-delay:calc(var(--i) * 25ms)}
 .v-mflags{position:absolute;top:40px;left:10px;display:flex;gap:6px}
+.v-mview{align-self:flex-start}
+.v-msort{display:flex;gap:10px;align-items:stretch}
+.v-tmapper{flex:0 1 220px;height:42px}
+.v-tmapper input{flex:1;min-width:0;border:0;background:none;color:var(--text);font:inherit;outline:none}
+.v-tnote{margin:0;padding:14px 18px;border-radius:12px;background:var(--panel);box-shadow:inset 0 0 0 1px var(--line);color:var(--text-2);font-size:13.5px;line-height:1.55}
+.v-tnote p{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 10px;margin:0 0 6px}
+.v-tnote p b{color:var(--text);font-size:14.5px;font-weight:700}
+.v-tnote ul{margin:0;padding-left:18px}
+.v-tnote li::marker{color:var(--muted)}
+.v-thidden{margin:0 0 14px;color:var(--muted);font-size:13px}
+.v-tneed{max-width:560px;margin:40px auto;display:flex;flex-direction:column;align-items:center;gap:10px;text-align:center}
+.v-tneed b{font-size:17px}
+.v-tneed p{margin:0 0 6px;color:var(--muted);font-size:13.5px;line-height:1.55;text-wrap:balance}
+.v-tneed .btn{color:var(--text);background:var(--panel-2);box-shadow:inset 0 0 0 1px var(--line-2)}
 .v-notice{max-width:680px;margin:24px auto;padding:24px 26px;border-radius:16px;background:var(--panel);box-shadow:inset 0 0 0 1px rgba(251,191,36,.3)}
 .v-notice h2{margin:0 0 12px;font-size:21px}
 .v-notice p{margin:0 0 10px;color:var(--text-2);line-height:1.6}
@@ -529,5 +676,5 @@ const css = `
 @media (prefers-reduced-motion:reduce){.v-hero.enter *,.v-page.enter *,.v-mgrid.anim .h-map{animation:none!important}}
 `;
 
-return {SITE, Data, Kit, esc, cssUrl, fillTip, fmt, pct, REDUCED, when, ago, fullDate, mmss, diff, status, grade, GRADE_C, TITLES, titleOf, SOCIAL_HOSTS, socialLink, MODES, mods, flag, av, accTxt, tips, toast, shell, watchDialog, slot, playsHtml, playsNote, PREVIEW_SPEEDS, ask, row, slugify, plainText, pager, spreadHtml, hoursMin, dropBroken, avgStars, morph, page, get css() { return css + styles.join(''); }};
+return {SITE, Data, Kit, esc, cssUrl, fillTip, fmt, pct, REDUCED, when, ago, fullDate, mmss, diff, status, grade, GRADE_C, TITLES, titleOf, SOCIAL_HOSTS, socialLink, MODES, mods, flag, countryName, countryPicker, av, accTxt, tips, toast, shell, watchDialog, slot, playsHtml, playsNote, PREVIEW_SPEEDS, REPLAY_SPEEDS, speedLabel, ask, row, slugify, plainText, mapTile, pager, spreadHtml, hoursMin, dropBroken, avgStars, morph, page, get css() { return css + styles.join(''); }};
 })();

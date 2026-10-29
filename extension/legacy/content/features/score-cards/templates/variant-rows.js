@@ -116,25 +116,8 @@ RhythiaX.ScoreCardTemplates = RhythiaX.ScoreCardTemplates || {};
     return btn;
   }
 
-  // Label over value, no box.
-  function stat(label, value, className = '', sub = '') {
-    const box = el('div', `rhythiax-sc-row-stat ${className}`.trim());
-    box.appendChild(el('span', 'rhythiax-sc-row-label', label));
-    const val = el('span', 'rhythiax-sc-row-value');
-    if (value instanceof Node) val.appendChild(value); else val.textContent = value;
-    box.appendChild(val);
-    if (sub) box.appendChild(el('span', 'rhythiax-sc-row-sub', sub));
-    return box;
-  }
-
   function missesNode(f) {
     return f.fc ? el('span', 'rhythiax-sc-fc', 'FC') : el('span', 'rhythiax-sc-miss', f.misses);
-  }
-
-  function hitsNode(f) {
-    const node = el('span', '', String(f.hits.hits ?? '--'));
-    if (f.hits.total && f.hits.total !== '--') node.appendChild(el('small', 'rhythiax-sc-row-total', ` / ${f.hits.total}`));
-    return node;
   }
 
   function weightLine(f) {
@@ -148,22 +131,59 @@ RhythiaX.ScoreCardTemplates = RhythiaX.ScoreCardTemplates || {};
     return node;
   }
 
-  // D: Rhythia's own row with map art, mapper, hits and RP weight added.
+  // D: Rhythia's own score row as it is on rhythia.com (the edge in the map's difficulty colour, grade and accuracy
+  // on a plate, misses in a red box, weighted RP then RP), with the map's art and its mapper added.
+  const DIFF_EDGE = { easy: '#3bbf7d', medium: '#d8970a', hard: '#e5484d', logic: '#a26bdc', tasukete: '#404040' };
+  const X_ICON = '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18"></path><path d="m6 6 12 12"></path></svg>';
+  const CHEVRON = '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"></path></svg>';
+  // "2026-10-02 (3 weeks ago)" -> "3 weeks ago", as Rhythia shows it; the full date stays in the tooltip.
+  const relative = date => (String(date).match(/\(([^)]+)\)\s*$/) || [])[1] || String(date);
+  function rpBox(label, value, className, title) {
+    const box = el('div', `rhythiax-sc-rd-rp ${className}`);
+    box.title = title;
+    box.append(el('span', 'rhythiax-sc-rd-rp-label', label), el('span', 'rhythiax-sc-rd-rp-value', value));
+    return box;
+  }
   function renderRow(scoreData) {
     const f = facts(scoreData);
     const card = shell(scoreData, f, 'rhythiax-sc-row-d');
+    card.style.setProperty('--rx-diff-edge', DIFF_EDGE[String(scoreData.difficulty || '').trim().toLowerCase()] || '#404040');
     const grade = el('div', 'rhythiax-sc-row-grade');
     grade.append(el('b', '', f.grade), el('span', 'rhythiax-sc-acc', f.acc));
+    const main = el('div', 'rhythiax-sc-row-main');
+    const title = el('a', 'rhythiax-sc-title', scoreData.songTitle || 'Unknown Beatmap');
+    title.href = scoreData.mapHref || (scoreData.beatmapId ? `/maps/${scoreData.beatmapId}` : '#');
+    const meta = el('div', 'rhythiax-sc-meta-line');
+    if (f.date) {
+      const date = el('span', 'rhythiax-sc-meta-date', relative(f.date));
+      date.title = f.dateTooltip || f.date;
+      meta.appendChild(date);
+    }
+    if (f.mapper) {
+      if (meta.children.length) meta.appendChild(el('span', 'rhythiax-sc-meta-sep', '·'));
+      const mapper = el('span', 'rhythiax-sc-meta-mapper', 'mapped by ');
+      mapper.appendChild(el('strong', '', f.mapper));
+      meta.appendChild(mapper);
+    }
+    main.append(title, meta);
+    const misses = el('div', `rhythiax-sc-rd-miss${f.fc ? ' is-fc' : ''}`);
+    const hits = f.hits.total && f.hits.total !== '--' ? ` · ${f.hits.hits} / ${f.hits.total} hits` : '';
+    misses.title = f.fc ? `Full combo${hits}` : `${f.misses} misses${hits}`;
+    if (f.fc) misses.appendChild(el('span', 'rhythiax-sc-rd-miss-fc', 'FC'));
+    else {
+      const icon = el('span', 'rhythiax-sc-rd-miss-icon');
+      icon.innerHTML = X_ICON;
+      misses.append(icon, el('span', 'rhythiax-sc-rd-miss-value', f.misses));
+    }
+    const rp = el('div', 'rhythiax-sc-rd-rps');
+    if (f.weightedRp) rp.appendChild(rpBox('RP', f.weightedRp, 'is-weighted', `Weighted RP${f.weightPercent ? ` · ${f.weightPercent}` : ''}`));
+    rp.appendChild(rpBox(f.reign ? 'Reign' : 'RP', f.rp, `is-raw${f.weightedRp ? '' : ' is-alone'}`, f.reign ? 'Reign' : 'RP'));
+    const action = actionButton();
+    action.innerHTML = CHEVRON;
     const controls = el('div', 'rhythiax-sc-top-controls rhythiax-sc-row-controls');
-    controls.append(
-      modsGroup(scoreData),
-      stat(f.fc ? 'Combo' : 'Misses', missesNode(f), 'is-misses'),
-      stat('Hits', hitsNode(f), 'is-hits'),
-      stat(f.reign ? 'Rating' : 'RP', `${f.rp}`, 'is-rp', weightLine(f)),
-      actionButton()
-    );
+    controls.append(modsGroup(scoreData), misses, rp, action);
     const body = el('div', 'rhythiax-sc-row-body');
-    body.append(grade, art('rhythiax-sc-row-thumb'), titleBlock(scoreData, f), controls);
+    body.append(grade, art('rhythiax-sc-row-thumb'), main, controls);
     card.appendChild(body);
     return card;
   }

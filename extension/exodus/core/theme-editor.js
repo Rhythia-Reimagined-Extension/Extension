@@ -33,7 +33,7 @@ RhythiaX.ExodusThemeEditor = (function () {
   const CSS = `
 :host{all:initial}
 *,*::before,*::after{box-sizing:border-box}
-/* Exodus' dark tokens (core/assets.js). Fixed: the editor keeps its look while the page previews a theme. */
+/* Exodus' dark tokens (core/assets.js), under the colours of the theme being edited (paintOwn()). */
 .ed{--page:#090a0c;--panel:#111318;--panel-2:#171a20;--panel-3:#1d2028;--field:#0d0f12;--dialog:#0e1014;--tip:#22252d;
   --line:rgba(255,255,255,.06);--line-2:rgba(255,255,255,.12);--text:#f4f5f7;--text-2:#c5cad3;--muted:#8a929f;
   --accent:#60a5fa;--accent-2:#93c5fd;--accent-soft:rgba(96,165,250,.14);--on-accent:#06121f;
@@ -345,10 +345,10 @@ dialog textarea:focus{box-shadow:inset 0 0 0 1px var(--accent)}
   const KEYS_OF = Object.fromEntries(PARTS.map(p => [p.g, p.controls.flatMap(c => c.keys || [c.k]).filter(Boolean)]));
   // What each part outlines on the page, and where the line to its settings starts.
   const OUTLINE = {
-    header: 'header.site', banner: '.hero .banner', glass: '.ranks,.rtags,.ranks-head .pills', panel: '.site .search,.kpi,.tabs.seg,.pills:not(.mini),.field',
+    header: 'header.site', banner: '.hero .banner', glass: '.ranks,.rtags', panel: '.site .search,.kpi,.tabs.seg,.pills:not(.mini),.field',
     lines: '.strip,.hero-bar,.intro', button: '.btn:not(.primary),.social', accent: '.btn.primary,.rp b,.tabs .ink', text: '.name,.bio,.sec-head h2',
   };
-  const MAIN = { header: 'header.site', banner: '.hero .banner', glass: '.ranks', panel: '.site .search', lines: '.strip', button: '.ranks-head .btn', accent: '.btn.primary', text: '.name' };
+  const MAIN = { header: 'header.site', banner: '.hero .banner', glass: '.ranks', panel: '.site .search', lines: '.strip', button: '[data-compare],.btn:not(.primary),.social', accent: '.btn.primary', text: '.name' };
 
   // What a point on the page belongs to: { g: part, el } or { fixed, el } for something that keeps its own
   // colour in every theme (rank and title colours, grades, status, pictures, icons, charts).
@@ -361,7 +361,7 @@ dialog textarea:focus{box-shadow:inset 0 0 0 1px var(--accent)}
     const c = s => el.closest(s);
     let hit;
     if ((hit = c('.btn.primary,.tabs .ink,.rp'))) return { g: 'accent', el: hit };
-    if ((hit = c('.ranks,.rtags,.ranks-head .pills'))) return { g: 'glass', el: hit };
+    if ((hit = c('.ranks,.rtags'))) return { g: 'glass', el: hit };
     if ((hit = c('.btn,.social,.link'))) return { g: 'button', el: hit };
     if ((hit = c('header.site'))) return c('.search') ? { g: 'panel', el: c('.search') } : { g: 'header', el: hit };
     if ((hit = c('img,svg,canvas'))) return { fixed: true, el: hit };
@@ -445,9 +445,19 @@ dialog textarea:focus{box-shadow:inset 0 0 0 1px var(--accent)}
     else if (isSeed(k)) S.T.seed[k] = v;
     else S.T.manual[k] = v;
   }
+  // The editor wears the colours of the theme it edits, which the page shows meanwhile (ExodusThemes resolve().ui()),
+  // worked out with "Keep everything readable" on, so a hand-set colour that does not read never makes the editor
+  // itself hard to read.
+  function paintOwn() {
+    const ed = S.$('.ed'), R = S.T.fit === false ? S.TH.resolve({ ...S.T, fit: true }) : S.R;
+    if (!ed) return;
+    for (const [k, v] of Object.entries(R.ui())) ed.style.setProperty(k, v);
+    ed.style.colorScheme = R.base === 'white' ? 'light' : 'dark';
+  }
   function apply() {
     S.R = S.TH.resolve(S.T, S.image);
     S.opts.paint(S.T, S.image);
+    paintOwn();
     render();
     // An uploaded picture is read again whenever it, its place or the window changes (a moment later).
     const sig = val('bgImg')?.local && S.image ? `${S.image.length}${S.image.slice(-16)}${JSON.stringify(S.R.frame())}${innerWidth}x${innerHeight}` : '';
@@ -607,6 +617,8 @@ dialog textarea:focus{box-shadow:inset 0 0 0 1px var(--accent)}
         <button class="up" data-up aria-pressed="${!!v?.local}" aria-label="${v?.local ? 'Your file. Add a new one' : 'Upload a picture or video'}"${v?.local && !v.video && S.image ? ` style="background:${PIC}"` : ''}>${v?.local && !v.video && S.image ? '' : v?.video ? 'Video' : 'Upload'}</button></div>
       ${v?.local ? `<div class="file"><span>${esc(v.name || (v.video ? 'Your video' : 'Your picture'))}</span><button class="btn sm" data-up>Add new</button></div>` : '<div class="why">Pictures and GIFs up to 8 MB, MP4 or WebM videos up to 20 MB.</div>'}
       ${v?.local && S.palette?.avg ? `<button class="btn frompic" data-frompic><i style="background:${S.palette.avg}"></i>${S.palette.vivid ? `<i style="background:${S.palette.vivid}"></i>` : ''}Use the picture's colours</button>` : ''}
+      ${v?.local && S.T.manual.bgZones ? `<button class="btn frompic" data-readable>Set blur and ${S.R.D.base === 'white' ? 'lightening' : 'darkening'} for readable text</button>
+        <div class="why">Picks them from how light and busy the picture is. They stay yours to change below.</div>` : ''}
       ${uploadsHtml()}
       <input type="file" accept="image/png,image/jpeg,image/webp,image/gif,video/mp4,video/webm" hidden data-file></div>`;
   }
@@ -872,6 +884,16 @@ dialog textarea:focus{box-shadow:inset 0 0 0 1px var(--accent)}
         Object.assign(S.T.seed, { page: p.page, page2: null, page3: null }, p.accent ? { accent: p.accent, accent2: null } : {});
         apply();
         toast('Background and accent set from the picture.');
+        return;
+      }
+      // Readable picture settings (ExodusThemes.readablePicture): filled in once, then the player's own.
+      if ('readable' in d) {
+        const r = S.TH.readablePicture(S.T);
+        if (r) {
+          Object.assign(S.T.manual, r);
+          apply();
+          toast(`Blur ${r.bgBlur} px and ${S.R.D.base === 'white' ? 'lighten' : 'darken'} ${r.bgDim}% set for this picture.`);
+        }
         return;
       }
       if ('up' in d) S.$('[data-file]')?.click();

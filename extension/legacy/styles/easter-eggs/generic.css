@@ -25,12 +25,14 @@
   animation: none;
 }
 
+/* The 67 meme: the 6 goes up while the 7 goes down, then the other way, twice in 2 s. */
 .rhythiax-number-egg--sixty-seven.rhythiax-number-egg--active .rhythiax-number-egg__digit {
-  animation: rhythiax-sixty-seven-forced 2s linear infinite;
+  --rhythiax-sway: 1;
+  animation: rhythiax-sixty-seven 2s ease-in-out var(--rhythiax-egg-plays, 1);
 }
 
 .rhythiax-number-egg--sixty-seven.rhythiax-number-egg--active .rhythiax-number-egg__digit:nth-child(2) {
-  animation-delay: -1s;
+  --rhythiax-sway: -1;
 }
 
 .rhythiax-number-egg--sixty-nine {
@@ -41,7 +43,7 @@
 .rhythiax-number-egg--sixty-nine.rhythiax-number-egg--active {
   z-index: 1;
   color: #ef477f;
-  animation: rhythiax-sixty-nine 4s ease-in-out;
+  animation: rhythiax-sixty-nine 2s ease-in-out var(--rhythiax-egg-plays, 1);
   text-shadow: 0 0 0.35em rgba(239, 71, 127, 0.55), 0 0 0.8em rgba(255, 74, 111, 0.3);
 }
 
@@ -55,7 +57,7 @@
   font-size: 0.7em;
   line-height: 1;
   pointer-events: none;
-  animation: rhythiax-heart-float 4s ease-out;
+  animation: rhythiax-heart-float 2s ease-out var(--rhythiax-egg-plays, 1);
 }
 
 .rhythiax-number-egg--sixty-nine.rhythiax-number-egg--active::before {
@@ -71,13 +73,13 @@
 }
 
 .rhythiax-number-egg--four-twenty.rhythiax-number-egg--active {
-  animation: rhythiax-four-twenty-forced 2s ease-in-out;
+  animation: rhythiax-four-twenty-forced 2s ease-in-out var(--rhythiax-egg-plays, 1);
 }
 
-@keyframes rhythiax-sixty-seven-forced {
+@keyframes rhythiax-sixty-seven {
   0%, 50%, 100% { transform: translateY(0); }
-  25% { transform: translateY(-0.2em); }
-  75% { transform: translateY(0.2em); }
+  12.5%, 62.5% { transform: translateY(calc(var(--rhythiax-sway) * -0.24em)); }
+  37.5%, 87.5% { transform: translateY(calc(var(--rhythiax-sway) * 0.24em)); }
 }
 
 @keyframes rhythiax-sixty-nine {

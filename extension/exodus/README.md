@@ -71,10 +71,14 @@ in this order:
 | `core/routes.js` | `RhythiaX.ExodusRoutes`. Which page shows at which address (`routeKey()`, `viewKey()`) and which "Pages Exodus takes over" entry it belongs to (`pageGroup()`). No state, so it runs in a test as it is. |
 | `core/own-theme.js` | `RhythiaX.ExodusOwnTheme`. The CSS an own theme adds to the page (`css()`, `pictureCss()`), and the shell's part of own themes: the theme in use, its background picture or video, and the theme editor's hand-off with saving and removing. |
 | `core/dock.js` | `RhythiaX.ExodusDock`. Lays Rhythia's own player (map preview, score replay) over a slot of the Exodus page. |
+| `core/flair.js` | `RhythiaX.ExodusFlair`. Motion that belongs to no page: the 67, 69 and 420 Easter eggs and the logo swap (popup switch Easter eggs), and the supporter hearts beating. Started by `core/shell.js`. |
+| `core/notify.js` | `RhythiaX.ExodusNotify`. The header's bell for a signed-in player: Rhythia's notifications, clan invites answered there, Mark as read. Started by `core/shell.js`. |
 | `core/shell.js` | `RhythiaX.Exodus`. The header, navigation, search, and the page shown at each address. |
 
 `core/bridge.js` runs in the page's own world (`"world": "MAIN"`) at `document_idle`. It reaches
-Rhythia's map preview for the speed and seek controls.
+Rhythia's map preview and score replay for the speed and seek controls: the map page's preview speeds
+(`PREVIEW_SPEEDS` in `core/kit.js`: 0.25×, 0.5× and the game's speed mods) and the score page's replay speeds
+(`REPLAY_SPEEDS`: 1×, 0.75×, 0.5× of the speed the play was set at).
 
 ## Pages
 
@@ -86,6 +90,7 @@ Rhythia's map preview for the speed and seek controls.
 | `pages/profile-stats.js` | The profile's Progress and Rankings panes and the activity calendar. |
 | `pages/profile-playstyle.js` | The profile's Playstyle pane: momentum's status guide, Month in review, map types. |
 | `pages/profile-scores.js` | The profile's score lists, their search, filters and menu, and the Scores page's chart. |
+| `pages/profile-tabs.js` | The profile's Maps, Skins and Inventory tabs (the owner equips items and tints a name colour there). |
 | `pages/profile-style.js` | The profile's CSS, loaded right after the part files. |
 | `pages/compare.js` | The profile's Compare window, with its own CSS. |
 | `pages/board.js` | `/leaderboards`, `/leaderboards/:country` |
@@ -106,9 +111,9 @@ directly: `RhythiaX.ExodusApp` (profile), `RhythiaX.ExodusHome` and `RhythiaX.Ex
 is the profile's Compare window, which the profile calls. These four bring their CSS to the shell as the global's
 `.css` (the profile's is set by `pages/profile-style.js`).
 
-The profile is split over five files. `pages/profile.js` keeps the data, the view state, the rendering, the
-actions and the events; the four part files (`profile-hero.js`, `profile-stats.js`, `profile-playstyle.js`,
-`profile-scores.js`) each register a factory on `RhythiaX.ExodusProfileParts` and are loaded right after it.
+The profile is split over six files. `pages/profile.js` keeps the data, the view state, the rendering, the
+actions and the events; the five part files (`profile-hero.js`, `profile-stats.js`, `profile-playstyle.js`,
+`profile-scores.js`, `profile-tabs.js`) each register a factory on `RhythiaX.ExodusProfileParts` and are loaded right after it.
 `profile.js` calls each factory at mount with one context object and draws what it returns; values that change
 after mount (such as the history) are getters on that object. Only the profile uses `ExodusProfileParts`; the
 shell never calls it.
@@ -158,9 +163,26 @@ on), "Your themes" lists them under the built-in ones; "New theme" and a theme's
 - An uploaded picture (or the video's frame) is read in 12 areas of the screen as it lies there (`bgZones`,
   the editor's `readPicture` and `ExodusThemes.zonesFrom`). With them, the darkening (`bgDim`) is Auto: just
   enough for text to read 7:1 on every area's average and 4.5:1 on its dark and light details (strokes,
-  highlights), and secondary text is kept readable on it too. Over a picture the rank plates (`glassA`,
+  highlights; a blur (`bgBlur`) smooths those details into the area's colour, fully from 12px), and secondary text
+  is kept readable on it too. Over a picture the rank plates (`glassA`,
   `glassBlur`) and panels (`panelClear`, `panelBlur`) are Auto as well: as see-through as text on them allows.
-  "Colours from the picture" takes the page and the accent from it (`fromPicture`).
+  "Colours from the picture" takes the page and the accent from it (`fromPicture`). "Set blur and darkening for
+  readable text" fills in the picture's blur and darkening once (`readablePicture`): a blur from how busy the
+  picture is, then the least darkening with which text reads 7:1 and needs no halo. They are then ordinary
+  settings; nothing is changed on the picture after that.
+  Text with no panel behind it (section headings, the score's hero, the profile's tabs) is checked on those areas
+  too. Links are lifted until they read there, at most 40% of the way to white (`link`). On a picture too light or busy
+  for the text (the darkening set low by hand, say), `bare` (0 to .9) gives it a soft halo of the glass colour
+  hugging the letters (wider and lighter on headings; on a light theme only a tight edge, never a glow). It is set
+  once on `.exo` and inherited, so text on every page has it, and taken off in everything that draws its own
+  background (`OWN_BG` in `core/own-theme.js`: buttons, chips, menus, cards; `FLOAT_BG`: panels, only in Floating,
+  as Lines draws them as outlines over the picture). A new part with its own background behind text joins that list.
+  The picture itself always shows exactly as its settings say. Coloured text on it keeps its colour but lighter, at most 40%
+  of the way to white: chips, and the climb, drop and miss colours, so an arrow or a number carries the colour while
+  names stay in the text colour. No boxes are added. On a picture text already reads on, nothing is added.
+- The popup and the theme editor wear the own theme's colours (`resolve().ui()`, worked out with "Keep everything
+  readable" on): the popup those of the theme in use, redrawn when it or its colours change; the editor those of the
+  theme it edits, as it is edited.
 - Panels can be see-through (`panelClear`, up to 20%) with blur behind (`panelBlur`, up to 20px). A hidden
   banner (`bannerMode` none, or others' with "mine") takes its space with it: the hero moves up under the bar.
 - An uploaded picture is its own sheet (`<style id="ownpic">`, `--own-pic`), written only when it changes; the
@@ -177,7 +199,7 @@ on), "Your themes" lists them under the built-in ones; "New theme" and a theme's
   updates go through `morph()` where they can, rather than a fresh `innerHTML`. That way nothing jumps,
   flashes or plays its entrance again. Two places still redraw: Home's quiet refresh mounts it again (keeping
   the playing video), and the changelog's `refresh()` sets its body and side panel anew.
-- **Pay with Rhythia.** Sign-in, uploads, payments and login changes open Rhythia's own dialogs
+- **Pay with Rhythia.** Sign-in, uploads, payments, login changes, editing or deleting a clan, and Download all of a collection open Rhythia's own dialogs
   (`ctx.clickNative` or `data-native-click`). The Settings window (`core/account.js`) saves the rest itself and hands these over.
 - **Use the shared limiter.** All requests to Rhythia's API and the VPS go through `shared/net.js` (player history goes on from there to the background, `background/vps-access.js`). Map files come from Rhythia's resource host and are capped in `core/mapkit.js` instead; the Home video is a plain `<video>` from Rhythia's static host and is not capped. The limits:
   - Rhythia: 16 a second.

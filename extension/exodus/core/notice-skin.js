@@ -35,6 +35,8 @@ RhythiaX.NoticeSkins.exodus = `
     :host([data-look="exodus"]) .act.primary { background: var(--accent); color: var(--on-accent); }
     :host([data-look="exodus"]) .act.primary:hover:not(:disabled) { background: var(--accent-2); }
     :host([data-look="exodus"]) a { color: var(--accent); }
+    :host([data-look="exodus"]) .check { color: var(--text-2); }
+    :host([data-look="exodus"]) .check input { accent-color: var(--accent); }
     :host([data-look="exodus"]) .status { color: var(--bad); }
     :host([data-look="exodus"]) :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 `;

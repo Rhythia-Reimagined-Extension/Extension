@@ -12,7 +12,8 @@
 //
 // Both changelogs show them the same way: a list of versions beside one release, a switch between the looks
 // (sections, forLook; the reader's own look first), sections such as "## Featured" with the same icon
-// (category, ICONS), and a list item written "- Title: text" with its title in bold.
+// (category, ICONS), and a list item written "- Title: text" as a short title over its text (item.title, item.body).
+// Featured items are shown in every look, marked with the look they belong to.
 
 var RhythiaX = RhythiaX || {};
 
@@ -153,14 +154,22 @@ RhythiaX.Releases = RhythiaX.Releases || (function () {
         if (twin.look !== i.look) twin.look = '';
         return false;
       });
+      for (const i of s.items) {
+        const m = i.text.match(/^\*\*([^*]+)\*\*\s+(\S[\s\S]*)$/);
+        if (m) { i.title = m[1]; i.body = m[2]; }
+      }
     }
     const rank = s => (ORDER.includes(s.cat) ? ORDER.indexOf(s.cat) : ORDER.length - 1.5);
     return list.map((s, i) => ({ s, i })).sort((a, b) => rank(a.s) - rank(b.s) || a.i - b.i).map(x => x.s);
   }
   // The looks a release has its own notes for (['exodus', 'legacy'] or one of them); none before 1.3.0.
   const looksOf = entry => ['exodus', 'legacy'].filter(look => entry?.groups?.some(g => g.engine === look));
-  // The sections one look sees ('all' keeps every item), and the empty ones dropped.
-  const forLook = (list, look) => list.map(s => ({ ...s, items: s.items.filter(i => look === 'all' || !i.look || i.look === look) })).filter(s => s.items.length);
+  // The sections one look sees ('all' keeps every item; Featured keeps every look's), and the empty ones dropped.
+  const forLook = (list, look) => list.map(s => ({ ...s, items: s.items.filter(i => look === 'all' || !i.look || i.look === look || s.cat === 'featured') })).filter(s => s.items.length);
+  // The label beside an item: its look under All, "Exodus only" for another look's Featured item, "Both looks" when
+  // the release has notes per look.
+  const tagOf = (item, look, looks) => (look === 'all' ? (item.look ? LOOKS[item.look].label : '')
+    : item.look && item.look !== look ? `${LOOKS[item.look].label} only` : !item.look && looks.length ? 'Both looks' : '');
   // "5 added · 3 changed · 2 fixed" for the header of a release.
   const summary = list => list.filter(s => ['added', 'changed', 'improved', 'fixed', 'removed'].includes(s.cat))
     .map(s => `${s.items.length} ${s.label.toLowerCase()}`).join(' · ');
@@ -174,8 +183,9 @@ RhythiaX.Releases = RhythiaX.Releases || (function () {
 
   let asked = null;
   // {list, preview}: preview is true in a development install, where only the local file is shown.
+  // sendMessage throws at once in a tab whose extension was reloaded or updated; the executor turns that into a rejection.
   function load() {
-    return asked || (asked = Promise.resolve(chrome.runtime.sendMessage({ type: 'rhythiax-releases' }))
+    return asked || (asked = new Promise(resolve => resolve(chrome.runtime.sendMessage({ type: 'rhythiax-releases' })))
       .then(r => {
         if (!r || typeof r.local !== 'string') throw new Error('No release notes');
         const local = parse(r.local, { drafts: r.dev });
@@ -185,5 +195,5 @@ RhythiaX.Releases = RhythiaX.Releases || (function () {
   }
   const entries = () => load().then(r => r.list);
 
-  return { entries, load, parse, merge, category, sections, looksOf, forLook, summary, ENGINES, LOOKS, ICONS };
+  return { entries, load, parse, merge, category, sections, looksOf, forLook, tagOf, summary, ENGINES, LOOKS, ICONS };
 })();

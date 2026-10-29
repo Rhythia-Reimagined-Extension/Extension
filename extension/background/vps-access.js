@@ -21,9 +21,11 @@ RhythiaX.VpsAccess = RhythiaX.VpsAccess || (function () {
   const KEY_URL = BASE + '/api/access/key';
   const STORE = 'rhythiaxVpsAccessKey';
   const HEADER = 'X-Reimagined-Key';
-  // The only requests carried: one player's history, or a page of players.
-  const ROUTES = [/^https:\/\/rhythia\.shuriel\.com\/api\/player\/\d{1,7}\/history$/, /^https:\/\/rhythia\.shuriel\.com\/api\/players\/history$/];
-  const MAX_BODY = 2048;
+  // The only requests carried: one player's history or compare, a page of players, the types of up to 100 maps,
+  // or the map search (what it filters by, and one page of results).
+  const ROUTES = [/^https:\/\/rhythia\.shuriel\.com\/api\/player\/\d{1,7}\/history$/, /^https:\/\/rhythia\.shuriel\.com\/api\/player\/\d{1,7}\/compare\?mode=(lock|spin|vr)$/, /^https:\/\/rhythia\.shuriel\.com\/api\/players\/history$/, /^https:\/\/rhythia\.shuriel\.com\/api\/maps\/(kinds|types|search)$/];
+  // POST routes and the largest body each may carry (map keys are song names, up to ~150 characters).
+  const POST_BODY = { '/api/players/history': 2048, '/api/maps/kinds': 16384, '/api/maps/search': 2048 };
   const KEY_PATTERN = /^rk1\.[A-Za-z0-9_-]{48}$/;
   // After the server refuses a key: wait at least this long before asking again. The time is kept in
   // chrome.storage.session too, because the worker stops when idle and would otherwise ask again on its
@@ -137,8 +139,9 @@ RhythiaX.VpsAccess = RhythiaX.VpsAccess || (function () {
   async function historyFetch(request) {
     const url = String(request?.url || '');
     const method = request?.method === 'POST' ? 'POST' : 'GET';
-    if (!ROUTES.some(re => re.test(url)) || (method === 'POST') !== url.endsWith('/players/history')) return { error: 'not allowed' };
-    if (method === 'POST' && (typeof request.body !== 'string' || request.body.length > MAX_BODY)) return { error: 'not allowed' };
+    const maxBody = POST_BODY[url.slice(BASE.length)];
+    if (!ROUTES.some(re => re.test(url)) || (method === 'POST') !== Boolean(maxBody)) return { error: 'not allowed' };
+    if (method === 'POST' && (typeof request.body !== 'string' || request.body.length > maxBody)) return { error: 'not allowed' };
     const round = revision;
     if (!(await allowed())) { await forget(); return { error: 'not allowed' }; }
     const opts = { method, body: request.body };

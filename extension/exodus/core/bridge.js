@@ -2,9 +2,9 @@
 // Reimagined for Rhythia — Exodus player bridge (page world)
 // =============================================
 // Runs in the page's own JavaScript world (engines.js registers it with world MAIN) so it can
-// reach Rhythia's map preview, which Exodus shows inside its map page. It only
-// calls the preview's own functions: its speed change (any speed, not only the
-// eight in its menu), its seek and its play button. Exodus asks through DOM
+// reach Rhythia's map preview and score replay, which Exodus shows inside its map and score
+// pages. It only calls the player's own functions: its speed change (any speed, not only the
+// eight in the preview's menu), its seek and its play button. Exodus asks through DOM
 // events with JSON text and gets the preview's state back the same way. When
 // Rhythia's code changes and a function cannot be found, it answers ok: false
 // and Exodus hides the controls.
@@ -23,15 +23,16 @@
     return key ? el[key] : null;
   };
 
-  // The preview component that owns the player Exodus shows.
+  // The component that owns the player Exodus shows: the map preview or the score replay.
+  const PLAYERS = ['MapVisualizer', 'ReplayVisualizer'];
   function preview() {
     if (!document.documentElement.classList.contains('rhythiax-exodus-dock')) return null;
     let f = fiberOf(document.querySelector('[data-rhythiax-dock]'));
-    while (f && nameOf(f.type) !== 'MapVisualizer') f = f.return;
+    while (f && !PLAYERS.includes(nameOf(f.type))) f = f.return;
     return f;
   }
 
-  // Its playback hook keeps changeSpeed as a memoised callback: (speed) => { …ref.current = speed, setSpeed(speed) … }.
+  // Both players' playback hooks keep changeSpeed as a memoised callback: (speed) => { …ref.current = speed, setSpeed(speed) … }.
   const SPEED_SRC = /^\(?(\w+)\)?=>\{const \w+=\w+\.current\?\w+\(\):\w+\.current;\w+\.current=\1,\w+\(\1\)/;
   function changeSpeed(f) {
     for (let h = f.memoizedState; h; h = h.next) {

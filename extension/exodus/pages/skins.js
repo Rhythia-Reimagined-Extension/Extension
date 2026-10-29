@@ -41,6 +41,27 @@ function colorGrid(colors, cls = '') {
   return `<span class="v-cset ${cls}" style="grid-template-columns:repeat(${n},1fr);aspect-ratio:${n}/${rows}" role="img" aria-label="${colors.length} color preview">${colors.map(raw => { const c = cleanColor(raw); return c ? `<i style="background:${esc(c)}"${cls ? ` data-hex="${esc(c)}" data-tip="<b>${esc(c)}</b><small>Click to copy</small>"` : ''}></i>` : `<i class="bad"${cls ? ' data-tip="<b>Not a colour</b><small>This value is not drawn</small>"' : ''}></i>`; }).join('')}</span>`;
 }
 
+function skinArt(a, big = false) {
+  const t = a.assetType;
+  if (t === 'colorset') return Array.isArray(a.colors) && a.colors.length ? colorGrid(a.colors, big ? 'big' : '') : '<span class="v-nopv"><b>Preview unavailable</b></span>';
+  const src = t === 'rhs' ? a.previewUrl : a.previewUrl || a.url;
+  if (!src) return `<span class="v-nopv"><b>${t === 'rhs' ? 'Preview unavailable' : 'Image unavailable'}</b></span>`;
+  return `<img src="${esc(src)}" alt="${esc(a.name)} preview" ${big ? '' : 'loading="lazy"'} data-kind="${t}">`;
+}
+// One asset's card. opts.del adds the delete button; opts.open false draws the art without the larger view
+// (a profile's Skins tab), and opts.by false leaves out the uploader.
+function skinCard(a, i, {del = false, open = true, by = true} = {}) {
+  const n = a.downloadCount, cls = `v-skart ${a.assetType === 'rhs' ? 'wide' : ''} ${a.assetType === 'colorset' ? 'cs' : ''}`;
+  return `<article class="v-skin" style="--i:${Math.min(i, 24)}">
+    ${open ? `<button class="${cls}" type="button" data-open="${esc(a.id)}" aria-label="Open ${esc(a.name)}">${skinArt(a)}</button>` : `<div class="${cls} still">${skinArt(a)}</div>`}
+    ${del ? `<button class="iconbtn v-skdel" type="button" data-del="${esc(a.id)}" aria-label="Delete ${esc(a.name)}">${TRASH}</button>` : ''}
+    <div class="v-skbody"><h3 title="${esc(a.name)}">${esc(a.name)}</h3>
+      ${by ? `<a class="v-skby" href="/player/${esc(a.owner.id)}">${av(a.owner.avatarUrl)}<span>${esc(a.owner.username)}</span></a>` : ''}
+      <div class="v-skmeta"><span class="num">${bytes(a.sizeBytes)}</span><span class="num">${fmt(n)} ${n === 1 ? 'download' : 'downloads'}</span><span data-tip="<b>${esc(fullDate(a.createdAt))}</b>">${esc(ago(a.createdAt))}</span></div>
+      <div class="v-skact"><a class="btn" href="${esc(shareUrl(a.id))}" target="_blank" rel="noreferrer"><svg class="ico" aria-hidden="true"><use href="#i-dl"/></svg>Download</a><button class="btn v-sq" type="button" data-copy="${esc(a.id)}" aria-label="Copy share link for ${esc(a.name)}" data-tip="<b>Copy link</b>"><svg class="ico" aria-hidden="true"><use href="#i-link"/></svg></button></div>
+    </div></article>`;
+}
+
 function skins(host, ctx) {
   const R = host.shadowRoot, ac = new AbortController(), sig = {signal: ac.signal}, $ = s => R.querySelector(s);
   const ui = shell(R, sig);
@@ -98,24 +119,7 @@ function skins(host, ctx) {
         ${['cursor', 'note', 'border'].includes(q.type) ? bgPills() : ''}
       </div></div>`;
   }
-  function art(a, big = false) {
-    const t = a.assetType;
-    if (t === 'colorset') return Array.isArray(a.colors) && a.colors.length ? colorGrid(a.colors, big ? 'big' : '') : '<span class="v-nopv"><b>Preview unavailable</b></span>';
-    const src = t === 'rhs' ? a.previewUrl : a.previewUrl || a.url;
-    if (!src) return `<span class="v-nopv"><b>${t === 'rhs' ? 'Preview unavailable' : 'Image unavailable'}</b></span>`;
-    return `<img src="${esc(src)}" alt="${esc(a.name)} preview" ${big ? '' : 'loading="lazy"'} data-kind="${t}">`;
-  }
-  function card(a, i) {
-    const n = a.downloadCount;
-    return `<article class="v-skin" style="--i:${Math.min(i, 24)}">
-      <button class="v-skart ${a.assetType === 'rhs' ? 'wide' : ''} ${a.assetType === 'colorset' ? 'cs' : ''}" type="button" data-open="${esc(a.id)}" aria-label="Open ${esc(a.name)}">${art(a)}</button>
-      ${canDelete(a) ? `<button class="iconbtn v-skdel" type="button" data-del="${esc(a.id)}" aria-label="Delete ${esc(a.name)}">${TRASH}</button>` : ''}
-      <div class="v-skbody"><h3 title="${esc(a.name)}">${esc(a.name)}</h3>
-        <a class="v-skby" href="/player/${esc(a.owner.id)}">${av(a.owner.avatarUrl)}<span>${esc(a.owner.username)}</span></a>
-        <div class="v-skmeta"><span class="num">${bytes(a.sizeBytes)}</span><span class="num">${fmt(n)} ${n === 1 ? 'download' : 'downloads'}</span><span data-tip="<b>${esc(fullDate(a.createdAt))}</b>">${esc(ago(a.createdAt))}</span></div>
-        <div class="v-skact"><a class="btn" href="${esc(shareUrl(a.id))}" target="_blank" rel="noreferrer"><svg class="ico" aria-hidden="true"><use href="#i-dl"/></svg>Download</a><button class="btn v-sq" type="button" data-copy="${esc(a.id)}" aria-label="Copy share link for ${esc(a.name)}" data-tip="<b>Copy link</b>"><svg class="ico" aria-hidden="true"><use href="#i-link"/></svg></button></div>
-      </div></article>`;
-  }
+  const card = (a, i) => skinCard(a, i, {del: canDelete(a)});
   function grid() {
     const d = S.data, [, label, one] = typeOf(S.q.type);
     if (!S.ok) return `<div class="v-notice"><h2>Before you browse community skins</h2>
@@ -150,7 +154,7 @@ function skins(host, ctx) {
     ];
     return `<div class="cmp-head"><h2 id="cmp-title">${esc(a.name)}</h2>${closeBtn}</div>
       <div class="cmp-body v-skview">
-        <div class="v-skbig ${a.assetType} bg-${S.bg}">${art(a, true)}</div>
+        <div class="v-skbig ${a.assetType} bg-${S.bg}">${skinArt(a, true)}</div>
         <div class="v-skside">
           <a class="v-skby" href="/player/${esc(a.owner.id)}" data-close>${av(a.owner.avatarUrl)}<span>${esc(a.owner.username)}</span></a>
           <dl>${facts.map(([k, v]) => `<div><dt>${k}</dt><dd class="num">${v}</dd></div>`).join('')}</dl>
@@ -183,10 +187,12 @@ function skins(host, ctx) {
   dlg.addEventListener('close', () => { if (S.open) { S.open = null; dlg.classList.remove('v-skdlg', 'small'); } }, sig);
 
   function render() {
+    if (ac.signal.aborted) return;
     $('#hero').innerHTML = '';
     $('#body').innerHTML = `<div class="b-page v-mpage v-skpage ${S.enter ? 'enter' : ''}">${head()}<div id="v-mbar">${bar()}</div><section class="container v-sec v-mlist"><div id="v-mgrid">${grid()}</div><div id="v-mpager">${pager()}</div></section><div style="height:96px"></div></div>`;
   }
   function refresh() {
+    if (ac.signal.aborted) return;
     if (!$('.v-skpage')) return render();
     const f = R.activeElement?.id;
     morph($('#v-mbar'), bar()); morph($('#v-mgrid'), grid()); morph($('#v-mpager'), pager());
@@ -323,6 +329,8 @@ const css = `
 .v-skart.wide img{object-fit:cover;padding:0}
 .v-skart:hover img{transform:scale(1.04)}
 .v-skart.cs{padding:20px}
+.v-skart.still{cursor:default}
+.v-skart.still:hover img{transform:none}
 .v-skart .v-cset{width:min(160px,100%)}
 .v-skbig{background:#08090b}
 .bg-light .v-skart:not(.wide):not(.cs),.v-skbig.bg-light:not(.rhs):not(.colorset){background:#eef0f4}
@@ -375,4 +383,6 @@ dialog.cmp.v-skdlg.small{width:min(520px,calc(100vw - 32px))}
 `;
 
 K().page('skins', skins, css);
+// The cards and their links, for a profile's Skins tab (pages/profile-tabs.js).
+RhythiaX.ExodusSkinCards = {card: skinCard, shareUrl, copyText, TYPES: SKIN_TYPES};
 })();

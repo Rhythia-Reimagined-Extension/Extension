@@ -10,7 +10,7 @@ var RhythiaX = RhythiaX || {};
 
 RhythiaX.ExodusCompare = function mountExodusCompare(R, env) {
 'use strict';
-const {U, MODES, prepare, ico, sgn, tone, hideTip, sig, KIND, BAR_KINDS} = env;
+const {U, MODES, prepare, ico, sgn, tone, hideTip, sig, KIND, BAR_KINDS, OWN} = env;
 const {esc, fmt, REDUCED, SITE} = RhythiaX.ExodusKit;
 const $ = s => R.querySelector(s);
 // A complete url("…") token, safe inside a style attribute (core/kit.js).
@@ -23,8 +23,9 @@ const api = (name, body) => RhythiaX.ExodusData.post(name, body);
 const gone = () => sig.signal.aborted || !$('#cmp')?.open;
 // Leaving the profile stops the map files still being read for the window.
 sig.signal.addEventListener('abort', () => cmp.styAc?.abort(), {once: true});
-// Suggestions before a search: the signed-in player, then the top of the global board.
-let tops = null;
+// Suggestions before a search: the signed-in player, the top of the global board, and the players ranked
+// just above and just below this profile in Lock (two each side, from Rhythia's leaderboard).
+let tops = null, nearby = null;
 const tryCard = (p, tag, i) => `<button type="button" class="try-card fadein" style="animation-delay:${i * 40}ms" data-pick="${esc(p.id)}">
   <i class="av" style="background-image:${cssUrl(p.avatar)}"></i>
   <span class="try-who"><b>${esc(p.username)}${p.flag ? `<img class="flg" src="${SITE}/flags/${esc(p.flag)}.svg" alt="${esc(p.flag)}">` : ''}</b>
@@ -36,17 +37,34 @@ function tryList() {
   const me = RhythiaX.ExodusData.cachedSelf();
   const mine = me && String(me.id) !== String(U.id) ? [tryCard({id: me.id, username: me.username, avatar: me.avatar_url, flag: me.flag, position: me.position, rp: me.skill_points}, 'You', 0)] : [];
   const top = tops ? tops.filter(p => String(p.id) !== String(U.id)).slice(0, 3).map((p, i) => tryCard(p, p.position === 1 ? 'Global #1' : `Top ${p.position}`, mine.length + i)).join('') : trySkeleton(3);
-  return `<div class="try"><p class="try-h">Try</p><div class="try-grid">${mine.join('')}${top}</div></div>`;
+  const pos = Number(U.position) || 0;
+  const near = !pos ? '' : nearby ? (nearby.length ? `<p class="try-h">Near ${OWN ? 'your' : `${esc(U.username)}’s`} rank <span class="num">· #${fmt(pos, 0)}</span></p>
+    <div class="try-grid">${nearby.map((p, i) => tryCard(p, p.position < pos ? `${p.position === pos - 1 ? 'Just' : `${pos - p.position}`} above` : `${p.position === pos + 1 ? 'Just' : `${p.position - pos}`} below`, i)).join('')}</div>` : '')
+    : `<p class="try-h">Near this rank</p><div class="try-grid">${trySkeleton(4)}</div>`;
+  return `<div class="try"><p class="try-h">Try</p><div class="try-grid">${mine.join('')}${top}</div>${near ? `<div class="try-near">${near}</div>` : ''}</div>`;
+}
+// The leaderboard pages (50 players each) that hold the two places on each side of this profile.
+function loadNearby() {
+  const pos = Number(U.position) || 0, want = [pos - 2, pos - 1, pos + 1, pos + 2].filter(n => n >= 1);
+  if (!pos) { nearby = []; return Promise.resolve(); }
+  const pages = [...new Set(want.map(n => Math.ceil(n / 50)))];
+  return Promise.all(pages.map(page => api('getLeaderboard', {page, session: RhythiaX.ExodusData.session(), spin: false, vr: false})))
+    .then(rs => {
+      const rows = rs.flatMap(r => r?.leaderboard || []);
+      nearby = want.map(n => rows.find(u => u.position === n)).filter(u => u && String(u.id) !== String(U.id))
+        .map(u => ({id: u.id, username: u.username, avatar: u.avatar_url, flag: u.flag, position: u.position, rp: u.skill_points}));
+    }, () => { nearby = []; });
 }
 function showTry() {
   const box = $('#cmp-results'); if (!box) return;
   box.innerHTML = tryList();
-  if (tops) return;
+  if (tops) { if (!nearby) loadNearby().then(() => { const b = $('#cmp-results'); if (!gone() && b?.querySelector('.try') && !$('#cmp-q')?.value.trim()) b.innerHTML = tryList(); }); return; }
   RhythiaX.ExodusData.leaderboard('normal').then(list => {
     tops = list;
     const b = $('#cmp-results');
     if (!gone() && b?.querySelector('.try') && !$('#cmp-q')?.value.trim()) b.innerHTML = tryList();
   }).catch(() => { tops = []; const b = $('#cmp-results'); if (!gone() && b?.querySelector('.try')) b.innerHTML = tryList(); });
+  if (!nearby) loadNearby().then(() => { const b = $('#cmp-results'); if (!gone() && b?.querySelector('.try') && !$('#cmp-q')?.value.trim()) b.innerHTML = tryList(); });
 }
 function openCompare() {
   const dlg = $('#cmp');
@@ -341,6 +359,8 @@ RhythiaX.ExodusCompare.css = `
 .who-row .flg{width:16px;vertical-align:-2px;margin-left:4px;border-radius:2px}
 .try{padding:18px 2px 4px}
 .try-h{margin:0 0 10px;font-size:14px;font-weight:650;color:var(--text-2)}
+.try-h span{font-weight:500;color:var(--muted)}
+.try-near{margin-top:16px}
 .try-grid{display:grid;grid-template-columns:minmax(0,1fr);gap:6px}
 .try-card{display:flex;align-items:center;gap:12px;min-width:0;padding:10px 14px;border:0;border-radius:14px;background:var(--panel-2);box-shadow:inset 0 0 0 1px var(--line);color:var(--text);text-align:left;transition:background-color .15s,box-shadow .15s,transform .2s var(--ease)}
 .try-card:not(.is-load):hover{background:var(--panel-3);box-shadow:inset 0 0 0 1px var(--line-2);transform:translateY(-2px)}

@@ -63,6 +63,9 @@ RhythiaX.ExodusDock = (function () {
     dockRo.disconnect();
     removeEventListener('resize', queueDock);
     clearInterval(dockTimer);
+    // Leaving for a profile, Exodus moves the address without Rhythia's router (core/shell.js navigate), so
+    // Rhythia's page and its player stay underneath and would play on. Its own Pause button stops it.
+    dockEl?.querySelector('button[aria-label="Pause"]')?.click();
     setDockEl(null);
     dockSlot = null;
     html.classList.remove(DOCK);

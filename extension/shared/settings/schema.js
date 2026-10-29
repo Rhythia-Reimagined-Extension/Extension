@@ -73,8 +73,12 @@ RhythiaX.SettingsSchema = (function () {
       title: 'Pages Exodus takes over', desc: 'Off keeps Rhythia’s own version of that page.', options: PAGES },
     { key: 'exodus.search', tab: 'features', group: 'Pages', type: 'switch', looks: EXODUS, default: true,
       title: 'Search with Ctrl K', desc: 'Players, maps and clans from any page.' },
-    { key: 'modules.easterEggs', tab: 'features', group: 'Extras', type: 'switch', looks: CLASSIC, default: true,
-      title: 'Easter eggs', desc: 'Small surprises on some profiles.' },
+    { key: 'modules.easterEggs', tab: 'features', group: 'Extras', type: 'switch', looks: BOTH, default: true,
+      title: 'Easter eggs', desc: 'Small surprises here and there.',
+      children: [
+        { key: 'options.easterEggs.frequency', type: 'pills', looks: BOTH, default: 'normal', title: 'How often',
+          options: [['frequent', 'Frequent'], ['normal', 'Normal'], ['rare', 'Rare']] },
+      ] },
 
     // Appearance
     { key: 'theme', tab: 'look', group: 'Colours', type: 'themes', looks: BOTH, default: 'reimagined',
@@ -92,15 +96,16 @@ RhythiaX.SettingsSchema = (function () {
     { key: 'data.syncMode', tab: 'data', group: 'Community history', type: 'source', looks: BOTH, default: 'hybrid',
       title: 'Where history comes from', options: [['local-only', 'This device', 'device'], ['hybrid', 'Both', 'both'], ['cloud-only', 'Community', 'cloud']],
       notes: {
-        'local-only': 'Only what this browser saw. Nothing is sent to the community service.',
-        hybrid: 'Shared public history plus what this browser saw. The viewed player’s public ID and an anonymous key for this installation are sent to Shuriel’s service (rhythia.shuriel.com).',
-        'cloud-only': 'Shared public history only. Nothing new is saved on this device. The viewed player’s public ID and an anonymous key for this installation are sent to Shuriel’s service (rhythia.shuriel.com).',
+        'local-only': 'Only what this browser saw. Nothing is sent to the community service. With Both, profiles also show the daily history of the top 5,000 players.',
+        hybrid: 'Shared public history plus what this browser saw. Sends player and map IDs, Reimagined Search filters and an anonymous key for this installation to Shuriel’s service (rhythia.shuriel.com).',
+        'cloud-only': 'Shared public history only. Nothing new is saved on this device. Sends player and map IDs, Reimagined Search filters and an anonymous key for this installation to Shuriel’s service (rhythia.shuriel.com).',
       } },
     { key: 'data.telemetryEnabled', tab: 'data', group: 'Community history', type: 'switch', looks: CLASSIC, default: false,
       title: 'Report profile visits', desc: 'Sends the public ID of profiles you open, so their history starts being kept. Your IP address is processed to prevent abuse.' },
+    // What is saved in this browser, by kind, each with its size and a way to clear it (popup/popup.js storageCard).
     { key: 'storage', tab: 'data', group: 'On this device', type: 'storage', looks: BOTH, title: 'Storage' },
-    // Only Classic records these visits (rhythiax_connection_logs).
-    { key: 'visits', tab: 'data', group: 'Recent profile visits', type: 'visits', looks: CLASSIC, title: 'Recent profile visits' },
+    { key: 'backup', tab: 'data', group: 'Backup', type: 'backup', looks: BOTH, title: 'Settings and themes' },
+    { key: 'reset', tab: 'data', group: 'Start over', type: 'reset', looks: BOTH, title: 'Reset settings' },
   ];
 
   const EXODUS_DEFAULTS = { pages: PAGES.map(p => p[0]), search: true, homeVideo: true, scoresView: 'list' };

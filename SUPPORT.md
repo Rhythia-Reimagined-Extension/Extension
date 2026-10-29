@@ -1,4 +1,4 @@
-# Support — Reimagined for Rhythia 1.3.1
+# Support — Reimagined for Rhythia 1.4.0
 
 Something not working? Refresh Rhythia first, then check the version shown in the extension popup. Chrome 116+ and compatible Chromium browsers are supported; the Firefox version requires desktop Firefox 140+.
 

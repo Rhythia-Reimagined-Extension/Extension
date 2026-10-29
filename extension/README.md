@@ -49,6 +49,7 @@ Reimagined for Rhythia has two looks, chosen in the popup. Each has its own fold
 | `community-consent.js` | Exodus, Legacy. The online-history choice card (a notice); each look refreshes its history after a choice (`onChoice`). |
 | `consent.js` | Exodus, Legacy, popup, background. The one rule for the player's online-history choice (`RhythiaX.Consent`): whether history requests and profile visit reports are allowed. Callers treat a missing rule as not allowed. |
 | `grades.js` | Exodus, Legacy. `RhythiaX.Grades`: the one rule for a score's grade letter. A letter Rhythia supplied is used as it is; otherwise it comes from the accuracy on Rhythia's scale (SS at 100% without a miss, S from 98%, A from 95%, B from 93%, C from 90%, D from 80%), and F below 80% or for a play marked as failed. Each look colours the letters in its own CSS. |
+| `app-icon.js` | Exodus, Legacy. `RhythiaX.APP_ICON`: the extension's icon as a data URL (the page cannot load the extension's files), for the Creator of Reimagined badge and Exodus' logo Easter egg. |
 | `rhythia-session.js` | Exodus, Legacy. `RhythiaX.RhythiaSession.token()`: who is signed in to Rhythia, read the same way in both looks. Callers treat a missing file as signed out. |
 | `data/data-schema.js`, `data/data-migrations.js`, `data/data-repository.js` | Legacy, background. Saved player data and its migrations. The popup also loads `data-schema.js`, for the history settings' defaults and the record key. |
 

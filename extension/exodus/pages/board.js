@@ -20,24 +20,16 @@ const cssUrl = RhythiaX.ExodusKit.cssUrl;
 const REDUCED = matchMedia('(prefers-reduced-motion: reduce)').matches;
 const MODES = {normal: ['Lock', 'lock.png', 'rp', 'position', 'change'], spin: ['Spin', 'spincam.png', 'spinRp', 'spinPosition', 'spinChange'], vr: ['VR', 'vr.png', 'vrRp', 'vrPosition', 'vrChange']};
 const PERIODS = [['today', 'Today'], ['7d', '7 days'], ['30d', '30 days']];
-const CODES = 'AD AE AF AG AI AL AM AO AQ AR AS AT AU AW AX AZ BA BB BD BE BF BG BH BI BJ BL BM BN BO BQ BR BS BT BV BW BY BZ CA CC CD CF CG CH CI CK CL CM CN CO CR CU CV CW CX CY CZ DE DJ DK DM DO DZ EC EE EG EH ER ES ET FI FJ FK FM FO FR GA GB GD GE GF GG GH GI GL GM GN GP GQ GR GS GT GU GW GY HK HM HN HR HT HU ID IE IL IM IN IO IQ IR IS IT JE JM JO JP KE KG KH KI KM KN KP KR KW KY KZ LA LB LC LI LK LR LS LT LU LV LY MA MC MD ME MF MG MH MK ML MM MN MO MP MQ MR MS MT MU MV MW MX MY MZ NA NC NE NF NG NI NL NO NP NR NU NZ OM PA PE PF PG PH PK PL PM PN PR PS PT PW PY QA RE RO RS RU RW SA SB SC SD SE SG SH SI SJ SK SL SM SN SO SR SS ST SV SX SY SZ TC TD TF TG TH TJ TK TL TM TN TO TR TT TV TW TZ UA UG UM US UY UZ VA VC VE VG VI VN VU WF WS XK YE YT ZA ZM ZW'.split(' ');
-const NAMES = (() => { try { return new Intl.DisplayNames(['en'], {type: 'region'}); } catch (_) { return null; } })();
-const country = c => { try { return NAMES?.of(c) || c; } catch (_) { return c; } };
-const COUNTRIES = CODES.map(c => [c, country(c)]).sort((a, b) => a[1].localeCompare(b[1]));
+const {countryName: country, countryPicker} = RhythiaX.ExodusKit;
 // A supporter's row is Rhythia's supporter card: its background art and the heart.
 const SUP_BG = `<picture class="b-supbg" aria-hidden="true"><source media="(min-width: 1024px)" srcset="${SITE}/supporterbg.png"><img src="${SITE}/supporterbg-mobile.png" alt=""></picture>`;
 const HEART = `<img class="b-heart" src="${SITE}/supporterheart.png" alt="Rhythia Supporter" data-tip="<b>Rhythia Supporter</b><small>Supports Rhythia’s development</small>">`;
 // Rhythia's title, as its leaderboard shows it next to a name (core/kit.js titleOf; art in /titles/).
 const titleImg = (rp, pos) => { const {id: k, name: l} = RhythiaX.ExodusKit.titleOf(rp || 0, pos); return `<img class="b-tt" src="${SITE}/titles/${k}.png" alt="${l}" data-tip="<b>${l}</b><small>Rhythia title</small>">`; };
 const morph = (el, html) => RhythiaX.ExodusKit.morph(el, html);
-// Line icons only: a globe for Global, a chevron, a check for the chosen country.
-const GLOBE = '<svg class="b-globe" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.5 2.7 3.8 5.7 3.8 9s-1.3 6.3-3.8 9c-2.5-2.7-3.8-5.7-3.8-9S9.5 5.7 12 3z"/></svg>';
-const CHEVRON = '<svg class="b-chev" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>';
-const CHECK = '<svg class="b-check" viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12.5 4.5 4.5L19 7.5"/></svg>';
-const flagImg = c => c ? `<img class="b-fl" src="${SITE}/flags/${esc(c)}.svg" alt="" data-code="${esc(c)}">` : GLOBE;
-
 // dq is the query the shown data belongs to; while another one loads, the rows keep their own mode.
-const S = {cp: {open: false, q: '', i: -1}, q: parse(), dq: null, period: '', data: null, hist: null, histBusy: false, allowed: false, me: null, loading: false, seq: 0, enter: !ctx.quiet};
+const S = {q: parse(), dq: null, period: '', data: null, hist: null, histBusy: false, allowed: false, me: null, loading: false, seq: 0, enter: !ctx.quiet};
+const cp = countryPicker(R, {current: () => S.q.flag, mine: () => S.me?.flag || '', pick: flag => go({flag, page: 1}), redraw: () => morph($('#b-bar'), bar()), signal: ac.signal});
 const mode = () => (S.dq || S.q).mode;
 const wantsHist = q => S.allowed && q.mode === 'normal';
 
@@ -107,43 +99,11 @@ function head() {
 function bar() {
   const q = S.q;
   return `<div class="container b-bar">
-    <div class="b-cp ${S.cp.open ? 'open' : ''}"><button class="b-cp-btn" type="button" data-cp aria-haspopup="listbox" aria-expanded="${S.cp.open}" aria-label="Country: ${q.flag ? esc(country(q.flag)) : 'Global'}">${flagImg(q.flag)}<span>${q.flag ? esc(country(q.flag)) : 'Global'}</span>${CHEVRON}</button>${S.cp.open ? picker() : ''}</div>
+    ${cp.html()}
     <div class="pills" aria-label="Game mode">${Object.entries(MODES).map(([k, v]) => `<button type="button" aria-pressed="${q.mode === k}" data-mode="${k}"><img src="${SITE}/${v[1]}" alt="">${v[0]}</button>`).join('')}</div>
     <div class="pills" aria-label="Movement period">${PERIODS.map(([k, l]) => `<button type="button" aria-pressed="${period() === k}" data-period="${k}" ${periodOk(k) ? '' : `aria-disabled="true" data-tip="${!S.allowed ? '<b>Community history is off</b><small>Turn it on in the Reimagined popup.</small>' : '<b>Lock only</b><small>Movement over days is tracked for Lock only.</small>'}"`}>${l}</button>`).join('')}</div>
     <label class="b-switch"><input type="checkbox" id="b-inactive" ${q.inactive ? 'checked' : ''}><i aria-hidden="true"></i>Include inactive</label>
   </div>`;
-}
-
-function cpItems() {
-  const qq = S.cp.q.trim().toLowerCase(), cur = S.q.flag, mine = S.me?.flag;
-  const match = ([c, n]) => !qq || n.toLowerCase().includes(qq) || c.toLowerCase() === qq;
-  const item = (c, n) => `<button type="button" role="option" class="b-cp-item" aria-selected="${cur === c}" data-flag="${esc(c)}">${flagImg(c)}<span>${esc(n)}</span>${cur === c ? CHECK : ''}</button>`;
-  const head = t => `<div class="b-cp-sec">${t}</div>`;
-  let out = '';
-  if (!qq || 'global'.includes(qq)) out += item('', 'Global');
-  if (mine && match([mine, country(mine)])) out += head('Your country') + item(mine, country(mine));
-  const all = COUNTRIES.filter(match);
-  if (all.length) out += head(qq ? `${all.length} ${all.length === 1 ? 'country' : 'countries'}` : 'All countries') + all.map(([c, n]) => item(c, n)).join('');
-  return out || '<p class="cap b-cp-none">No country matches.</p>';
-}
-function picker() {
-  return `<div class="b-cp-pop" role="dialog" aria-label="Choose a country">
-    <label class="field b-cp-q"><svg class="ico" aria-hidden="true"><use href="#i-search"/></svg><span class="sr">Search countries</span><input id="b-cp-q" type="search" placeholder="Search countries" autocomplete="off" value="${esc(S.cp.q)}"></label>
-    <div class="b-cp-list" role="listbox" id="b-cp-list">${cpItems()}</div></div>`;
-}
-function openPicker(open) {
-  S.cp = {open, q: '', i: -1};
-  morph($('#b-bar'), bar());
-  if (!open) return;
-  $('#b-cp-q')?.focus();
-  $('.b-cp-item[aria-selected="true"]')?.scrollIntoView({block: 'center'});
-}
-function cpMove(step) {
-  const items = [...R.querySelectorAll('.b-cp-item')];
-  if (!items.length) return;
-  S.cp.i = (S.cp.i + step + items.length) % items.length;
-  items.forEach((b, i) => b.classList.toggle('on', i === S.cp.i));
-  items[S.cp.i].scrollIntoView({block: 'nearest'});
 }
 
 /* ── Highlights: what moved on this page ── */
@@ -200,7 +160,9 @@ function pager() {
 }
 
 /* ── Rendering ── */
+// Once the page is left, late answers (history parts, a slow board) draw nothing: the next page may share b-page.
 function render() {
+  if (ac.signal.aborted) return;
   $('#hero').innerHTML = '';
   $('#body').innerHTML = `<div class="b-page ${S.enter ? 'enter' : ''}"><div id="b-headw">${head()}</div><div id="b-bar">${bar()}</div><div id="b-hls">${highlights()}</div>
     <section class="container b-table" aria-label="Leaderboard"><div class="panel b-panel ${S.loading ? 'busy' : ''}" id="b-table">${table()}</div><div id="b-pager">${pager()}</div></section><div style="height:96px"></div></div>`;
@@ -208,10 +170,11 @@ function render() {
   if (S.enter) setTimeout(() => $('.b-page')?.classList.remove('enter'), 900);
 }
 function refresh() {
-  if (!$('.b-page')) return render();
+  if (ac.signal.aborted) return;
+  if (!$('#b-table')) return render();
   // Brought up to date in place: rows, pictures and running animations stay where they are.
   morph($('#b-headw'), head());
-  if (!S.cp.open) morph($('#b-bar'), bar());
+  if (!cp.isOpen) morph($('#b-bar'), bar());
   morph($('#b-hls'), highlights());
   const t = $('#b-table'); morph(t, table()); t.classList.toggle('busy', S.loading);
   morph($('#b-pager'), pager());
@@ -262,10 +225,6 @@ async function load() {
 }
 
 R.addEventListener('click', e => {
-  if (S.cp.open && !e.target.closest('.b-cp')) openPicker(false);
-  if (e.target.closest('[data-cp]')) return openPicker(!S.cp.open);
-  const f = e.target.closest('[data-flag]');
-  if (f) { const flag = f.dataset.flag; openPicker(false); if (flag !== S.q.flag) go({flag, page: 1}); return; }
   const t = e.target.closest('[data-mode],[data-period],[data-page],[data-mine],[data-native-click],[data-retry]');
   if (!t || t.disabled) return;
   const d = t.dataset;
@@ -280,23 +239,6 @@ R.addEventListener('click', e => {
   if (t.hasAttribute('data-retry')) return load();
   if (d.nativeClick && !ctx.clickNative(d.nativeClick)) toast('Rhythia is still loading. Try again in a moment.');
 }, sig);
-R.addEventListener('input', e => {
-  if (e.target.id !== 'b-cp-q') return;
-  S.cp.q = e.target.value; S.cp.i = -1;
-  $('#b-cp-list').innerHTML = cpItems();
-}, sig);
-R.addEventListener('keydown', e => {
-  if (!S.cp.open) return;
-  if (e.key === 'ArrowDown' || e.key === 'ArrowUp') { e.preventDefault(); return cpMove(e.key === 'ArrowDown' ? 1 : -1); }
-  if (e.key === 'Enter') { e.preventDefault(); const items = R.querySelectorAll('.b-cp-item'); (items[S.cp.i] || (S.cp.q ? items[0] : null))?.click(); return; }
-  if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); openPicker(false); R.querySelector('[data-cp]')?.focus(); }
-}, sig);
-// A flag Rhythia does not have shows its code instead.
-R.addEventListener('error', e => {
-  const img = e.target;
-  if (img?.tagName !== 'IMG' || !img.classList.contains('b-fl')) return;
-  const b = document.createElement('b'); b.className = 'b-fl code'; b.textContent = img.dataset.code || ''; img.replaceWith(b);
-}, {capture: true, signal: ac.signal});
 R.addEventListener('change', e => {
   if (e.target.id === 'b-inactive') go({inactive: e.target.checked, page: 1});
 }, sig);
@@ -336,27 +278,6 @@ RhythiaX.ExodusBoard.css = `
 .b-bar::before{top:0}.b-bar::after{bottom:0}
 .b-bar .pills{height:40px;padding:3px;align-items:stretch}
 .b-bar .pills button{height:auto}
-.b-cp{position:relative}
-.b-cp-btn{display:flex;align-items:center;gap:10px;height:40px;min-width:220px;padding:0 12px;border:0;border-radius:10px;background:var(--field);box-shadow:inset 0 0 0 1px var(--line-2);color:var(--text);font:inherit;font-weight:600;text-align:left;cursor:pointer;transition:box-shadow .15s}
-.b-cp-btn:hover,.b-cp.open .b-cp-btn{box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--accent) 55%,transparent)}
-.b-cp-btn span{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.b-fl{width:22px;height:16px;flex:none;object-fit:cover;border-radius:3px;box-shadow:0 0 0 1px rgba(var(--ink),.08)}
-.b-fl.code{display:grid;place-items:center;font-size:9.5px;font-weight:700;color:var(--muted);background:var(--panel-3)}
-.b-globe,.b-chev,.b-check{width:18px;height:18px;flex:none;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
-.b-globe{width:20px;height:20px;color:var(--accent-2)}
-.b-chev{color:var(--muted);transition:transform .2s var(--ease)}
-.b-cp.open .b-chev{transform:rotate(180deg)}
-.b-check{color:var(--accent-2);margin-left:auto}
-.b-cp-pop{position:absolute;z-index:30;top:calc(100% + 6px);left:0;width:300px;padding:8px;border-radius:14px;background:var(--dialog);box-shadow:0 0 0 1px var(--line-2),0 18px 40px rgba(0,0,0,calc(.45 * var(--sh)));animation:exoEnter .2s var(--ease) both}
-.b-cp-q{display:flex;align-items:center;gap:8px;height:38px;padding:0 10px}
-.b-cp-q input{flex:1;min-width:0;border:0;background:none;color:var(--text);font:inherit;outline:none}
-.b-cp-list{max-height:340px;overflow:auto;margin-top:6px;padding-right:2px;scrollbar-width:thin}
-.b-cp-sec{padding:10px 10px 4px;font-size:11.5px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--muted)}
-.b-cp-item{display:flex;align-items:center;gap:10px;width:100%;height:36px;padding:0 10px;border:0;border-radius:8px;background:none;color:var(--text-2);font:inherit;font-weight:550;text-align:left;cursor:pointer}
-.b-cp-item span{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.b-cp-item:hover,.b-cp-item.on{background:rgba(var(--ink),.06);color:var(--text)}
-.b-cp-item[aria-selected="true"]{color:var(--text);font-weight:650}
-.b-cp-none{margin:14px 10px}
 .b-bar .pills button[aria-disabled="true"]{opacity:.45}
 .b-hls{margin-top:28px}
 .b-hls-head{display:flex;align-items:baseline;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:12px}
@@ -426,6 +347,6 @@ RhythiaX.ExodusBoard.css = `
 .b-page.enter .b-hls{animation:exoEnter .6s var(--ease) .16s both}
 [data-variant="lines"] .b-panel{padding:0}
 @media (max-width:900px){.b-cols.trend,.b-rows.trend .b-row,.b-cols,.b-row{grid-template-columns:40px 52px minmax(0,1fr) 100px}.b-cols span:nth-child(4):not(:last-child),.b-row .b-spark,.b-row .pc,.b-cols span:last-child{display:none}.b-cols.trend span:nth-child(5){display:block}}
-@media (max-width:560px){.b-me{width:100%}.b-cp,.b-cp-btn{width:100%}.b-cp-pop{width:100%}.b-cols,.b-row{grid-template-columns:34px 44px minmax(0,1fr) 84px;gap:8px}.b-cols.trend,.b-rows.trend .b-row{grid-template-columns:34px 44px minmax(0,1fr) 84px}.b-row .tag,.b-row .b-flag{display:none}.b-hls-row{grid-template-columns:1fr 1fr}}
+@media (max-width:560px){.b-me{width:100%}.b-bar .b-cp,.b-bar .b-cp-btn{width:100%}.b-bar .b-cp-pop{width:100%}.b-cols,.b-row{grid-template-columns:34px 44px minmax(0,1fr) 84px;gap:8px}.b-cols.trend,.b-rows.trend .b-row{grid-template-columns:34px 44px minmax(0,1fr) 84px}.b-row .tag,.b-row .b-flag{display:none}.b-hls-row{grid-template-columns:1fr 1fr}}
 @media (prefers-reduced-motion:reduce){.b-rows.anim .b-row{animation:none!important}.b-rows.anim .b-spark path{stroke-dasharray:none;animation:none}}
 `;

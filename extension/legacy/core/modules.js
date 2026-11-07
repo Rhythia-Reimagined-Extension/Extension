@@ -16,10 +16,10 @@ RhythiaX.MODULE_DEFAULTS = {
 
 RhythiaX.MODULE_SETTING_DEFAULTS = {
   appearance: { theme: 'reimagined', size: 'default', dateFormat: 'yyyy-mm-dd' },
-  scoreCards: { customCards: true, cardLayout: 'variant_e', playerView: 'list', cardBackgrounds: true, dateFormat: 'yyyy-mm-dd', showModIcons: true, showModText: false },
+  scoreCards: { cardLayout: 'variant_e', playerView: 'list', cardBackgrounds: true, dateFormat: 'yyyy-mm-dd', showModIcons: true, showModText: false },
   advancedStats: { playstyleTab: true, scoutingSummary: true, performanceBreakdown: true, bestMaps: true },
   statHistory: { layout: 'variant_b' },
-  titleProgression: { showProgression: true, showHistory: true, crownMode: '3d' },
+  titleProgression: { showProgression: true, showHistory: true },
   playerCompare: {},
   easterEggs: { frequency: 'normal' },
 };
@@ -37,18 +37,20 @@ function moduleUpdatesIdle() {
 RhythiaX.applyModuleOptionSettings = function (settings) {
   RhythiaX.moduleOptionSettings = Object.keys(RhythiaX.MODULE_SETTING_DEFAULTS).reduce((all, name) => {
     const stored = { ...(settings?.[name] || {}) };
+    // Old names and shapes, read as the popup reads them (shared/settings/schema.js read()); the card styles' old
+    // names are read in score-cards/store.js.
     if (name === 'scoreCards') {
       const labelsOnly = stored.showModIcons === false && stored.showModText !== false;
       stored.showModIcons = !labelsOnly;
       stored.showModText = labelsOnly;
     }
     if (name === 'advancedStats') {
-      if (stored.performanceBreakdown === undefined && stored.performanceFilters !== undefined) {
+      if (stored.performanceBreakdown == null && stored.performanceFilters != null) {
         stored.performanceBreakdown = stored.performanceFilters;
       }
       delete stored.performanceFilters;
     }
-    if (name === 'advancedStats' && stored.playstyleTab === undefined && stored.playstyleDeck !== undefined) {
+    if (name === 'advancedStats' && stored.playstyleTab == null && stored.playstyleDeck != null) {
       stored.playstyleTab = stored.playstyleDeck;
     }
     return {
@@ -66,9 +68,7 @@ RhythiaX.applyModuleOptionSettings = function (settings) {
     moduleUpdatesWaiting = true;
     return;
   }
-  if (!RhythiaX.isModuleOptionEnabled('scoreCards', 'customCards')) {
-    RhythiaX.ScoreCardView?.unenhance?.();
-  } else if (!RhythiaX.isCardBackgroundsEnabled?.()) {
+  if (!RhythiaX.isCardBackgroundsEnabled?.()) {
     document.querySelectorAll('.rhythiax-card-bg').forEach(bg => bg.remove());
   }
 
@@ -105,22 +105,14 @@ RhythiaX.isCardBackgroundsEnabled = function () {
 };
 
 RhythiaX.getDateFormat = function () {
-  const appFmt = RhythiaX.moduleOptionSettings.appearance?.dateFormat;
-  const scFmt = RhythiaX.moduleOptionSettings.scoreCards?.dateFormat;
-  let format = 'yyyy-mm-dd';
-  if (appFmt && appFmt !== 'yyyy-mm-dd' && appFmt !== 'relative') {
-    format = appFmt;
-  } else if (scFmt && scFmt !== 'yyyy-mm-dd' && scFmt !== 'relative') {
-    format = scFmt;
-  } else if (appFmt && appFmt !== 'relative') {
-    format = appFmt;
-  } else if (scFmt && scFmt !== 'relative') {
-    format = scFmt;
-  }
-  const clean = String(format).toLowerCase().trim();
-  // The popup offers these three (shared/settings/schema.js); no version stored a format with slashes.
+  // The popup offers these three (shared/settings/schema.js); no version stored a format with slashes. Any other
+  // saved value, such as an early build's 'relative', counts as no choice. Appearance wins over the score cards'
+  // own copy unless it holds only the default.
   const valid = ['yyyy-mm-dd', 'mm-dd-yyyy', 'dd-mm-yyyy'];
-  return valid.includes(clean) ? clean : 'yyyy-mm-dd';
+  const read = value => { const clean = String(value || '').toLowerCase().trim(); return valid.includes(clean) ? clean : ''; };
+  const appFmt = read(RhythiaX.moduleOptionSettings.appearance?.dateFormat);
+  const scFmt = read(RhythiaX.moduleOptionSettings.scoreCards?.dateFormat);
+  return [appFmt, scFmt].find(format => format && format !== 'yyyy-mm-dd') || 'yyyy-mm-dd';
 };
 
 RhythiaX.isScoreCardModIconsEnabled = function () {

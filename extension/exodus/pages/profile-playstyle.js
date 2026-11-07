@@ -1,8 +1,8 @@
 // =============================================
 // Reimagined for Rhythia — Exodus profile: playstyle
 // =============================================
-// The Playstyle pane: momentum and its status guide, the signals, Month in review with the map types read
-// from the map files, the speed and grade mix of the top plays and the best plays. momentum() and the daily
+// The Playstyle pane: momentum and its status guide, the signals, Month in review with the map types from
+// the history service, the speed and grade mix of the top plays and the best plays. momentum() and the daily
 // history it reads are in pages/profile.js, which makes this part at mount with its context c.
 
 var RhythiaX = RhythiaX || {};
@@ -57,16 +57,11 @@ function comeback(b) {
   return t;
 }
 
-// Map types come from each map's notes (ExodusMapKit). Saved results show at once; the rest load
-// while the tab is open, four files at a time, and only the notes part of each file is read.
+// Map types come from the history service (ExodusData.mapStyles, online history only). Saved results show at
+// once; the rest are asked for while the tab is open, up to 100 maps a request.
 // Each map has one of the first four types; Quantum is on top of that, so it has a row but no part of the bar.
-const KIND = {
-  jump: ['Jumps', 'Mostly long moves across the grid'],
-  stream: ['Streams', 'Mostly short moves at an even speed'],
-  tech: ['Techs', 'Mostly short moves at a changing speed'],
-  varied: ['Varied', 'No kind of movement leads'],
-  quantum: ['Quantum', 'Parts placed off the grid'],
-};
+// Their names and tips are the ones both looks use (shared/game-terms.js).
+const KIND = RhythiaX.GameTerms.TYPES;
 const BAR_KINDS = ['jump', 'stream', 'tech', 'varied'];
 const STY = {map: RhythiaX.ExodusData.storedStyles(PLAYS.map(s => s.songId)), started: false, done: 0, total: 0};
 const kindOf = s => STY.map.get(s.songId)?.kind;
@@ -101,9 +96,9 @@ function mapTypes() {
   const all = [...month, ...top], known = all.filter(kindOf).length;
   const name = monthName(ym, {month: 'long'});
   if (STY.total && known < all.length) {
-    return `<h4>Map types</h4><div class="mt-load" role="status"><span>Reading map files <b class="num">${STY.done} of ${STY.total}</b></span><i style="--p:${Math.round(STY.done / STY.total * 100)}%"></i></div>`;
+    return `<h4>Map types</h4><div class="mt-load" role="status"><span>${S.basic ? 'Reading map files for their types' : 'Asking for map types'} <b class="num">${STY.done} of ${STY.total}</b></span><i style="--p:${Math.round(STY.done / STY.total * 100)}%"></i></div>`;
   }
-  if (!known) return `<h4>Map types</h4><p class="cap">Could not read the map files.</p>`;
+  if (!known) return `<h4>Map types</h4>${S.offline && !S.basic ? onlineOffer('Map types come from online history: Reimagined’s history service reads each map.') : S.basic ? '<p class="cap">This browser could not read these maps’ files yet.</p>' : '<p class="cap">Reimagined has not read these maps yet. Their types come within a day.</p>'}`;
   const keys = Object.keys(KIND), color = k => `var(--k-${k})`, label = k => KIND[k][0];
   const count = list => keys.map(k => [k, list.filter(s => isKind(s, k))]);
   const m = count(month), t = count(top), mKnown = month.filter(kindOf).length, tKnown = top.filter(kindOf).length;
@@ -118,7 +113,8 @@ function mapTypes() {
     const shift = m.map(([k, l], i) => [k, l.length, l.length / mKnown - t[i][1].length / tKnown, t[i][1].length]).sort((a, b) => b[2] - a[2])[0];
     if (shift[2] >= .2) lines.push(`${name} leans more on <b>${label(shift[0]).toLowerCase()}</b>: ${shift[1]} of ${mKnown} maps, against ${shift[3]} of the top 100.`);
   }
-  return `<h4>Map types <span class="cap">· ${mKnown ? `${plural(mKnown, 'map')} played in ${name}` : `top 100, no listed plays in ${name}`}</span></h4>
+  const approx = all.some(s => STY.map.get(s.songId)?.approximate);
+  return `<h4>Map types <span class="cap">· ${mKnown ? `${plural(mKnown, 'map')} played in ${name}` : `top 100, no listed plays in ${name}`}</span>${approx ? ` <span class="cap" data-tip="<b>Approximate</b><small>${RhythiaX.ExodusKit.BASIC_TIP}</small>">· approximate</span>` : ''}</h4>
     ${mix(base.map(([k, l]) => [k, l.length]), color, label, mKnown ? `${mKnown} in ${name}` : `${tKnown} in the top 100`, k => `<br>${KIND[k][1]}`)}
     <div class="mt-rows"><span class="h">Type</span><span class="h">${esc(monthName(ym, {month: 'short'}))}</span><span class="h">Top 100</span><span class="h">Accuracy</span>
       ${rows.map(r => `<span class="k" style="--c:${color(r.k)}" data-tip="<b>${label(r.k)}</b><small>${KIND[r.k][1]}</small>">${label(r.k)}</span><em class="num">${r.m.length || '—'}</em><em class="num">${r.t.length || '—'}</em><em class="num" data-tip="<small>Average accuracy of these maps in ${whose} top 100</small>">${r.t.length ? fmt(avgAcc(r.t), 2) + '%' : '—'}</em>`).join('')}</div>

@@ -26,23 +26,11 @@ RhythiaX.parseRelativeTime = function (text) {
   return d;
 };
 
-RhythiaX.formatDate = function (d, customFormat) {
-  if (!(d instanceof Date) || Number.isNaN(d.getTime())) return '';
-  const pad = value => String(value).padStart(2, '0');
-  if (customFormat && typeof customFormat === 'string') {
-    return RhythiaX.formatDateWithPattern(d, customFormat);
-  }
-  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
-};
-
-RhythiaX.formatDateWithPattern = function (d, pattern = 'relative') {
+RhythiaX.formatDateWithPattern = function (d, pattern = 'yyyy-mm-dd') {
   if (!d) return '';
   let dateObj = d;
   if (typeof dateObj === 'string') {
     const trimmed = dateObj.trim();
-    if (/^\d+\s+\w+\s+ago$/i.test(trimmed) && pattern === 'relative') {
-      return trimmed;
-    }
     if (/^\d+\s*(second|minute|hour|day|week|month|year)s?\s*ago/i.test(trimmed)) {
       dateObj = RhythiaX.parseRelativeTime ? RhythiaX.parseRelativeTime(trimmed) : null;
     } else {
@@ -54,11 +42,7 @@ RhythiaX.formatDateWithPattern = function (d, pattern = 'relative') {
     return String(d || '');
   }
 
-  const p = String(pattern || 'relative').toLowerCase();
-  if (p === 'relative') {
-    return RhythiaX.formatRelativeDate ? RhythiaX.formatRelativeDate(dateObj) : '';
-  }
-
+  const p = String(pattern || 'yyyy-mm-dd').toLowerCase();
   const pad = val => String(val).padStart(2, '0');
   const year = dateObj.getFullYear();
   const month = pad(dateObj.getMonth() + 1);

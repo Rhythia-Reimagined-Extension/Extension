@@ -7,50 +7,12 @@ var RhythiaX = RhythiaX || {};
 (function () {
   'use strict';
 
-  function parse(card) {
-    if (!card) return null;
-    const score = RhythiaX.parseScoreCard ? RhythiaX.parseScoreCard(card) : {};
-    const titleEl = card.querySelector('.truncate span, .whitespace-nowrap span, span.font-medium, .truncate, .rhythiax-card-title');
-    const mapTitle = titleEl?.textContent?.trim() || score.songTitle || '';
-    const scoreId = score.scoreId || card.getAttribute('data-rhythiax-score-id') || '';
-    const scoreHref = scoreId ? `/score/${scoreId}` : (card.querySelector('a[href*="/score/"]')?.getAttribute('href') || '');
-    const mapHref = score.beatmapId ? `/maps/${score.beatmapId}` : (score.beatmapHash ? `/maps/${score.beatmapHash}` : scoreHref);
-    const replayUrl = score.replayUrl || RhythiaX.findReplayLink?.(card)?.getAttribute('href') || '';
-    const mapper = score.mapper || extractMapper(score) || '';
-
-    return {
-      score,
-      scoreId,
-      date: score.absoluteDate || (RhythiaX.parseRelativeTime ? RhythiaX.parseRelativeTime(score.timeAgo) : score.timeAgo),
-      scoreHref,
-      mapHref,
-      replayUrl,
-      songTitle: mapTitle,
-      songArtist: score.artist || '',
-      mapper,
-    };
-  }
-
-  function stats(score) {
-    const parseNum = value => (RhythiaX.parseLocalizedNumber ? RhythiaX.parseLocalizedNumber(value) : (Number.parseFloat(String(value ?? '').replace(/,/g, '')) || 0));
-    return [
-      { label: 'Mods', value: score.mods },
-      { label: 'Notes', value: RhythiaX.formatNumber ? RhythiaX.formatNumber(parseInt(score.notes, 10)) : score.notes },
-      { label: 'Raw RP', value: RhythiaX.formatNumber ? RhythiaX.formatNumber(Math.round(parseNum(score.rpEarned))) : score.rpEarned },
-      { label: 'Accuracy', value: score.accuracy },
-      { label: 'Misses', value: score.misses, isMisses: true },
-      { label: 'Weighted RP', value: RhythiaX.formatNumber ? RhythiaX.formatNumber(Math.round(parseNum(score.weightedRp))) : score.weightedRp }
-    ];
-  }
-
   function getGrade(scoreOrAcc, passed = true, misses = 0) {
     if (typeof scoreOrAcc === 'object' && scoreOrAcc !== null) {
       const s = scoreOrAcc;
-      // A letter Rhythia gave the score comes first: read from its card (gradeSource 'page', parseScoreCard)
-      // or sent by its API (gradeSource 'api', mapApiScores in core/scores.js). A letter the extension worked
-      // out itself is not used; accuracy decides then, as it does when there is no letter.
-      const fromRhythia = s.gradeSource === 'page' || s.gradeSource === 'api';
-      const known = fromRhythia ? RhythiaX.Grades.supplied(s.grade) : '';
+      // A letter Rhythia's API sent comes first (gradeSource 'api', mapApiScores in core/scores.js). A letter
+      // the extension worked out itself is not used; accuracy decides then, as it does when there is no letter.
+      const known = s.gradeSource === 'api' ? RhythiaX.Grades.supplied(s.grade) : '';
       if (known) return known;
       const p = s.passed !== false && s.failed !== true;
       const m = parseInt(s.misses, 10) || 0;
@@ -284,8 +246,8 @@ var RhythiaX = RhythiaX || {};
 
   function formatScoreDate(rawDate, customFormat) {
     if (!rawDate) return '';
-    const format = customFormat || (RhythiaX.getDateFormat ? RhythiaX.getDateFormat() : 'relative');
-    const p = String(format || 'relative').toLowerCase();
+    const format = customFormat || (RhythiaX.getDateFormat ? RhythiaX.getDateFormat() : 'yyyy-mm-dd');
+    const p = String(format || 'yyyy-mm-dd').toLowerCase();
 
     // 1. Resolve relative and calendar dates
     let dateObj = rawDate;
@@ -302,14 +264,6 @@ var RhythiaX = RhythiaX || {};
       }
     }
 
-    if (p === 'relative') {
-      if (originalRelative) return originalRelative;
-      if (dateObj instanceof Date && !isNaN(dateObj.getTime())) {
-        return RhythiaX.formatRelativeDate ? RhythiaX.formatRelativeDate(dateObj) : '';
-      }
-      return String(rawDate || '');
-    }
-
     // 2. Format calendar date
     let calDate = '';
     if (RhythiaX.formatDateWithPattern) {
@@ -324,9 +278,6 @@ var RhythiaX = RhythiaX || {};
         case 'mm-dd-yyyy': calDate = `${month}-${day}-${year}`; break;
         case 'dd-mm-yyyy': calDate = `${day}-${month}-${year}`; break;
         case 'yyyy-mm-dd': calDate = `${year}-${month}-${day}`; break;
-        case 'mm/dd/yyyy': calDate = `${month}/${day}/${year}`; break;
-        case 'dd/mm/yyyy': calDate = `${day}/${month}/${year}`; break;
-        case 'yyyy/mm/dd': calDate = `${year}/${month}/${day}`; break;
         default: calDate = `${year}-${month}-${day}`; break;
       }
     }
@@ -482,8 +433,6 @@ var RhythiaX = RhythiaX || {};
   RhythiaX.ScoreCardDomain = {
     placeModsBelowMapper,
     handleModIconError,
-    parse,
-    stats,
     getGrade,
     getGradeColor,
     getGradeGlow,

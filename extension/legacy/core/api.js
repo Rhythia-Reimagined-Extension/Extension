@@ -237,6 +237,53 @@ RhythiaX.fetchUserProfile = async function (playerId, signal) {
   return fetchPromise;
 };
 
+// The players at the given places of the global Lock leaderboard (Rhythia's getLeaderboard, 50 a page), for
+// Compare's players near a rank and the title's #30. Pages are kept for ten minutes, and callers asking for a page
+// already on its way share that request; a page that failed is asked again by the next caller. Places not found
+// are left out.
+const leaderboardPages = new Map();
+const leaderboardInFlight = new Map();
+const LEADERBOARD_FRESH_MS = 10 * 60 * 1000;
+function leaderboardPage(page) {
+  const hit = leaderboardPages.get(page);
+  if (hit && Date.now() - hit.at < LEADERBOARD_FRESH_MS) return Promise.resolve(hit.rows);
+  if (leaderboardInFlight.has(page)) return leaderboardInFlight.get(page);
+  const request = createApiRequestSignal();
+  const ask = (async () => {
+    try {
+      const resp = await (RhythiaX.Net?.fetch || fetch)('https://production.rhythia.com/api/getLeaderboard', {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain;charset=UTF-8' },
+        signal: request.signal,
+        body: JSON.stringify({ page, session: RhythiaX.getRhythiaAuthToken(), spin: false, vr: false }),
+      });
+      if (!resp.ok) return [];
+      const list = (await resp.json())?.leaderboard;
+      if (!Array.isArray(list)) return [];
+      leaderboardPages.set(page, { at: Date.now(), rows: list });
+      return list;
+    } catch (err) {
+      if (err?.name !== 'AbortError') RhythiaX.captureError(err, 'Leaderboard API fetch failed');
+      return [];
+    } finally {
+      request.dispose();
+      leaderboardInFlight.delete(page);
+    }
+  })();
+  leaderboardInFlight.set(page, ask);
+  return ask;
+}
+RhythiaX.fetchLeaderboardPlaces = async function (places, signal) {
+  const want = [...new Set((places || []).map(Number).filter(n => Number.isInteger(n) && n >= 1))];
+  const pages = [...new Set(want.map(n => Math.ceil(n / 50)))];
+  const rows = [];
+  for (const page of pages) {
+    if (signal?.aborted) break;
+    rows.push(...await leaderboardPage(page));
+  }
+  return want.map(n => rows.find(u => u?.position === n)).filter(Boolean);
+};
+
 RhythiaX.prefetchPlayerData = function (playerId) {
   if (!validPlayerId(playerId)) return;
   // Exodus loads its own profile data.

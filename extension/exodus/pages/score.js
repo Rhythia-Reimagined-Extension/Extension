@@ -2,21 +2,21 @@
 // Reimagined for Rhythia — Exodus score page
 // =============================================
 // /score/:id: the play, how it stands on its map, Rhythia's replay player (laid over a slot
-// by the shell) and what the map file says about the map.
+// by the shell) and how the map plays (from the history service).
 
 var RhythiaX = RhythiaX || {};
 
 (function () {
 'use strict';
 const K = () => RhythiaX.ExodusKit;
-const {SITE, Data, Kit, esc, cssUrl, fmt, REDUCED, when, ago, fullDate, diff, status, grade, GRADE_C, MODES, mods, av, accTxt, shell, slot, playsHtml, playsNote, REPLAY_SPEEDS, speedLabel, ask, row, morph} = RhythiaX.ExodusKit;
+const {SITE, Data, esc, cssUrl, fmt, REDUCED, when, ago, fullDate, diff, status, grade, GRADE_C, MODES, mods, av, accTxt, shell, slot, playsHtml, playsNote, playsMissing, REPLAY_SPEEDS, speedLabel, ask, row, morph} = RhythiaX.ExodusKit;
 
 /* ════════════════════ Score ════════════════════ */
 function score(host, ctx) {
   const R = host.shadowRoot, ac = new AbortController(), sig = {signal: ac.signal}, $ = s => R.querySelector(s);
   const ui = shell(R, sig);
   const id = ctx.id;
-  const S = {d: null, hist: undefined, allowed: false, plays: null, playsErr: '', enter: true, dock: null, live: false, speed: 0};
+  const S = {d: null, hist: undefined, allowed: false, plays: undefined, playsErr: '', enter: true, dock: null, live: false, speed: 0};
 
   function hero(d) {
     // The score as data.js keeps it carries no letter of Rhythia's own; a play marked as failed is F.
@@ -86,7 +86,10 @@ function score(host, ctx) {
       <span class="cap num">Played at ${speedLabel(Number(rec.toFixed(2)))}×</span></div>`;
   }
   function playsSec(d) {
-    const body = S.plays ? playsHtml(S.plays, d.score.speed || 1) : S.playsErr ? `<p class="cap">${esc(S.playsErr)}</p>` : '<div class="skeleton" style="height:120px;border-radius:14px"></div>';
+    // S.plays: undefined while asked, null without online history, else the history service's answer.
+    const p = S.plays;
+    const body = S.playsErr ? `<p class="cap">${esc(S.playsErr)}</p>` : p === undefined ? '<div class="skeleton" style="height:120px;border-radius:14px"></div>'
+      : p?.state === 'done' ? playsHtml(p, d.score.speed || 1) : playsMissing(p);
     return `<section class="container v-sec" id="v-plays-sec"><div class="sec-head"><div><h2>What the map asks</h2><p class="lede">${playsNote}${d.score.speed !== 1 ? ` Speeds are shown at this play’s ${fmt(d.score.speed, 2)}×.` : ''}</p></div>${d.map ? `<a class="v-more" href="/maps/${esc(d.map.id)}">Map page →</a>` : ''}</div>${body}</section>`;
   }
   function topSec(d) {
@@ -124,31 +127,39 @@ function score(host, ctx) {
     if (ac.signal.aborted) return;
     if (snap) { S.d = snap; render(); }
     else $('#body').innerHTML = '<div class="container v-sk"><div class="skeleton" style="height:200px;border-radius:22px"></div><div class="skeleton" style="height:140px;border-radius:16px;margin-top:24px"></div></div>';
-    let d;
+    let d = null;
     try { d = await Data().scorePage(id, ac.signal); } catch (err) {
       if (ac.signal.aborted) return;
-      if (!S.d) $('#body').innerHTML = `<div class="container"><div class="empty" style="padding:120px 0"><b>Could not load this score</b>${esc(err.message)}<div style="margin-top:16px"><button class="btn" type="button" data-native-x>Show Rhythia's page</button></div></div></div>`;
-      else ui.toast('Showing the saved score; Rhythia did not answer.');
-      return;
+      if (!S.d) { $('#body').innerHTML = `<div class="container"><div class="empty" style="padding:120px 0"><b>Could not load this score</b>${esc(err.message)}<div style="margin-top:16px"><button class="btn" type="button" data-native-x>Show Rhythia's page</button></div></div></div>`; return; }
+      // The saved score stays, and the day around the play and how its map plays are still asked for.
+      ui.toast('Showing the saved score; Rhythia did not answer.');
     }
     if (ac.signal.aborted) return;
-    const was = S.d;
-    S.d = d;
-    if (was) S.enter = false;
-    render();
+    if (d) {
+      const was = S.d;
+      S.d = d;
+      if (was) S.enter = false;
+      render();
+    } else d = S.d;
     S.enter = false;
-    // The day around the play, from the community history.
+    // The day around the play, from the community history, and how the map plays: neither waits for the other.
+    const plays = loadPlays(d);
     S.allowed = await Data().historyAllowed().catch(() => false);
     if (S.allowed) { S.hist = await Data().historyOf(d.score.userId, ac.signal).catch(() => null); }
     if (!ac.signal.aborted) redraw('#v-stand-sec', stands(d));
-    // The map file: what the map asks.
-    if (d.map?.file) {
-      try { const m = await Kit().load(d.map.file, ac.signal); S.plays = m.analysis; } catch (err) { if (ac.signal.aborted) return; S.playsErr = `The map file could not be read (${err.message}).`; }
-    } else S.playsErr = 'Rhythia did not send the map file.';
+    await plays;
+  }
+  // What the map asks, from the history service: by the map's hash and number, as the map page asks (the service
+  // queues a map it has not read only by its hash), or by the score's song id when Rhythia did not say which map.
+  async function loadPlays(d) {
+    S.playsErr = '';
+    try { S.plays = await Data().mapPlays(d.map?.hash || d.score.hash, d.map?.id, ac.signal, d.map?.file); } catch (err) { if (ac.signal.aborted) return; S.playsErr = err.message || 'The history service did not answer.'; }
     if (!ac.signal.aborted) redraw('#v-plays-sec', playsSec(d));
   }
   R.addEventListener('click', e => {
     if (e.target.closest('[data-native-x]')) return ctx.showNative();
+    const on = e.target.closest('[data-online]');
+    if (on && S.d) { RhythiaX.ExodusKit.turnOnline(on, e, ui.toast, () => { S.plays = undefined; redraw('#v-plays-sec', playsSec(S.d)); loadPlays(S.d); }, ac.signal); return; }
     const sp = e.target.closest('[data-rspeed]');
     if (sp) ask('speed', recorded() * Number(sp.dataset.rspeed)).then(() => setTimeout(watchNow, 120));
   }, sig);

@@ -3,16 +3,22 @@
 // =============================================
 // Every request the extension sends to Rhythia's API or to the Reimagined VPS goes through
 // RhythiaX.Net.fetch, from every open tab together:
-//   Rhythia's API          16 a second, at most 8 at once (so a busy second stays near 24, not 32);
-//   VPS API                100 a minute, 40 at once (the gateway allows 120 a minute, burst 60);
-//   VPS bulk history       16 a minute, 4 at once (gateway: 20 a minute, burst 5);
+//   Rhythia's API          16 a second, at most 8 at once (so a busy second stays near 24, not 32), its file
+//                          host included (map files read in parts for map types without online history);
+//   VPS API                100 a minute, 40 at once (the gateway allows 120 a minute, burst 60): every VPS
+//                          request but telemetry takes from it, and from the budget of its own kind on the
+//                          history service: a player's history and compare, bulk history (16 a minute, 4 at
+//                          once; gateway: 20 a minute, burst 5), map types (maps/kinds, maps/plays) or the map
+//                          search (maps/search, maps/types);
 //   VPS telemetry          25 a minute, 10 at once (gateway: 30 a minute, burst 20).
 // Tabs share one budget through a Web Lock and a small record in the site's localStorage.
-// A refusal (429), or a busy answer (503) to a profile visit report, pauses that budget for as long as the
-// server asks (Retry-After, at most six hours), or a while when it does not say. Player history goes through
-// the background (background/vps-access.js), which adds this installation's key; the page never sees it, and
-// without the background it is not sent. Map types (maps/kinds) and the map search (maps/types, maps/search) go
-// the same way, in the VPS API budget.
+// A refusal (429), or a busy answer (503) to a profile visit report, pauses a budget for as long as the
+// server asks (Retry-After, at most six hours), or a while when it does not say. A refusal of one of the
+// history service's budgets (daily_budget or burst, which names it) pauses only that kind of request, so map
+// types or the search running out never stop player history; a closed key, the gateway's limit or a refusal
+// that does not say pauses every VPS request. Player history goes through the background
+// (background/vps-access.js), which adds this installation's key; the page never sees it, and without the
+// background it is not sent. Map types and the map search go the same way.
 // A caller that would rather fail than wait passes maxWait (ms): when the budget's wait or the answer would
 // take longer, the request fails with an Error named MaxWaitError (retryAt: when the budget has a request
 // again, when known), and a budget wait that long sends nothing. Loaded first by both Exodus and
@@ -23,27 +29,40 @@ var RhythiaX = RhythiaX || {};
 RhythiaX.Net = RhythiaX.Net || (function () {
   'use strict';
 
+  // history, maps and search have the VPS API's own pace: they are there so each can be paused alone.
   const BUCKETS = {
     rhythia: { rate: 16, cap: 8 },
     vps: { rate: 100 / 60, cap: 40 },
+    history: { rate: 100 / 60, cap: 40 },
     bulk: { rate: 16 / 60, cap: 4 },
+    maps: { rate: 100 / 60, cap: 40 },
+    search: { rate: 100 / 60, cap: 40 },
     telemetry: { rate: 25 / 60, cap: 10 },
   };
-  const PAUSE = { rhythia: 2000, vps: 30000, bulk: 60000, telemetry: 60000 };
+  const PAUSE = { rhythia: 2000, vps: 30000, history: 30000, bulk: 60000, maps: 30000, search: 30000, telemetry: 60000 };
+  // The budgets a refusal of the history service can name (budget: ...), and the record each pauses.
+  const NAMED = { history: 'history', bulk: 'bulk', maps: 'maps', search: 'search' };
   const MAX_PAUSE = 6 * 3600 * 1000;
-  const HISTORY = /^https:\/\/rhythia\.shuriel\.com\/api\/(player\/\d{1,7}\/(history|compare\?mode=(lock|spin|vr))|players\/history|maps\/(kinds|types|search))$/;
+  const HISTORY = /^https:\/\/rhythia\.shuriel\.com\/api\/(player\/\d{1,7}\/(history|compare\?mode=(lock|spin|vr))|players\/history|maps\/(kinds|types|search|plays))$/;
   const KEY = 'rhythiax_net_';
   const mem = {};
   // History failures that mean the history server could not be reached (the background says so).
   const unreachable = new WeakSet();
 
+  const VPS = 'https://rhythia.shuriel.com/api/';
   const bucketOf = url => {
-    if (/^https:\/\/production\.rhythia\.com\/api\//.test(url)) return 'rhythia';
-    if (/^https:\/\/rhythia\.shuriel\.com\/api\/telemetry\//.test(url)) return 'telemetry';
-    if (/^https:\/\/rhythia\.shuriel\.com\/api\/players\/history$/.test(url)) return 'bulk';
-    if (/^https:\/\/rhythia\.shuriel\.com\/api\//.test(url)) return 'vps';
-    return '';
+    if (/^https:\/\/([a-z0-9-]+\.)*rhythia\.com\//i.test(url)) return 'rhythia';
+    if (!url.startsWith(VPS)) return '';
+    const route = url.slice(VPS.length);
+    if (route.startsWith('telemetry/')) return 'telemetry';
+    if (route === 'players/history') return 'bulk';
+    if (/^player\/\d{1,7}\/(history|compare)(\?|$)/.test(route)) return 'history';
+    if (/^maps\/(kinds|plays)$/.test(route)) return 'maps';
+    if (/^maps\/(search|types)$/.test(route)) return 'search';
+    return 'vps';
   };
+  // Every request to the history service but telemetry also counts against the gateway's general limit.
+  const alsoVps = name => name !== 'vps' && name !== 'rhythia' && name !== 'telemetry';
 
   function read(name) {
     try { const st = JSON.parse(localStorage.getItem(KEY + name) || 'null'); if (st && typeof st.t === 'number') return st; } catch (_) {}
@@ -131,6 +150,17 @@ RhythiaX.Net = RhythiaX.Net || (function () {
     const s = Number(res.headers?.get?.('Retry-After'));
     return Number.isFinite(s) && s > 0 ? Math.min(MAX_PAUSE, s * 1000) : 0;
   };
+  // The budget a refusal from the history service stops: a spent one (daily_budget or burst) only its own kind
+  // of request (the one it names, else this request's); a closed key, the gateway's limit or a refusal that
+  // does not say (not the service's JSON), every VPS request.
+  async function refusedBudget(res, name) {
+    if (!alsoVps(name)) return name;
+    try {
+      const body = await res.clone().json();
+      if (body?.error === 'daily_budget' || body?.error === 'burst') return NAMED[body.budget] || name;
+    } catch (_) {}
+    return 'vps';
+  }
 
   async function limited(url, opts, deadline) {
     const name = bucketOf(String(url));
@@ -141,8 +171,7 @@ RhythiaX.Net = RhythiaX.Net || (function () {
     const carried = HISTORY.test(String(url));
     if (carried && !background()) throw new TypeError('Failed to fetch');
     await turn(name, opts.signal, deadline);
-    // The gateway counts a bulk request against the general API limit too.
-    if (name === 'bulk') await turn('vps', opts.signal, deadline);
+    if (alsoVps(name)) await turn('vps', opts.signal, deadline);
     if (carried && !background()) throw new TypeError('Failed to fetch');
     let res;
     try {
@@ -151,15 +180,24 @@ RhythiaX.Net = RhythiaX.Net || (function () {
       // Refusals arrive as a status (the gateway's 429 carries CORS headers, and history comes back from the
       // background with the server's status), so what fails here is a server that could not be reached, the
       // caller's deadline, a script the extension has left, a refusal by the background, a Cloudflare error
-      // page or a refused preflight. Such a failure pauses a VPS budget, except an abort or the deadline.
-      // History pauses only when the background says the server could not be reached; its other failures
-      // (refused there, for example just after the player's choice changed, or no reply at all) pause nothing.
+      // page or a refused preflight. Such a failure pauses its budget and every VPS request with it, except an
+      // abort or the deadline. History pauses only when the background says the server could not be reached; its
+      // other failures (refused there, for example just after the player's choice changed, or no reply at all)
+      // pause nothing.
       if (name !== 'rhythia' && err?.name !== 'AbortError' && err?.name !== 'MaxWaitError'
-        && (!carried || unreachable.has(err))) pause(name, PAUSE[name]);
+        && (!carried || unreachable.has(err))) {
+        pause(name, PAUSE[name]);
+        if (alsoVps(name)) pause('vps', PAUSE.vps);
+      }
       throw err;
     }
-    // The report server answers 503 while it is busy: reports then wait as after a refusal; history does not.
-    if (res.status === 429 || (name === 'telemetry' && res.status === 503)) pause(name, retryAfterMs(res) || PAUSE[name]);
+    if (res.status === 429) {
+      const scope = await refusedBudget(res, name);
+      pause(scope, retryAfterMs(res) || PAUSE[scope]);
+    } else if (name === 'telemetry' && res.status === 503) {
+      // The report server answers 503 while it is busy: reports then wait as after a refusal; history does not.
+      pause(name, retryAfterMs(res) || PAUSE[name]);
+    }
     return res;
   }
 

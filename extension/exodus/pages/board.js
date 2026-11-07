@@ -145,11 +145,13 @@ function table() {
   return `<div class="b-cols ${showTrend ? 'trend' : ''}" aria-hidden="true"><span>#</span><span>${period() === 'today' ? 'Today' : period() === '7d' ? '7 days' : '30 days'}</span><span>Player</span>${showTrend ? '<span>30 days</span>' : ''}<span>Rhythm points</span><span>Play count</span></div>
     <div class="b-rows ${showTrend ? 'trend' : ''} ${S.enter ? 'anim' : ''}">${d.rows.map((u, i) => {
       const m = move(u), pos = u.rank, mine = S.me && String(S.me.id) === String(u.id);
+      // With Include inactive, Rhythia sends no position for a player without a score in 30 days.
+      const idle = S.dq?.inactive && u[posK] == null ? `<span class="b-idle" data-tip="<b>Inactive</b><small>No score in the last 30 days, so not on the usual leaderboard. The next score brings the rank back.</small>">Inactive</span>` : '';
       const mv = m === WAIT ? '<span class="b-mv"><i class="skeleton b-mvsk"></i></span>' : m ? `<span class="b-mv ${m.places > 0 ? 'up' : m.places < 0 ? 'down' : ''}" data-tip="${m.places ? `<b>${m.places > 0 ? 'Up' : 'Down'} ${fmt(Math.abs(m.places))} place${Math.abs(m.places) === 1 ? '' : 's'}</b><small>${scope()}${m.rp != null ? ` · ${m.rp >= 0 ? '+' : '−'}${fmt(Math.abs(m.rp), 1)} RP` : ''}</small>` : `<b>No change</b><small>${scope()}</small>`}">${placesTxt(m.places)}</span>`
         : `<span class="b-mv none" data-tip="<b>No history yet</b><small>Not tracked long enough</small>">·</span>`;
       return `<a class="b-row ${mine ? 'me' : ''} ${u.verified ? 'sup' : ''}" href="/player/${esc(u.id)}" style="--i:${Math.min(i, 30)}">${u.verified ? SUP_BG : ''}
         <span class="pos num ${pos <= 3 ? 'p' + pos : ''}">${fmt(pos)}</span>${mv}
-        <span class="who">${u.flag ? `<img class="b-flag" src="${SITE}/flags/${esc(u.flag)}.svg" alt="${esc(u.flag)}">` : ''}<i class="av" style="background-image:${cssUrl(u.avatar)}"></i><b>${esc(u.username)}</b>${titleImg(u[rpK], u[posK])}${u.clan ? `<span class="tag">${esc(u.clan.acronym)}</span>` : ''}${u.verified ? HEART : ''}</span>
+        <span class="who">${u.flag ? `<img class="b-flag" src="${SITE}/flags/${esc(u.flag)}.svg" alt="${esc(u.flag)}">` : ''}<i class="av" style="background-image:${cssUrl(u.avatar)}"></i><b>${esc(u.username)}</b>${idle}${titleImg(u[rpK], u[posK])}${u.clan ? `<span class="tag">${esc(u.clan.acronym)}</span>` : ''}${u.verified ? HEART : ''}</span>
         ${showTrend ? spark(u) : ''}
         <span class="rp num">${fmt(u[rpK], 2)}</span><span class="pc num">${fmt(u.plays)}</span></a>`;
     }).join('')}</div>`;
@@ -334,6 +336,8 @@ RhythiaX.ExodusBoard.css = `
 .b-row .av{width:30px;height:30px;border-radius:50%;flex:none;background:var(--panel-3) center/cover}
 .b-flag{width:20px;border-radius:2px;flex:none}
 .b-row .tag{flex:none;padding:1px 6px;border-radius:5px;font-size:11px;font-weight:700;color:var(--muted);box-shadow:inset 0 0 0 1px var(--line-2)}
+.b-row .b-idle{flex:none;padding:1px 7px;border-radius:999px;font-size:11px;font-weight:650;color:var(--muted);background:rgba(var(--ink),.06);cursor:help}
+.b-row:has(.b-idle) .av{opacity:.7}
 .b-row .rp{text-align:right;font-weight:700}
 .b-row .pc{text-align:right;color:var(--text-2)}
 .b-spark{display:block;width:84px;height:24px;overflow:visible}

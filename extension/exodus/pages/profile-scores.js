@@ -11,7 +11,7 @@ RhythiaX.ExodusProfileParts = RhythiaX.ExodusProfileParts || {};
 RhythiaX.ExodusProfileParts.scores = function mountProfileScores(c) {
 'use strict';
 // What this part takes from pages/profile.js.
-const {R, U, SITE, ac, esc, fmt, onlineOffer, $, cssUrl, ico, ago, SPEED, GRADES, MODES, S, kpi, pinnedScores, SCORES_ALL, tone} = c;
+const {R, U, SITE, ac, esc, fmt, onlineOffer, $, cssUrl, ico, ago, SPEED, GRADES, MODES, ACCOUNT, S, kpi, pinnedScores, SCORES_ALL, tone} = c;
 
 /* ── Scores ── */
 const MOD_LABEL = {mirrorxy:'Mirror XY', mirrorx:'Mirror X', mirrory:'Mirror Y', ghost:'Ghost', hardrock:'Hard Rock', nofail:'No Fail', suddendeath:'Sudden Death',
@@ -33,21 +33,30 @@ const SORT_BY = {new: (a, b) => b.created_at.localeCompare(a.created_at), old: (
   acclow: (a, b) => a.acc - b.acc, rp: (a, b) => b.raw - a.raw, stars: (a, b) => b.stars - a.stars,
   room: (a, b) => (nearShare(near(a)) ?? 2) - (nearShare(near(b)) ?? 2), best: (a, b) => (nearShare(near(b)) ?? -1) - (nearShare(near(a)) ?? -1)};
 const NEAR_SORTS = [['room', 'Most room to improve'], ['best', 'Best against players near you']];
-// Map types, read from each map's notes as Playstyle does (ExodusData.mapStyles, kept for a year). The files
-// of a list are read only once a type is chosen.
-const KINDS = [['jump', 'Jumps'], ['stream', 'Streams'], ['tech', 'Techs'], ['varied', 'Varied'], ['quantum', 'Quantum']];
-const STY = {map: new Map(), busy: false, done: 0, total: 0};
+// Map types from the history service, as Playstyle has them (ExodusData.mapStyles, kept for a year). A list's
+// maps are asked for only once a type is chosen; without online history the filter offers it instead.
+const KINDS = Object.entries(RhythiaX.GameTerms.TYPES).map(([k, [name]]) => [k, name]);
+// tried: maps asked for in the last 10 minutes that got no answer (history off, the service refused or failed), so a
+// redraw does not ask for them again at once.
+const STY = {map: new Map(), tried: new Map(), busy: false, done: 0, total: 0};
+const TRY_AGAIN = 10 * 60 * 1000;
+const triedLately = id => Date.now() - (STY.tried.get(id) || 0) < TRY_AGAIN;
 const ofKind = (s, k) => { const st = STY.map.get(s.songId); return Boolean(st) && (k === 'quantum' ? st.quantum : st.kind === k); };
 function readKinds(list) {
   const Data = RhythiaX.ExodusData, ids = [...new Set(list.map(s => s.songId))];
   for (const [id, st] of Data.storedStyles(ids.filter(id => !STY.map.has(id)))) STY.map.set(id, st);
-  const todo = ids.filter(id => !STY.map.has(id));
+  const todo = ids.filter(id => !STY.map.has(id) && !triedLately(id));
   if (!todo.length || STY.busy) return;
   STY.busy = true; STY.done = 0; STY.total = todo.length;
   const redraw = () => { const b = $('#score-body'); if (b && S.kind) b.innerHTML = scoreBody(false); };
   Data.mapStyles(todo, ac.signal, (done, total) => { STY.done = done; STY.total = total; redraw(); })
     .then(map => { for (const [id, st] of map) STY.map.set(id, st); }, () => {})
-    .finally(() => { STY.busy = false; if (!ac.signal.aborted) redraw(); });
+    .finally(() => {
+      STY.busy = false;
+      if (ac.signal.aborted) return;
+      const at = Date.now(); for (const id of todo) if (!STY.map.has(id)) STY.tried.set(id, at);
+      redraw();
+    });
 }
 /* ── Players ranked near this one ── */
 // The history server's compare answer: players ranked from half the rank above to half again below, each group
@@ -80,6 +89,18 @@ const ordinal = n => { const t = n % 100, u = n % 10; return fmt(n) + (t > 10 &&
 // The share of nearby players this play is ahead of, 0 to 1 (null without a place).
 const nearShare = x => (x?.place && x.of > 1 ? (x.of - x.place) / (x.of - 1) : null);
 const NEAR_SETS = {below: 'Players below score higher', at: 'Between the two groups', above: 'You beat players above', none: 'Not compared'};
+// What each nearby set means, by the history service's rule: the play's RP against the middle player of the
+// group ranked just below and just above, on maps at least 5 of each group played.
+const NEAR_HINTS = {
+  below: own => `${own ? 'Your' : 'This player’s'} RP is under what the middle player ranked below got.`,
+  at: own => `${own ? 'Your' : 'This player’s'} RP is between the middle players below and above.`,
+  above: own => `${own ? 'Your' : 'This player’s'} RP matches or beats the middle player ranked above.`,
+  none: () => 'Fewer than 5 players on each side played the map.',
+};
+// The filter menus (core/kit.js menuSelect); they fire 'change' on their button, as the selects did.
+const MN = RhythiaX.ExodusKit.menuSelect(R, {signal: ac.signal});
+// Map type counts only once every play's map type is known (online history on and read), so none reads 0 by mistake.
+const kindsKnown = lists => (!S.offline || S.basic) && searched(lists).every(s => STY.map.has(s.songId) || triedLately(s.songId));
 // Under a value: the middle player near the rank on the same map (accuracy only at the same speed).
 const nearMid = (v, digits, suffix = '') => (v == null ? '' : `<small class="nd">nearby ${fmt(v, digits)}${suffix}</small>`);
 const accDelta = (s, x) => nearMid(x?.all?.accMedian, 2, '%');
@@ -144,15 +165,40 @@ function tile(s, kind, i) {
     <dl><div><dt>Accuracy</dt><dd class="v num">${fmt(s.acc, 2)}%${nx ? accDelta(s, nx) : ''}</dd></div><div><dt>Misses</dt><dd class="v ${s.fc ? 'fc' : 'miss'} num">${s.fc ? 'FC' : fmt(s.misses)}${nx ? missDelta(s, nx) : ''}</dd></div>
       <div><dt>${kind === 'top' && !nx ? 'Weighted' : 'RP'}</dt><dd class="v w num" ${nx ? `data-tip="<b>${fmt(s.weighted)} weighted</b><small>${s.weight}% of ${fmt(s.raw)} RP</small>"` : ''}>${fmt(kind === 'top' && !nx ? s.weighted : s.raw)}${nx ? rpDelta(s, nx) : ''}</dd></div></dl>${kind === 'top' && nearReady() ? `<div class="tile-near">${nearLine(s)}</div>` : ''}</div></article>`;
 }
+// Each filter as a test of one play, in the order they apply, so a menu can count what each of its choices
+// would leave with the other filters kept.
+const TESTS = {
+  grade: (s, v) => s.grade === v,
+  speed: (s, v) => s.speedKey === v,
+  mod: (s, v) => (v === 'none' ? !(s.mods || []).length : (s.mods || []).some(m => modKey(m) === v)),
+  kind: (s, v) => ofKind(s, v),
+  nearSet: (s, v) => (v === 'none' ? !near(s)?.place : near(s)?.level === v),
+};
+const inUse = k => Boolean(S[k]) && (k !== 'nearSet' || nearReady());
+const listsOf = m => ({top: m.top, reign: m.reign, recent: m.recent, pinned: S.mode === 'normal' ? pinnedScores() : []});
+function searched(lists) {
+  const list = lists[S.list];
+  if (!S.q) return list;
+  const q = S.q.toLowerCase();
+  return list.filter(s => s.beatmapTitle.toLowerCase().includes(q) || s.mapper.toLowerCase().includes(q));
+}
+// read: ask for the map types the Map type filter needs (counting never does, so it sends nothing).
+function applyFilters(list, skip, read) {
+  for (const k of Object.keys(TESTS)) {
+    if (k === skip || !inUse(k)) continue;
+    if (k === 'kind' && read) readKinds(list);
+    list = list.filter(s => TESTS[k](s, S[k]));
+  }
+  return list;
+}
+// How many plays each value of one filter leaves; '' (all) is every play the other filters leave.
+function countsFor(key, lists) {
+  const pool = applyFilters(searched(lists), key, false);
+  return v => (v === '' ? pool.length : pool.filter(s => TESTS[key](s, v)).length);
+}
 function filtered() {
-  const m = MODES[S.mode], lists = {top: m.top, reign: m.reign, recent: m.recent, pinned: S.mode === 'normal' ? pinnedScores() : []};
-  let list = lists[S.list];
-  if (S.q) { const q = S.q.toLowerCase(); list = list.filter(s => s.beatmapTitle.toLowerCase().includes(q) || s.mapper.toLowerCase().includes(q)); }
-  if (S.grade) list = list.filter(s => s.grade === S.grade);
-  if (S.speed) list = list.filter(s => s.speedKey === S.speed);
-  if (S.mod) list = list.filter(s => S.mod === 'none' ? !(s.mods || []).length : (s.mods || []).some(m => modKey(m) === S.mod));
-  if (S.kind) { readKinds(list); list = list.filter(s => ofKind(s, S.kind)); }
-  if (S.nearSet && nearReady()) list = list.filter(s => (S.nearSet === 'none' ? !near(s)?.place : near(s)?.level === S.nearSet));
+  const m = MODES[S.mode], lists = listsOf(m);
+  let list = applyFilters(searched(lists), null, true);
   if (SORT_BY[S.sort] && (nearReady() || !NEAR_SORTS.some(([k]) => k === S.sort))) list = list.slice().sort(SORT_BY[S.sort]);
   return {m, lists, list, total: lists[S.list].length};
 }
@@ -162,7 +208,9 @@ function scoreBody(anim) {
   const shown = list.slice((S.page - 1) * per, S.page * per);
   const nums = Array.from({length: pages}, (_, i) => i + 1).filter(p => p === 1 || p === pages || Math.abs(p - S.page) <= 1);
   const busy = Boolean(S.kind && STY.busy);
-  const reading = (busy ? `<p class="cap kinds-load" role="status">Reading map files for map types: <b class="num">${fmt(STY.done)} of ${fmt(STY.total)}</b></p>` : '');
+  const reading = S.kind && S.offline && !S.basic ? onlineOffer('Map types come from online history: Reimagined’s history service reads each map.')
+    : busy ? `<p class="cap kinds-load" role="status">${S.basic ? 'Reading map files for their types' : 'Asking for map types'}: <b class="num">${fmt(STY.done)} of ${fmt(STY.total)}</b></p>`
+    : S.kind && S.basic ? `<p class="cap kinds-load" data-tip="<b>Approximate</b><small>${RhythiaX.ExodusKit.BASIC_TIP}</small>">Map types worked out in this browser: approximate, without Techs.</p>` : '';
   const body = !shown.length ? `${reading}<div class="panel empty"><b>${busy ? 'Reading map types…' : total ? 'No scores match' : `No ${S.list === 'reign' ? 'reigning' : S.list} scores in ${m.label}`}</b>${total && !busy ? 'Try clearing the search or filters.' : ''}</div>`
     : S.view === 'grid' ? `${reading}<div class="tiles ${anim ? 'anim' : ''}">${shown.map((s, i) => tile(s, S.list, i)).join('')}</div>`
     : `${reading}<div class="list-panel panel ${nearReady() ? 'near' : ''}"><div class="cols" aria-hidden="true"><span>#</span><span></span><span>Map</span><span>Grade</span><span>Accuracy</span><span>Misses</span><span>RP</span><span>${S.list === 'top' ? 'Weighted' : ''}</span>${nearReady() ? `<span data-tip="<b>Nearby</b><small>The middle player of those ranked near ${S.viewer === 'owner' ? 'you' : 'this player'} who have the map in their top 100</small>">Nearby</span>` : ''}<span></span></div>
@@ -178,6 +226,12 @@ function scores(anim) {
   const speeds = [...new Set([...lists[S.list].map(s => s.speedKey), ...(S.speed ? [S.speed] : [])])].sort((a, b) => b - a);
   const mods = [...new Set([...lists[S.list].flatMap(s => (s.mods || []).map(modKey)), ...(S.mod && S.mod !== 'none' ? [S.mod] : [])])].sort();
   const pins = pinnedScores();
+  const own = S.viewer === 'owner', whose = own ? 'your' : 'this player’s';
+  // A filter menu: 'All …' first, then each choice with how many plays it leaves (counted only when known).
+  const menu = (key, label, none, options, count = true, id = key) => {
+    const n = count ? countsFor(key, lists) : null;
+    return MN.html({id, label, none, value: S[key] || '', on: Boolean(S[key]), options: [{value: '', label: none, count: n ? n('') : null}, ...options.map(o => ({...o, count: n ? n(o.value) : null}))]});
+  };
   return `<div class="sec-head">
       <div><h2>${S.section === 'scores' ? 'All scores' : 'Scores'}</h2>${S.section === 'scores' ? ''
         : `<p class="lede">The top 100 count toward RP, each 3% less than the one above. <a class="lede-link" href="/player/${esc(U.id)}/scores">All scores</a></p>`}</div>
@@ -187,15 +241,15 @@ function scores(anim) {
     <div class="tools">
       <div class="search-wrap"><label class="field">${ico('search')}<span class="sr">Search scores</span><input id="q" type="search" placeholder="Search map, artist or mapper  ( / )" value="${esc(S.q)}" autocomplete="off" role="combobox" aria-controls="suggest" aria-autocomplete="list"></label>
         <div class="suggest" id="suggest" role="listbox" hidden></div></div>
-      <select class="field" id="sort" aria-label="Order">${[...SORTS, ...(nearReady() ? NEAR_SORTS : [])].map(([k, l]) => `<option value="${k}" ${(S.sort || '') === k ? 'selected' : ''}>${l}</option>`).join('')}</select>
+      ${MN.html({id: 'sort', label: 'Order', cls: 'sort', value: S.sort || '', options: [...SORTS.map(([value, label]) => ({value, label})), ...(nearReady() ? NEAR_SORTS.map(([value, label], i) => ({value, label, sec: i ? '' : `Against players near ${whose} rank`})) : [])]})}
       <div class="pills" aria-label="Layout"><button type="button" aria-pressed="${S.view === 'list'}" data-view="list" aria-label="List">${ico('list')}</button><button type="button" aria-pressed="${S.view === 'grid'}" data-view="grid" aria-label="Grid">${ico('grid')}</button></div>
     </div>
     <div class="fbar" role="group" aria-label="Filters">
-      <select class="field ${S.grade ? 'on' : ''}" id="grade" aria-label="Grade"><option value="">All grades</option>${GRADES.map(g => `<option ${S.grade === g ? 'selected' : ''}>${g}</option>`).join('')}</select>
-      <select class="field ${S.mod ? 'on' : ''}" id="mod" aria-label="Mods"><option value="">All mods</option><option value="none" ${S.mod === 'none' ? 'selected' : ''}>No mods</option>${mods.map(k => `<option value="${k}" ${S.mod === k ? 'selected' : ''}>${esc(MOD_LABEL[k] || k)}</option>`).join('')}</select>
-      <select class="field ${S.speed ? 'on' : ''}" id="speed" aria-label="Speed"><option value="">All speeds</option>${speeds.map(k => `<option value="${k}" ${S.speed === k ? 'selected' : ''}>${k}×</option>`).join('')}</select>
-      <select class="field ${S.kind ? 'on' : ''}" id="kind" aria-label="Map type"><option value="">All map types</option>${KINDS.map(([k, l]) => `<option value="${k}" ${S.kind === k ? 'selected' : ''}>${l}</option>`).join('')}</select>
-      ${nearReady() ? `<select class="field ${S.nearSet ? 'on' : ''}" id="nearset" aria-label="Against players near ${S.viewer === 'owner' ? 'your' : 'this'} rank"><option value="">All maps nearby</option>${Object.entries(NEAR_SETS).map(([k, l]) => `<option value="${k}" ${S.nearSet === k ? 'selected' : ''}>${l}</option>`).join('')}</select>` : ''}
+      ${menu('grade', 'Grade', 'All grades', GRADES.map(g => ({value: g, label: g})))}
+      ${menu('mod', 'Mods', 'All mods', [{value: 'none', label: 'No mods'}, ...mods.map((k, i) => ({value: k, label: MOD_LABEL[k] || k, sec: i ? '' : 'With'}))])}
+      ${menu('speed', 'Speed', 'All speeds', speeds.map(k => ({value: k, label: `${k}×`})))}
+      ${menu('kind', 'Map type', 'All map types', KINDS.filter(([value]) => !(S.basic && value === 'tech')).map(([value, label]) => ({value, label})), kindsKnown(lists))}
+      ${nearReady() ? menu('nearSet', `Against players near ${whose} rank`, 'All maps nearby', Object.entries(NEAR_SETS).map(([value, label]) => ({value, label, hint: NEAR_HINTS[value](own)})), true, 'nearset') : ''}
       ${S.grade || S.mod || S.speed || S.kind || (S.nearSet && nearReady()) ? '<button class="link" type="button" data-clear-filters>Clear filters</button>' : ''}
     </div>
     <div id="score-body">${scoreBody(anim)}</div>`;
@@ -232,7 +286,7 @@ function rpChart() {
 }
 
 /* ── Scores page: against players ranked near this one ── */
-const KIND_LABEL = {jump: 'Jumps', stream: 'Streams', tech: 'Tech', varied: 'Varied', quantum: 'Quantum'};
+const KIND_LABEL = Object.fromEntries(KINDS);
 // The ranks whose top 100 the history server keeps (its daily and weekly reads).
 const NEAR_TOP = 5000;
 const mmss = v => `${Math.floor(v / 60)}:${String(Math.round(v % 60)).padStart(2, '0')}`;
@@ -275,6 +329,10 @@ function metricBlock(m, who) {
 function nearSection() {
   const own = S.viewer === 'owner', who = own ? 'You' : esc(U.username), whose = own ? 'your' : `${esc(U.username)}’s`;
   const head = `<div class="sec-head"><div><h2>Near ${whose} rank</h2><p class="lede">${who} against the players ranked just above and below, in ${MODES[S.mode].label}.</p></div></div>`;
+  // No rank because Rhythia took it away (inactive or excluded): one line that says so, and nothing is asked.
+  const out = !MODES[S.mode].rank && (ACCOUNT.ban === 'excluded' ? 'excluded' : ACCOUNT.inactive ? 'inactive' : '');
+  if (out) return `<p class="near-only"><b>Near ${whose} rank</b> · ${out === 'excluded' ? `${own ? 'Your account is' : 'This account is'} excluded, so it has no rank.`
+    : `No rank while ${own ? 'you are' : `${esc(U.username)} is`} inactive: no score in the last 30 days.`}</p>`;
   // Nothing while reading or when the server could not be reached; one line, with more on hover, when there is
   // nobody to compare with yet or online history is off.
   if (CMP.key !== cmpKey()) { loadNear(); return ''; }

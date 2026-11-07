@@ -298,7 +298,7 @@ html[data-rhythiax-own-theme] body[data-rhythiax-theme] .rhythiax-hv2 {
 
 /* Playstyle summary in variant B (playstyle/scout.js buildStory) */
 .rhythiax-summary-text.rhythiax-summary-story p {
-  margin: 0 0 10px;
+  margin: 0;
   max-width: 92ch;
   line-height: 1.65;
   color: var(--rhythiax-text-muted, #a3a3a3);
@@ -320,108 +320,3 @@ html[data-rhythiax-own-theme] body[data-rhythiax-theme] .rhythiax-hv2 {
 
 .rhythiax-story-lead.positive { color: var(--rhythiax-up, #4ade80); }
 .rhythiax-story-lead.negative { color: var(--rhythiax-down, #f87171); }
-
-/* Playstyle in variant B (playstyle/view.js): thin Breakdown bars, Best maps with map art */
-.rhythiax-playstyle-v2 .rhythiax-bottom-row {
-  grid-template-columns: 1fr;
-  gap: 20px;
-}
-
-.rhythiax-playstyle-v2 .rhythiax-breakdown-sections {
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 16px 32px;
-}
-
-.rhythiax-ps2-stack { min-width: 0; }
-
-.rhythiax-ps2-sublabel {
-  display: block;
-  margin-bottom: 6px;
-  font-size: 11px;
-  font-weight: 600;
-  letter-spacing: .05em;
-  text-transform: uppercase;
-  color: var(--rhythiax-text-muted, #a3a3a3);
-}
-
-.rhythiax-ps2-bar {
-  display: flex;
-  gap: 2px;
-  height: 10px;
-}
-
-.rhythiax-ps2-bar span {
-  min-width: 3px;
-  border-radius: 3px;
-}
-
-.rhythiax-ps2-legend {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 4px 12px;
-  margin-top: 8px;
-  font-size: 12px;
-  font-variant-numeric: tabular-nums;
-  color: var(--rhythiax-text-muted, #a3a3a3);
-}
-
-.rhythiax-ps2-legend b {
-  margin-right: 3px;
-  font-weight: 700;
-}
-
-.rhythiax-ps2-legend .is-zero { opacity: .6; }
-
-.rhythiax-playstyle-v2 .rhythiax-best-maps-box {
-  padding-top: 16px;
-  border-top: 1px solid var(--rhythiax-border, rgba(255, 255, 255, .1));
-}
-
-.rhythiax-best-maps-box.rhythiax-ps2-maps {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 12px 16px;
-}
-
-.rhythiax-ps2-maps .rhythiax-best-maps-header { grid-column: 1 / -1; }
-
-.rhythiax-ps2-maps .rhythiax-best-map-item.rhythiax-best-map-item {
-  display: grid;
-  grid-template-columns: 48px minmax(0, 1fr);
-  grid-template-rows: auto auto;
-  align-items: center;
-  column-gap: 12px;
-  padding: 0;
-  border: 0;
-}
-
-.rhythiax-ps2-art {
-  grid-row: 1 / 3;
-  width: 48px;
-  height: 48px;
-  overflow: hidden;
-  border-radius: 6px;
-  background: var(--rhythiax-inner-surface, rgba(255, 255, 255, .06));
-}
-
-.rhythiax-ps2-art img {
-  display: block;
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
-.rhythiax-ps2-maps .rhythiax-best-map-left { align-self: end; }
-
-.rhythiax-ps2-maps .rhythiax-best-map-pill {
-  align-self: start;
-  font-weight: 500;
-  color: var(--rhythiax-text-muted, #a3a3a3);
-}
-
-@media (max-width: 640px) {
-  .rhythiax-playstyle-v2 .rhythiax-breakdown-sections,
-  .rhythiax-best-maps-box.rhythiax-ps2-maps {
-    grid-template-columns: 1fr;
-  }
-}

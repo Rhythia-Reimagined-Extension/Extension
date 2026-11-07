@@ -13,15 +13,17 @@ RhythiaX.ExodusCompare = function mountExodusCompare(R, env) {
 const {U, MODES, prepare, ico, sgn, tone, hideTip, sig, KIND, BAR_KINDS, OWN} = env;
 const {esc, fmt, REDUCED, SITE} = RhythiaX.ExodusKit;
 const $ = s => R.querySelector(s);
+// The filter and order menus (core/kit.js menuSelect, shared with the profile); they fire 'change' on their button.
+const MN = RhythiaX.ExodusKit.menuSelect(R, sig);
 // A complete url("…") token, safe inside a style attribute (core/kit.js).
 const cssUrl = x => RhythiaX.ExodusKit.cssUrl(x);
 
 /* ── Compare (live Rhythia API) — duel, radar and shared-map clashes, as in the extension ── */
 // searchSeq and pickSeq: an answer counts only if no newer search or pick (or a close or reopen) came since.
-const cmp = {timer: 0, other: null, ref: 0, q: '', filter: 'all', sort: 'delta', shown: 20, sty: new Map(), styAc: null, styDone: 0, styTotal: 0, searchSeq: 0, pickSeq: 0};
+const cmp = {timer: 0, other: null, ref: 0, q: '', filter: 'all', sort: 'delta', shown: 20, sty: new Map(), styAc: null, styDone: 0, styTotal: 0, styOff: false, searchSeq: 0, pickSeq: 0};
 const api = (name, body) => RhythiaX.ExodusData.post(name, body);
 const gone = () => sig.signal.aborted || !$('#cmp')?.open;
-// Leaving the profile stops the map files still being read for the window.
+// Leaving the profile stops the map types still being asked for the window.
 sig.signal.addEventListener('abort', () => cmp.styAc?.abort(), {once: true});
 // Suggestions before a search: the signed-in player, the top of the global board, and the players ranked
 // just above and just below this profile in Lock (two each side, from Rhythia's leaderboard).
@@ -135,7 +137,7 @@ function model() {
   return {o, P, st: P.map(p => profileStats(p.u, p.top)), bt, total: bt.clashes.length, wins: [bt.w1, bt.w2], me: cmp.ref, them: 1 - cmp.ref};
 }
 
-/* ── Map types (ExodusMapKit through ExodusData.mapStyles): saved results at once, the rest while the window is open ── */
+/* ── Map types (the history service through ExodusData.mapStyles): saved results at once, the rest while the window is open ── */
 const NOUN = {jump: ['jumps', 'jump'], stream: ['streams', 'stream'], tech: ['techs', 'tech'], varied: ['varied maps', 'varied']};
 const kindOf = s => cmp.sty.get(s.songId)?.kind;
 const isKind = (s, k) => cmp.sty.get(s.songId)?.kind === k;
@@ -150,6 +152,7 @@ function loadKinds() {
   let queued = false;
   const later = () => { if (!queued) { queued = true; setTimeout(() => { queued = false; if (!ac.signal.aborted) paintKinds(); }, 250); } };
   paintKinds();
+  RhythiaX.ExodusData.historyAllowed().then(async ok => { cmp.styOff = !ok && !(await RhythiaX.ExodusData.basicKindsOn().catch(() => false)); }, () => {});
   RhythiaX.ExodusData.mapStyles(ids, ac.signal, (done, total) => { cmp.styDone = done; cmp.styTotal = total; later(); })
     .then(map => { if (ac.signal.aborted) return; cmp.sty = map; cmp.styTotal = 0; paintKinds(); })
     .catch(() => { if (!ac.signal.aborted) { cmp.styTotal = 0; paintKinds(); } });
@@ -219,10 +222,11 @@ function summary(m, K) {
     ${cmp.styTotal ? '<p class="cap">Map types are still loading.</p>' : ''}</div>`;
 }
 function styleBlock(m, K) {
-  const head = '<div class="panel-head"><h3>Playstyle <span>· map types in each top 100</span></h3></div>';
-  if (cmp.styTotal) return `<div class="panel cmp-style" id="cmp-style">${head}<div class="mt-load" role="status"><span>Reading map files <b class="num">${cmp.styDone} of ${cmp.styTotal}</b></span><i style="--p:${Math.round(cmp.styDone / cmp.styTotal * 100)}%"></i></div></div>`;
+  const approx = [...cmp.sty.values()].some(s => s?.approximate);
+  const head = `<div class="panel-head"><h3>Playstyle <span>· map types in each top 100</span>${approx ? ` <span class="cap" data-tip="<b>Approximate</b><small>${RhythiaX.ExodusKit.BASIC_TIP}</small>">· approximate</span>` : ''}</h3></div>`;
+  if (cmp.styTotal) return `<div class="panel cmp-style" id="cmp-style">${head}<div class="mt-load" role="status"><span>Asking for map types <b class="num">${cmp.styDone} of ${cmp.styTotal}</b></span><i style="--p:${Math.round(cmp.styDone / cmp.styTotal * 100)}%"></i></div></div>`;
   const order = [m.me, m.them], known = m.P.map(p => p.top.filter(kindOf).length);
-  if (!known[0] && !known[1]) return `<div class="panel cmp-style" id="cmp-style">${head}<p class="cap">Could not read the map files.</p></div>`;
+  if (!known[0] && !known[1]) return `<div class="panel cmp-style" id="cmp-style">${head}<p class="cap">${cmp.styOff ? 'Map types come from online history. Turn it on in the popup to see them here.' : 'Reimagined has not read these maps yet. Their types come within a day.'}</p></div>`;
   const bars = order.map(i => {
     const p = m.P[i], rows = K.map(r => [r.k, r.side[i].n]), main = rows.slice().sort((a, b) => b[1] - a[1])[0];
     return `<div class="ps-row"><span class="ps-who" style="color:${p.t}">${esc(p.u.username)}</span>
@@ -252,7 +256,7 @@ function styleBlock(m, K) {
   }).join('');
   const partial = known.some((n, i) => n < m.P[i].top.length);
   return `<div class="panel cmp-style" id="cmp-style">${head}<div class="ps-rows">${bars}</div><div class="k-cards">${cards}</div>
-    ${partial ? `<p class="cap">Maps read: ${order.map(i => `${known[i]} of ${m.P[i].top.length} for ${esc(m.P[i].u.username)}`).join(', ')}.</p>` : ''}</div>`;
+    ${partial ? `<p class="cap">Map types known: ${order.map(i => `${known[i]} of ${m.P[i].top.length} for ${esc(m.P[i].u.username)}`).join(', ')}.</p>` : ''}</div>`;
 }
 
 function renderCompare(first) {
@@ -302,8 +306,8 @@ function renderCompare(first) {
     <div class="clash-head"><h3>Shared maps</h3><span class="cap num" data-tip="<b>RP decides each map</b><small>RP already counts accuracy, misses, speed and difficulty</small>">${total} in both top 100s</span></div>
     <div class="clash-tools">
       <label class="field">${ico('search')}<span class="sr">Search shared maps</span><input id="cmp-search" type="search" placeholder="Search beatmap title" value="${esc(cmp.q)}"></label>
-      <select class="field" id="cmp-filter" aria-label="Filter"><option value="all" ${cmp.filter === 'all' ? 'selected' : ''}>All shared maps</option><option value="diff" ${cmp.filter === 'diff' ? 'selected' : ''}>Not tied</option><option value="lost" ${cmp.filter === 'lost' ? 'selected' : ''}>Maps ${esc(P[me].u.username)} lost</option></select>
-      <select class="field" id="cmp-sort" aria-label="Sort"><option value="delta" ${cmp.sort === 'delta' ? 'selected' : ''}>Biggest difference</option><option value="acc" ${cmp.sort === 'acc' ? 'selected' : ''}>Best accuracy</option><option value="speed" ${cmp.sort === 'speed' ? 'selected' : ''}>Highest speed</option></select>
+      ${MN.html({id: 'cmp-filter', label: 'Filter', value: cmp.filter, on: cmp.filter !== 'all', options: [{value: 'all', label: 'All shared maps'}, {value: 'diff', label: 'Not tied'}, {value: 'lost', label: `Maps ${P[me].u.username} lost`}]})}
+      ${MN.html({id: 'cmp-sort', label: 'Sort', value: cmp.sort, options: [{value: 'delta', label: 'Biggest difference'}, {value: 'acc', label: 'Best accuracy'}, {value: 'speed', label: 'Highest speed'}]})}
     </div>
     <div class="clash clash-cols" aria-hidden="true"><span></span><span class="cap">Map</span><span class="cap" style="color:var(--accent-2)">${esc(U.username)}</span><span class="cap" style="color:var(--p2-text)">${esc(o.u.username)}</span><span class="cap" style="text-align:right">${esc(P[me].u.username)} ±</span></div>
     <div class="clashes" id="clashes">${clashList(bt, P)}</div>`;

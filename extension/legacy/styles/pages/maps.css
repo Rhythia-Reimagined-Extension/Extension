@@ -3,3 +3,44 @@ body[data-rhythiax-page="maps"] #root,
 body[data-rhythiax-page="map-detail"] #root {
   min-width: 0;
 }
+
+/* A map's page: the map type chips beside Rhythia's status chips and "How this map plays"
+   (content/pages/map/composition.js). The type colours are the ones Exodus uses. */
+.rhythiax-k-jump { --rhythiax-kind: #f59e0b; }
+.rhythiax-k-stream { --rhythiax-kind: #38bdf8; }
+.rhythiax-k-tech { --rhythiax-kind: #f472b6; }
+.rhythiax-k-other { --rhythiax-kind: #a78bfa; }
+.rhythiax-k-quantum { --rhythiax-kind: #34d399; }
+body[data-rhythiax-theme="white"] .rhythiax-k-jump { --rhythiax-kind: #d97706; }
+body[data-rhythiax-theme="white"] .rhythiax-k-stream { --rhythiax-kind: #0284c7; }
+body[data-rhythiax-theme="white"] .rhythiax-k-tech { --rhythiax-kind: #db2777; }
+body[data-rhythiax-theme="white"] .rhythiax-k-other { --rhythiax-kind: #7c3aed; }
+body[data-rhythiax-theme="white"] .rhythiax-k-quantum { --rhythiax-kind: #059669; }
+.rhythiax-map-type-dot {
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  flex: none;
+  border-radius: 999px;
+  background: var(--rhythiax-kind, currentColor);
+}
+.rhythiax-map-type { cursor: default; }
+.rhythiax-map-plays-bar > i {
+  display: block;
+  min-width: 2px;
+  height: 100%;
+  background: var(--rhythiax-kind);
+}
+.rhythiax-map-plays-bar > i + i { box-shadow: inset 1px 0 0 rgba(0, 0, 0, .35); }
+body[data-rhythiax-theme="white"] .rhythiax-map-plays-bar > i + i { box-shadow: inset 1px 0 0 rgba(255, 255, 255, .7); }
+.rhythiax-map-plays-legend { gap: 4px 16px; margin-top: 8px; }
+.rhythiax-map-plays-facts {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 8px;
+  margin-top: 16px;
+}
+.rhythiax-map-plays-value { margin-top: 2px; }
+@media (max-width: 639px) {
+  .rhythiax-map-plays-facts { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}

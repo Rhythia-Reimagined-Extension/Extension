@@ -206,6 +206,30 @@ RhythiaX.getStoredBeatmapMeta = function (mapHashOrId) {
   return null;
 };
 
+// A score's map star rating from the saved map details (by song id, hash or map id), or null when not known yet.
+RhythiaX.mapStarRating = function (score) {
+  for (const key of [score?.songId, score?.beatmapHash, score?.beatmapId]) {
+    const stars = key ? Number(RhythiaX.getStoredBeatmapMeta(key)?.starRating) : NaN;
+    if (stars > 0) return stars;
+  }
+  return null;
+};
+
+// The star ratings of these scores' maps: the details not saved yet are asked for (through the same queue
+// as the art, at most `max` maps); resolves once all have answered, to how many of them have a rating now.
+RhythiaX.loadMapStars = function (scores, options = {}) {
+  const keys = [];
+  for (const s of scores || []) {
+    if (RhythiaX.mapStarRating(s) != null) continue;
+    const key = s?.songId || s?.beatmapHash || s?.beatmapId;
+    const meta = key ? RhythiaX.getStoredBeatmapMeta(key) : null;
+    if (key && !meta?.notFound && !keys.includes(key)) keys.push(String(key));
+  }
+  const ask = keys.slice(0, options.max || 200);
+  return Promise.all(ask.map(key => RhythiaX.resolveBeatmapMeta(key, { signal: options.signal }).catch(() => null)))
+    .then(metas => metas.filter(meta => meta?.starRating != null).length);
+};
+
 // resolveBeatmapMeta(mapHashOrId, { signal }): with a signal, that caller stops waiting when
 // it aborts and gets null. Callers asking for the same map share one request, which is
 // cancelled only once every caller has left (a caller without a signal always stays). A
@@ -219,7 +243,8 @@ RhythiaX.resolveBeatmapMeta = async function (mapHashOrId, options = {}) {
   const stored = RhythiaX.getStoredBeatmapMeta(str);
   if (stored) {
     if (stored.notFound) return stored;
-    if (stored.ownerUsername !== undefined && (stored.previewUrl !== undefined || stored.id)) return stored;
+    // Details saved before 1.5.0 have no star rating yet: those are asked for once more.
+    if (stored.ownerUsername !== undefined && stored.starRating !== undefined && (stored.previewUrl !== undefined || stored.id)) return stored;
   }
   if (signal?.aborted) return null;
   scheduleBeatmapSweep();
@@ -321,6 +346,11 @@ function startBeatmapRequest(str) {
         title: b.title || null,
         lengthMs: Number(b.length) || null,
         ownerUsername: b.ownerUsername || null,
+        // Rhythia's star rating (★ 11.28); a score's beatmapDifficulty is only the difficulty step, 1 to 5 or so.
+        starRating: Number(b.starRating) > 0 ? Number(b.starRating) : null,
+        mapHash: b.mapHash || null,
+        // The map file's address, for map types without online history (shared/map-kinds-basic.js).
+        file: b.beatmapFile || null,
         cachedAt: Date.now(),
       };
       RhythiaX.beatmapMetaCache.set(str, meta);

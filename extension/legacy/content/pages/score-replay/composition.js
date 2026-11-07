@@ -110,6 +110,13 @@ var RhythiaX = RhythiaX || {};
       return false;
     }
 
+    // Rhythia's player has its own Fullscreen button since its build of November 2026: nothing to add.
+    const native = [...player.querySelectorAll('button[aria-label]')].some(b => !b.classList.contains(FULLSCREEN_BUTTON) && /^(exit )?fullscreen$/i.test(b.getAttribute('aria-label').trim()));
+    if (native) {
+      RhythiaX.injected = true;
+      return true;
+    }
+
     const controlsBar = findControlsBar(player);
     if (!controlsBar) {
       RhythiaX.log('Score replay controls not ready yet');

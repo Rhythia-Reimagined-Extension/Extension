@@ -16,7 +16,7 @@ var RhythiaX = RhythiaX || {};
   // What Reimagined Search is, until the server's own words (/api/maps/types) are known, and without online history.
   const SEARCH_NOTE = { note: "Reimagined's own search, not Rhythia's.", points: [
     "Ranked and Qualified maps only. Every other map is in Rhythia's map list.",
-    "It searches Reimagined's copy of Rhythia's Ranked and Qualified lists, read once a day, so a map ranked or qualified since may be missing and results can differ from Rhythia.",
+    "It checks Rhythia's Ranked and Qualified lists every hour, so a map ranked or qualified in the last hour may be missing, and a new map's type can come up to a day later.",
     "Map types are worked out automatically from each map's file, so some may be wrong."] };
   const esc = value => RhythiaX.escapeHtml(String(value ?? ''));
   const fmt = (v, d = 0) => Number(v || 0).toLocaleString('en-US', { minimumFractionDigits: d, maximumFractionDigits: d });
@@ -47,7 +47,8 @@ var RhythiaX = RhythiaX || {};
   }
 
   const group = (label, items, attr, on) => `<div class="rhythiax-msearch-seg" role="group" aria-label="${esc(label)}">${items.map(([k, n]) => `<button type="button" data-${attr}="${esc(k)}" aria-pressed="${on(k)}">${esc(n)}</button>`).join('')}</div>`;
-  const typeName = id => S.types?.types?.find(t => t.id === id)?.label || id;
+  // A type the server's list does not name gets the name both looks use (shared/game-terms.js).
+  const typeName = id => S.types?.types?.find(t => t.id === id)?.label || RhythiaX.GameTerms.typeName(id) || id;
 
   function card(m) {
     return `<a class="rhythiax-msearch-card" href="/maps/${esc(m.id)}">
@@ -65,7 +66,7 @@ var RhythiaX = RhythiaX || {};
   function body() {
     if (S.types === null) {
       return `${note()}<div class="rhythiax-msearch-need"><b>Reimagined Search uses online history</b>
-        <p>It runs on Reimagined's history service. Turning it on switches on online history everywhere: the public IDs of the players and maps you view, these filters and an anonymous key go to rhythia.shuriel.com. Rhythia's own search above works without it.</p>
+        <p>It runs on Reimagined's history service. Turning it on uses online history everywhere; only these filters, the public IDs of the players and maps you open and a random number for this copy of Reimagined go to the service. Rhythia's own search above works without it.</p>
         <button type="button" class="rhythiax-msearch-btn" data-msearch-online>Turn on online history</button></div>`;
     }
     if (S.types === undefined) return `${note()}<p class="rhythiax-msearch-wait">${S.error ? esc(S.error) : 'Loading…'}</p>`;

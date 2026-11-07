@@ -311,6 +311,5 @@ var RhythiaX = globalThis.RhythiaX || {};
   }
 
   RhythiaX.createStorageMutationAuthority = createStorageMutationAuthority;
-  RhythiaX.purgeCommunityHistory = purgeCommunityHistory;
-  if (typeof module !== 'undefined') module.exports = { createStorageMutationAuthority, purgeCommunityHistory };
+  if (typeof module !== 'undefined') module.exports = { createStorageMutationAuthority };
 })();

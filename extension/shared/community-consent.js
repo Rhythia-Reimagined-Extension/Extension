@@ -47,11 +47,11 @@ var RhythiaX = RhythiaX || {};
     card = RhythiaX.Notices.show({
       id: ID,
       label: 'Online history',
-      title: 'Use online player history?',
+      title: 'Turn on online history?',
       body: [
-        "Loads shared player history from Shuriel's community service.",
-        "Sends the public IDs of the players and maps you view, your Reimagined Search filters and an anonymous key for this installation to Shuriel's service (rhythia.shuriel.com). Your IP address is processed to deliver and protect the connection.",
-        'Visit reports stay off unless you turn them on.',
+        "Profiles get their full rank and RP history, Near your rank and map types from Reimagined's history service (rhythia.shuriel.com).",
+        "To answer, the service only needs the public IDs of the players and maps you open (the same numbers as in Rhythia's links), your Reimagined Search filters, and a random number for this copy of Reimagined so it can keep its daily limits. Nothing from your Rhythia account, no passwords and none of your browsing. Like any website, it sees your IP address while it answers.",
+        'You can turn it off any time in the popup. Visit reports stay off unless you turn them on.',
       ],
       actions: [
         { text: 'Use online history', kind: 'primary', run: event => choose(event, false) },
@@ -126,7 +126,7 @@ var RhythiaX = RhythiaX || {};
       id: NUDGE_ID,
       label: 'Online history',
       title: 'See more of each player',
-      body: ['History now comes from this browser only. With online history, profiles show the daily rank and RP history of the top 5,000 players, Near your rank, and 7 and 30 day changes on the leaderboard.', "It sends the public IDs of the players and maps you view, your Reimagined Search filters and an anonymous key to Shuriel's service (rhythia.shuriel.com)."],
+      body: ['History now comes from this browser only. With online history, profiles show the daily rank and RP history of the top 5,000 players, Near your rank, and 7 and 30 day changes on the leaderboard.', "It only sends the public IDs of the players and maps you open, your Reimagined Search filters and a random number for this copy of Reimagined to Reimagined's history service (rhythia.shuriel.com)."],
       actions: [
         { text: 'Turn on', kind: 'primary', run: async event => { nudge?.setBusy(true); if (!(await turnOn(event))) { nudge?.setBusy(false); nudge?.setStatus('Not turned on. Try again.'); } } },
         { text: 'Not now', run: event => { if (!event.isTrusted) return; const later = (state.later || 0) + 1;

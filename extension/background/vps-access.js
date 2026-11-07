@@ -1,7 +1,7 @@
 // =============================================
 // Reimagined for Rhythia — history server access key (background only)
 // =============================================
-// The history server serves full player history to installations with an anonymous key: random
+// The history server serves full player history to installations with an access key: random
 // bytes it signs and hands out on request, with nothing about the player, their game session or
 // this browser in it. The key stays in chrome.storage.local and is used only here, in the
 // background: history requests from Rhythia's pages come here as messages (shared/net.js), so the
@@ -22,10 +22,10 @@ RhythiaX.VpsAccess = RhythiaX.VpsAccess || (function () {
   const STORE = 'rhythiaxVpsAccessKey';
   const HEADER = 'X-Reimagined-Key';
   // The only requests carried: one player's history or compare, a page of players, the types of up to 100 maps,
-  // or the map search (what it filters by, and one page of results).
-  const ROUTES = [/^https:\/\/rhythia\.shuriel\.com\/api\/player\/\d{1,7}\/history$/, /^https:\/\/rhythia\.shuriel\.com\/api\/player\/\d{1,7}\/compare\?mode=(lock|spin|vr)$/, /^https:\/\/rhythia\.shuriel\.com\/api\/players\/history$/, /^https:\/\/rhythia\.shuriel\.com\/api\/maps\/(kinds|types|search)$/];
+  // how one map plays (the map and score pages), or the map search (what it filters by, and one page of results).
+  const ROUTES = [/^https:\/\/rhythia\.shuriel\.com\/api\/player\/\d{1,7}\/history$/, /^https:\/\/rhythia\.shuriel\.com\/api\/player\/\d{1,7}\/compare\?mode=(lock|spin|vr)$/, /^https:\/\/rhythia\.shuriel\.com\/api\/players\/history$/, /^https:\/\/rhythia\.shuriel\.com\/api\/maps\/(kinds|types|search|plays)$/];
   // POST routes and the largest body each may carry (map keys are song names, up to ~150 characters).
-  const POST_BODY = { '/api/players/history': 2048, '/api/maps/kinds': 16384, '/api/maps/search': 2048 };
+  const POST_BODY = { '/api/players/history': 2048, '/api/maps/kinds': 16384, '/api/maps/search': 2048, '/api/maps/plays': 4096 };
   const KEY_PATTERN = /^rk1\.[A-Za-z0-9_-]{48}$/;
   // After the server refuses a key: wait at least this long before asking again. The time is kept in
   // chrome.storage.session too, because the worker stops when idle and would otherwise ask again on its

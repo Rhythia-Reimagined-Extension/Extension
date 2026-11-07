@@ -144,6 +144,15 @@ a.fr-row:hover{background:var(--panel-2)}
 .fr-dot{display:inline-block;width:9px;height:9px;border-radius:50%;background:var(--good)}
 .strip{grid-template-columns:repeat(6,minmax(0,1fr))}
 .strip > div{padding:0 20px}
+/* Rhythia's notices about the account: a bar down the left edge, red for a ban kind, grey for inactive. */
+.acct-note{display:flex;flex-direction:column;gap:3px;margin:20px 0 0;padding:12px 16px;border-radius:12px;background:var(--panel);box-shadow:inset 3px 0 0 var(--c, var(--line-2)),inset 0 0 0 1px var(--line)}
+.acct-note.bad{--c:var(--bad)}
+.acct-note b{font-weight:700}
+.acct-note span{color:var(--text-2);line-height:1.5}
+.acct-note a{color:var(--accent-2);text-decoration:underline}
+.acct-note small{color:var(--muted);font-size:13px}
+.hero.enter .acct-note{animation:exoEnter .55s var(--ease) .04s both}
+.ranks .rk-out{font-size:17px;font-weight:650;color:var(--muted);cursor:help}
 .hero-bar{min-height:49px}
 .avatar.sup{background-size:cover,220% 220%;animation:supRing 5s ease-in-out infinite alternate}
 /* A settled hero stops its entrance animations, but a supporter's ring and floating hearts keep going. */
@@ -362,7 +371,8 @@ dialog.cmp.rp-dlg{width:min(460px,calc(100vw - 32px))}
 .iv-banner.sup{display:grid;place-items:center;background:linear-gradient(120deg,#5b2a6e,#8a3a74 55%,#3b2a6e)}
 .iv-banner.sup img{height:44%;width:auto}
 .iv-aa{font-size:34px;font-weight:850;letter-spacing:-.02em;color:var(--accent-2)}
-.iv-aa.name{color:var(--accent-2)}
+/* A Name Change's Aa has the class name, as the profile's name has (core/assets.js): on the item's own art it takes no shadow from it. */
+.iv-aa.name{color:var(--accent-2);text-shadow:none}
 .iv-detail{display:flex;flex-direction:column;gap:0;padding:0;overflow:hidden}
 .iv-prev{position:relative;display:grid;place-items:center;height:200px;overflow:hidden;background:var(--field);border-bottom:1px solid var(--line)}
 .iv-prev.solo .iv-aa{max-width:90%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:30px}
@@ -388,4 +398,60 @@ dialog.cmp.rp-dlg{width:min(460px,calc(100vw - 32px))}
 [data-theme="white"] .iv-qty{background:rgba(15,23,42,.7)}
 @media (max-width:900px){.iv-grid{grid-template-columns:1fr}}
 @media (max-width:560px){.iv-list{grid-template-columns:repeat(2,minmax(0,1fr))}.iv-item.wide{grid-column:span 2}}
+/* Title panel (pages/profile-title.js): the header, the way there in one of three looks, the Top 30 row, the card. */
+.ticon{position:relative;width:52px;height:52px;flex:none}
+.ticon img{position:absolute;inset:0;width:100%;height:100%}
+.twho{min-width:0}
+.tname{display:block;font-size:21px;font-weight:700;letter-spacing:-.01em;line-height:1.25;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tsub{display:flex;align-items:center;flex-wrap:wrap}
+.tgain{display:inline-block;overflow:hidden;white-space:nowrap;vertical-align:bottom;color:var(--good);font-weight:700;padding-left:6px;max-width:0;opacity:0}
+.tgain:empty{padding-left:0}
+.tgain.down{color:var(--bad)}
+.tchip{margin-left:8px;padding:1px 8px;border-radius:999px;font-size:11.5px;font-weight:600;color:var(--muted);box-shadow:inset 0 0 0 1px var(--line-2)}
+.tchip.new{color:var(--text)}
+.tchip[hidden]{display:none}
+.tpanel .goal .tk,.tpanel .goal .tsm{display:block}
+.tpanel .goal .tbig{font-size:24px;font-weight:750;letter-spacing:-.015em;line-height:1.2;transition:color .4s}
+.tviz{display:grid;grid-template-columns:240px minmax(0,1fr);gap:24px;align-items:center;margin-top:12px}
+.tviz.track{grid-template-columns:minmax(0,1fr);gap:6px}
+.tsvg{display:block;width:100%;height:auto;overflow:visible}
+.tsvg.loop{max-width:240px}
+.tsvg.loop .bed{stroke:rgba(var(--ink),.07)}
+.tsvg.track .bed{fill:rgba(var(--ink),.07)}
+.tsvg .shut{opacity:0;transition:opacity .7s var(--ease)}
+.tsvg .shut.on{opacity:1}
+.tsvg .head{fill:#fff;stroke-width:3.5;transition:opacity .3s}
+.tsvg .head.hollow{fill:var(--page)}
+.tsvg .head.gone{opacity:0}
+.tsvg .stem{stroke:rgba(var(--ink),.12)}
+.tsvg .tnode{cursor:pointer;outline:none}
+.tsvg .tnode image.off{filter:grayscale(1);opacity:.35}
+.tsvg .tnode:hover image:not(.off){filter:brightness(1.15)}
+.tsvg .tnode:focus-visible > circle{stroke:var(--accent);stroke-width:1.5}
+.tsvg .crp{font:750 22px var(--font);fill:var(--text)}
+.tsvg .csub{font:500 11.5px var(--font);fill:var(--muted)}
+.tsvg .tlab{font:650 12px var(--font)}
+.tsay{margin:0;color:var(--text-2);line-height:1.6}
+.tpanel .tsvg,.tpanel .ticon{transition:filter .8s,opacity .8s}
+.tpanel.out .tsvg,.tpanel.out .ticon{filter:grayscale(1);opacity:.7}
+.tpanel.out .tname{color:var(--text-2)!important}
+.t30{display:flex;align-items:center;gap:14px;margin-top:18px;padding-top:14px;border-top:1px solid var(--line)}
+.t30 svg{flex:1;min-width:0;max-width:600px;overflow:visible}
+.t30 rect{fill:rgba(var(--ink),.08)}
+.t30 rect.on{fill:#A3ABB9}
+.t30 rect.me{stroke:var(--text);stroke-width:1.5}
+.t30 .c{fill:rgba(var(--ink),.12)}
+.t30 .c.on.p1{fill:#f5c542}.t30 .c.on.p2{fill:#cfd6e0}.t30 .c.on.p3{fill:#d08a4e}
+.t30 .you{font:700 11px var(--font);fill:var(--text)}
+.t30 .you.out{font-size:12px;fill:#A35BC0}
+.t30.fill .on,.t30.fill .you{animation:exoFade .5s var(--ease) .3s both}
+.tcard{display:grid;grid-template-columns:44px minmax(0,1fr) 210px;gap:14px;align-items:center;margin-top:18px;padding-top:14px;border-top:1px solid var(--line);animation:exoEnter .3s var(--ease) both}
+.tcard img{width:44px;height:44px}
+.tcard b,.tcard span{display:block}
+.tspark{width:210px;height:auto;overflow:visible}
+.tspark .all{fill:none;stroke:rgba(var(--ink),.2);stroke-width:1.5}
+.tspark .part{fill:none;stroke-width:2.2;stroke-linejoin:round}
+.tspark line{stroke-dasharray:3 4;stroke-opacity:.75}
+.tspark text{font:500 10px var(--font);fill:var(--muted)}
+@media (max-width:640px){.tviz{grid-template-columns:minmax(0,1fr)}.tsvg.loop{margin:0 auto}.tcard{grid-template-columns:44px minmax(0,1fr)}.tcard .tspark{grid-column:1/-1}}
 `;

@@ -140,14 +140,6 @@ html[data-rhythiax-own-theme][data-rhythiax-theme] {
   contain-intrinsic-size: 114px;
 }
 
-/* Host element for native replacement */
-.rhythiax-card-enhanced-host {
-  padding: 0 !important;
-  background: transparent !important;
-  border: none !important;
-  box-shadow: none !important;
-}
-
 .rhythiax-sc-title-box {
   cursor: default;
 }

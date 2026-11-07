@@ -75,10 +75,6 @@ var RhythiaX = RhythiaX || {};
         }
         cardEl.dataset.rhythiaxMapper = resolvedMapper;
         cardEl.setAttribute('data-rhythiax-mapper', resolvedMapper);
-        if (cardEl.parentElement?.classList?.contains('rhythiax-card-enhanced-host')) {
-          cardEl.parentElement.dataset.rhythiaxMapper = resolvedMapper;
-          cardEl.parentElement.setAttribute('data-rhythiax-mapper', resolvedMapper);
-        }
       }
 
       // 4. Mapper / Title link if beatmap ID exists

@@ -1,10 +1,10 @@
 # Terms — independent player-history service
 
-Updated October 29, 2026. These terms describe the current player-history service.
+Updated November 7, 2026. These terms describe the current player-history service.
 
 Project contact: Shuriel · [contact@shuriel.com](mailto:contact@shuriel.com).
 
-The service collects public Rhythia profile statistics and selected score observations to provide player progress history and comparisons. It is free and noncommercial. Full histories are served to Reimagined installations through an anonymous access key; requests without one are limited. Other projects hosted on the same server are outside these terms.
+The service collects public Rhythia profile statistics and selected score observations to provide player progress history and comparisons. It is free and noncommercial. Full histories are served to Reimagined installations through an access key (a random number for each installation); requests without one are limited. Other projects hosted on the same server are outside these terms.
 
 The operator confirms that Capo Games continues to permit this project. Rhythia's [Terms](https://www.rhythia.com/terms) and the [official policy repository](https://github.com/Capo-Games/terms-privacy) were reviewed on October 18, 2026. Permission remains subject to its applicable scope and conditions; it does not replace players' data-protection rights. This does not make the service an official partner or endorsed client. Rhythia controls the original game records; the operator handles this separate copy.
 

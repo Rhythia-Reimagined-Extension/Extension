@@ -70,14 +70,13 @@ RhythiaX.ExodusData = (function () {
     }
   }
 
-  // field 'file': the map file's address, kept also for maps without art (undefined in entries from before).
-  function storedMap(songId, field = 'meta') {
+  function storedMap(songId) {
     try {
       const raw = localStorage.getItem(MAP_PREFIX + songId);
       if (!raw) return undefined;
       const entry = JSON.parse(raw);
       if (Date.now() - entry.at > MAP_TTL) return undefined;
-      return entry[field];
+      return entry.meta;
     } catch (_) {
       return undefined;
     }
@@ -122,10 +121,9 @@ RhythiaX.ExodusData = (function () {
   }
 
   async function fetchMeta(songId, signal) {
-    let meta = null, file = null;
+    let meta = null;
     try {
       const b = (await post('getBeatmapPageById', { mapId: songId, session: '' }, signal)).beatmap || {};
-      file = b.beatmapFile || null;
       if (b.image) {
         const p = b.previewImage || {};
         meta = { img: p.medium || b.image, thumb: p.small || b.image, mapper: b.ownerUsername, stars: b.starRating, mapId: b.id, length: b.length, file: b.beatmapFile };
@@ -134,7 +132,7 @@ RhythiaX.ExodusData = (function () {
       if (signal?.aborted) throw err;
       return null;
     }
-    try { localStorage.setItem(MAP_PREFIX + songId, JSON.stringify({ at: Date.now(), meta, file })); } catch (_) {}
+    try { localStorage.setItem(MAP_PREFIX + songId, JSON.stringify({ at: Date.now(), meta })); } catch (_) {}
     return meta;
   }
 
@@ -153,81 +151,48 @@ RhythiaX.ExodusData = (function () {
   }
 
   // How each map plays (jumps, streams, techs, varied, and whether it has quantum parts), for the
-  // profile's summaries. Only the notes are read (ExodusMapKit.notesOnly), and the result is kept in
-  // one small list for a year. The key changes whenever the way types are worked out does, so old
-  // types go (1.3.0 kept them under rhythiax_exodus_styles).
-  const STYLE_KEY = 'rhythiax_exodus_styles3', STYLE_OLD = ['rhythiax_exodus_styles'];
-  const STYLE_DAYS = 365, STYLE_FAIL_DAYS = 7, STYLE_MAX = 800;
-  const KINDS = ['stream', 'jump', 'varied', 'tech'];
-  const today = () => Math.floor(Date.now() / 864e5);
+  // profile's summaries, as the history service answers it, kept in one small list for a year that Classic
+  // reads and writes too (shared/vps-client.js). The key changes whenever the way types are worked out does, so
+  // old types go (1.3.0 kept them under rhythiax_exodus_styles; up to 1.4.0 this browser worked out the types
+  // the service did not know).
+  const Vps = () => RhythiaX.VpsClient;
+  const STYLE_OLD = ['rhythiax_exodus_styles', 'rhythiax_exodus_styles3', 'rhythiax_exodus_styles4'];
   try { for (const k of STYLE_OLD) localStorage.removeItem(k); } catch (_) {}
-  function readStyles() {
-    try { return JSON.parse(localStorage.getItem(STYLE_KEY) || '{}') || {}; } catch (_) { return {}; }
-  }
-  function writeStyles(list) {
-    const keys = Object.keys(list);
-    if (keys.length > STYLE_MAX) keys.sort((a, b) => list[a][0] - list[b][0]).slice(0, keys.length - STYLE_MAX).forEach(k => delete list[k]);
-    try { localStorage.setItem(STYLE_KEY, JSON.stringify(list)); } catch (_) {}
-  }
-  // [day, kind, stream %, jump %, quantum 0/1, notes per second × 10, tech %]; kind -1 = unreadable.
-  const styleOf = e => (e[1] < 0 ? null : { kind: KINDS[e[1]], stream: e[2] / 100, jump: e[3] / 100, quantum: e[4] === 1, nps: e[5] / 10, tech: (e[6] || 0) / 100 });
-  const fresh = e => e && today() - e[0] < (e[1] < 0 ? STYLE_FAIL_DAYS : STYLE_DAYS);
-
-  // With online history on, the history server answers the types of the maps it has read (up to 100 a call),
-  // so only the maps it does not know are downloaded here. Any failure leaves the rest to this browser.
-  const KINDS_URL = VPS.replace(/player\/$/, 'maps/kinds'), KINDS_BATCH = 100, KINDS_BODY = 15000, KINDS_WAIT = 20000;
-  async function serverStyles(ids, signal) {
-    const out = new Map(), keys = ids.filter(id => typeof id === 'string' && id.length <= 512);
-    if (!keys.length || !(await historyAllowed())) return out;
-    for (let i = 0; i < keys.length;) {
-      const chunk = [];
-      for (let size = 12; i < keys.length && chunk.length < KINDS_BATCH && size + JSON.stringify(keys[i]).length < KINDS_BODY; i++) {
-        size += JSON.stringify(keys[i]).length + 1;
-        chunk.push(keys[i]);
-      }
-      try {
-        const res = await RhythiaX.Net.fetch(KINDS_URL, { method: 'POST', headers: { 'Content-Type': 'application/json', Accept: 'application/json' }, body: JSON.stringify({ keys: chunk }), signal, maxWait: KINDS_WAIT });
-        if (!res.ok) break;
-        const maps = (await res.json())?.maps || {};
-        for (const id of chunk) if (KINDS.includes(maps[id]?.kind)) out.set(id, maps[id]);
-      } catch (err) {
-        if (signal?.aborted) throw err;
-        break;
-      }
-    }
-    return out;
+  // With online history on, the history server answers the types of the maps it has read (up to 100 a call):
+  // map id -> its answer (null for a map it has not read) for each map it answered. A failure stops there, and
+  // the rest are asked again next time.
+  async function serverStyles(ids, signal, onChunk) {
+    const keys = ids.filter(id => typeof id === 'string' && id.length <= 512);
+    if (!keys.length || !(await historyAllowed())) return new Map();
+    return Vps().kinds(RhythiaX.Net.fetch, keys, signal, (_, done) => onChunk?.(done));
   }
 
   // The types of a map list's maps (by mapHash) that this browser or the history server already know, without
   // reading any map file. Map id -> style.
   async function knownStyles(songIds, signal) {
-    const list = readStyles(), out = new Map(), ask = [];
-    for (const id of new Set(songIds)) { if (fresh(list[id])) { if (list[id][1] >= 0) out.set(id, styleOf(list[id])); } else ask.push(id); }
-    for (const [id, s] of await serverStyles(ask, signal).catch(() => new Map())) out.set(id, s);
+    const V = Vps(), list = V.readSaved(), out = new Map(), ask = [];
+    for (const id of new Set(songIds)) { if (V.fresh(list[id])) { if (list[id][1] >= 0) out.set(id, V.styleOf(list[id])); } else ask.push(id); }
+    for (const [id, s] of await serverStyles(ask, signal).catch(() => new Map())) if (V.KINDS.includes(s?.kind)) out.set(id, s);
     return out;
   }
 
-  // Reimagined Search on the history server: Ranked and Qualified maps only. The types, statuses, note and points
-  // above the results come from the server, so a type can be added there without a new version. Online history
-  // only; pages are kept until the tab closes, so going back costs nothing.
-  const MAPS_API = VPS.replace(/player\/$/, 'maps/'), SEARCH_WAIT = 20000;
+  // Reimagined Search on the history server (shared/vps-client.js): Ranked and Qualified maps only. The types,
+  // statuses, note and points above the results come from the server, so a type can be added there without a new
+  // version. Online history only; pages are kept until the tab closes, so going back costs nothing.
   let searchTypes = null;
   const searchPages = new Map();
-  async function vpsJson(path, init, signal) {
-    const res = await RhythiaX.Net.fetch(MAPS_API + path, { ...init, headers: { 'Content-Type': 'application/json', Accept: 'application/json' }, signal, maxWait: SEARCH_WAIT });
-    if (res.status === 429) throw new Error('Too many map searches for now. Try again a little later.');
+  // A refusal or failure of the history service (shared/vps-client.js answer()) in Exodus' words; any other error
+  // is passed on as it is. busy: what a 429 means for this request (a search, or how a map plays).
+  const SAYS = {
     // The search needs this installation's access key, which the service hands out a few times a day per address.
-    if (res.status === 403) throw new Error('This browser has no access key for the history service yet. Try again later.');
-    if (!res.ok) throw new Error(`The history service did not answer (HTTP ${res.status}).`);
-    return res.json();
-  }
+    key: 'This browser has no access key for the history service yet. Try again later.',
+    unexpected: 'The history service sent an unexpected answer.',
+  };
+  const said = (err, busy = 'Too many map searches for now. Try again a little later.') => (!err?.reason ? err
+    : new Error(err.reason === 'busy' ? busy : SAYS[err.reason] || `The history service did not answer (HTTP ${err.status}).`));
   async function mapSearchTypes(signal) {
     if (!(await historyAllowed())) return null;
-    if (!searchTypes) {
-      const t = await vpsJson('types', { method: 'GET' }, signal);
-      if (!Array.isArray(t?.types) || !Array.isArray(t?.statuses)) throw new Error('The history service sent an unexpected answer.');
-      searchTypes = t;
-    }
+    if (!searchTypes) searchTypes = await Vps().searchTypes(RhythiaX.Net.fetch, signal).catch(err => { throw said(err); });
     return searchTypes;
   }
   // q: { statuses, types, quantum, stars: {min, max}, length: {min, max} (seconds), mapper, title, explicit, order,
@@ -236,7 +201,7 @@ RhythiaX.ExodusData = (function () {
     if (!(await historyAllowed())) throw new Error('Searching by map type needs online history.');
     const key = JSON.stringify(q), hit = searchPages.get(key);
     if (hit) return hit;
-    const r = await vpsJson('search', { method: 'POST', body: key }, signal);
+    const r = await Vps().search(RhythiaX.Net.fetch, q, signal).catch(err => { throw said(err); });
     const data = {
       total: r.total || 0, page: r.page || q.page, perPage: r.perPage || 30, pages: r.pages || 0,
       maps: (r.maps || []).map(m => ({ id: m.id, title: m.title, mapper: m.mapper, mapperId: m.mapperId, stars: m.stars, difficulty: m.difficulty,
@@ -247,6 +212,48 @@ RhythiaX.ExodusData = (function () {
     if (searchPages.size > 200) searchPages.delete(searchPages.keys().next().value);
     return data;
   }
+  // How one map plays, for the map and score pages (POST /api/maps/plays, online history only): null without it,
+  // otherwise the service's answer, whose state is done (type, tags, shares and the chart: parts in order and notes
+  // per half second), pending or queued (read within a day), missing, unreadable, full or unknown. key is a score's
+  // song id or the map page's map hash, id the map's number. Answers that are done are kept until the tab closes.
+  const playsPages = new Map();
+  async function mapPlays(key, id, signal, file) {
+    if (!(await historyAllowed())) return basicPlays(key, id, signal, file);
+    // A map without its hash cannot be asked about: the service has not read it (not "turn on online history").
+    if (typeof key !== 'string' || !key || key.length > 512) return { state: 'unknown' };
+    const num = Number(id), k = `${key}|${num || ''}`;
+    if (playsPages.has(k)) return playsPages.get(k);
+    const r = await Vps().answer(await Vps().plays(RhythiaX.Net.fetch, key, id, signal)).catch(err => { throw said(err, 'The history service is busy right now. Try again a little later.'); });
+    if (!r || typeof r.state !== 'string') throw new Error(SAYS.unexpected);
+    if (r.state === 'done') { playsPages.set(k, r); if (playsPages.size > 50) playsPages.delete(playsPages.keys().next().value); }
+    return r;
+  }
+  // Map types without online history (shared/map-kinds-basic.js), when the player turned them on in the popup.
+  // A map's file address: from its saved details, or Rhythia's map page (by song id or map number).
+  const Basic = () => RhythiaX.MapKindsBasic;
+  async function fileBySong(songId, signal) {
+    const meta = await mapMeta(songId, signal).catch(() => null);
+    if (meta?.file) return meta.file;
+    return (await post('getBeatmapPageById', { mapId: songId, session: '' }, signal)).beatmap?.beatmapFile || null;
+  }
+  async function basicKinds(songIds, signal, onProgress) {
+    if (!Basic()) return new Map();
+    return Basic().kinds(songIds, { signal, fileOf: fileBySong, onProgress });
+  }
+  // True when map types come from this browser: no online history and the setting on.
+  async function basicKindsOn() {
+    return Boolean(Basic()) && !(await historyAllowed()) && (await Basic().enabled());
+  }
+  // The map and score pages without online history: { state: 'basic', kind, quantum } when this browser could
+  // work the type out, null otherwise (they then offer online history as before).
+  async function basicPlays(key, id, signal, file) {
+    if (!Basic() || typeof key !== 'string' || !key || !(await Basic().enabled())) return null;
+    const fileOf = async () => file
+      || (Number(id) > 0 ? (await post('getBeatmapPage', { id: Number(id), session: '' }, signal)).beatmap?.beatmapFile || null : fileBySong(key, signal));
+    const got = (await Basic().kinds([key], { signal, fileOf })).get(key);
+    return got ? { state: 'basic', kind: got.kind, quantum: got.quantum } : null;
+  }
+
   // The signed-in player's Lock top 100, as map ids, for "Not in my top 100". null when signed out.
   let myTop = null;
   async function myTopMaps(signal) {
@@ -258,54 +265,26 @@ RhythiaX.ExodusData = (function () {
     return myTop.ids;
   }
 
-  // Map id -> style (null when the map could not be read). onProgress(done, total) runs as files arrive.
+  // Map id -> style. With online history it comes from the history service: a map the service has not read yet
+  // comes back as null and is asked again the next day. Without it come the types saved before and, when the
+  // player turned on "Map types without online history", the ones this browser works out from the map files.
+  // onProgress(done, total) runs after each answer.
   async function mapStyles(songIds, signal, onProgress) {
-    const list = readStyles(), out = new Map(), todo = [];
-    for (const id of new Set(songIds)) { if (fresh(list[id])) out.set(id, styleOf(list[id])); else todo.push(id); }
-    let next = 0, done = 0, unsaved = 0, rest = todo;
-    if (todo.length) {
-      let known;
-      try { known = await serverStyles(todo, signal); } catch (_) { return out; }
-      const pct = v => Math.round((Number(v) || 0) * 100);
-      for (const [id, s] of known) {
-        list[id] = [today(), KINDS.indexOf(s.kind), pct(s.stream), pct(s.jump), s.quantum ? 1 : 0, Math.round((Number(s.nps) || 0) * 10), pct(s.tech)];
-        out.set(id, styleOf(list[id])); unsaved++;
-      }
-      if (known.size) { rest = todo.filter(id => !known.has(id)); onProgress?.(out.size, out.size + rest.length); }
+    const V = Vps(), list = V.readSaved(), out = new Map(), todo = [];
+    for (const id of new Set(songIds)) { if (V.fresh(list[id])) out.set(id, V.styleOf(list[id])); else todo.push(id); }
+    if (!todo.length) return out;
+    // Without online history: map types worked out in this browser, when the player turned them on
+    // (shared/map-kinds-basic.js; approximate, without Techs).
+    if (!(await historyAllowed())) {
+      const known = out.size, basic = await basicKinds(todo, signal, (done, total) => onProgress?.(known + done, known + total));
+      for (const [id, s] of basic) out.set(id, s);
+      return out;
     }
-    const save = () => { if (unsaved) { const now = readStyles(); for (const id of todo) if (list[id]) now[id] = list[id]; writeStyles(now); unsaved = 0; } };
-    const fileOf = async id => {
-      const meta = await mapMeta(id, signal);
-      if (meta?.file) return meta.file;
-      const file = storedMap(id, 'file');
-      return file !== undefined ? file : (await post('getBeatmapPageById', { mapId: id, session: '' }, signal)).beatmap?.beatmapFile;
-    };
-    const worker = async () => {
-      while (next < rest.length) {
-        const id = rest[next++];
-        let e;
-        try {
-          const file = await fileOf(id);
-          if (!file) throw new Error('No map file');
-          if (!/^https:\/\/([a-z0-9-]+\.)*rhythia\.com\//i.test(file)) throw new Error('Map file is not on Rhythia');
-          const kit = RhythiaX.ExodusMapKit, a = kit.analyse(await kit.notesOnly(file, signal));
-          e = [today(), KINDS.indexOf(kit.kind(a)), Math.round(a.mix.Stream * 100), Math.round(a.mix.Jump * 100), kit.quantum(a) ? 1 : 0, Math.round(a.avgNps * 10), Math.round(a.mix.Tech * 100)];
-        } catch (err) {
-          if (signal?.aborted) return;
-          // Offline, refused (429) or a server error: try again next visit instead of remembering it.
-          if (err?.name === 'TypeError' || /HTTP (408|429|5\d\d)/.test(err?.message || '')) { out.set(id, null); done++; onProgress?.(out.size, out.size + rest.length - done); continue; }
-          e = [today(), -1, 0, 0, 0, 0, 0];
-        }
-        list[id] = e; out.set(id, styleOf(e)); done++; unsaved++;
-        if (unsaved >= 10) save();
-        onProgress?.(out.size, out.size + rest.length - done);
-      }
-    };
-    await Promise.all(Array.from({ length: Math.min(4, rest.length) }, worker));
-    save();
+    const known = await serverStyles(todo, signal, done => onProgress?.(out.size + done, out.size + todo.length));
+    for (const [id, e] of V.save(known)) out.set(id, V.styleOf(e));
     return out;
   }
-  const storedStyles = songIds => { const list = readStyles(), out = new Map(); for (const id of songIds) if (fresh(list[id])) out.set(id, styleOf(list[id])); return out; };
+  const storedStyles = songIds => { const V = Vps(), list = V.readSaved(), out = new Map(); for (const id of songIds) if (V.fresh(list[id])) out.set(id, V.styleOf(list[id])); return out; };
 
   // Community history follows the extension's one consent rule (RhythiaX.Consent, shared/consent.js):
   // only after the current consent version and a cloud or hybrid sync mode. Exodus reads that setting
@@ -454,7 +433,9 @@ RhythiaX.ExodusData = (function () {
   // key when keys are required), { list: [] } when there is none or online history is off, or null when it
   // could not be read (offline, refused, slow): the caller then keeps what it had. A full list is reused for
   // three hours (the score page shares it). The wait is capped (maxWait), so a paused budget fails at once.
-  const HIST_WAIT = 3500;
+  // The cap is as long as Classic's for a late answer: no page waits for it, and the background may first have
+  // to wake up and ask for this installation's key (background/vps-access.js gives each request 10 s).
+  const HIST_WAIT = 20000;
   async function history(id, signal) {
     if (!(await historyAllowed())) return { list: [] };
     const hit = histMemo.get(Number(id));
@@ -483,18 +464,7 @@ RhythiaX.ExodusData = (function () {
     const key = `${Number(id)}:${mode}`, hit = cmpMemo.get(key);
     if (hit && Date.now() - hit.at < CMP_FRESH) return hit.body;
     const gen = histGen;
-    let body;
-    try {
-      const res = await RhythiaX.Net.fetch(`${VPS}${Number(id)}/compare?mode=${mode}`, { headers: { Accept: 'application/json' }, signal, maxWait: HIST_WAIT });
-      if (res.status === 404) return { available: false, reason: 'unknown' };
-      if (!res.ok) return null;
-      body = await res.json();
-    } catch (_) {
-      return null;
-    }
-    if (!body || typeof body !== 'object') return null;
-    if (gen === histGen) remember(cmpMemo, key, { at: Date.now(), body });
-    return body;
+    return Vps().compare(RhythiaX.Net.fetch, Number(id), mode, signal, body => { if (gen === histGen) remember(cmpMemo, key, { at: Date.now(), body }); });
   }
   // A short answer fills in the days it covers; the older days stay as they were.
   const withRecent = (old, recent) => { const from = recent[0]?.date; return [...(old || []).filter(d => d?.date && (!from || d.date < from)), ...recent]; };
@@ -766,10 +736,26 @@ RhythiaX.ExodusData = (function () {
     return data.meTag === tag ? data : { ...data, me: tag ? undefined : null, friends: [], meTag: tag };
   }
 
+  // The first leaderboard page of one mode (50 players), shared by the home page's top ten, Compare's suggestions
+  // and the title panel: one request per mode, reused for two minutes.
+  const firstPages = new Map();
+  async function firstPage(mode, signal) {
+    const hit = firstPages.get(mode);
+    if (hit && Date.now() - hit.at < 120000) return hit.rows;
+    const r = await post('getLeaderboard', { page: 1, session: session(), spin: mode === 'spin', vr: mode === 'vr' }, signal);
+    const rows = r.leaderboard || [];
+    firstPages.set(mode, { at: Date.now(), rows });
+    return rows;
+  }
   // The top ten of one mode; Lock comes with the page, Spin and VR on request.
   async function leaderboard(mode, signal) {
-    const r = await post('getLeaderboard', { page: 1, session: session(), spin: mode === 'spin', vr: mode === 'vr' }, signal);
-    return (r.leaderboard || []).slice(0, 10).map(slimPlayer);
+    return (await firstPage(mode, signal)).slice(0, 10).map(slimPlayer);
+  }
+  // What each of the first 50 places has (position, RP), for how far Grandmaster is (pages/profile-title.js).
+  async function topPlaces(mode, signal) {
+    const rpKey = mode === 'spin' ? 'spin_skill_points' : mode === 'vr' ? 'vr_skill_points' : 'skill_points';
+    const posKey = mode === 'spin' ? 'spin_position' : mode === 'vr' ? 'vr_position' : 'position';
+    return (await firstPage(mode, signal)).map(u => ({ position: u[posKey], rp: u[rpKey] })).filter(p => p.position > 0 && Number.isFinite(p.rp));
   }
 
   const timed = (promise, ms) => Promise.race([promise, new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), ms))]);
@@ -1004,14 +990,29 @@ RhythiaX.ExodusData = (function () {
     trophy: b.trophyOwner ? { scoreId: b.trophyOwner.scoreId, rp: b.trophyOwner.awardedSp, userId: b.trophyOwner.userId, username: b.trophyOwner.username, avatar: b.trophyOwner.userAvatarUrl, clan: b.trophyOwner.clanName ? { id: b.trophyOwner.clanId, name: b.trophyOwner.clanName, acronym: b.trophyOwner.clanAcronym } : null } : null,
   });
 
-  // One map page: the map, its top 50 for a mode (in one country, as Rhythia's own Global/country choice)
-  // and, for a player, their best there with its place.
-  async function mapPage(id, mode = 'normal', userId = 0, signal, keep = !userId, country = '') {
+  // One map page: the map, its top 50 for a mode (in one country, as Rhythia's own Global/country choice;
+  // friends: only the signed-in player and their friends, Rhythia's Friends only) and, for a player, their
+  // best there with its place. A friends board is never saved.
+  async function mapPage(id, mode = 'normal', userId = 0, signal, keep = !userId, country = '', friends = false) {
     const s = session();
-    const r = await post('getBeatmapPage', { id: Number(id), session: userId && s ? s : '', ...(country ? { country } : {}), mode, limit: 50, ...(userId ? { user_id: Number(userId) } : {}) }, signal);
+    const r = await post('getBeatmapPage', { id: Number(id), session: userId && s ? s : '', ...(country ? { country } : {}), ...(friends ? { friendsOnly: true } : {}), mode, limit: 50, ...(userId ? { user_id: Number(userId) } : {}) }, signal);
     if (!r.beatmap) throw new Error('This map does not exist.');
     const data = { fetchedAt: new Date().toISOString(), map: fullMap(r.beatmap), scores: (r.scores || []).map(slimScore), mine: r.userScore ? slimScore(r.userScore) : null };
-    return keep ? keepPage(`map:${id}:${mode}${country ? `:${country}` : ''}`, data) : data;
+    return keep && !friends ? keepPage(`map:${id}:${mode}${country ? `:${country}` : ''}`, data) : data;
+  }
+
+  // A map's likes and dislikes, as Rhythia's map page shows them, with the signed-in player's own vote
+  // (mine: 'like', 'dislike' or null). voteMap sets that vote; null takes it back. Both answer the new totals.
+  const slimVotes = v => (v ? { likes: v.likes || 0, dislikes: v.dislikes || 0, mine: v.viewerVote || null } : null);
+  async function mapVotes(mapId, signal) {
+    const r = await post('getBeatmapVotes', { page: Number(mapId), session: session() }, signal);
+    if (!r.votes) throw new Error('Votes unavailable.');
+    return slimVotes(r.votes);
+  }
+  async function voteMap(mapId, vote) {
+    const r = await post('setBeatmapVote', { session: needSession(), page: Number(mapId), vote: vote || null });
+    if (!r.votes) throw new Error('Could not save your vote.');
+    return slimVotes(r.votes);
   }
 
   // Team Ranked: qualify a map, or veto a qualified one with a reason (Rhythia checks the badge itself).
@@ -1046,8 +1047,8 @@ RhythiaX.ExodusData = (function () {
     return failed ? data : keepPage(`score:${id}`, data);
   }
 
-  // The player's community history around a play (same consent rule as everywhere else). The page waits for
-  // it at most HIST_WAIT; a short answer is shown but not kept as the full history.
+  // The player's community history around a play (same consent rule as everywhere else). Its part of the page
+  // waits for it at most HIST_WAIT; a short answer is shown but not kept as the full history.
   async function historyOf(id, signal) {
     if (!(await historyAllowed())) return null;
     const hit = histMemo.get(Number(id));
@@ -1217,7 +1218,7 @@ RhythiaX.ExodusData = (function () {
     let short = false;
     const more = await Promise.all(Array.from({ length: Math.min(9, (r.totalPages || 1) - 1) }, (_, i) => ask(i + 2).then(x => x.collection?.beatmaps || [], () => { short = true; return []; })));
     const c = r.collection || {};
-    const maps = [...(c.beatmaps || []), ...more.flat()].map(b => ({ ...slimMap(b), status: b.status, file: b.beatmapFile, img: b.previewImage?.medium || b.image }));
+    const maps = [...(c.beatmaps || []), ...more.flat()].map(b => ({ ...slimMap(b), status: b.status, img: b.previewImage?.medium || b.image }));
     const data = {
       fetchedAt: new Date().toISOString(), id: Number(id), title: c.title || '', description: c.description || '', isList: Boolean(c.isList),
       owner: { id: c.owner?.id, username: c.owner?.username, avatar: c.owner?.avatar_url }, count: c.beatmapCount ?? maps.length, maps,
@@ -1270,11 +1271,12 @@ RhythiaX.ExodusData = (function () {
 
   async function comments(mapId, signal) {
     const r = await post('getBeatmapComments', { page: Number(mapId) }, signal);
-    return (r.comments || []).map(c => ({ id: c.id, userId: c.owner, username: c.profiles?.username, avatar: c.profiles?.avatar_url, badges: c.profiles?.badges || [], text: String(c.content || ''), at: c.created_at }));
+    return (r.comments || []).map(c => ({ id: c.id, parentId: c.parentId ?? null, userId: c.owner, username: c.profiles?.username, avatar: c.profiles?.avatar_url, badges: c.profiles?.badges || [], text: String(c.content || ''), at: c.created_at }));
   }
-  async function postComment(mapId, content) {
+  // parentId: the comment this one replies to (Rhythia keeps replies one level deep).
+  async function postComment(mapId, content, parentId) {
     const s = needSession();
-    await post('postBeatmapComment', { session: s, content, page: Number(mapId) });
+    await post('postBeatmapComment', { session: s, content, page: Number(mapId), ...(parentId != null ? { parentId: Number(parentId) } : {}) });
   }
 
   async function forget(id) {
@@ -1286,5 +1288,5 @@ RhythiaX.ExodusData = (function () {
   const mapMetaFor = (ids, signal) => mapMetaAll([...new Set(ids)], signal);
   const onHistoryChange = fn => { historyListeners.push(fn); };
 
-  return { load, stale, mapMetaFor, mapStyles, knownStyles, mapSearchTypes, mapSearch, myTopMaps, storedStyles, snapshot, forget, post, session, composeAboutMe, actions, account, notes, cachedSelf, knownSelf, viewerTag, searchShowcase, loadHome, homeSnapshot, leaderboard, board, boardSnapshot, histories, historiesCached, historyAllowed, compare, onHistoryChange, signedIn, mapPage, qualifyMap, vetoMap, scorePage, pageSnapshot, historyOf, maps, mapsSnapshot, comments, postComment, skins, skinsSnapshot, skinCounts, deleteSkin, clans, clansSnapshot, clanPage, clanSnapshot, clanScores, clanRanks, inviteToClan, leaveClan, collections, collectionsSnapshot, collection, collectionSnapshot, removeFromCollection, ownCollections, addToCollection, createCollection, editCollection, deleteCollection, changelog, playerMaps, playerMapsSnapshot, playerSkins, playerSkinsSnapshot, inventory, equip };
+  return { load, stale, mapMetaFor, mapStyles, basicKindsOn, mapPlays, knownStyles, mapSearchTypes, mapSearch, myTopMaps, storedStyles, snapshot, forget, post, session, composeAboutMe, actions, account, notes, cachedSelf, knownSelf, viewerTag, searchShowcase, loadHome, homeSnapshot, leaderboard, topPlaces, board, boardSnapshot, histories, historiesCached, historyAllowed, compare, onHistoryChange, signedIn, mapPage, qualifyMap, vetoMap, mapVotes, voteMap, scorePage, pageSnapshot, historyOf, maps, mapsSnapshot, comments, postComment, skins, skinsSnapshot, skinCounts, deleteSkin, clans, clansSnapshot, clanPage, clanSnapshot, clanScores, clanRanks, inviteToClan, leaveClan, collections, collectionsSnapshot, collection, collectionSnapshot, removeFromCollection, ownCollections, addToCollection, createCollection, editCollection, deleteCollection, changelog, playerMaps, playerMapsSnapshot, playerSkins, playerSkinsSnapshot, inventory, equip };
 })();

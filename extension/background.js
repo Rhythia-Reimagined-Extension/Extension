@@ -14,8 +14,10 @@ const storageMutationAuthority = RhythiaX.createStorageMutationAuthority({
   isReadOnly: () => RhythiaX.dataStorageReadOnly === true,
 });
 
+// One of this extension's own pages, by its address without the query and hash: the popup also opens in a tab
+// on one of its tabs (popup.html?tab=data, pickFile in popup/popup.js).
 function isInternalPage(sender, page) {
-  return sender?.id === chrome.runtime.id && sender?.url === chrome.runtime.getURL(page);
+  return sender?.id === chrome.runtime.id && String(sender?.url || '').split(/[?#]/)[0] === chrome.runtime.getURL(page);
 }
 
 function isRhythiaContentScript(sender) {
@@ -26,6 +28,10 @@ function isRhythiaContentScript(sender) {
       && (!sender.origin || sender.origin === origin);
   } catch (_) { return false; }
 }
+
+// The choices the Rhythia notice offers (shared/community-consent.js): This device, or online history without
+// profile visit reports. Community only is chosen in the popup.
+const NOTICE_CHOICES = ['local-only', 'hybrid-no-reports'];
 
 // Keys no part of the extension reads any more, removed on every install or update: the 1.2.x master switch
 // (rhythiaxMasterActive) and the pinned scores kept before 1.2.0 (rhythiax_pinned_scores, in local and sync
@@ -142,8 +148,14 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     return true;
   }
   if (message?.type === 'rhythiax-community-consent') {
-    if (!isInternalPage(sender, 'popup/popup.html') && !isRhythiaContentScript(sender)) {
+    const popup = isInternalPage(sender, 'popup/popup.html');
+    if (!popup && !isRhythiaContentScript(sender)) {
       sendResponse({ ok: false, error: 'Community choices require the extension popup or its Rhythia notification.' });
+      return false;
+    }
+    // From a Rhythia tab, only a choice its notice offers.
+    if (!popup && !NOTICE_CHOICES.includes(message.choice)) {
+      sendResponse({ ok: false, error: 'This choice can be made only in the extension popup.' });
       return false;
     }
     storageMutationAuthority.communityConsent(message.choice)
@@ -189,6 +201,12 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     // Classic's history records are saved only by Classic in a Rhythia tab; the popup never writes them.
     if (message.operation === 'data-records-commit' && !isRhythiaContentScript(sender)) {
       sendResponse({ ok: false, error: 'History records can be saved only from a Rhythia tab.' });
+      return false;
+    }
+    // The history settings change only from the popup, where the player chooses them: a script in a Rhythia tab
+    // makes only its notice's choices (NOTICE_CHOICES), so it cannot turn on profile visit reports or Community only.
+    if (message.operation === 'data-settings-patch' && !isInternalPage(sender, 'popup/popup.html')) {
+      sendResponse({ ok: false, error: 'History settings can be changed only from the extension popup.' });
       return false;
     }
     storageMutationAuthority.dispatch(message)

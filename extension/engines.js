@@ -74,6 +74,7 @@ RhythiaX.Engines = (function () {
       'shared/consent.js',
       'shared/rhythia-session.js',
       'shared/grades.js',
+      'shared/game-terms.js',
       'shared/app-icon.js',
       'legacy/core/constants.js',
       'legacy/core/state.js',
@@ -101,9 +102,10 @@ RhythiaX.Engines = (function () {
       'legacy/core/time.js',
       'legacy/core/scores.js',
       'legacy/core/beatmap-meta.js',
-      'legacy/core/score-parse.js',
       'legacy/core/bridges/page-api-bridge.js',
       'legacy/core/api.js',
+      'shared/map-kinds-basic.js',
+      'shared/vps-client.js',
       'legacy/core/vps-client.js',
       'legacy/core/bridges/rhythia-api-bridge.js',
       'legacy/core/stats.js',
@@ -133,6 +135,7 @@ RhythiaX.Engines = (function () {
       'legacy/content/features/score-cards/view.js',
       'legacy/content/features/score-cards/hub-native.js',
       'legacy/content/features/score-cards/hub-controls.js',
+      'legacy/content/features/score-cards/hub-filters.js',
       'legacy/content/features/score-cards/service.js',
       'legacy/content/features/compare/store.js',
       'legacy/content/features/compare/loader.js',
@@ -140,7 +143,6 @@ RhythiaX.Engines = (function () {
       'legacy/content/features/compare/modal-template.js',
       'legacy/content/features/compare/view.js',
       'legacy/content/features/friends/quick-list.js',
-      'legacy/content/features/title-progression/icons.js',
       'legacy/content/features/title-progression/domain.js',
       'legacy/content/features/title-progression/view.js',
       'legacy/content/features/title-progression/service.js',
@@ -152,6 +154,8 @@ RhythiaX.Engines = (function () {
       'legacy/content/pages/profile/adapter.js',
       'legacy/content/pages/profile/history-orchestration.js',
       'legacy/content/pages/profile/composition.js',
+      'legacy/content/pages/scores/composition.js',
+      'legacy/content/pages/map/composition.js',
       'legacy/content/pages/score-replay/adapter.js',
       'legacy/content/pages/score-replay/composition.js',
       'shared/releases.js',
@@ -180,20 +184,23 @@ RhythiaX.Engines = (function () {
       'shared/consent.js',
       'shared/rhythia-session.js',
       'shared/grades.js',
+      'shared/game-terms.js',
       'shared/app-icon.js',
       'shared/settings/schema.js',
       'shared/colour.js',
       'shared/uploads.js',
       'shared/exodus-themes.js',
       'exodus/core/assets.js',
+      'shared/map-kinds-basic.js',
+      'shared/vps-client.js',
       'exodus/core/data.js',
       'exodus/core/kit.js',
       'exodus/core/markdown.js',
       'shared/releases.js',
-      'exodus/core/mapkit.js',
       'exodus/pages/compare.js',
       'exodus/pages/profile.js',
       'exodus/pages/profile-hero.js',
+      'exodus/pages/profile-title.js',
       'exodus/pages/profile-stats.js',
       'exodus/pages/profile-playstyle.js',
       'exodus/pages/profile-scores.js',
@@ -300,18 +307,29 @@ RhythiaX.Engines = (function () {
 
   // Adds a look to one tab, once: the check and the mark happen in one step inside the tab. Legacy brings a
   // theme stylesheet, recorded with the mark so addThemeToTab does not insert it again.
+  // Right after Exodus is switched off both looks are registered for a moment (apply), so a page loading then
+  // runs Exodus, which gives the page to Legacy, and Legacy's own registered scripts, which start only at
+  // document_idle. While Legacy is registered the check waits for the page's load (document_idle comes by then)
+  // and looks again, so Legacy is not added a second time.
   async function inject(tabId, look) {
     const p = PRESENT[look], target = { tabId, frameIds: [0] };
     const { theme } = await settings();
+    const registered = look === 'legacy' && (await chrome.scripting.getRegisteredContentScripts({ ids: [GROUPS.legacy.id] }).catch(() => [])).length > 0;
     const [first] = await chrome.scripting.executeScript({
       target,
-      func: (name, flag, sheet) => {
-        if ((globalThis.RhythiaX && globalThis.RhythiaX[name]) || globalThis[flag]) return false;
+      func: async (name, flag, sheet, wait) => {
+        const present = () => Boolean((globalThis.RhythiaX && globalThis.RhythiaX[name]) || globalThis[flag]);
+        if (present()) return false;
+        if (wait) {
+          if (document.readyState !== 'complete') await new Promise(resolve => addEventListener('load', resolve, { once: true }));
+          await new Promise(resolve => setTimeout(resolve, 100));
+          if (present()) return false;
+        }
         globalThis[flag] = true;
         if (sheet) (globalThis.__rhythiaxThemeCss || (globalThis.__rhythiaxThemeCss = [])).push(sheet);
         return true;
       },
-      args: [p.global, p.flag, look === 'legacy' ? theme : ''],
+      args: [p.global, p.flag, look === 'legacy' ? theme : '', registered],
     });
     if (first?.result !== true) return false;
     for (const g of p.groups(theme)) {

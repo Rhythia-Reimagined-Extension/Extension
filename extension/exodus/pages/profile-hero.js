@@ -2,7 +2,8 @@
 // Reimagined for Rhythia — Exodus profile: hero and intro
 // =============================================
 // The top of the profile (banner, name, badges, ranks and the section tabs) and the intro under it: About
-// with the inline editor, the title map, the showcase, and the friends and showcase-picker windows.
+// with the inline editor, the Title panel (made by pages/profile-title.js), the showcase, and the friends and
+// showcase-picker windows.
 // pages/profile.js makes this part at mount with its context c and draws what it returns.
 
 var RhythiaX = RhythiaX || {};
@@ -12,7 +13,7 @@ RhythiaX.ExodusProfileParts.hero = function mountProfileHero(c) {
 'use strict';
 // What this part takes from pages/profile.js. The daily history can be replaced after mount (fresh data),
 // so it is read from c each time: c.H and c.last7.
-const {D, ctx, ac, U, ICONS, SITE, esc, fmt, REDUCED, TITLES, COUNTRY, $, cssUrl, tone, ico, ago, MODES, MPW, ON, S,
+const {D, ctx, ac, U, SITE, esc, fmt, REDUCED, COUNTRY, $, cssUrl, tone, ico, ago, MODES, MPW, ACCOUNT, OWN, ON, S,
   counter, toast, pinnedScores, SCORES_ALL, md, bioText, socialLinks, refreshIntro} = c;
 
 // Rhythia's badges: roles are tags under the name, event badges small icons. Badges without art are not shown, as on rhythia.com.
@@ -48,70 +49,6 @@ function supporterLeft() {
   if (!ctx.owner || !U.verificationDeadline) return '';
   const days = Math.ceil((new Date(U.verificationDeadline) - Date.now()) / 864e5);
   return days <= 0 ? 'Expired' : days >= 365 ? `${Math.round(days / 365)} year${Math.round(days / 365) > 1 ? 's' : ''} left` : days >= 30 ? `${Math.round(days / 30)} month${Math.round(days / 30) > 1 ? 's' : ''} left` : `${days} day${days > 1 ? 's' : ''} left`;
-}
-
-/* ── Title ── */
-// A player Rhythia lists without a global rank has no place to count to the top 30 from.
-function titleState() {
-  const m = MODES.normal, rp = m.rp || 0, rank = m.rank || 0;
-  let i = 0; TITLES.slice(0, 5).forEach((t, k) => { if (rp >= t.rp) i = k; });
-  if (rp >= 10000 && rank && rank <= 30) i = 5;
-  const next = TITLES[i + 1];
-  const goal = !next ? 'Highest title reached' : next.top ? (rank ? `${fmt(rank - 30)} places to the top 30` : 'Not ranked') : `${fmt(next.rp - rp, 0)} RP to go`;
-  const prog = !next ? 1 : next.top ? (rank ? Math.min(1, 30 / rank) : 0) : (rp - TITLES[i].rp) / (next.rp - TITLES[i].rp);
-  return {i, cur: TITLES[i], next, goal, prog, rp, rank};
-}
-// A climbing road: each title sits a little higher than the last, so the line only rises.
-// Names stay under the emblems. Clicking a title drops its pin with what it takes;
-// the "you" marker is kept clear of the emblems and steps back while a pin is open.
-function titleMap() {
-  const t = titleState(), W = 640, Hh = 256, R = 19;
-  const xs = TITLES.map((_, k) => 50 + k * (W - 100) / 5), ys = [210, 186, 172, 142, 128, 92];
-  const seg = k => { const mx = (xs[k] + xs[k + 1]) / 2; return [[xs[k], ys[k]], [mx, ys[k]], [mx, ys[k + 1]], [xs[k + 1], ys[k + 1]]]; };
-  const lerp = (a, b, u) => [a[0] + (b[0] - a[0]) * u, a[1] + (b[1] - a[1]) * u];
-  const split = (P, u) => { const a = lerp(P[0], P[1], u), b = lerp(P[1], P[2], u), c = lerp(P[2], P[3], u), d = lerp(a, b, u), e = lerp(b, c, u); return [P[0], a, d, lerp(d, e, u)]; };
-  const dOf = P => `M${P[0]} C${P[1]} ${P[2]} ${P[3]}`;
-  const full = `M${xs[0]},${ys[0]}` + TITLES.slice(1).map((_, k) => { const P = seg(k); return ` C${P[1]} ${P[2]} ${P[3]}`; }).join('');
-  // Progress maps onto the part of the segment between the two emblem rings.
-  const gap = (R + 12) / (xs[1] - xs[0]), u = t.next ? gap + (1 - 2 * gap) * t.prog : 0;
-  const part = t.next ? split(seg(t.i), u) : null, pt = part ? part[3] : [xs[t.i], ys[t.i]];
-  let road = `<path d="${full}" fill="none" stroke="url(#tm-ahead)" stroke-width="4" stroke-linecap="round" stroke-dasharray="1 8"/>`;
-  for (let k = 0; k < t.i; k++) road += `<path d="${dOf(seg(k))}" fill="none" stroke="url(#tm-s${k})" stroke-width="5" stroke-linecap="round"/>`;
-  if (part) road += `<path class="prog" d="${dOf(part)}" fill="none" stroke="${t.cur.c}" stroke-width="5" stroke-linecap="round" pathLength="1" stroke-dasharray="1 1" style="--p:1"/>`;
-  const grads = TITLES.slice(0, 5).map((tier, k) => `<linearGradient id="tm-s${k}" gradientUnits="userSpaceOnUse" x1="${xs[k]}" x2="${xs[k + 1]}"><stop offset="0" stop-color="${tier.c}"/><stop offset="1" stop-color="${TITLES[k + 1].c}"/></linearGradient>`).join('');
-  const shade = c => c === '#A3ABB9' ? 'var(--text)' : c;
-  const nodes = TITLES.map((tier, k) => {
-    const reached = k <= t.i, now = k === t.i, open = S.tier === k, cx = xs[k], cy = ys[k];
-    return `<g class="node ${open ? 'open' : ''}" data-tier="${k}" role="button" tabindex="0" aria-pressed="${open}" aria-label="${tier.name}">
-      <circle cx="${cx}" cy="${cy}" r="${R + 14}" fill="transparent"/>
-      ${now ? `<circle cx="${cx}" cy="${cy}" r="${R + 10}" fill="${tier.c}" fill-opacity=".14"/>` : ''}
-      <circle class="ring" cx="${cx}" cy="${cy}" r="${R + 5}" style="fill:var(--ring-bg);stroke:${reached || open ? tier.c : 'rgba(var(--ink),.16)'}" stroke-width="${now || open ? 2.5 : 1.5}"/>
-      <image href="${ICONS[tier.id] || ''}" x="${cx - R}" y="${cy - R}" width="${R * 2}" height="${R * 2}" ${reached ? '' : 'style="filter:grayscale(1);opacity:.5"'}/>
-      <text x="${cx}" y="${cy + R + 24}" text-anchor="middle" style="fill:${now ? shade(tier.c) : reached ? 'var(--text-2)' : 'var(--muted)'}">${tier.short || tier.name}</text></g>`;
-  }).join('');
-  // Pin for the clicked title.
-  let callout = '';
-  if (S.tier !== null && S.tier !== undefined) {
-    const k = S.tier, tier = TITLES[k], cx = xs[k], cy = ys[k], reached = k <= t.i;
-    const need = tier.top ? (reached ? 'Top 30 · reached' : t.rank ? `Top 30 global · ${fmt(t.rank - 30)} places to go` : 'Top 30 global · not ranked')
-      : !tier.rp ? 'Starting title' : reached ? `${fmt(tier.rp)} RP · reached` : `${fmt(tier.rp)} RP · ${fmt(tier.rp - t.rp, 0)} to go`;
-    const bw = Math.round(Math.max(tier.name.length * 8, need.length * 6.6) + 28), bh = 46;
-    const bx = Math.min(W - bw - 2, Math.max(2, cx - bw / 2)), by = cy - R - 22 - bh;
-    callout = `<g class="callout"><line x1="${cx}" y1="${cy - R - 6}" x2="${cx}" y2="${by + bh}" stroke="${tier.c}" stroke-width="1.5"/>
-      <rect x="${bx}" y="${by}" width="${bw}" height="${bh}" rx="10" style="fill:var(--panel-3)" stroke="${tier.c}" stroke-opacity=".7"/>
-      <text x="${bx + 14}" y="${by + 19}" style="fill:${shade(tier.c)};font-weight:700">${tier.name}</text>
-      <text class="sub" x="${bx + 14}" y="${by + 35}">${need}</text></g>`;
-  }
-  let you = '';
-  if (t.next) {
-    const [px, py] = pt, pw = 64, rx = Math.min(W - pw - 2, Math.max(2, px - pw / 2)), ty = py - 30;
-    you = `<g class="pin ${callout ? 'dim' : ''}"><line class="stem" x1="${px}" y1="${py - 6}" x2="${px}" y2="${ty}" stroke="${t.cur.c}" stroke-width="1.5"/>
-      ${t.rank ? `<g class="tag"><rect x="${rx}" y="${ty - 24}" width="${pw}" height="24" rx="8" fill="${t.cur.c}"/><text x="${rx + pw / 2}" y="${ty - 7.5}" text-anchor="middle" style="fill:#fff;font-weight:750">#${fmt(t.rank)}</text></g>` : ''}
-      <circle class="head" cx="${px}" cy="${py}" r="6.5" fill="#fff" stroke="${t.cur.c}" stroke-width="3"/></g>`;
-  }
-  return `<svg class="tmap" viewBox="0 0 ${W} ${Hh}" role="group" aria-label="Title progression: ${esc(t.cur.name)}. ${esc(t.goal)}.">
-    <defs>${grads}<linearGradient id="tm-ahead" gradientUnits="userSpaceOnUse" x1="${pt[0]}" x2="${W}"><stop offset="0" style="stop-color:rgb(var(--ink));stop-opacity:.32"/><stop offset="1" style="stop-color:rgb(var(--ink));stop-opacity:.05"/></linearGradient></defs>
-    ${road}${nodes}${you}${callout}</svg>`;
 }
 
 /* ── Hero ── */
@@ -157,6 +94,23 @@ function newTag(sec) {
   return seen[k] > 0 && now - seen[k] < NEW_DAYS * 864e5 ? `<span class="tab-new" data-tip="<b>New in ${n.version}</b><small>${n.tip}</small>">New</span>` : '';
 }
 const SUP_FLOAT = Array.from({length: 10}, (_, i) => `<i class="pf ${i % 3 ? 'h' : 'q'}" style="--x:${(i * 41 + 7) % 100}%;--d:${11 + (i * 7) % 8}s;--w:${-((i * 13) % 17)}s;--s:${.55 + ((i * 5) % 6) / 10}"></i>`).join('');
+// Rhythia's own notices about the account, in its words: a ban kind, then inactive with the last score.
+const BAN_TEXT = {
+  excluded: 'which means the profile has been blocked due to highest level of Rhythia rules infringement. Please refer to support@rhythia.com for an appeal. You must read the <a href="/rules">rules</a> before appealing.',
+  restricted: 'which means the user cannot submit scores due to rule infringements. Please refer to support@rhythia.com for an appeal.',
+  silenced: 'which means the user has blocked access to communication using the website.',
+};
+function accountNote() {
+  const A = ACCOUNT, name = A.ban && A.ban[0].toUpperCase() + A.ban.slice(1);
+  const ban = A.ban ? `<div class="acct-note bad" role="note"><b>${name}</b><span>This user has been marked as <b>${name}</b>, ${BAN_TEXT[A.ban]}</span></div>` : '';
+  const idle = A.inactive ? `<div class="acct-note" role="note"><b>Inactive profile</b><span>${OWN ? 'Your profile is inactive and won’t appear in leaderboards because you haven’t' : 'This profile is inactive and won’t appear in leaderboards because the user hasn’t'} submitted a score in 30 days.</span>${A.last ? `<small>Last score: ${ago(new Date(A.last).toISOString())}</small>` : ''}</div>` : '';
+  return ban + idle;
+}
+// In place of a rank the account does not have: why, when it is inactive or excluded; otherwise a dash.
+const OUT = ACCOUNT.ban === 'excluded' ? ['Excluded', 'Rhythia keeps excluded accounts out of its rankings.']
+  : ACCOUNT.inactive ? ['Inactive', 'No score in the last 30 days, so no rank. The next score brings it back.'] : null;
+const noRank = (big = true) => (OUT && big ? `<span class="rk-out" tabindex="0" data-tip="<b>${OUT[0]}</b><small>${OUT[1]}</small>">${OUT[0]}</span>` : OUT ? OUT[0] : '—');
+
 function hero() {
   const m = MODES[S.mode], lock = S.mode === 'normal';
   // Change since yesterday, as Classic shows by default: today's live numbers (the last point, core/data.js
@@ -195,13 +149,13 @@ function hero() {
         <div class="ranks-wrap">
           <div class="ranks">
             <div class="ranks-modes" role="group" aria-label="Game mode" style="--i:${Object.keys(MODES).indexOf(S.mode)}">${Object.entries(MODES).map(([k, v]) => `<button type="button" aria-pressed="${S.mode === k}" data-mode="${k}">${v.label}</button>`).join('')}<i class="mk" aria-hidden="true"></i></div>
-            <div><span class="cap">Global</span><strong class="num">${m.rank ? counter(m.rank, 0, '#') : '—'}${d(r1)}</strong>${size((x, l) => (x.rank ? '#' + fmt(x.rank) : '—') + (l ? dd(r1) : ''))}</div>
-            <div class="${board ? 'rk-ct' : ''}">${board ? `<a class="rk-go" href="${board}" aria-label="${esc(COUNTRY)} leaderboard" data-tip="<b>${esc(COUNTRY)} leaderboard</b><small>Opens on ${S.viewer === 'owner' ? 'your' : 'this player’s'} page of it</small>"></a>` : ''}<span class="cap">${esc(COUNTRY)}</span><strong class="num">${m.country ? counter(m.country, 0, '#') : '—'}${d(c1)}</strong>${size((x, l) => (x.country ? '#' + fmt(x.country) : '—') + (l ? dd(c1) : ''))}</div>
+            <div><span class="cap">Global</span><strong class="num">${m.rank ? counter(m.rank, 0, '#') : noRank()}${d(r1)}</strong>${size((x, l) => (x.rank ? '#' + fmt(x.rank) : noRank(false)) + (l ? dd(r1) : ''))}</div>
+            <div class="${board ? 'rk-ct' : ''}">${board ? `<a class="rk-go" href="${board}" aria-label="${esc(COUNTRY)} leaderboard" data-tip="<b>${esc(COUNTRY)} leaderboard</b><small>Opens on ${S.viewer === 'owner' ? 'your' : 'this player’s'} page of it</small>"></a>` : ''}<span class="cap">${esc(COUNTRY)}</span><strong class="num">${m.country ? counter(m.country, 0, '#') : noRank()}${d(c1)}</strong>${size((x, l) => (x.country ? '#' + fmt(x.country) : noRank(false)) + (l ? dd(c1) : ''))}</div>
             <div class="rp"><span class="cap">Rhythm points</span><strong class="num">${counter(m.rp, 2)}${d(rp1, 1)}</strong>${size((x, l) => fmt(x.rp || 0, 2) + (l ? dd(rp1, 1) : ''))}</div>
           </div>
         </div>
       </div>
-      <div class="strip panel">
+      ${accountNote()}<div class="strip panel">
         <div><small>Playtime</small><b class="num">${h}h ${mi}m</b></div>
         <div><small>Play count</small><b class="num">${counter(U.play_count)}</b></div>
         <div><small>Squares hit</small><b class="num">${counter(U.squares_hit)}</b></div>
@@ -260,6 +214,8 @@ function showcase() {
 const SHOWCASE_MAX = 5;
 const itemPath = it => `${{beatmap: '/maps/', skin: '/skins/share/', collection: '/collections/'}[it.kind] || '/'}${encodeURIComponent(it.id)}`;
 const SKIN_TYPES = {rhs: 'RHS skin', cursor: 'Cursor', note: 'Note', border: 'Border', colorset: 'Colorset'};
+// The skin type menu (core/kit.js menuSelect, shared with the rest of the profile); it fires 'change' on its button.
+const MN = RhythiaX.ExodusKit.menuSelect(c.R, {signal: ac.signal});
 const itemKind = it => it.kind === 'beatmap' ? 'Beatmap' : it.kind === 'collection' ? 'Collection' : SKIN_TYPES[it.skinType || 'rhs'] || 'Skin';
 function itemPreview(it) {
   if (it.kind === 'skin' && it.skinType === 'colorset' && it.colors?.length) {
@@ -332,7 +288,7 @@ function openPicker() {
     <div class="cmp-body pick-body">
       <div class="pick-bar"><div class="pills" aria-label="Item type">${[['beatmap', 'Beatmaps'], ['skin', 'Skins'], ['collection', 'Collections']].map(([k, l]) => `<button type="button" aria-pressed="${picker.kind === k}" data-pick-kind="${k}">${l}</button>`).join('')}</div>
         <div class="pills" aria-label="Owner"><button type="button" aria-pressed="${picker.mine}" data-pick-mine="1">Mine</button><button type="button" aria-pressed="${!picker.mine}" data-pick-mine="0">Everyone</button></div>
-        ${picker.kind === 'skin' ? `<select class="field" id="pick-skin" aria-label="Skin type">${Object.entries(SKIN_TYPES).map(([k, l]) => `<option value="${k}" ${picker.skinType === k ? 'selected' : ''}>${l}</option>`).join('')}</select>` : ''}</div>
+        ${picker.kind === 'skin' ? MN.html({id: 'pick-skin', label: 'Skin type', value: picker.skinType, options: Object.entries(SKIN_TYPES).map(([value, label]) => ({value, label}))}) : ''}</div>
       <label class="field">${ico('search')}<span class="sr">Search</span><input id="pick-q" type="search" placeholder="Search by title" value="${esc(picker.q)}" autocomplete="off"></label>
       <div class="pick-res" id="pick-res"></div></div>`;
   if (!dlg.open) dlg.showModal();
@@ -355,7 +311,6 @@ function intro() {
   const raw = String(U.about_me || '');
   const text = bioText(raw);
   const links = socialLinks(raw);
-  const t = titleState();
   // With the title beside it, the showcase gets its own row below both, so a long About never leaves the title column empty.
   const side = ON('titleProgression'), extras = S.editing ? '' : showcaseItems() + showcase(), below = side && extras;
   return `<div class="container reveal" id="intro"><div class="intro ${side ? '' : 'solo'} ${below ? 'has-more' : ''}">
@@ -363,16 +318,10 @@ function intro() {
       <div class="about-head"><h3 id="about-h">${S.editing ? 'Edit profile' : 'About'}</h3><div class="socials">${links.map(socialIcon).join('')}${S.viewer === 'owner' && !S.editing ? `<button class="social" type="button" data-edit-bio aria-label="Edit profile" data-tip="<b>Edit profile</b><small>About me, social links and pinned scores</small>">${ico('edit')}</button>` : ''}</div></div>
       ${S.editing ? editor() : `<div class="bio-wrap ${S.bioOpen ? 'open' : ''}"><div class="bio md">${md(text) || '<span class="cap">No bio yet.</span>'}</div><button class="link bio-more" type="button" data-bio-more hidden>${S.bioOpen ? 'Show less' : 'Show more'}</button></div>${below ? '' : extras}`}
     </section>
-    ${ON('titleProgression') ? `<section class="panel" aria-labelledby="title-h">
-      <h3 id="title-h">Title</h3>
-      <div class="title-head"><img src="${ICONS[t.cur.id] || ''}" alt=""><div><strong style="color:${t.cur.c === '#A3ABB9' ? 'inherit' : t.cur.c}">${esc(t.cur.name)}</strong><span class="cap num">${fmt(t.rp, 2)} RP · ${t.rank ? `#${fmt(t.rank)} global` : 'not ranked'}</span></div>
-        ${t.next ? `<div class="goal"><span class="cap">Next: ${esc(t.next.name)}</span><b class="num">${esc(t.goal)}</b></div>` : ''}</div>
-      <div class="tmap-scroll" id="tmap">${titleMap()}</div>
-      <p class="cap tmap-hint">Click a title to see its requirement.</p>
-    </section>` : ''}
+    ${ON('titleProgression') ? c.title.html() : ''}
     ${below ? `<section class="panel intro-more" aria-label="Showcase">${extras}</section>` : ''}
   </div></div>`;
 }
 
-return {hero, intro, titleMap, refreshEdPins, SHOWCASE_MAX, saveShowcase, openFriends, picker, openPicker, runPicker};
+return {hero, intro, refreshEdPins, SHOWCASE_MAX, saveShowcase, openFriends, picker, openPicker, runPicker};
 };

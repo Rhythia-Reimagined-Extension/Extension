@@ -18,6 +18,7 @@ var RhythiaX = RhythiaX || {};
   // --------------------------------------------------------------------------
   // Variant Management
   // --------------------------------------------------------------------------
+  // The card styles' names before 1.2.0 as well; the popup reads them the same way (shared/settings/schema.js read()).
   function normalizeVariant(v) {
     const str = String(v || '').toLowerCase().trim();
     if (str === 'variant_b' || str === 'eclipse' || str === 'glass_eclipse') return 'variant_b';

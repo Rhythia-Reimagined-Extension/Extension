@@ -1,6 +1,9 @@
 // =============================================
 // Reimagined for Rhythia — Playstyle Feature: View Module
-// The Playstyle tab: values, summary, status FAQ, breakdown and best maps.
+// The Playstyle tab, built from Rhythia's own pieces: the stat row of its Statistics card, its bordered panels and
+// the rounded rows of its lists. Top to bottom: four values, the summary with its status and FAQ, the breakdown of
+// the top plays (speed, grades and, with online history, map types) as bars with counts, and the best maps.
+// Sections slide in once and the bars grow; reduced motion keeps them still.
 // =============================================
 
 var RhythiaX = RhythiaX || {};
@@ -17,6 +20,12 @@ var RhythiaX = RhythiaX || {};
     shield: `<svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>`,
     pause: `<svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="4" width="4" height="16" rx="1"/><rect x="14" y="4" width="4" height="16" rx="1"/></svg>`,
     activity: `<svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>`,
+  };
+  // Section icons, Rhythia's lucide set.
+  const SECTION_ICONS = {
+    summary: '<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 3v18h18"/><path d="m19 9-5 5-4-4-3 3"/></svg>',
+    breakdown: '<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12h4"/><path d="M3 6h12"/><path d="M3 18h8"/></svg>',
+    maps: '<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11.5 2.5 14 8l6 .7-4.4 4.1 1.2 5.9-5.3-3-5.3 3 1.2-5.9L3 8.7 9 8z"/></svg>',
   };
 
   function getStatusSvg(iconType) {
@@ -53,11 +62,13 @@ var RhythiaX = RhythiaX || {};
   const setTone = (card, tone) => { if (tone) card.dataset.tone = tone; else delete card.dataset.tone; };
 
   let lastRenderCall = null;
-  // Map types from the history service (online history only), in the colours Exodus uses for them. A newer
-  // render drops an older one's late answer.
-  const MAP_TYPE_NAMES = { jump: 'Jumps', stream: 'Streams', tech: 'Techs', varied: 'Varied' };
-  const MAP_TYPE_COLORS = { Jumps: '#f59e0b', Streams: '#38bdf8', Techs: '#f472b6', Varied: '#a78bfa' };
+  // Map types from the history service (online history only), in the colours Rhythia's map pages use for them
+  // (pages/maps.css), by the names both looks use (shared/game-terms.js). A newer render drops an older one's late answer.
+  const MAP_TYPES = [['jump', 'jump', '#f59e0b'], ['stream', 'stream', '#38bdf8'], ['tech', 'tech', '#f472b6'], ['varied', 'other', '#a78bfa']]
+    .map(([id, cls, color]) => [id, RhythiaX.GameTerms.typeName(id), cls, color]);
   let mapTypesGen = 0;
+  // The observer waiting for the breakdown to come on screen before its map types are asked for.
+  let typesWatch = null;
 
   // Statistics variant B tells what happened from ranked plays and history (scout.buildStory).
   function storyHtml(story, status) {
@@ -66,57 +77,129 @@ var RhythiaX = RhythiaX || {};
       ? '<span class="rhythiax-story-lead ' + tone + '">' + story.lead.replace(/[&<>"']/g, '') + '.</span> ' : '') + text + '</p>').join('');
   }
 
-  // Variant B wording for the four values: a plain number, and what it means under it.
-  function valuesB({ scores, speedSummary, momentum, accTrend, fcStats }) {
+  // The four values in plain words: a number, and what it means under it.
+  function values({ scores, speedSummary, momentum, accTrend, fcStats }) {
     const total = scores.length;
     const share = total ? Math.round((domain.getSpeedBuckets(scores)[speedSummary.dominantSpeed] || 0) / total * 100) : 0;
     const move = momentum.comparisonDays
-      ? (momentum.rankDelta > 0 ? '▲ ' : momentum.rankDelta < 0 ? '▼ ' : '±') + Math.abs(momentum.rankDelta || 0) + ' ranks · ' + momentum.comparisonDays + ' days'
+      ? (momentum.rankDelta > 0 ? '▲ ' : momentum.rankDelta < 0 ? '▼ ' : '±') + Math.abs(momentum.rankDelta || 0) + ' ranks in ' + momentum.comparisonDays + ' days'
       : 'Needs 14 days of history';
     const acc = accTrend.hasHistory ? (accTrend.delta > 0 ? '+' : accTrend.delta < 0 ? '−' : '±') + Math.abs(accTrend.delta).toFixed(2) + '%' : '—';
     return {
       speed: total ? share + '% of top plays' : 'No top plays yet',
       momentum: move,
-      accuracy: [acc, accTrend.hasHistory ? 'vs ' + accTrend.days + ' days ago' : 'No accuracy history yet'],
-      fc: [fcStats.ratio + '%', fcStats.count + ' of ' + fcStats.total + ' top plays'],
+      accuracy: [acc, accTrend.hasHistory ? 'Average accuracy vs ' + accTrend.days + ' days ago' : 'No accuracy history yet'],
+      fc: [String(fcStats.count || 0), total ? 'of ' + fcStats.total + ' top plays · ' + fcStats.ratio + '%' : 'No top plays yet'],
     };
   }
 
-  // Variant B Breakdown: one thin bar per group, with the counts in a legend under it.
-  function stackedBar(label, keys, buckets, colors, suffix, total) {
+  // A bordered panel with Rhythia's section heading (icon, title, and a note on the right).
+  function panel(cls, icon, title, note) {
+    const box = document.createElement('section');
+    box.className = cls + ' rhythiax-ps-panel';
+    const head = document.createElement('div');
+    head.className = 'rhythiax-ps-head';
+    const h = document.createElement('h3');
+    h.className = 'rhythiax-ps-title';
+    h.innerHTML = SECTION_ICONS[icon] || '';
+    h.append(title);
+    head.appendChild(h);
+    const hint = document.createElement('span');
+    hint.className = 'rhythiax-ps-hint';
+    hint.textContent = note || '';
+    head.appendChild(hint);
+    box.appendChild(head);
+    return { box, head, hint };
+  }
+
+  // One group of the breakdown: a bar split by share, and under it each part with its count and share. Parts with
+  // no plays stay in the list, dimmed, so the groups read the same for every player.
+  function breakdownGroup(label, parts, total) {
     const section = document.createElement('div');
-    section.className = 'rhythiax-ps2-stack';
-    const heading = document.createElement('span');
-    heading.className = 'rhythiax-ps2-sublabel';
+    section.className = 'rhythiax-breakdown-section';
+    const heading = document.createElement('div');
+    heading.className = 'rhythiax-breakdown-sublabel';
     heading.textContent = label;
     const bar = document.createElement('div');
-    bar.className = 'rhythiax-ps2-bar';
+    bar.className = 'rhythiax-breakdown-bar';
     bar.setAttribute('role', 'img');
-    const legend = document.createElement('div');
-    legend.className = 'rhythiax-ps2-legend';
-    const parts = [];
-    keys.forEach(key => {
-      const count = buckets[key] || 0;
-      const name = key + suffix;
+    const list = document.createElement('div');
+    list.className = 'rhythiax-breakdown-grid';
+    const said = [];
+    parts.forEach(({ name, count, color, cls }) => {
+      const share = total ? count / total * 100 : 0;
+      const shareText = share.toFixed(1).replace(/\.0$/, '') + '%';
       if (count) {
         const piece = document.createElement('span');
-        piece.style.flex = String(count);
-        piece.style.background = colors[key];
-        piece.title = name + ': ' + count + ' of ' + total;
+        piece.style.flexGrow = String(count);
+        piece.style.background = color;
+        if (cls) piece.className = cls;
+        piece.title = name + ': ' + count + ' · ' + shareText;
         bar.appendChild(piece);
-        parts.push(name + ' ' + count);
+        said.push(name + ' ' + count);
       }
-      const item = document.createElement('span');
-      if (!count) item.className = 'is-zero';
-      const name_ = document.createElement('b');
-      name_.textContent = name;
-      if (count) name_.style.color = colors[key];
-      item.append(name_, String(count));
-      legend.appendChild(item);
+      const item = document.createElement('div');
+      item.className = 'rhythiax-breakdown-item' + (count ? '' : ' is-zero') + (cls ? ' ' + cls : '');
+      item.title = name + ': ' + count + (count === 1 ? ' score' : ' scores') + ' · ' + shareText;
+      item.style.setProperty('--breakdown-color', color);
+      const dot = document.createElement('i');
+      dot.className = 'rhythiax-breakdown-dot';
+      const nameEl = document.createElement('span');
+      nameEl.className = 'rhythiax-breakdown-label';
+      nameEl.textContent = name;
+      const amount = document.createElement('span');
+      amount.className = 'rhythiax-breakdown-count';
+      amount.textContent = String(count);
+      const pct = document.createElement('span');
+      pct.className = 'rhythiax-breakdown-share';
+      pct.textContent = count ? shareText : '';
+      item.setAttribute('aria-label', item.title);
+      item.append(dot, nameEl, amount, pct);
+      list.appendChild(item);
     });
-    bar.setAttribute('aria-label', label + ': ' + (parts.join(', ') || 'none'));
-    section.append(heading, bar, legend);
+    if (!said.length) bar.classList.add('is-empty');
+    bar.setAttribute('aria-label', label + ': ' + (said.join(', ') || 'none'));
+    section.append(heading, bar, list);
     return section;
+  }
+
+  // Elements that slide in one after another the first time the pane shows.
+  function comeIn(nodes) {
+    nodes.forEach((node, i) => {
+      node.style.setProperty('--i', String(Math.min(i, 12)));
+      node.classList.add('is-in');
+    });
+  }
+
+  // The players ranked just above and below on the same maps, from the compare answer: how this top stands against
+  // theirs, on how many maps it beats most players above, which map type each leans to, and two maps they have
+  // that this top has not. Empty when there is no answer to tell from.
+  const KIND_WORD = { jump: 'jumps', stream: 'streams', tech: 'tech', varied: 'varied maps' };
+  function nearWords(d) {
+    if (!d?.available || !d.band?.above || !d.band?.below || !d.summary) return '';
+    const b = d.band, m = d.summary, f = n => Number(n || 0).toLocaleString('en-US');
+    const esc = s => (RhythiaX.escapeHtml ? RhythiaX.escapeHtml(String(s ?? '')) : String(s ?? ''));
+    const verdict = { ahead: 'Ahead of them', at_level: 'At their level', slightly_behind: 'A little behind them', behind: 'Behind them' }[m.verdict];
+    const out = [];
+    const who = `the players ranked #${f(b.above.from)}–${f(b.above.to)} and #${f(b.below.from)}–${f(b.below.to)}`;
+    if (verdict && m.compared >= 10) {
+      out.push(`<strong>${verdict}</strong>: against ${who}, higher than <strong>${Math.round((m.share || 0) * 100)}%</strong> of them on ${f(m.compared)} shared maps.`);
+      out.push(`Beats most players above on <strong>${f(m.above)}</strong> ${m.above === 1 ? 'map' : 'maps'}; on ${f(m.below)} most players below score higher.`);
+    } else {
+      out.push(`Fewer than 10 maps shared with ${who} so far.`);
+    }
+    const lean = side => {
+      const v = d.mapTypes?.[side] || {};
+      const k = Object.keys(KIND_WORD).sort((x, y) => (v[y] || 0) - (v[x] || 0))[0];
+      return k && v[k] > 0 ? [k, Math.round(v[k] * 100)] : null;
+    };
+    const mine = lean('you'), theirs = lean('above');
+    if (mine && theirs) {
+      out.push(`This top is mostly ${KIND_WORD[mine[0]]} (${mine[1]}%)${theirs[0] === mine[0] ? ', like the players above' : `; the players above lean to ${KIND_WORD[theirs[0]]} (${theirs[1]}%)`}.`);
+    }
+    const missing = (d.players?.missing || []).slice(0, 2).map(x => `<strong>${esc(x.title)}</strong>`);
+    if (missing.length) out.push(`In their tops but not in this one: ${missing.join(' and ')}.`);
+    return out.join(' ');
   }
 
   function render(container, context = {}) {
@@ -151,57 +234,38 @@ var RhythiaX = RhythiaX || {};
     let momentum = scout.evaluateMomentum(initialRank, officialHistory, Date.now(), player.rp, momentumActivity);
     let accTrend = scout.evaluateAccuracyTrend(scores, []);
 
-    // Outer root container
     const root = document.createElement('div');
     root.className = 'rhythiax-playstyle-deck';
     root.dataset.rhythiaxStatsVariant = RhythiaX.getStatsVariant?.() || 'variant_a';
-    root.classList.toggle('rhythiax-playstyle-v2', variantB);
+    const animated = [];
 
-    // ─────────────────────────────────────────────
-    // 1. TOP 4 METRICS
-    // ─────────────────────────────────────────────
+    // ── 1. Four values, as the stat row of Rhythia's Statistics card ──
     const m4Grid = document.createElement('div');
     m4Grid.className = 'rhythiax-m4-grid';
-
-    const vb = variantB ? valuesB({ scores, speedSummary, momentum, accTrend, fcStats }) : null;
-    const cardSpeed = createMetricCard(vb ? 'Main speed' : 'Speed', speedSummary.value, vb ? vb.speed : speedSummary.sub);
-    const cardMomentum = createMetricCard('Momentum', momentum.label, vb ? vb.momentum : momentum.sub, momentum.status);
-    const cardAcc = createMetricCard('Accuracy Trend', vb ? vb.accuracy[0] : accTrend.formatted, vb ? vb.accuracy[1] : accTrend.sub, trendTone(accTrend.delta));
-    const cardFc = createMetricCard('FC Rate', vb ? vb.fc[0] : fcStats.formatted, vb ? vb.fc[1] : fcStats.sub);
-
+    const vb = values({ scores, speedSummary, momentum, accTrend, fcStats });
+    const cardSpeed = createMetricCard('Main speed', speedSummary.value, vb.speed);
+    const cardMomentum = createMetricCard('Momentum', momentum.label, vb.momentum, momentum.status);
+    const cardAcc = createMetricCard('Accuracy trend', vb.accuracy[0], vb.accuracy[1], trendTone(accTrend.delta));
+    const cardFc = createMetricCard('Full combos', vb.fc[0], vb.fc[1]);
     m4Grid.append(cardSpeed.card, cardMomentum.card, cardAcc.card, cardFc.card);
     root.appendChild(m4Grid);
+    animated.push(m4Grid);
 
-    // ─────────────────────────────────────────────
-    // 2. UNIFIED SUMMARY CARD WITH STATUS BADGE & FAQ
-    // ─────────────────────────────────────────────
-    const summaryCard = document.createElement('div');
-    summaryCard.className = 'rhythiax-summary-card';
-
-    const summaryHeader = document.createElement('div');
-    summaryHeader.className = 'rhythiax-summary-header';
-
-    const headerLeft = document.createElement('div');
-    headerLeft.className = 'rhythiax-summary-header-left';
-
-    const summaryTitle = document.createElement('span');
-    summaryTitle.className = 'rhythiax-summary-title';
-    summaryTitle.textContent = 'Summary';
-
+    // ── 2. Summary: status, FAQ, the words and the mods on the top plays ──
+    const summary = panel('rhythiax-summary-card', 'summary', 'Summary', '');
+    const summaryCard = summary.box;
     const statusBadge = document.createElement('span');
     statusBadge.className = `rhythiax-status-badge ${momentum.status}`;
     statusBadge.innerHTML = `<span class="rhythiax-badge-icon">${getStatusSvg(momentum.iconType)}</span><span>${momentum.badge}</span>`;
+    summary.head.querySelector('.rhythiax-ps-title').after(statusBadge);
 
-    headerLeft.append(summaryTitle, statusBadge);
-
-    // FAQ Button
     const faqBtn = document.createElement('button');
     faqBtn.type = 'button';
     faqBtn.className = 'rhythiax-faq-btn';
     faqBtn.textContent = 'How statuses work';
+    faqBtn.setAttribute('aria-expanded', 'false');
+    summary.hint.replaceWith(faqBtn);
 
-    summaryHeader.append(headerLeft, faqBtn);
-    summaryCard.appendChild(summaryHeader);
     const momentumNote = document.createElement('p');
     momentumNote.className = 'rhythiax-momentum-note';
     momentumNote.textContent = momentum.context;
@@ -237,26 +301,20 @@ var RhythiaX = RhythiaX || {};
       </div>
       <p class="rhythiax-faq-note">RP over 14 days: under 0.5% gain is low, under 0.1% either way is flat. Sudden moves: 2% of rank in 3 days, at least 3 places. With less history, the real period is shown.</p>
     `;
-
-    faqBtn.addEventListener('click', () => {
-      const isVisible = faqPopover.style.display !== 'none';
-      faqPopover.style.display = isVisible ? 'none' : 'block';
-      faqBtn.classList.toggle('active', !isVisible);
-    });
-
-    faqPopover.querySelector('.rhythiax-faq-close').addEventListener('click', () => {
-      faqPopover.style.display = 'none';
-      faqBtn.classList.remove('active');
-    });
-
+    const showFaq = open => {
+      faqPopover.style.display = open ? 'block' : 'none';
+      faqBtn.classList.toggle('active', open);
+      faqBtn.setAttribute('aria-expanded', String(open));
+    };
+    faqBtn.addEventListener('click', () => showFaq(faqPopover.style.display === 'none'));
+    faqPopover.querySelector('.rhythiax-faq-close').addEventListener('click', () => showFaq(false));
     summaryCard.appendChild(faqPopover);
 
     const summaryText = document.createElement('div');
     summaryText.className = 'rhythiax-summary-text';
-    const storyMode = variantB;
     const recentScores = scoreSets?.recentScores || [];
     const writeSummary = (points, refined) => {
-      if (storyMode) {
+      if (variantB) {
         summaryText.classList.add('rhythiax-summary-story');
         momentumNote.hidden = true;
         summaryText.innerHTML = storyHtml(scout.buildStory({ history: points, recent: recentScores, top: topScores,
@@ -268,26 +326,23 @@ var RhythiaX = RhythiaX || {};
     writeSummary(officialHistory, momentum);
     summaryCard.appendChild(summaryText);
 
-    // Most Played Mods Bar
+    // The mods on the top plays, as Rhythia's chips.
     const modsBar = document.createElement('div');
     modsBar.className = 'rhythiax-mods-bar';
-
     const modsLabel = document.createElement('span');
     modsLabel.className = 'rhythiax-mods-label';
-    modsLabel.textContent = 'Top-score mods';
+    modsLabel.textContent = 'Mods in top plays';
     modsBar.appendChild(modsLabel);
-
     if (mostPlayedMods.length > 0) {
       mostPlayedMods.forEach(m => {
         const chip = document.createElement('span');
         chip.className = 'rhythiax-mod-chip';
         const strong = document.createElement('strong');
         strong.textContent = m.label;
-        if (m.isSpeed && m.speedKey) {
-          strong.style.color = domain.SPEED_COLORS[m.speedKey] || 'inherit';
-        }
-        chip.appendChild(strong);
-        chip.append(` (${m.count} ${m.count === 1 ? 'map' : 'maps'})`);
+        if (m.isSpeed && m.speedKey) chip.style.setProperty('--chip-color', domain.SPEED_COLORS[m.speedKey] || 'currentColor');
+        const count = document.createElement('span');
+        count.textContent = m.count + (m.count === 1 ? ' map' : ' maps');
+        chip.append(strong, count);
         modsBar.appendChild(chip);
       });
     } else {
@@ -296,19 +351,33 @@ var RhythiaX = RhythiaX || {};
       none.textContent = 'None';
       modsBar.appendChild(none);
     }
+    summaryCard.appendChild(modsBar);
 
+    // Near this rank, in a few words: Exodus' Scores shows it in full (pages/profile-scores.js nearSection); here it
+    // is one row under the mods from the same answer of the history service (online history, top 5,000, Lock).
+    // vps-client keeps the answer and shares a request on its way, so a redraw asks nothing new.
     const showSummary = typeof RhythiaX.isModuleOptionEnabled === 'function'
       ? RhythiaX.isModuleOptionEnabled('advancedStats', 'scoutingSummary') !== false
       : true;
-
     if (showSummary) {
-      if (!variantB) summaryCard.appendChild(modsBar); // B: the Speed bar below shows the same
+      const nearRow = document.createElement('div');
+      nearRow.className = 'rhythiax-near-row';
+      nearRow.hidden = true;
+      summaryCard.appendChild(nearRow);
+      if (playerId && typeof RhythiaX.fetchVpsCompare === 'function') {
+        RhythiaX.fetchVpsCompare(playerId, 'lock', null).then(answer => {
+          const words = nearWords(answer);
+          if (!words || !nearRow.isConnected) return;
+          nearRow.innerHTML = `<span class="rhythiax-mods-label">Near this rank</span><p>${words}</p>`;
+          nearRow.hidden = false;
+          nearRow.classList.add('is-in');
+        }, () => {});
+      }
       root.appendChild(summaryCard);
+      animated.push(summaryCard);
     }
 
-    // ─────────────────────────────────────────────
-    // 3. PERFORMANCE BREAKDOWN & BEST MAPS
-    // ─────────────────────────────────────────────
+    // ── 3. Breakdown and best maps ──
     const showBreakdown = typeof RhythiaX.isModuleOptionEnabled === 'function'
       ? RhythiaX.isModuleOptionEnabled('advancedStats', 'performanceBreakdown') !== false
       : true;
@@ -316,179 +385,122 @@ var RhythiaX = RhythiaX || {};
       ? RhythiaX.isModuleOptionEnabled('advancedStats', 'bestMaps') !== false
       : true;
 
-    const breakdownPanel = document.createElement('section');
-    breakdownPanel.className = 'rhythiax-breakdown-panel';
-    breakdownPanel.setAttribute('aria-label', 'Performance Breakdown');
-    const breakdownHeader = document.createElement('div');
-    breakdownHeader.className = 'rhythiax-breakdown-header';
-    const breakdownTitle = document.createElement('span');
-    breakdownTitle.className = 'rhythiax-breakdown-title';
-    breakdownTitle.textContent = 'Performance Breakdown';
-    const breakdownHint = document.createElement('span');
-    breakdownHint.className = 'rhythiax-breakdown-hint';
-    breakdownHint.textContent = scores.length
-      ? scores.length + ' scores'
-      : 'No scores yet';
-    breakdownHeader.append(breakdownTitle, breakdownHint);
+    const breakdown = panel('rhythiax-breakdown-panel', 'breakdown', 'Breakdown', scores.length ? scores.length + ' top plays' : 'No scores yet');
+    const breakdownPanel = breakdown.box;
+    breakdownPanel.setAttribute('aria-label', 'Breakdown');
     const breakdownSections = document.createElement('div');
     breakdownSections.className = 'rhythiax-breakdown-sections';
-
-    function createBreakdownSection(label, keys, buckets, colors, suffix) {
-      const section = document.createElement('div');
-      section.className = 'rhythiax-breakdown-section';
-      const heading = document.createElement('h3');
-      heading.className = 'rhythiax-breakdown-sublabel';
-      heading.textContent = label;
-      const grid = document.createElement('div');
-      grid.className = 'rhythiax-breakdown-grid ' + (suffix ? 'is-speed' : 'is-grade');
-      keys.forEach(key => {
-        const count = buckets[key] || 0;
-        const share = scores.length ? count / scores.length * 100 : 0;
-        const shareText = share.toFixed(1).replace(/\.0$/, '') + '%';
-        const item = document.createElement('div');
-        item.className = 'rhythiax-breakdown-item' + (count ? '' : ' is-zero');
-        item.title = key + suffix + ': ' + count + (count === 1 ? ' score' : ' scores') + ' · ' + shareText;
-        item.style.setProperty('--breakdown-color', colors[key]);
-        const name = document.createElement('span');
-        name.className = 'rhythiax-breakdown-label';
-        name.textContent = key + suffix;
-        const amount = document.createElement('span');
-        amount.className = 'rhythiax-breakdown-count';
-        amount.textContent = String(count);
-        item.setAttribute('aria-label', item.title);
-        item.append(name, amount);
-        grid.appendChild(item);
-      });
-      section.append(heading, grid);
-      return section;
-    }
-    if (variantB) {
-      breakdownTitle.textContent = 'Breakdown';
-      breakdownHint.textContent = scores.length ? scores.length + ' top plays' : 'No scores yet';
-      breakdownSections.append(
-        stackedBar('Speed', domain.SPEED_KEYS, speedBuckets, domain.SPEED_COLORS, 'x', scores.length),
-        stackedBar('Grades', domain.GRADE_KEYS, gradeBuckets, domain.GRADE_COLORS, '', scores.length)
-      );
-    } else {
-      breakdownSections.append(
-        createBreakdownSection('Speed', domain.SPEED_KEYS, speedBuckets, domain.SPEED_COLORS, 'x'),
-        createBreakdownSection('Accuracy grades', domain.GRADE_KEYS, gradeBuckets, domain.GRADE_COLORS, '')
-      );
-    }
-    breakdownPanel.append(breakdownHeader, breakdownSections);
-    // With online history, the types of the maps in these plays from the history service, added once they arrive.
+    const group = (label, keys, buckets, colors, suffix) => breakdownGroup(label,
+      keys.map(key => ({ name: key + suffix, count: buckets[key] || 0, color: colors[key] })), scores.length);
+    breakdownSections.append(
+      group('Speed', domain.SPEED_KEYS, speedBuckets, domain.SPEED_COLORS, 'x'),
+      group('Grades', domain.GRADE_KEYS, gradeBuckets, domain.GRADE_COLORS, '')
+    );
+    breakdownPanel.appendChild(breakdownSections);
+    // The types of the maps in these plays, added once they arrive: from the history service, or without online
+    // history worked out in this browser when the player turned that on.
+    // They are asked for once the breakdown is on screen (the Playstyle tab may never be opened), and leaving the page
+    // stops the request, or without online history the reading of map files.
     const typesGen = ++mapTypesGen;
-    RhythiaX.fetchVpsMapKinds?.(scores.map(s => s.songId || s.beatmapHash), null).then(kinds => {
+    const askTypes = () => RhythiaX.fetchVpsMapKinds?.(scores.map(s => s.songId || s.beatmapHash), RhythiaX.beatmapPageSignal?.()).then(kinds => {
       if (typesGen !== mapTypesGen || !breakdownSections.isConnected || !kinds?.size) return;
-      const buckets = {};
+      const counts = {};
       let known = 0;
       scores.forEach(s => {
         const k = kinds.get(s.songId || s.beatmapHash);
-        if (!k || !MAP_TYPE_NAMES[k.kind]) return;
-        buckets[MAP_TYPE_NAMES[k.kind]] = (buckets[MAP_TYPE_NAMES[k.kind]] || 0) + 1;
+        if (!k || !MAP_TYPES.some(([id]) => id === k.kind)) return;
+        counts[k.kind] = (counts[k.kind] || 0) + 1;
         known++;
       });
       if (!known) return;
-      const keys = Object.values(MAP_TYPE_NAMES);
-      breakdownSections.append(variantB
-        ? stackedBar('Map types', keys, buckets, MAP_TYPE_COLORS, '', known)
-        : createBreakdownSection('Map types', keys, buckets, MAP_TYPE_COLORS, ''));
+      // Without online history the types may be worked out in this browser (shared/map-kinds-basic.js): approximate,
+      // and never Techs, so that row is left out.
+      const approx = [...kinds.values()].some(k => k?.approximate);
+      const section = breakdownGroup('Map types', MAP_TYPES.filter(([id]) => !(approx && id === 'tech')).map(([id, name, cls, color]) =>
+        ({ name, count: counts[id] || 0, color: `var(--rhythiax-kind, ${color})`, cls: 'rhythiax-k-' + cls })), known);
+      const note = Object.assign(document.createElement('small'), { textContent: known + ' of ' + scores.length + ' known' + (approx ? ' · approximate' : '') });
+      if (approx) note.title = 'Worked out in this browser from the map files, without online history. Online history tells Techs.';
+      section.querySelector('.rhythiax-breakdown-sublabel').append(note);
+      breakdownSections.appendChild(section);
+      comeIn([section]);
     }, () => {});
+    typesWatch?.disconnect();
+    typesWatch = null;
+    if (showBreakdown && scores.length) {
+      if (typeof IntersectionObserver !== 'function') askTypes();
+      else {
+        const watch = new IntersectionObserver(entries => {
+          if (!entries.some(e => e.isIntersecting)) return;
+          watch.disconnect();
+          if (typesWatch === watch) typesWatch = null;
+          if (typesGen === mapTypesGen && breakdownSections.isConnected) askTypes();
+        });
+        typesWatch = watch;
+        watch.observe(breakdownSections);
+      }
+    }
 
-    // Right Panel: Best Maps Box (3 Centered Records)
+    // Best maps: three rows like Rhythia's lists, with the map art as on the score cards (off when "Map art behind
+    // cards" is off).
     let bestMapsBox = null;
     if (showBestMaps) {
-      bestMapsBox = document.createElement('div');
-      bestMapsBox.className = 'rhythiax-best-maps-box';
-
-      const bestMapsHeader = document.createElement('div');
-      bestMapsHeader.className = 'rhythiax-best-maps-header';
-      bestMapsHeader.innerHTML = `
-        <span class="rhythiax-best-maps-title">Best maps</span>
-      `;
-      bestMapsBox.appendChild(bestMapsHeader);
-
-      const renderBestMapItem = (label, item) => {
+      bestMapsBox = panel('rhythiax-best-maps-box', 'maps', 'Best maps', '').box;
+      const list = document.createElement('div');
+      list.className = 'rhythiax-best-maps-list';
+      const showArt = RhythiaX.isCardBackgroundsEnabled?.() !== false;
+      const token = RhythiaX.navigationToken;
+      [['Best accuracy', bestMaps.bestAccuracy], ['Most RP', bestMaps.topRp], ['Most notes', bestMaps.mostNotes]].forEach(([label, item]) => {
         const row = document.createElement('div');
         row.className = 'rhythiax-best-map-item';
-        if (!item) {
-          row.innerHTML = `
-            <div class="rhythiax-best-map-left">
-              <span class="rhythiax-best-map-kind">${label}</span>
-              <span class="rhythiax-best-map-name">—</span>
-            </div>
-            <span class="rhythiax-best-map-pill accuracy">—</span>
-          `;
-          return row;
-        }
-
+        const art = document.createElement('span');
+        art.className = 'rhythiax-best-map-art';
         const left = document.createElement('div');
         left.className = 'rhythiax-best-map-left';
-
         const kind = document.createElement('span');
         kind.className = 'rhythiax-best-map-kind';
         kind.textContent = label;
-
         const name = document.createElement('span');
         name.className = 'rhythiax-best-map-name';
-        name.textContent = item.name;
-        name.title = item.name; // Full tooltip on hover
-
+        name.textContent = item ? item.name : '—';
+        if (item) name.title = item.name;
         left.append(kind, name);
-
+        const [main, speed] = item ? String(item.pill).split(' • ') : ['—', ''];
         const pill = document.createElement('span');
-        pill.className = `rhythiax-best-map-pill ${item.kind || 'accuracy'}`;
-        pill.textContent = item.pill;
-
-        row.append(left, pill);
-        return row;
-      };
-
-      if (variantB) {
-        // Map art as on the score cards; off when "Map art behind cards" is off.
-        bestMapsBox.classList.add('rhythiax-ps2-maps');
-        const showArt = RhythiaX.isCardBackgroundsEnabled?.() !== false;
-        const token = RhythiaX.navigationToken;
-        [['Best accuracy', bestMaps.bestAccuracy], ['Most RP', bestMaps.topRp], ['Most notes', bestMaps.mostNotes]].forEach(([label, item]) => {
-          const row = renderBestMapItem(label, item);
-          const art = document.createElement('span');
-          art.className = 'rhythiax-ps2-art';
-          row.prepend(art);
-          const key = item?.score && (item.score.beatmapId || item.score.beatmapHash || item.score.songId);
-          if (showArt && key && RhythiaX.resolveBeatmapMeta) {
-            RhythiaX.resolveBeatmapMeta(key, { signal: RhythiaX.beatmapPageSignal?.() }).then(meta => {
-              if (!meta?.previewUrl || !art.isConnected || token !== RhythiaX.navigationToken) return;
-              const img = document.createElement('img');
-              img.alt = '';
-              img.loading = 'lazy';
-              img.src = meta.previewUrl;
-              art.appendChild(img);
-            }).catch(() => {});
-          }
-          bestMapsBox.appendChild(row);
-        });
-      } else {
-        bestMapsBox.appendChild(renderBestMapItem('Best Accuracy', bestMaps.bestAccuracy));
-        bestMapsBox.appendChild(renderBestMapItem('Top RP Play', bestMaps.topRp));
-        bestMapsBox.appendChild(renderBestMapItem('Most Notes Map', bestMaps.mostNotes));
-      }
+        pill.className = `rhythiax-best-map-pill ${item?.kind || 'accuracy'}`;
+        const value = document.createElement('b');
+        value.textContent = main;
+        pill.appendChild(value);
+        if (speed) pill.append(Object.assign(document.createElement('small'), { textContent: speed }));
+        row.append(art, left, pill);
+        const key = item?.score && (item.score.beatmapId || item.score.beatmapHash || item.score.songId);
+        if (showArt && key && RhythiaX.resolveBeatmapMeta) {
+          RhythiaX.resolveBeatmapMeta(key, { signal: RhythiaX.beatmapPageSignal?.() }).then(meta => {
+            if (!meta?.previewUrl || !art.isConnected || token !== RhythiaX.navigationToken) return;
+            const img = document.createElement('img');
+            img.alt = '';
+            img.loading = 'lazy';
+            img.src = meta.previewUrl;
+            art.appendChild(img);
+          }).catch(() => {});
+        }
+        list.appendChild(row);
+      });
+      bestMapsBox.appendChild(list);
     }
 
     if (showBreakdown || showBestMaps) {
       const bottomRow = document.createElement('div');
       bottomRow.className = 'rhythiax-bottom-row';
       if (!showBreakdown || !showBestMaps) bottomRow.classList.add('is-single-column');
-      if (showBreakdown) bottomRow.appendChild(breakdownPanel);
-      if (showBestMaps && bestMapsBox) bottomRow.appendChild(bestMapsBox);
+      if (showBreakdown) { bottomRow.appendChild(breakdownPanel); animated.push(breakdownPanel); }
+      if (showBestMaps && bestMapsBox) { bottomRow.appendChild(bestMapsBox); animated.push(bestMapsBox); }
       root.appendChild(bottomRow);
     }
 
-    // Mount to container cleanly
     container.replaceChildren(root);
+    comeIn(animated);
 
-    // ─────────────────────────────────────────────
-    // 4. ASYNC BACKGROUND REFINEMENT (HISTORY & MOMENTUM UP TO 30D)
-    // ─────────────────────────────────────────────
+    // ── 4. History, once it loads: momentum and the accuracy trend over up to 30 days ──
     if (playerId) {
       const historyRevision = loader.getRevision?.();
       const applyHistoryPoints = points => {
@@ -505,22 +517,20 @@ var RhythiaX = RhythiaX || {};
 
         const refinedMomentum = scout.evaluateMomentum(resolvedRank, resolvedPoints, Date.now(), player.rp, momentumActivity);
         const refinedAcc = scout.evaluateAccuracyTrend(scores, resolvedPoints);
-        const rb = variantB ? valuesB({ scores, speedSummary, momentum: refinedMomentum, accTrend: refinedAcc, fcStats }) : null;
+        const rb = values({ scores, speedSummary, momentum: refinedMomentum, accTrend: refinedAcc, fcStats });
         cardMomentum.val.textContent = refinedMomentum.label;
-        cardMomentum.sb.textContent = rb ? rb.momentum : refinedMomentum.sub;
+        cardMomentum.sb.textContent = rb.momentum;
         setTone(cardMomentum.card, refinedMomentum.status);
 
-        cardAcc.val.textContent = rb ? rb.accuracy[0] : refinedAcc.formatted;
-        cardAcc.sb.textContent = rb ? rb.accuracy[1] : refinedAcc.sub;
+        cardAcc.val.textContent = rb.accuracy[0];
+        cardAcc.sb.textContent = rb.accuracy[1];
         setTone(cardAcc.card, trendTone(refinedAcc.delta));
 
-        // Update Badge
         statusBadge.className = `rhythiax-status-badge ${refinedMomentum.status}`;
         statusBadge.innerHTML = `<span class="rhythiax-badge-icon">${getStatusSvg(refinedMomentum.iconType)}</span><span>${refinedMomentum.badge}</span>`;
         momentumNote.textContent = refinedMomentum.context;
         momentumNote.hidden = !refinedMomentum.context;
 
-        // Update Summary Text
         accTrend = refinedAcc;
         writeSummary(resolvedPoints, refinedMomentum);
       };

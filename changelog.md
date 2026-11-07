@@ -3,6 +3,101 @@
 All notable user-facing changes are documented in this file.
 
 ---
+version: 1.5.0
+date: 2026-11-07
+title: Common Ground
+listed: yes
+---
+
+## 1.5.0 - Common Ground - 2026-11-07
+
+## Added
+
+- Map types without online history: An option in the popup's Data tab works out map types in this browser from Rhythia's map files: Jumps, Streams, Varied and Quantum, marked approximate. Techs and How this map plays still come with online history.
+
+## Changed
+
+- Online history text: The popup, the online history cards, the Turn on buttons and the policies say plainly what goes to the service: public player and map IDs, Reimagined Search filters and a random number for this copy of Reimagined. The privacy policies are shorter and start with an In short part.
+
+## Improved
+
+- Map types: A type one look already got is shown by the other without asking again.
+- Online history limits: When map types or Reimagined Search reach the service's limit, only they wait; player history goes on.
+- Load a file: A settings file is saved in one go, so open Rhythia tabs update once instead of once for each setting in the file.
+
+## Fixed
+
+- Titles: A player with exactly 10,000 RP is a Master, as on Rhythia; both looks showed Candidate Grandmaster.
+- Reimagined Search: Its note now says Rhythia's Ranked and Qualified lists are checked every hour; it said once a day.
+- Popup in a tab: In Firefox, the popup that opens in a tab for Load a file can make the first choice of where history comes from and repair damaged history; both failed there and asked to try again.
+
+# Exodus
+
+## Featured
+
+- Title panel: Redone, in three looks to choose from in the popup, each with a small picture: Road (the Rhythia square, the default), Ring or Track. What the next title or Grandmaster needs is shown large, the way there fills up when the panel first shows, and clicking a title shows when it was reached and how the RP went. Candidate Grandmasters and Grandmasters see the top 30, with what #30, #31 or the place above has.
+- Map page as on Rhythia: Reply to a comment, like or dislike a map with the share of likes, and Friends only on the leaderboard when you are signed in.
+- Account notices: Excluded, restricted, silenced and inactive accounts show Rhythia's notice (an inactive one with the last score), with Inactive or Excluded in place of the rank; Near your rank and the title give the same reason instead of asking for the top 5,000.
+
+## Added
+
+- Upload your map: The map list has Upload your map, as on Rhythia's own page, when you are signed in.
+- Most liked: The map list can be put in order by most liked, as on Rhythia.
+- Inactive players: With Include inactive, the leaderboard marks inactive players Inactive.
+- Title memory: A profile you saw before opens where it was last time and moves only by what changed since: RP won or lost, and each title won or lost turns over.
+
+## Changed
+
+- Order arrow: In the map list and Reimagined Search, the order's direction is an arrow on the chosen order, and choosing that order again reverses it, so the row fits on one line.
+- Comments: Follow Rhythia's limits of 256 characters and 6 lines, with a counter under the box.
+- Map types: Come from online history. Techs are told apart better, off-grid maps included, and fewer jumps are taken for spins; saved map types are worked out again. On This device, Exodus reads map files only with Map types without online history turned on; otherwise Playstyle, Scores and Compare show no map types, and the map and score pages offer to turn on online history instead of How this map plays and What the map asks.
+- How this map plays: On map pages, and as What the map asks on score pages, it comes from Reimagined's history service. A map it has not read yet is read within a day.
+
+## Improved
+
+- Menus: Scores, Compare and the showcase picker use menus in the Exodus look instead of the browser's own lists. On Scores each choice shows how many plays it leaves, and each Nearby choice has a short note.
+
+## Fixed
+
+- Speed buttons: The preview and replay speed buttons are back under Rhythia's player on map and score pages; an update of Rhythia's site had hidden them.
+- Comment replies: Replies are shown under their comment; they showed as separate comments.
+- Open tabs after an update: After Reimagined is updated or reloaded, a Rhythia tab that was already open loads the next page in full; before, its pages said online history was off.
+- Slow history: A player's online history that answers slowly is shown once it arrives; before, it was given up after a few seconds and the days showed as Not tracked.
+- Score page: What the map asks no longer waits for the player's history.
+- Auto Restart: Its mod picture shows on map, score and clan pages; it was missing.
+- Reimagined Search: After Turn on online history, it no longer says for a moment that the history service did not answer.
+- Saved map pages: When Rhythia does not answer and the saved page is shown, its comments and How this map plays still load; they kept loading.
+- Saved score pages: When Rhythia does not answer and the saved page is shown, What the map asks still loads, and The day of this play no longer asks to turn on online history when it is on.
+- Map comments: When they cannot load, the map page says so instead of No comments yet.
+- Own themes: With a picture, text on Reimagined Search's note and, in Lines, on the inventory and the place number on top plays is drawn plain on its own background; it had a soft shadow.
+
+# Classic
+
+## Featured
+
+- Scores page: A player's scores page (Score report) shows Reimagined's Scores list in place of Rhythia's, with an order row (date, accuracy, RP or difficulty; the same order again turns it round), filters for grade, mods, speed and map type in a panel like Rhythia's Advanced Filters, and with online history each play's map type and, in Top, how many of the players ranked near this one it beats, with a Nearby order and filter. Rhythia's chart and Lock, Spin and VR stay; the profile keeps its plain list.
+- Statistics in Rhythia's look: With the Tables layout chosen in the popup, Progress and Rank history are lists like Rhythia's: the last 7 days, weeks or months (with the year), what each period changed first with where it ended under it, months that open into weeks and weeks into days, quiet days folded into one row, and Show older. Playstyle is laid out like Rhythia's own sections: four values in plain words, the summary with the mods of the top plays, speed, grades and map types as bars with counts, and the best maps as rows with their art.
+- Title progression: A track like Exodus' Track instead of the map: Rhythia's title art along one line that fills with each title's colour, a dot at the player's place, what the next title or Grandmaster needs, and past 10,000 RP the top 30. A profile you saw before moves only by what changed since.
+
+## Added
+
+- Map page: With online history, the map type next to Rhythia's status (Jumps, Streams, Techs, Varied, Quantum), and How this map plays with the share of jumps, streams and techs and how dense the map is.
+- Near this rank: With online history, Playstyle says in a few words how the top plays stand against the players ranked just above and below, as Exodus' Near your rank.
+- Compare neighbours: With one player added, the tray suggests the two players ranked just above and the two just below.
+
+## Changed
+
+- History periods: In the Tables layout, 30 Days is gone from Progress and Rank history, and the last choice of Last 7 days, Weeks or Months is kept.
+- Playstyle values: Full combos instead of an FC ratio and, in the Tables layout, the accuracy change in %.
+- Title option: The popup's Progression map is now Progress bar.
+
+## Fixed
+
+- Scores page: Weighted RP, hits and dates are right again; after an update of Rhythia's site every play showed 0 weighted and 0 hits, and some dates were wrong.
+- Compare: Map Difficulty and the shared maps show the maps' star rating; they showed Rhythia's difficulty step, around 5.
+- Switching from Exodus: A Rhythia page that opened just as Exodus was switched off no longer runs Classic twice.
+
+---
 version: 1.4.0
 date: 2026-10-29
 title: Within Reach

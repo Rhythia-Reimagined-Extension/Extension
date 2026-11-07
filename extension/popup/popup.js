@@ -21,7 +21,7 @@
   const EXODUS_CACHES = ['rhythiaxExodusHome', 'rhythiaxExodusBoard'];
   // Exodus keeps each saved profile, page and player history under its own key (exodus/core/data.js).
   const EXODUS_CACHE_PREFIXES = ['rhythiaxExodusSnap:', 'rhythiaxExodusHist:', 'rhythiaxExodusPage:'];
-  const STORE_KEYS = ['rhythiaxTheme', 'rhythiaxPopupSize', 'rhythiaxModules', 'rhythiaxModuleOptions',
+  const STORE_KEYS = ['rhythiaxTheme', 'rhythiaxPopupSize', 'rhythiaxMapKindsOffline', 'rhythiaxModules', 'rhythiaxModuleOptions',
     'rhythiaxDataSettings', 'rhythiax_connection_logs', 'rhythiaxExodus', 'rhythiaxExodusStyle', X.EXODUS_KEY, TH.LIST_KEY, TH.ACTIVE_KEY, CT.LIST_KEY, CT.ACTIVE_KEY];
 
   const root = document.getElementById('popupRoot');
@@ -166,57 +166,59 @@
     notifyActiveTabs({ type: 'rhythiax-history-settings' });
   }
 
-  // Open Classic tabs follow rhythiaxModules and rhythiaxModuleOptions through storage.onChanged
-  // (legacy/core/modules.js), so module and option changes send no message.
-  async function write(key, value) {
+  // The storage values one setting changes, worked out over vals (the popup's store, or Load a file's copy of
+  // storage), which takes them too. The history settings go through the background, and an own theme's style into
+  // the theme, in write().
+  function patchFor(vals, key, value) {
     const [head, a, b] = key.split('.');
-    if (key === 'theme') {
-      store.rhythiaxTheme = value;
-      // A built-in theme replaces an own theme of the look in use.
-      const key = OWN().ACTIVE_KEY;
-      if (store[key]) store[key] = '';
-      await chrome.storage.local.set({ rhythiaxTheme: value, [key]: '' });
-      notifyActiveTabs({ type: 'rhythiax-theme', theme: value });
-      notifyActiveTabs({ type: 'rhythiax-theme-changed', theme: value });
-    } else if (key === 'popupSize') {
-      store.rhythiaxPopupSize = value;
-      await chrome.storage.local.set({ rhythiaxPopupSize: value });
-    } else if (key === 'look') {
-      store.rhythiaxExodus = value === 'exodus';
-      await chrome.storage.local.set({ rhythiaxExodus: store.rhythiaxExodus });
-    } else if (key === 'exodus.style') {
-      // With an own theme in use the style is the theme's own, the one its editor shows, so it is written there.
-      const own = TH.active(store);
-      if (own) {
-        const got = await chrome.storage.local.get([TH.LIST_KEY]);
-        const list = TH.list(got).map(t => (t.id === own.id ? { ...t, style: value } : t));
-        store[TH.LIST_KEY] = list;
-        await chrome.storage.local.set({ [TH.LIST_KEY]: list });
-      } else {
-        store.rhythiaxExodusStyle = value;
-        await chrome.storage.local.set({ rhythiaxExodusStyle: value });
-      }
-    } else if (head === 'modules') {
-      const modules = { ...(store.rhythiaxModules || {}) };
+    let next = null;
+    // A built-in theme replaces an own theme of the look in use.
+    if (key === 'theme') next = { rhythiaxTheme: value, [OWN().ACTIVE_KEY]: '' };
+    else if (key === 'popupSize') next = { rhythiaxPopupSize: value };
+    else if (key === 'mapKindsOffline') next = { rhythiaxMapKindsOffline: value === true };
+    else if (key === 'look') next = { rhythiaxExodus: value === 'exodus' };
+    else if (key === 'exodus.style') next = { rhythiaxExodusStyle: value };
+    else if (head === 'modules') {
+      const modules = { ...(vals.rhythiaxModules || {}) };
       if (a === 'statHistory') { modules.statHistory = value; modules.rankingHistory = value; } else modules[a] = value;
-      store.rhythiaxModules = modules;
-      await chrome.storage.local.set({ rhythiaxModules: modules });
+      next = { rhythiaxModules: modules };
     } else if (head === 'options') {
-      const options = JSON.parse(JSON.stringify(store.rhythiaxModuleOptions || {}));
+      const options = JSON.parse(JSON.stringify(vals.rhythiaxModuleOptions || {}));
       const mod = options[a] = options[a] || {};
       if (a === 'scoreCards' && b === 'modDisplay') { mod.showModIcons = value === 'icons'; mod.showModText = value !== 'icons'; }
       else if (a === 'appearance' && b === 'dateFormat') { mod.dateFormat = value; options.scoreCards = { ...(options.scoreCards || {}), dateFormat: value }; }
       else mod[b] = value;
       if (a === 'advancedStats') { delete mod.performanceFilters; delete mod.playstyleDeck; }
-      store.rhythiaxModuleOptions = options;
-      await chrome.storage.local.set({ rhythiaxModuleOptions: options });
-    } else if (head === 'data') {
+      next = { rhythiaxModuleOptions: options };
+    } else if (head === 'exodus') next = { [X.EXODUS_KEY]: { ...(vals[X.EXODUS_KEY] || {}), [a]: value } };
+    if (next) Object.assign(vals, next);
+    return next;
+  }
+
+  // Open Classic tabs follow rhythiaxModules and rhythiaxModuleOptions through storage.onChanged
+  // (legacy/core/modules.js), so module and option changes send no message.
+  async function write(key, value) {
+    const [head, a] = key.split('.');
+    if (head === 'data') {
       if (a === 'syncMode' && !hasCommunityConsent()) await chooseCommunity(value);
       else await persistDataPatch({ [a]: value });
-    } else if (head === 'exodus') {
-      const opts = { ...(store[X.EXODUS_KEY] || {}), [a]: value };
-      store[X.EXODUS_KEY] = opts;
-      await chrome.storage.local.set({ [X.EXODUS_KEY]: opts });
+      return;
+    }
+    // With an own theme in use the style is the theme's own, the one its editor shows, so it is written there.
+    const own = key === 'exodus.style' && TH.active(store);
+    if (own) {
+      const got = await chrome.storage.local.get([TH.LIST_KEY]);
+      const list = TH.list(got).map(t => (t.id === own.id ? { ...t, style: value } : t));
+      store[TH.LIST_KEY] = list;
+      await chrome.storage.local.set({ [TH.LIST_KEY]: list });
+      return;
+    }
+    const next = patchFor(store, key, value);
+    if (!next) return;
+    await chrome.storage.local.set(next);
+    if (key === 'theme') {
+      notifyActiveTabs({ type: 'rhythiax-theme', theme: value });
+      notifyActiveTabs({ type: 'rhythiax-theme-changed', theme: value });
     }
   }
 
@@ -300,6 +302,20 @@
       + R(1, 23, 61, 20, 'panel', 3) + R(4, 25.5, 11, 1.8, 't') + rows([4, 12, 20, 28, 36, 44, 52], x => R(x, 29.5, 6.5, 5.5, x === 28 ? 'hot' : x === 36 ? 'hot2' : 'cell', 1) + R(x, 36.5, 6.5, 5.5, 'cell', 1))
       + R(65, 23, 30, 20, 'panel', 3) + R(68, 26, 16, 2.2, 't') + R(68, 31.5, 8, 1.2, 'm') + R(68, 34, 10, 2, 't') + R(81, 31.5, 8, 1.2, 'm') + R(81, 34, 10, 2, 't'),
   };
+  // Exodus' Title look: the way to Grandmaster in the title colours, filled as far as a Candidate Grandmaster.
+  const LEG = [[0, 11.7, '#7ED54F'], [11.7, 19.5, '#04A0B6'], [19.5, 39, '#C26F38'], [39, 78, '#B6463A'], [78, 85, '#A35BC0']];
+  const loopArt = shape => LEG.map(([a, b, c]) => shape(`fill="none" stroke="${c}" stroke-width="3.2" stroke-dasharray="${b - a - 0.6} 100" stroke-dashoffset="${-a}"`)).join('');
+  const goalLines = R(48, 9, 22, 2.8, 't') + R(48, 14, 15, 1.6, 'm') + R(48, 22, 11, 1.3, 'm') + R(48, 25.5, 19, 3.4, 'a') + R(48, 33.5, 40, 1.4, 'm');
+  ART.tRoad = `<g transform="rotate(-16 23 22)"><rect x="9" y="8" width="28" height="28" rx="9" pathLength="100" class="tbed"/>${loopArt(a => `<rect x="9" y="8" width="28" height="28" rx="9" pathLength="100" ${a}/>`)}</g>`
+    + R(19.5, 18.5, 7, 7, 'tag', 2) + goalLines;
+  ART.tRing = `<g transform="rotate(-90 23 22)"><circle cx="23" cy="22" r="14" pathLength="100" class="tbed"/>${loopArt(a => `<circle cx="23" cy="22" r="14" pathLength="100" ${a}/>`)}</g>`
+    + R(19.5, 18.5, 7, 7, 'tag', 2) + goalLines;
+  ART.tTrack = R(4, 5, 6, 6, 'tag', 1.5) + R(13, 5.4, 18, 2.6, 't') + R(13, 9.2, 12, 1.4, 'm') + R(70, 4.6, 12, 1.3, 'm') + R(70, 7.6, 22, 3.2, 'a')
+    + LEG.map(([a, b, c], k) => { const x0 = 4 + a * 0.88, x1 = 4 + b * 0.88; return `<rect x="${x0}" y="28" width="${(4 + LEG[k][1] * 0.88) - x0 - 0.6}" height="2.6" rx="1.3" class="tbedr"/>`
+      + `<rect x="${x0}" y="28" width="${Math.max(0, x1 - x0 - 0.6)}" height="2.6" rx="1.3" fill="${c}"/>`
+      + `<line x1="${x0 + (k ? 0 : 2)}" y1="21.5" x2="${x0 + (k ? 0 : 2)}" y2="26.5" class="tstem"/><circle cx="${x0 + (k ? 0 : 2)}" cy="19" r="2.3" fill="${c}"/>`; }).join('')
+    + `<rect x="${4 + 85 * 0.88}" y="28" width="${100 * 0.88 - 85 * 0.88}" height="2.6" rx="1.3" class="tbedr"/><line x1="90" y1="21.5" x2="90" y2="26.5" class="tstem"/><circle cx="90" cy="19" r="2.3" class="tnode"/>`
+    + `<circle cx="${4 + 85 * 0.88}" cy="29.3" r="2.2" fill="#fff" stroke="#A35BC0" stroke-width="1"/>` + R(32, 37, 32, 1.4, 'm');
   const drawing = k => ART[k] ? `<svg class="art-svg" viewBox="0 0 96 44" aria-hidden="true">${ART[k]}</svg>` : '';
 
   // ─── Rendering ───
@@ -650,7 +666,7 @@
   // through the same checks as the popup's own controls and the theme editors (shared/*-themes.js normalize), so a
   // file can only hold values the extension could have saved itself; history and the online history choice are left out.
   const BACKUP = 'Reimagined for Rhythia';
-  const BACKUP_KEYS = ['rhythiaxTheme', 'rhythiaxPopupSize', 'rhythiaxModules', 'rhythiaxModuleOptions', 'rhythiaxExodus', 'rhythiaxExodusStyle',
+  const BACKUP_KEYS = ['rhythiaxTheme', 'rhythiaxPopupSize', 'rhythiaxMapKindsOffline', 'rhythiaxModules', 'rhythiaxModuleOptions', 'rhythiaxExodus', 'rhythiaxExodusStyle',
     X.EXODUS_KEY, TH.LIST_KEY, TH.ACTIVE_KEY, CT.LIST_KEY, CT.ACTIVE_KEY];
   const imageKeys = got => [...TH.list(got).filter(t => t.image).map(t => TH.imageKey(t.id)), ...CT.list(got).map(t => CT.imageKey(t.id))];
 
@@ -703,24 +719,24 @@
     if (!confirm('Load the settings and themes from this file?\n\nYour settings are replaced, and the own themes in it are added to yours. History and your online history choice stay as they are.')) return;
     const src = data.settings, images = data.images && typeof data.images === 'object' ? data.images : {};
     try {
-      // Own themes in use are put aside in both looks first, so the file's style is not written into one of them;
-      // the file may choose them again below.
-      await chrome.storage.local.set({ [TH.ACTIVE_KEY]: '', [CT.ACTIVE_KEY]: '' });
-      store[TH.ACTIVE_KEY] = ''; store[CT.ACTIVE_KEY] = '';
+      // Everything the file changes is worked out first and saved in one write, so open tabs redraw once, not for
+      // each setting. Own themes in use are put aside in both looks, so the file's style is not written into one of
+      // them; the file may choose them again below.
+      const set = { [TH.ACTIVE_KEY]: '', [CT.ACTIVE_KEY]: '' };
+      const vals = { ...(await chrome.storage.local.get(BACKUP_KEYS)), ...set };
+      const add = next => { if (next) Object.assign(set, next); };
       // The built-in theme first: choosing it clears an own theme in use, which the file may set again below.
       const order = [];
       X.walk(X.SETTINGS, s => { if ('default' in s && !s.key.startsWith('data.')) order.push(s); });
       order.sort((a, b) => (b.key === 'theme') - (a.key === 'theme'));
       for (const s of order) {
         const v = allowed(s, X.read(src, s.key));
-        if (v !== undefined) await write(s.key, v);
+        if (v !== undefined) add(patchFor(vals, s.key, v));
       }
-      if (typeof src.rhythiaxExodus === 'boolean') await write('look', src.rhythiaxExodus ? 'exodus' : 'classic');
+      if (typeof src.rhythiaxExodus === 'boolean') add(patchFor(vals, 'look', src.rhythiaxExodus ? 'exodus' : 'classic'));
       // Own themes from the file join the ones here (the ones here win for the same id), up to each look's limit.
-      const cur = await chrome.storage.local.get([TH.LIST_KEY, CT.LIST_KEY]);
-      const set = {};
       for (const M of [TH, CT]) {
-        const mine = M.list(cur), ids = new Set(mine.map(t => t.id));
+        const mine = M.list(vals), ids = new Set(mine.map(t => t.id));
         const added = M.list(src).filter(t => !ids.has(t.id)).slice(0, Math.max(0, M.MAX_THEMES - mine.length));
         set[M.LIST_KEY] = [...mine, ...added];
         for (const t of added) { const k = M.imageKey(t.id); if (RhythiaX.Colour.imageOk(images[k])) set[k] = images[k]; }
@@ -787,7 +803,7 @@
       modules.rankingHistory = modules.statHistory;
       Object.assign(options.scoreCards, { showModIcons: true, showModText: false, dateFormat: options.appearance.dateFormat });
       await chrome.storage.local.set({
-        rhythiaxModules: modules, rhythiaxModuleOptions: options, rhythiaxTheme: 'reimagined', rhythiaxPopupSize: 'default',
+        rhythiaxModules: modules, rhythiaxModuleOptions: options, rhythiaxTheme: 'reimagined', rhythiaxPopupSize: 'default', rhythiaxMapKindsOffline: false,
         // Own themes stay saved (they are the player's work, not settings); none of them stays in use.
         [TH.ACTIVE_KEY]: '', [CT.ACTIVE_KEY]: '',
         rhythiaxExodus: false, rhythiaxExodusStyle: 'lines', [X.EXODUS_KEY]: { ...X.EXODUS_DEFAULTS, pages: [...X.EXODUS_DEFAULTS.pages] },

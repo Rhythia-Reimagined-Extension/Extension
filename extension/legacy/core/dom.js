@@ -93,17 +93,6 @@ RhythiaX.findReplayLink = function (card) {
   });
 };
 
-RhythiaX.findExpandedPanel = function (card) {
-  const grid = card.querySelector('.grid.grid-cols-3, [class*="grid-cols-3"], [class*="grid-cols-6"]');
-  if (grid) {
-    const text = grid.textContent;
-    if (text.includes('Mods') && (text.includes('Misses') || text.includes('Notes')) && text.includes('Accuracy')) {
-      return grid.parentElement;
-    }
-  }
-  return null;
-};
-
 RhythiaX.findOfficialStatsContainer = function () {
   // Find the official Statistics/Stats box
   const order1 = RhythiaX.qs('.order-1');

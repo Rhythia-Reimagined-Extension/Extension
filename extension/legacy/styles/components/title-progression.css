@@ -4,17 +4,7 @@
 
 :root {
   --r-map-bg: radial-gradient(ellipse at 50% 30%, #161226 0%, #0c0a14 100%);
-  --r-map-grid: rgba(255, 255, 255, 0.05);
-  --r-track-base: rgba(255, 255, 255, 0.12);
   --r-node-bg: rgba(18, 15, 28, 0.95);
-  --r-pin-bg: rgba(18, 15, 28, 0.96);
-  --r-pin-stem: rgba(255, 255, 255, 0.5);
-  --gm-white: #ffffff;
-  --gm-white-border: #f8fafc;
-  --gm-white-glow: rgba(255, 255, 255, 0.65);
-  --silver-color: #cbd5e1;
-  --silver-border: #e2e8f0;
-  --silver-text: #f1f5f9;
 }
 
 /* Host Container */
@@ -128,106 +118,13 @@
   transform: scale(0.95);
 }
 
-/* ─── Map Arena ─────────────────────────────── */
+/* ─── Progress container (the track inside it) ─── */
 .rhythiax-title-map-container {
   width: 100%;
   border-radius: 10px;
   overflow: hidden;
   border: 1px solid var(--rhythiax-border, rgba(255, 255, 255, 0.07));
   background: var(--r-map-bg);
-}
-
-.rhythiax-title-map-arena {
-  position: relative;
-  width: 100%;
-  max-width: 960px;
-  height: 220px;
-  margin: 0 auto;
-  background: var(--r-map-bg);
-  overflow: hidden;
-}
-
-.rhythiax-map-bg-grid {
-  position: absolute;
-  inset: 0;
-  background-image: radial-gradient(var(--r-map-grid) 1px, transparent 1px);
-  background-size: 24px 24px;
-  pointer-events: none;
-}
-
-.rhythiax-map-svg {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  display: block;
-}
-
-/* ─── Map Waypoint Nodes & Badges ────────────── */
-.rhythiax-map-node-group {
-  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
-  cursor: default;
-}
-
-.rhythiax-map-node-group rect {
-  transition: all 0.2s ease;
-}
-
-/* Luminous Grandmaster emblem ONLY when unlocked */
-.rhythiax-map-node-group[data-tier="grandmaster"][data-unlocked="true"] image {
-  filter: brightness(0) invert(1) drop-shadow(0 0 6px rgba(255, 255, 255, 0.9));
-}
-
-body[data-rhythiax-theme="white"] .rhythiax-map-node-group[data-tier="grandmaster"][data-unlocked="true"] image {
-  filter: drop-shadow(0 0 3px rgba(0, 0, 0, 0.45));
-}
-
-/* Locked tier styling: no glow, muted dashed token box border, dimmed emblem */
-.rhythiax-map-node-group[data-unlocked="false"] rect {
-  stroke-dasharray: 4 3;
-  stroke: rgba(255, 255, 255, 0.16) !important;
-  filter: none !important;
-}
-
-.rhythiax-map-node-group[data-unlocked="false"] image {
-  filter: grayscale(0.7) opacity(0.32) !important;
-}
-
-.rhythiax-map-node-group[data-unlocked="false"] text {
-  opacity: 0.55;
-}
-
-/* ─── Footer Status Bar (Clean, centered Goal with modern sans typography) ─── */
-.rhythiax-title-progression-footer {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 10px 16px;
-  background: var(--rhythiax-surface, rgba(0, 0, 0, 0.22));
-  border-top: 1px solid var(--rhythiax-border, rgba(255, 255, 255, 0.05));
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Inter", "Helvetica Neue", sans-serif;
-  text-align: center;
-}
-
-.rhythiax-footer-goal-centered {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  color: var(--rhythiax-text-muted, #94a3b8);
-  font-size: 12.5px;
-  font-weight: 500;
-  letter-spacing: 0.01em;
-}
-
-
-
-.rhythiax-status-goal {
-  color: var(--rhythiax-text-strong, #f8fafc);
-  font-family: inherit;
-  font-weight: 700;
-  letter-spacing: 0.01em;
 }
 
 /* ─── History View Container (Seamless, no double/triple outer borders) ─── */
@@ -373,17 +270,7 @@ body[data-rhythiax-theme="white"] .rhythiax-map-node-group[data-tier="grandmaste
 /* ─── White Theme Overrides ─────────────────── */
 body[data-rhythiax-theme="white"] {
   --r-map-bg: #f8fafc;
-  --r-map-grid: rgba(0, 0, 0, 0.05);
-  --r-track-base: rgba(0, 0, 0, 0.12);
   --r-node-bg: #ffffff;
-  --r-pin-bg: #ffffff;
-  --r-pin-stem: #64748b;
-  --gm-white: #0f172a;
-  --gm-white-border: #475569;
-  --gm-white-glow: rgba(71, 85, 105, 0.25);
-  --silver-color: #475569;
-  --silver-border: #64748b;
-  --silver-text: #0f172a;
 }
 
 body[data-rhythiax-theme="white"] .rhythiax-title-map-container {
@@ -434,74 +321,10 @@ body[data-rhythiax-theme="white"] .rhythiax-pill-btn.active {
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
-body[data-rhythiax-theme="white"] .rhythiax-title-progression-footer {
-  background: #f8fafc;
-  border-top-color: #e2e8f0;
-}
-
-body[data-rhythiax-theme="white"] .rhythiax-status-title {
-  color: #0f172a;
-}
-
-body[data-rhythiax-theme="white"] .rhythiax-status-goal {
-  color: #0f172a;
-}
-
-/* White Theme Waypoints & Locked Ranks Visibility */
-body[data-rhythiax-theme="white"] .rhythiax-waypoint-name {
-  fill: #0f172a !important;
-}
-
-body[data-rhythiax-theme="white"] .rhythiax-waypoint-rp {
-  fill: #64748b !important;
-}
-
-body[data-rhythiax-theme="white"] .rhythiax-title-map-arena path[stroke-dasharray="6 6"] {
-  stroke: rgba(15, 23, 42, 0.16) !important;
-}
-
-body[data-rhythiax-theme="white"] .rhythiax-map-node-group[data-unlocked="false"] rect {
-  fill: #ffffff !important;
-  stroke: rgba(15, 23, 42, 0.28) !important;
-  stroke-dasharray: 4 3 !important;
-}
-
-body[data-rhythiax-theme="white"] .rhythiax-map-node-group[data-unlocked="false"] image {
-  filter: grayscale(1) opacity(0.35) !important;
-}
-
-body[data-rhythiax-theme="white"] .rhythiax-map-node-group[data-unlocked="false"] .rhythiax-waypoint-name {
-  fill: #475569 !important;
-  opacity: 0.8 !important;
-}
-
-body[data-rhythiax-theme="white"] .rhythiax-map-node-group[data-unlocked="false"] .rhythiax-waypoint-rp {
-  fill: #94a3b8 !important;
-  opacity: 0.8 !important;
-}
-
-/* White Theme Locked Grandmaster Stencil */
-body[data-rhythiax-theme="white"] .rhythiax-map-node-group[data-tier="grandmaster"][data-unlocked="false"] rect {
-  fill: #ffffff !important;
-  stroke: rgba(15, 23, 42, 0.28) !important;
-  stroke-dasharray: 4 3 !important;
-}
-
-body[data-rhythiax-theme="white"] .rhythiax-map-node-group[data-tier="grandmaster"][data-unlocked="false"] image {
-  filter: brightness(0) opacity(0.3) !important;
-}
-
-body[data-rhythiax-theme="white"] .rhythiax-map-pin-group polygon,
-body[data-rhythiax-theme="white"] .rhythiax-map-pin-group rect {
-  fill: #ffffff !important;
-}
-
 /* ─── Dark Theme Overrides ──────────────────── */
 body[data-rhythiax-theme="dark"] {
   --r-map-bg: #0f1013;
-  --r-map-grid: rgba(255, 255, 255, 0.04);
   --r-node-bg: #14161a;
-  --r-pin-bg: #14161a;
 }
 
 body[data-rhythiax-theme="dark"] .rhythiax-title-history-container {
@@ -515,15 +338,8 @@ body[data-rhythiax-theme="dark"] .rhythiax-history-chart-area {
 
 /* ─── Responsive Styles ─────────────────────── */
 @media (max-width: 640px) {
-  .rhythiax-title-map-arena {
-    height: 180px;
-  }
-
-  .rhythiax-title-progression-footer {
-    padding: 8px 12px;
-    font-size: 11px;
-  }
-
+  
+  
   .rhythiax-history-card-wrap {
     padding: 12px 14px 16px;
   }
@@ -550,3 +366,65 @@ body[data-rhythiax-theme="dark"] .rhythiax-history-chart-area {
 .rhythiax-hist-tooltip-badge::after { display: none; }
 .rhythiax-history-interactive-dot:focus { outline: none; stroke-width: 3; r: 6.5; }
 body[data-rhythiax-theme="white"] .rhythiax-hist-tooltip-badge { color: #0f172a; }
+
+/* ==========================================================================
+   The title bar (title-progression/view.js renderBar): Rhythia's own markup; these rules give its parts the
+   theme's colours. No glow on the fills.
+   ========================================================================== */
+/* The bar sits on the card as Rhythia's does: no frame of its own. */
+.rhythiax-title-map-container.rhythiax-title-bar-container { border: 0 !important; background: none !important; overflow: visible; padding: 0; }
+.rhythiax-tbar-slot { fill: rgba(255, 255, 255, .08); transition: fill .3s ease; }
+.rhythiax-tbar-slot.is-on { fill: var(--rhythiax-text-strong, #e5e5e5); }
+.rhythiax-tbar-em { color: var(--rhythiax-text-strong, #fff); font-weight: 700; }
+/* White's theme colours Rhythia's own Grandmaster ticks (themes/white/theme.css); the bar's own slots and crowns
+   keep their state over it. */
+body[data-rhythiax-theme="white"] .rhythiax-tbar svg rect.rhythiax-tbar-slot { fill: rgba(15, 23, 42, .1) !important; stroke: none !important; }
+body[data-rhythiax-theme="white"] .rhythiax-tbar svg rect.rhythiax-tbar-slot.is-on { fill: #334155 !important; }
+@media (prefers-reduced-motion: reduce) { .rhythiax-tbar-slot { transition: none; } }
+/* ─── The track (title-progression/view.js renderBar): Exodus' Track look in Rhythia's dress ─── */
+/* The card sits in Rhythia's View progression panel, which has no padding of its own. */
+.rhythiax-title-progression-component { box-sizing: border-box; padding: 16px 20px 20px; }
+.rhythiax-title-progression-header { margin-bottom: 14px; }
+.rhythiax-track { display: flex; flex-direction: column; gap: 6px; font-variant-numeric: tabular-nums; }
+.rhythiax-track-head { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+.rhythiax-track-icon { width: 48px; height: 48px; flex: none; object-fit: contain; }
+.rhythiax-track-who { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+.rhythiax-track-name { font-size: 18px; font-weight: 700; line-height: 1.2; }
+.rhythiax-track-sub { font-size: 12.5px; font-weight: 500; color: var(--rhythiax-text-muted, #94a3b8); }
+.rhythiax-track-rp { color: var(--rhythiax-text, #e5e7eb); font-weight: 600; }
+.rhythiax-track-gain { display: inline-block; max-width: 0; margin-left: 0; overflow: hidden; vertical-align: bottom; opacity: 0; color: var(--rhythiax-up); font-weight: 700; white-space: nowrap; transition: max-width .5s cubic-bezier(.22, 1, .36, 1), margin .5s cubic-bezier(.22, 1, .36, 1), opacity .5s ease; }
+.rhythiax-track-gain.is-on { max-width: 90px; margin-left: 6px; opacity: 1; }
+.rhythiax-track-gain.is-down { color: var(--rhythiax-down); }
+.rhythiax-track-goal { display: flex; flex-direction: column; align-items: flex-end; gap: 2px; margin-left: auto; text-align: right; }
+.rhythiax-track-k { font-size: 11px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--rhythiax-text-muted, #94a3b8); }
+.rhythiax-track-big { font-size: 22px; font-weight: 800; line-height: 1.15; letter-spacing: -.01em; transition: color .4s ease; }
+.rhythiax-track-sm { font-size: 12px; font-weight: 500; color: var(--rhythiax-text-muted, #94a3b8); }
+.rhythiax-track-svg { display: block; width: 100%; height: auto; margin-top: 4px; overflow: visible; }
+.rhythiax-track-bed { fill: color-mix(in srgb, var(--rhythiax-text-strong, #fff) 9%, transparent); }
+.rhythiax-track-stem { stroke: color-mix(in srgb, var(--rhythiax-text-strong, #fff) 14%, transparent); stroke-width: 1; }
+.rhythiax-track-dot { fill: #fff; stroke-width: 3.5; transition: opacity .3s ease; }
+.rhythiax-track-dot.is-hollow { fill: var(--rhythiax-surface, #111214); }
+.rhythiax-track-dot.is-gone { opacity: 0; }
+.rhythiax-track-node image.off { filter: grayscale(1); opacity: .35; }
+.rhythiax-track-lab { font-size: 12px; font-weight: 700; }
+.rhythiax-track-say { margin: 2px 0 0; text-align: center; font-size: 13px; line-height: 1.5; color: var(--rhythiax-text-muted, #94a3b8); }
+.rhythiax-track-t30 { display: flex; align-items: center; gap: 16px; margin-top: 10px; padding-top: 14px; border-top: 1px solid var(--rhythiax-border, rgba(255, 255, 255, .08)); }
+.rhythiax-track-t30 svg { flex: 1; min-width: 0; max-width: 620px; overflow: visible; }
+.rhythiax-track-t30 .rhythiax-tbar-slot.is-me { stroke: var(--rhythiax-text-strong, #fff); stroke-width: 1.5; }
+.rhythiax-track-crown { fill: color-mix(in srgb, var(--rhythiax-text-strong, #fff) 12%, transparent); }
+.rhythiax-track-crown.is-on.p1 { fill: #f5c542; }
+.rhythiax-track-crown.is-on.p2 { fill: #cfd6e0; }
+.rhythiax-track-crown.is-on.p3 { fill: #d08a4e; }
+.rhythiax-track-you { font-size: 11px; font-weight: 700; fill: var(--rhythiax-text-strong, #fff); }
+.rhythiax-track-you.is-out { font-size: 12px; fill: #8A4FA0; }
+.rhythiax-track-t30.is-lit .is-on, .rhythiax-track-t30.is-lit .rhythiax-track-you { animation: rhythiaxTrackLit .5s cubic-bezier(.22, 1, .36, 1) both; }
+@keyframes rhythiaxTrackLit { from { opacity: 0; } to { opacity: 1; } }
+.rhythiax-track.is-out .rhythiax-track-svg, .rhythiax-track.is-out .rhythiax-track-icon { filter: grayscale(1); opacity: .7; }
+[data-rhythiax-theme="white"] .rhythiax-track-dot { fill: #fff; }
+[data-rhythiax-theme="white"] .rhythiax-track-bed { fill: rgba(15, 23, 42, .08); }
+[data-rhythiax-theme="white"] .rhythiax-track-stem { stroke: rgba(15, 23, 42, .14); }
+@media (max-width: 640px) {
+  .rhythiax-title-progression-component { padding: 14px 14px 16px; }
+  .rhythiax-track-goal { margin-left: 0; align-items: flex-start; text-align: left; width: 100%; }
+}
+@media (prefers-reduced-motion: reduce) { .rhythiax-track-gain, .rhythiax-track-big { transition: none; } .rhythiax-track-t30.is-lit .is-on { animation: none; } }

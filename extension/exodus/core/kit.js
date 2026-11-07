@@ -16,7 +16,6 @@ RhythiaX.ExodusKit = (function () {
 
 const SITE = 'https://www.rhythia.com';
 const Data = () => RhythiaX.ExodusData;
-const Kit = () => RhythiaX.ExodusMapKit;
 const esc = v => String(v ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const fmt = (n, d = 0) => Number(n || 0).toLocaleString('en-US', {minimumFractionDigits: d, maximumFractionDigits: d});
 const pct = (n, d = 0) => `${fmt(n * 100, d)}%`;
@@ -40,16 +39,15 @@ const status = m => STATUS[m?.qualified && m.status !== 'RANKED' ? 'QUALIFIED' :
 // F for a play marked as failed, otherwise the letter for the accuracy and misses.
 const grade = (acc, misses, letter, failed) => RhythiaX.Grades.of({letter, accuracy: Number(acc), misses, failed});
 const GRADE_C = {SS: '#fbbf24', S: '#fcd34d', A: '#86efac', B: '#60a5fa', C: '#c084fc', D: '#b45309', F: '#f87171'};
-// Rhythia's titles (art in /titles/), lowest first: the RP each one needs, its colour, a shorter name where
-// space is tight. Grandmaster needs a place in the top 30 as well.
-const TITLES = [
-  {id:'novice', name:'Novice', rp:0, c:'#7ED54F'}, {id:'expert', name:'Expert', rp:1500, c:'#04A0B6'},
-  {id:'candidate_master', name:'Candidate Master', short:'Cand. Master', rp:2500, c:'#C26F38'}, {id:'master', name:'Master', rp:5000, c:'#B6463A'},
-  {id:'candidate_grandmaster', name:'Candidate Grandmaster', short:'Cand. GM', rp:10000, c:'#A35BC0'}, {id:'grandmaster', name:'Grandmaster', rp:10000, c:'#A3ABB9', top:30},
-];
-// The title Rhythia shows next to a name: Grandmaster for 10,000 RP and a place from 1 to 30, otherwise the
-// highest of the others the RP reaches (undefined for an RP below 0 or not a number).
-const titleOf = (rp, position) => (rp >= 10000 && position >= 1 && position <= 30 ? TITLES[5] : TITLES.slice(0, 5).filter(t => rp >= t.rp).pop());
+// Rhythia's titles (art in /titles/), lowest first, by the rule both looks share (shared/game-terms.js: the RP each
+// one starts at, Grandmaster for more than 10,000 RP and the top 30), with Exodus' colour for each and a shorter
+// name where space is tight.
+const TITLE_LOOK = {novice: {c:'#7ED54F'}, expert: {c:'#04A0B6'}, candidate_master: {short:'Cand. Master', c:'#C26F38'}, master: {c:'#B6463A'},
+  candidate_grandmaster: {short:'Cand. GM', c:'#A35BC0'}, grandmaster: {c:'#A3ABB9'}};
+const TITLES = RhythiaX.GameTerms.TITLES.map(t => ({...t, ...TITLE_LOOK[t.id]}));
+const titleIndex = RhythiaX.GameTerms.titleIndex;
+// The title Rhythia shows next to a name (undefined for an RP below 0 or not a number).
+const titleOf = (rp, position) => (rp >= 0 ? TITLES[titleIndex(rp, position)] : undefined);
 // Rhythia accepts social links to these sites only, over https.
 const SOCIAL_HOSTS = Object.freeze(['discord.com', 'discord.gg', 't.me', 'telegram.me', 'youtube.com', 'youtu.be', 'twitch.tv', 'x.com', 'twitter.com', 'github.com', 'instagram.com', 'tiktok.com', 'facebook.com', 'steamcommunity.com']);
 // A typed social link as it is saved: '' for a blank one, null when it is not an https link to one of
@@ -64,7 +62,7 @@ const socialLink = value => {
 };
 const MODES = {normal: ['Lock', 'lock.png'], spin: ['Spin', 'spincam.png'], vr: ['VR', 'vr.png']};
 // Rhythia's mod art (as on its score pages). Pitch lock has no art there and is left out as well.
-const MOD_ART = {mod_hardrock: ['hardrock', 'Hard Rock'], mod_nofail: ['nofail', 'No Fail'], mod_sudden_death: ['suddendeath', 'Sudden Death'], mod_auto_restart: ['aurorestart', 'Auto Restart'],
+const MOD_ART = {mod_hardrock: ['hardrock', 'Hard Rock'], mod_nofail: ['nofail', 'No Fail'], mod_sudden_death: ['suddendeath', 'Sudden Death'], mod_auto_restart: ['autorestart', 'Auto Restart'],
   mod_chaos: ['chaos', 'Chaos'], mod_360: ['360', '360'], mod_full_360: ['360', '360'], mod_vr: ['vr', 'Virtual Reality'], mod_spin: ['spin', 'Spin'], spin: ['spin', 'Spin'],
   mod_ghost: ['ghost', 'Ghost'], mod_mirror: ['mirrorx', 'Mirror X'], mod_mirror_y: ['mirrory', 'Mirror Y']};
 const SPEED_ART = {'0.75': 'minusminusminus', '0.80': 'minusminus', '0.87': 'minus', '1.15': 'plus', '1.25': 'plusplus', '1.35': 'plusplusplus', '1.45': 'plusplusplusplus'};
@@ -156,6 +154,97 @@ function countryPicker(R, {current, mine = () => '', pick, redraw, signal}) {
   return {html, open, get isOpen() { return st.open; }};
 }
 
+// ─── Menus in place of <select> (Scores filters, Compare, the skin picker) ───
+// One per mount for any number of menus. html(cfg) draws a menu: cfg {id, label (for screen readers), value,
+// options: [{value, label, hint, count, sec}], cls, on (marks a filter in use), none (the label for '')}; sec
+// starts a section with that heading, hint is a short line under the label, count a number on the right. The
+// button carries the id and the chosen value, so picking fires 'change' on it as a <select> would and the
+// page's own change handler reads e.target.id and e.target.value. An open menu stays open across a redraw.
+// Every part of a page asks for the same one (a shadow root has one, until its signal ends), so only one
+// menu is open at a time.
+const MENUS = new WeakMap();
+function menuSelect(R, {signal}) {
+  const had = MENUS.get(R);
+  if (had && !had.signal.aborted) return had.api;
+  const cfgs = new Map();
+  let openId = '', hi = -1;
+  const wrapOf = id => R.querySelector(`.mn[data-mn="${CSS.escape(id)}"]`);
+  const optsOf = id => [...(wrapOf(id)?.querySelectorAll('.mn-opt') || [])];
+  const labelOf = c => c.options.find(o => String(o.value) === String(c.value))?.label ?? c.none ?? '';
+  function pop(c) {
+    const items = c.options.map((o, i) => `${o.sec ? `<div class="mn-sec" role="presentation">${esc(o.sec)}</div>` : ''}<button type="button" role="option" class="mn-opt ${o.count === 0 ? 'zero' : ''}" data-i="${i}" aria-selected="${String(o.value) === String(c.value)}"><span class="mn-l"><b>${esc(o.label)}</b>${o.hint ? `<small>${esc(o.hint)}</small>` : ''}</span>${o.count != null ? `<span class="mn-n num">${fmt(o.count)}</span>` : ''}${String(o.value) === String(c.value) ? CHECK : '<i class="mn-ck"></i>'}</button>`).join('');
+    return `<div class="mn-pop" role="listbox" id="mn-pop-${esc(c.id)}" aria-label="${esc(c.label)}">${items}</div>`;
+  }
+  function html(c) {
+    cfgs.set(c.id, c);
+    const open = openId === c.id;
+    return `<div class="mn ${open ? 'open' : ''} ${c.cls || ''}" data-mn="${esc(c.id)}"><button type="button" class="field mn-btn ${c.on ? 'on' : ''}" id="${esc(c.id)}" value="${esc(c.value ?? '')}" aria-haspopup="listbox" aria-expanded="${open}" aria-label="${esc(c.label)}: ${esc(labelOf(c))}"><span>${esc(labelOf(c))}</span>${CHEVRON}</button>${open ? pop(c) : ''}</div>`;
+  }
+  function mark(i) {
+    const list = optsOf(openId);
+    if (!list.length) return;
+    hi = (i + list.length) % list.length;
+    list.forEach((b, k) => b.classList.toggle('on', k === hi));
+    list[hi].scrollIntoView({block: 'nearest'});
+  }
+  function close(focus) {
+    const id = openId, w = id && wrapOf(id);
+    openId = ''; hi = -1;
+    if (!w) return;
+    w.classList.remove('open'); w.querySelector('.mn-pop')?.remove();
+    const b = w.querySelector('.mn-btn'); b.setAttribute('aria-expanded', 'false');
+    if (focus) b.focus();
+  }
+  function open(id) {
+    if (openId) close(false);
+    const w = wrapOf(id), c = cfgs.get(id);
+    if (!w || !c) return;
+    openId = id;
+    w.classList.add('open'); w.querySelector('.mn-btn').setAttribute('aria-expanded', 'true');
+    w.insertAdjacentHTML('beforeend', pop(c));
+    // Near the right edge the list opens leftwards, so it stays on screen.
+    const p = w.querySelector('.mn-pop'), r = w.getBoundingClientRect();
+    p.classList.toggle('right', r.left + Math.max(p.offsetWidth, 260) > innerWidth - 12);
+    mark(Math.max(0, c.options.findIndex(o => String(o.value) === String(c.value))));
+  }
+  function choose(i) {
+    const id = openId, c = cfgs.get(id), o = c?.options[i];
+    close(true);
+    if (!o || String(o.value) === String(c.value)) return;
+    // The button shows the choice at once, for a page that does not draw the menu again after a change.
+    c.value = o.value;
+    const b = R.getElementById(id);
+    b.value = String(o.value);
+    b.querySelector('span').textContent = o.label;
+    b.setAttribute('aria-label', `${c.label}: ${o.label}`);
+    b.dispatchEvent(new Event('change', {bubbles: true}));
+  }
+  R.addEventListener('click', e => {
+    const opt = e.target.closest('.mn-opt');
+    if (opt) return choose(Number(opt.dataset.i));
+    const btn = e.target.closest('.mn-btn');
+    if (btn) { const id = btn.closest('.mn').dataset.mn; return openId === id ? close(true) : open(id); }
+    if (openId && !e.target.closest('.mn')) close(false);
+  }, {signal});
+  R.addEventListener('keydown', e => {
+    const btn = e.target.closest?.('.mn-btn');
+    if (!openId) { if (btn && (e.key === 'ArrowDown' || e.key === 'ArrowUp')) { e.preventDefault(); open(btn.closest('.mn').dataset.mn); } return; }
+    if (e.key === 'ArrowDown' || e.key === 'ArrowUp') { e.preventDefault(); return mark(hi + (e.key === 'ArrowDown' ? 1 : -1)); }
+    if (e.key === 'Home' || e.key === 'End') { e.preventDefault(); return mark(e.key === 'Home' ? 0 : -1); }
+    if (e.key === 'Enter' || e.key === ' ') { if (hi >= 0) { e.preventDefault(); choose(Number(optsOf(openId)[hi].dataset.i)); } return; }
+    if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); return close(true); }
+    if (e.key === 'Tab') return close(false);
+    // A letter moves to the next option that starts with it.
+    if (e.key.length === 1 && /\S/.test(e.key)) {
+      const list = optsOf(openId), k = e.key.toLowerCase();
+      for (let s = 1; s <= list.length; s++) { const j = (hi + s) % list.length; if (list[j].querySelector('b').textContent.trim().toLowerCase().startsWith(k)) return mark(j); }
+    }
+  }, {signal});
+  const api = {html, close: () => close(false), get openId() { return openId; }};
+  MENUS.set(R, {signal, api});
+  return api;
+}
+
 // A picture's address as a whole CSS url("…") token for a style attribute: escaped for a double-quoted
 // CSS string first (backslash, quote, line breaks and other control characters), then for the attribute,
 // so no address can close the string and add declarations of its own.
@@ -235,35 +324,65 @@ function watchDialog(path, reload) {
 // The slot Rhythia's player is laid over, with a note until it is there.
 const slot = (label = 'Loading Rhythia’s player…') => `<div class="v-dock" id="v-dock"><span class="cap">${label}</span></div>`;
 
-// What the map file says about the map: tags, the share of each kind, the density line.
-const KIND = {Jump: ['Jumps', 'Long moves across the grid, spins included'], Stream: ['Streams', 'Short moves at an even speed'], Tech: ['Techs', 'Short moves at a changing speed']};
-// Whole percentages that add up to 100: the parts left over by rounding go to the largest remainders.
-function wholes(parts) {
-  const total = parts.reduce((t, v) => t + v, 0) || 1, raw = parts.map(v => v / total * 100), out = raw.map(Math.floor);
-  raw.map((v, i) => [v - out[i], i]).sort((x, y) => y[0] - x[0]).slice(0, 100 - out.reduce((t, v) => t + v, 0)).forEach(([, i]) => out[i]++);
-  return out;
-}
-function playsHtml(a, speed = 1) {
-  if (!a) return '';
-  const s = a.share, tags = Kit().style(a), kinds = Object.keys(KIND).filter(k => s[k] > .005);
-  const p = Object.fromEntries(wholes(kinds.map(k => s[k])).map((v, i) => [kinds[i], `${v}%`]));
-  const bar = kinds.map(k => `<i class="k-${k.toLowerCase()}" style="flex:${s[k]}" data-tip="<b>${KIND[k][0]} · ${p[k]} of the notes</b><small>${KIND[k][1]}</small>"></i>`).join('');
+// How a map plays, as the history service answers it (ExodusData.mapPlays): tags, the share of each kind,
+// a few numbers; the map page adds the parts and the density line (pages/map.js). The names, tips and whole
+// percentages are the ones both looks use (shared/game-terms.js).
+const {MOVES: KIND, tagsOf, wholes} = RhythiaX.GameTerms;
+function playsHtml(p, speed = 1) {
+  if (!p) return '';
+  const c = p.plays || {}, sh = c.share || {stream: p.stream, jump: p.jump, tech: p.tech};
+  const s = {jump: Number(sh.jump) || 0, stream: Number(sh.stream) || 0, tech: Number(sh.tech) || 0}, kinds = Object.keys(KIND).filter(k => s[k] > .005);
+  // A map answered without its tags (the service's canary maps) shows its type and Quantum.
+  const tags = tagsOf(p);
+  const share = Object.fromEntries(wholes(kinds.map(k => s[k])).map((v, i) => [kinds[i], `${v}%`]));
+  const bar = kinds.map(k => `<i class="k-${k}" style="flex:${s[k]}" data-tip="<b>${KIND[k][0]} · ${share[k]} of the notes</b><small>${KIND[k][1]}</small>"></i>`).join('');
   const at = speed !== 1 ? ` at ${fmt(speed, 2)}×` : '';
   const facts = [
-    ['Notes per second' + at, fmt(a.avgNps * speed, 1), ''],
-    ['Busiest second' + at, `${fmt(a.peakNps * speed, 0)} notes`, 'Most notes in any one second'],
-    ['Fastest stream' + at, a.fastestStream ? `${fmt(a.fastestStream * speed, 1)} notes/s` : '—', ''],
-    ['Longest stream', a.longestStream ? `${fmt((a.longestStream.end - a.longestStream.start) / 1000 / speed, 1)} s` : '—', ''],
-    ['Off-grid notes', pct(a.offGrid), 'Notes away from the 3×3 grid'],
+    ['Notes per second' + at, p.nps != null ? fmt(p.nps * speed, 1) : '—', ''],
+    ['Busiest second' + at, p.peakNps != null ? `${fmt(p.peakNps * speed, 0)} notes` : '—', 'Most notes in any one second'],
+    ['Fastest stream' + at, c.fastestStream ? `${fmt(c.fastestStream * speed, 1)} notes/s` : '—', ''],
+    ['Longest stream', p.longestStreamMs ? `${fmt(p.longestStreamMs / 1000 / speed, 1)} s` : '—', ''],
+    ['Off-grid notes', c.offGrid != null ? pct(c.offGrid) : '—', 'Notes away from the 3×3 grid'],
   ];
   return `<div class="v-plays">
     <div class="v-tags">${tags.map(t => `<span class="v-tag k-${t.k}" data-tip="<b>${esc(t.label)}</b><small>${esc(t.tip)}</small>">${esc(t.label)}</span>`).join('')}</div>
-    <div class="v-share" aria-label="${kinds.map(k => `${KIND[k][0]} ${p[k]}`).join(', ')}">${bar}</div>
-    <div class="v-legend">${kinds.map(k => `<span data-tip="<b>${KIND[k][0]}</b><small>${KIND[k][1]}</small>"><i class="k-${k.toLowerCase()}"></i>${KIND[k][0]} ${p[k]}</span>`).join('')}</div>
+    <div class="v-share" aria-label="${kinds.map(k => `${KIND[k][0]} ${share[k]}`).join(', ')}">${bar}</div>
+    <div class="v-legend">${kinds.map(k => `<span data-tip="<b>${KIND[k][0]}</b><small>${KIND[k][1]}</small>"><i class="k-${k}"></i>${KIND[k][0]} ${share[k]}</span>`).join('')}</div>
     <div class="v-facts">${facts.map(([l, v, t]) => `<div ${t ? `data-tip="<b>${esc(l)}</b><small>${esc(t)}</small>"` : ''}><small>${esc(l)}</small><b class="num">${v}</b></div>`).join('')}</div>
   </div>`;
 }
 const playsNote = 'Shares are by note count.';
+// The map and score pages' part when there is no chart: online history off (with its button), or a map the
+// history service has not read. plays is ExodusData.mapPlays' answer (null without online history).
+// A Turn on online history button (data-online): off while the choice is asked (shared/community-consent.js), back
+// on with a note when it was not turned on, then done(). signal is the page's: once the choice is made the shell
+// draws the page again, and a page that is gone by then does nothing more (the new one shares its frame).
+// False when the button is already busy.
+function turnOnline(btn, e, say, done, signal) {
+  if (!btn || btn.disabled) return false;
+  btn.disabled = true;
+  Promise.resolve(RhythiaX.CommunityConsentNotice?.turnOn?.(e)).then(ok => {
+    if (signal?.aborted) return;
+    if (!ok) { btn.disabled = false; say('Online history not turned on. Try again.'); return; }
+    done?.();
+  });
+  return true;
+}
+// Without online history and with map types worked out in this browser (state 'basic'): the type and Quantum,
+// marked approximate, above the same offer.
+const BASIC_TIP = 'Worked out in this browser from the map file, without online history. Online history tells Techs and how the map plays.';
+function basicTags(p) {
+  const tags = tagsOf({kind: p.kind, quantum: p.quantum});
+  return `<div class="v-tags">${tags.map(t => `<span class="v-tag k-${t.k}" data-tip="<b>${esc(t.label)} · approximate</b><small>${BASIC_TIP}</small>">${esc(t.label)}</span>`).join('')}<span class="cap">Approximate</span></div>`;
+}
+function playsMissing(plays) {
+  if (plays?.state === 'basic') return `<div class="v-plays">${basicTags(plays)}</div>${playsMissing(null)}`;
+  if (!plays) return `<div class="v-tneed"><b>How a map plays comes from online history</b><p>Reimagined's history service reads each map and tells how it plays: its type, its parts and how dense it is. Turning it on uses online history everywhere; only the public IDs of the players and maps you open and a random number for this copy of Reimagined go to the service.</p><button class="btn" type="button" data-online>Turn on online history</button></div>`;
+  const say = {pending: 'Reimagined has not read this map yet. It is read within a day.', queued: 'Reimagined will read this map within a day.',
+    full: 'Reimagined is reading many new maps today. Try again tomorrow.', missing: 'Rhythia no longer has this map file.',
+    unreadable: 'Reimagined could not read this map file.'}[plays.state];
+  return `<p class="cap">${say || 'Reimagined has not read this map.'}</p>`;
+}
 
 // Rhythia's map preview and score replay, reached through the page-world bridge (core/bridge.js).
 // The preview's speeds: half and a quarter speed for slow practice, then the game's own speed mods (SPEED_ART).
@@ -284,6 +403,33 @@ function ask(op, value, extra = {}) {
     document.addEventListener('rhythiax:exodus-player-state', on);
     document.dispatchEvent(new CustomEvent('rhythiax:exodus-player', {detail: JSON.stringify({id, op, value, ...extra})}));
   });
+}
+
+// A player's standing, by the rule of Rhythia's own profile page. ban: 'excluded', 'restricted', 'silenced' or ''.
+// inactive: no score for 30 days in the lists Rhythia looks at (lastDay, top, reign, vrRecent, spinRecent), or
+// none at all; such a player has no rank until the next score. An excluded account is never called inactive.
+// last: the newest of those scores (ms), or null.
+const INACTIVE_MS = 30 * 864e5;
+function accountState(user, scores, now = Date.now()) {
+  const times = ['lastDay', 'top', 'reign', 'vrRecent', 'spinRecent'].flatMap(k => scores?.[k] || [])
+    .map(s => new Date(s.created_at).getTime()).filter(Number.isFinite);
+  const last = times.length ? Math.max(...times) : null;
+  const ban = ['excluded', 'restricted', 'silenced'].includes(user?.ban) ? user.ban : '';
+  return {ban, inactive: Boolean(user?.id) && ban !== 'excluded' && (last == null || now - last > INACTIVE_MS), last};
+}
+
+// Map comments, by Rhythia's own rules: at most 256 characters and 6 lines; before posting, line breaks
+// become \n, spaces at line ends go and three or more line breaks become one blank line.
+const COMMENT_MAX = 256, COMMENT_LINES = 6;
+const cleanComment = t => String(t || '').replace(/\r\n?|[\u2028\u2029]/g, '\n').replace(/[^\S\n]+$/gm, '').replace(/\n{3,}/g, '\n\n').trim();
+const commentLines = t => (t ? t.split('\n').length : 0);
+// Comments as Rhythia lays them out: newest first, each followed by its replies (one level), oldest first.
+// A reply whose comment is not in the list stands on its own, so nothing goes missing.
+function commentThread(list) {
+  const t = c => new Date(c.at).getTime() || 0;
+  const ids = new Set(list.map(c => c.id));
+  const top = list.filter(c => c.parentId == null || !ids.has(c.parentId)).sort((a, b) => t(b) - t(a));
+  return top.flatMap(c => [{...c, reply: false}, ...(c.parentId == null ? list.filter(r => r.parentId === c.id).sort((a, b) => t(a) - t(b)).map(r => ({...r, reply: true})) : [])]);
 }
 
 // One leaderboard row: place, player, RP, accuracy, misses, mods, when. Links to the score.
@@ -351,6 +497,8 @@ function morphChildren(from, to) {
 }
 function morphNode(a, b) {
   if (a.nodeType !== 1) { if (a.nodeValue !== b.nodeValue) a.nodeValue = b.nodeValue; return; }
+  // A part that draws and moves itself (data-keep: a key of what it shows) is left as it is while that key stays.
+  if (a.dataset?.keep && a.dataset.keep === b.getAttribute('data-keep')) return;
   for (const {name, value} of [...b.attributes]) {
     let v = value;
     if (name === 'class') { const kept = KEEP_CLASSES.filter(c => a.classList.contains(c) && !b.classList.contains(c)); if (kept.length) v = `${value} ${kept.join(' ')}`; }
@@ -369,7 +517,6 @@ function morphNode(a, b) {
   }
   if (a.nodeName === 'TEXTAREA') { if (!focused) a.value = b.textContent; return; }
   morphChildren(a, b);
-  if (a.nodeName === 'SELECT') { const o = [...a.options].find(x => x.hasAttribute('selected')); if (o) a.value = o.value; }
 }
 function morph(el, html) {
   if (!el) return;
@@ -474,6 +621,20 @@ dialog.cmp.cd-dlg{width:min(480px,calc(100vw - 32px))}
 [data-theme="white"] .v-chip img{filter:invert(1)}
 .v-cover{width:150px;height:150px;flex:none;border-radius:22px;background:var(--panel-3) center/cover;box-shadow:0 0 0 1px var(--line-2),0 20px 50px rgba(0,0,0,calc(.35 * var(--sh)))}
 .v-act{display:flex;flex-wrap:wrap;gap:8px;margin-top:18px}
+.v-vote{position:relative;display:inline-flex;align-items:stretch;height:38px;border-radius:11px;overflow:hidden;background:var(--panel-2)}
+[data-variant="lines"] .v-vote{background:none;box-shadow:inset 0 0 0 1px var(--rule-2);border-radius:8px}
+.v-vb{display:inline-flex;align-items:center;gap:7px;padding:0 13px 2px;border:0;background:none;color:var(--text-2);font:inherit;font-weight:600;cursor:pointer;transition:background-color .15s,color .15s}
+.v-vb + .v-vb{box-shadow:inset 1px 0 0 var(--line)}
+.v-vb:hover:not(:disabled){background:rgba(var(--ink),.06);color:var(--text)}
+.v-vb[aria-pressed="true"].like{color:var(--good)}
+.v-vb[aria-pressed="true"].dislike{color:var(--bad)}
+.v-vb:disabled{cursor:default}
+.v-th{width:16px;height:16px;flex:none;fill:none;stroke:currentColor;stroke-width:2;stroke-linejoin:round;stroke-linecap:round}
+.v-vb.dislike .v-th{transform:rotate(180deg)}
+.v-vb[aria-pressed="true"] .v-th{fill:color-mix(in srgb,currentColor 22%,transparent)}
+.v-vbar{position:absolute;left:0;right:0;bottom:0;height:3px;background:rgba(var(--ink),.1)}
+.v-vbar i{display:block;height:100%;background:var(--good);transition:width .3s var(--ease)}
+.v-vpct{align-self:center;margin-left:2px}
 .v-ring{position:relative;width:150px;height:150px;flex:none}
 .v-ring svg{width:100%;height:100%;transform:rotate(-90deg)}
 .v-ring circle{fill:none;stroke-width:9}
@@ -568,6 +729,34 @@ dialog.cmp.cd-dlg{width:min(480px,calc(100vw - 32px))}
 .b-cp-item[aria-selected="true"]{color:var(--text);font-weight:650}
 .b-cp-none{margin:14px 10px}
 .v-bctl{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.mn{position:relative;flex:none}
+.mn-btn{width:100%;justify-content:space-between;gap:10px;border:0;color:var(--text);font:inherit;font-weight:550;text-align:left;cursor:pointer;white-space:nowrap}
+.mn-btn span{min-width:0;overflow:hidden;text-overflow:ellipsis}
+.mn-btn:hover,.mn.open .mn-btn{box-shadow:inset 0 0 0 1px var(--line-2)}
+.mn-btn:focus-visible{outline:none;box-shadow:inset 0 0 0 1px var(--accent)}
+.mn-btn .b-chev{width:15px;height:15px;stroke-width:2.4}
+.mn.open .b-chev{transform:rotate(180deg)}
+.mn-pop{position:absolute;z-index:30;top:calc(100% + 6px);left:0;min-width:100%;width:max-content;max-width:min(340px,calc(100vw - 24px));max-height:min(380px,60vh);overflow:auto;padding:6px;border-radius:12px;background:var(--dialog);box-shadow:0 0 0 1px var(--line-2),0 18px 40px rgba(0,0,0,calc(.45 * var(--sh)));scrollbar-width:thin;animation:exoEnter .18s var(--ease) both}
+.mn-pop.right{left:auto;right:0}
+.mn-sec{padding:9px 10px 4px;font-size:11px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--muted)}
+.mn-sec:first-child{padding-top:4px}
+.mn-opt{display:flex;align-items:center;gap:12px;width:100%;min-height:34px;padding:6px 10px;border:0;border-radius:8px;background:none;color:var(--text-2);font:inherit;font-size:13.5px;text-align:left;cursor:pointer}
+.mn-opt:hover,.mn-opt.on{background:rgba(var(--ink),.06);color:var(--text)}
+.mn-opt[aria-selected="true"]{color:var(--text)}
+.mn-opt[aria-selected="true"] b{font-weight:650}
+.mn-l{display:flex;flex-direction:column;gap:2px;flex:1;min-width:0}
+.mn-l b{font-weight:550;white-space:nowrap}
+.mn-l small{font-size:12px;line-height:1.35;color:var(--muted);white-space:normal;max-width:260px}
+.mn-n{font-size:12.5px;color:var(--muted);font-variant-numeric:tabular-nums}
+.mn-opt.zero{opacity:.55}
+.mn-ck{width:18px;flex:none}
+.mn-opt .b-check{margin-left:0}
+.tools .mn{width:190px}
+.clash-tools .mn{width:200px}
+.clash-tools .mn .mn-btn{flex:none;min-width:0}
+.fbar .mn-btn{height:36px;padding:0 10px 0 12px;font-size:13px;color:var(--text-2)}
+.fbar .mn-btn.on{color:var(--text);box-shadow:inset 0 0 0 1px var(--accent)}
+@media (max-width:760px){.tools .mn{width:auto;min-width:0}.tools .mn-btn{font-size:13px;padding:0 8px 0 11px}.tools .mn.sort{grid-row:2;grid-column:1/-1;width:100%}.fbar .mn{flex:1 1 40%;min-width:0}}
 .v-bctl .b-cp-btn{min-width:180px;height:36px}
 .v-bctl .b-cp-pop{left:auto;right:0}
 .v-top{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:12px;margin-bottom:14px}
@@ -621,6 +810,15 @@ dialog.cmp.cd-dlg{width:min(480px,calc(100vw - 32px))}
 .v-com header a:hover b{color:var(--accent-2)}
 .v-com p{margin:4px 0 0;line-height:1.55;color:var(--text-2);overflow-wrap:anywhere}
 [data-variant="lines"] .v-com{background:none;box-shadow:none;border-radius:0;border-top:1px solid var(--rule);padding:14px 0}
+.v-com.reply{margin-left:48px}
+.v-com.reply .v-av{width:28px;height:28px}
+[data-variant="lines"] .v-com.reply{border-top:0;border-left:2px solid var(--rule);padding:10px 0 10px 14px}
+.v-com-act{margin-left:auto;font-size:13px}
+.v-com .v-form{margin:12px 0 0}
+.v-com .v-form textarea{min-height:64px}
+.v-form-acts{display:flex;gap:8px}
+.v-count.over{color:var(--bad)}
+@media (max-width:640px){.v-com.reply{margin-left:20px}}
 .v-maps-links{display:flex;gap:8px}
 .v-mbar{display:flex;flex-direction:column;gap:12px;margin-top:32px;padding-top:16px;padding-bottom:16px;position:relative}
 .v-mbar::before,.v-mbar::after{content:"";position:absolute;left:24px;right:24px;height:1px;background:var(--line)}
@@ -634,7 +832,7 @@ dialog.cmp.cd-dlg{width:min(480px,calc(100vw - 32px))}
 .v-mbar .b-switch small{font-size:11.5px;font-weight:500;color:var(--muted)}
 .v-mbar .pills{height:auto;min-height:40px;padding:3px;align-items:stretch;flex-wrap:wrap}
 .v-mbar .pills button{height:auto;min-height:34px}
-.v-mpills{align-items:stretch}
+.v-mpills{align-items:stretch;column-gap:12px}
 .v-mpills .btn{height:auto}
 .v-buckets button{flex-direction:column;gap:0;padding:4px 12px;line-height:1.15}
 .v-buckets button b{font-size:13px}
@@ -648,7 +846,8 @@ dialog.cmp.cd-dlg{width:min(480px,calc(100vw - 32px))}
 .v-mgrid.anim .h-map{animation:hRise .5s var(--ease) both;animation-delay:calc(var(--i) * 25ms)}
 .v-mflags{position:absolute;top:40px;left:10px;display:flex;gap:6px}
 .v-mview{align-self:flex-start}
-.v-msort{display:flex;gap:10px;align-items:stretch}
+.v-sort button[aria-pressed="true"]{gap:5px;padding-right:9px}
+.v-sarrow{width:14px;height:14px;flex:none;fill:none;stroke:currentColor;stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round;opacity:.85}
 .v-tmapper{flex:0 1 220px;height:42px}
 .v-tmapper input{flex:1;min-width:0;border:0;background:none;color:var(--text);font:inherit;outline:none}
 .v-tnote{margin:0;padding:14px 18px;border-radius:12px;background:var(--panel);box-shadow:inset 0 0 0 1px var(--line);color:var(--text-2);font-size:13.5px;line-height:1.55}
@@ -676,5 +875,5 @@ dialog.cmp.cd-dlg{width:min(480px,calc(100vw - 32px))}
 @media (prefers-reduced-motion:reduce){.v-hero.enter *,.v-page.enter *,.v-mgrid.anim .h-map{animation:none!important}}
 `;
 
-return {SITE, Data, Kit, esc, cssUrl, fillTip, fmt, pct, REDUCED, when, ago, fullDate, mmss, diff, status, grade, GRADE_C, TITLES, titleOf, SOCIAL_HOSTS, socialLink, MODES, mods, flag, countryName, countryPicker, av, accTxt, tips, toast, shell, watchDialog, slot, playsHtml, playsNote, PREVIEW_SPEEDS, REPLAY_SPEEDS, speedLabel, ask, row, slugify, plainText, mapTile, pager, spreadHtml, hoursMin, dropBroken, avgStars, morph, page, get css() { return css + styles.join(''); }};
+return {SITE, Data, esc, cssUrl, fillTip, fmt, pct, REDUCED, when, ago, fullDate, mmss, diff, status, grade, GRADE_C, TITLES, titleIndex, titleOf, SOCIAL_HOSTS, socialLink, MODES, mods, flag, countryName, countryPicker, menuSelect, av, accTxt, tips, toast, shell, watchDialog, slot, playsHtml, playsNote, playsMissing, turnOnline, BASIC_TIP, PREVIEW_SPEEDS, REPLAY_SPEEDS, speedLabel, ask, accountState, COMMENT_MAX, COMMENT_LINES, cleanComment, commentLines, commentThread, row, slugify, plainText, mapTile, pager, spreadHtml, hoursMin, dropBroken, avgStars, morph, page, get css() { return css + styles.join(''); }};
 })();

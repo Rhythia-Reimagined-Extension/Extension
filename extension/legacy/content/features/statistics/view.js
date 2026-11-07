@@ -44,15 +44,18 @@ var RhythiaX = RhythiaX || {};
         element.setAttribute('aria-expanded', 'true');
       }
 
-      // Highlight corresponding column in the unified table and scroll into view if needed
-      const tableWrap = document.querySelector('.rhythiax-progress-history-table-wrap');
-      const table = tableWrap?.querySelector('table');
+      // Mark the same column in Progress history (history-tables.js keeps the mark when its rows are drawn again)
+      // and scroll it into view if needed.
+      const table = document.querySelector('.rhythiax-progress-history-table');
+      const tableWrap = table?.parentElement;
       if (table) {
         table.querySelectorAll('.rhythiax-col-focused').forEach(cell => cell.classList.remove('rhythiax-col-focused'));
-        if (!wasActive) {
+        if (wasActive) delete table.dataset.focus;
+        else {
+          table.dataset.focus = key;
           const colCells = table.querySelectorAll(`.rhythiax-col-${key}`);
           colCells.forEach(cell => cell.classList.add('rhythiax-col-focused'));
-          const headerCell = table.querySelector(`th.rhythiax-col-${key}`);
+          const headerCell = table.querySelector(`.rhythiax-ph-head .rhythiax-col-${key}`);
           if (headerCell && tableWrap) {
             const wrapRect = tableWrap.getBoundingClientRect();
             const cellRect = headerCell.getBoundingClientRect();

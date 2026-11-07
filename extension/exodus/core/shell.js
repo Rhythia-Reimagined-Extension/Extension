@@ -710,9 +710,15 @@ RhythiaX.Exodus = (function () {
 
   // The query counts too: the leaderboards keep their page, mode and filter in it.
   let lastPath = location.pathname + location.search;
+  // An extension reloaded or updated under this tab leaves this script running without chrome.storage or the
+  // background: the next page would say online history is off and save nothing. It loads in full instead,
+  // with the extension as it is now.
+  const left = () => { try { return !chrome.runtime?.id; } catch (_) { return true; } };
+  let reloading = false;
   function onRoute() {
     if (location.pathname + location.search === lastPath) return;
     lastPath = location.pathname + location.search;
+    if (reloading || left()) { if (!reloading) { reloading = true; location.reload(); } return; }
     if (nativeFor && nativeFor !== location.pathname) nativeFor = '';
     sync();
   }
@@ -734,6 +740,8 @@ RhythiaX.Exodus = (function () {
     const prefs = {
       modules: Object.fromEntries(['playerCompare', 'statHistory', 'titleProgression', 'advancedStats', 'friendsList', 'easterEggs'].map(k => [k, X.read(result, `modules.${k}`) !== false])),
       exodus: X.exodusOptions(result),
+      // Map types without online history (shared/map-kinds-basic.js): its types show or go with the page drawn again.
+      mapKindsOffline: X.read(result, 'mapKindsOffline') === true,
     };
     RhythiaX.ExodusPrefs = prefs;
     // How often the Easter eggs play (core/flair.js) is read as it goes; changing it redraws nothing.
@@ -784,7 +792,7 @@ RhythiaX.Exodus = (function () {
     reshow();
   });
 
-  const KEYS = { rhythiaxExodus: false, rhythiaxExodusStyle: 'lines', rhythiaxTheme: 'reimagined', rhythiaxModules: {}, rhythiaxModuleOptions: {}, rhythiaxExodusOptions: {},
+  const KEYS = { rhythiaxExodus: false, rhythiaxExodusStyle: 'lines', rhythiaxTheme: 'reimagined', rhythiaxModules: {}, rhythiaxModuleOptions: {}, rhythiaxExodusOptions: {}, rhythiaxMapKindsOffline: false,
     [RhythiaX.ExodusThemes.LIST_KEY]: [], [RhythiaX.ExodusThemes.ACTIVE_KEY]: '' };
   if (typeof chrome !== 'undefined' && chrome.storage?.local) {
     chrome.storage.local.get(KEYS, readSettings);

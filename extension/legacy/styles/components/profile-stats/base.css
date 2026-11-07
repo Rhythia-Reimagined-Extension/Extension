@@ -326,12 +326,6 @@
   width: 100%;
 }
 
-/* The short Date / Value / Change table of a single metric */
-.rhythiax-history-pane .rhythiax-history-table:not(.rhythiax-progress-history-table):not(.rhythiax-rank-history-table) th:first-child,
-.rhythiax-history-pane .rhythiax-history-table:not(.rhythiax-progress-history-table):not(.rhythiax-rank-history-table) td:first-child {
-  width: 48%;
-}
-
 /* Hide native rank indicator from DOM/display safety */
 span[title*="Dropped" i]:not(.rhythiax-profile-history-delta),
 span[title*="Climbed" i]:not(.rhythiax-profile-history-delta) {

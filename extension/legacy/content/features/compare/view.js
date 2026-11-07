@@ -237,7 +237,43 @@ var RhythiaX = RhythiaX || {};
         renderTray();
       });
       tray.appendChild(closeBtn);
+      if (list.length === 1) renderNear(tray, list[0]);
     });
+  }
+
+  // With one player in the tray, the players ranked just above and below them on Rhythia's leaderboard (two
+  // each side), each added with one click. A popover in Rhythia's own look, over the tray.
+  const rankOf = item => parseInt(String(item?.globalRank || '').replace(/[^\d]/g, ''), 10) || 0;
+  async function renderNear(tray, item) {
+    if (!RhythiaX.fetchLeaderboardPlaces) return;
+    // A player just added has no rank stored yet; the profile gives it, as for the chip.
+    let pos = rankOf(item);
+    if (!pos) pos = rankOf(await loader.hydrateProfileMeta(item).catch(() => null));
+    if (!pos || !tray.isConnected || tray.querySelector('.rhythiax-tray-near') || tray.querySelectorAll('.rhythiax-tray-chip').length !== 1) return;
+    const box = document.createElement('div');
+    box.className = 'rhythiax-tray-near rounded-lg border border-line bg-raised text-white';
+    box.setAttribute('role', 'group');
+    box.setAttribute('aria-label', `Players near #${pos}`);
+    box.innerHTML = `<div class="rhythiax-tray-near-head"><span>Near #${pos.toLocaleString('en-US')}</span><small>Add one to compare</small></div>
+      <div class="rhythiax-tray-near-list">${'<span class="rhythiax-tray-near-row is-load"><span class="rhythiax-tray-near-av"></span><span class="rhythiax-tray-near-line"></span></span>'.repeat(4)}</div>`;
+    tray.prepend(box);
+    RhythiaX.fetchLeaderboardPlaces([pos - 2, pos - 1, pos + 1, pos + 2]).then(rows => {
+      if (!box.isConnected) return;
+      const players = rows.filter(u => u?.id != null && String(u.id) !== String(item.id));
+      if (!players.length) { box.remove(); return; }
+      const tag = n => (n < pos ? `${n === pos - 1 ? 'Just' : pos - n} above` : `${n === pos + 1 ? 'Just' : n - pos} below`);
+      const listEl = box.querySelector('.rhythiax-tray-near-list');
+      listEl.innerHTML = players.map(u => `<button type="button" class="rhythiax-tray-near-row" data-rx-near-add="${RhythiaX.escapeHtml(String(u.id))}" title="Add ${RhythiaX.escapeHtml(u.username || '')} to compare">
+          <span class="rhythiax-tray-near-av">${template.getAvatarHtml({ avatar: u.avatar_url || '', username: u.username || '' }, false)}</span>
+          <span class="rhythiax-tray-near-who"><b>${RhythiaX.escapeHtml(u.username || 'Unknown player')}</b><small>#${Number(u.position).toLocaleString('en-US')} · ${Number(u.skill_points || 0).toLocaleString('en-US', { maximumFractionDigits: 0 })} RP</small></span>
+          <span class="rhythiax-tray-near-tag">${tag(u.position)}</span></button>`).join('');
+      listEl.querySelectorAll('[data-rx-near-add]').forEach((btn, i) => btn.addEventListener('click', e => {
+        e.stopPropagation();
+        const u = players[i];
+        const entry = { id: String(u.id), username: u.username || 'Unknown player', avatar: u.avatar_url || '', globalRank: `#${u.position}`, countryRank: '', country: u.flag || '' };
+        store.update(items => [...items.filter(x => x.id !== entry.id), entry].slice(-MAX_PLAYERS)).then(renderTray);
+      }));
+    }, () => box.remove());
   }
 
   // --- Main Comparison Modal ---
@@ -278,7 +314,7 @@ var RhythiaX = RhythiaX || {};
     const p1Miss = metrics.averageMissRate(p1Scores);
     const p2Miss = metrics.averageMissRate(p2Scores);
 
-    const battle = metrics.analyzeSharedMaps(p1Scores, p2Scores);
+    let battle = metrics.analyzeSharedMaps(p1Scores, p2Scores);
 
     const p1WinsRatio = battle.totalShared > 0 ? battle.p1Wins / battle.totalShared : 0.5;
     const p2WinsRatio = battle.totalShared > 0 ? battle.p2Wins / battle.totalShared : 0.5;
@@ -346,6 +382,7 @@ var RhythiaX = RhythiaX || {};
         activeModalKeyHandler = null;
       }
       overlay.classList.add('is-closing');
+      if (typeof Event === 'function') overlay.dispatchEvent(new Event('rhythiax:compare-closed'));
       setTimeout(() => overlay.remove(), 180);
     }
 
@@ -361,6 +398,17 @@ var RhythiaX = RhythiaX || {};
     overlay.appendChild(dialog);
     document.body.appendChild(overlay);
     renderModalHtml();
+
+    // Map stars come from the maps' details (core/beatmap-meta.js): the ones not saved yet are asked for, and the
+    // window is drawn again with the average and the shared maps' stars once they are in.
+    const starsLeft = typeof AbortController === 'function' ? new AbortController() : null;
+    if (starsLeft) overlay.addEventListener('rhythiax:compare-closed', () => starsLeft.abort(), { once: true });
+    Promise.resolve(RhythiaX.loadMapStars?.([...p1Scores, ...p2Scores], { signal: starsLeft?.signal })).then(asked => {
+      if (!asked || !overlay.isConnected || overlay.classList.contains('is-closing')) return;
+      battle = metrics.analyzeSharedMaps(p1Scores, p2Scores);
+      Object.assign(model, { battle, p1More: metrics.moreStats(p1Scores), p2More: metrics.moreStats(p2Scores) });
+      renderModalHtml();
+    });
   }
 
   // --- Public API ---

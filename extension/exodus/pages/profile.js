@@ -86,6 +86,8 @@ const ownDay = () => ({date: new Date().toISOString().slice(0, 10), skillPoints:
 let H = fillHistory(D.history?.length ? D.history : [ownDay()]);
 let DAYS = daysOf(H);
 let lastActive = [...DAYS].reverse().find(d => d.plays > 0);
+// Banned, restricted or silenced, and inactive (no score for 30 days, so no rank), as Rhythia's profile says.
+const ACCOUNT = RhythiaX.ExodusKit.accountState(U, D.scores, NOW);
 // Maps per week, the extension's formula: lifetime plays over weeks since joining.
 const weeksSince = (NOW - new Date(U.created_at).getTime()) / 6048e5;
 const MPW = weeksSince > 0 ? U.play_count / weeksSince : 0;
@@ -135,9 +137,6 @@ function placeInks() {
     const sel = t.querySelector('[aria-selected="true"]');
     return sel && {t, ink: t.querySelector('.ink'), x: sel.offsetLeft, w: sel.offsetWidth};
   }).filter(Boolean);
-  const ends = endWanted ? [...R.querySelectorAll('.tmap-scroll')].map(el => [el, el.scrollWidth]) : [];
-  endWanted = false;
-  for (const [el, end] of ends) el.scrollLeft = end;
   for (const {t, ink: had, x, w} of rows) {
     const key = t.dataset.ink, p = inkAt[key], ink = had || t.appendChild(Object.assign(document.createElement('i'), {className: 'ink'}));
     inkAt[key] = {x, w};
@@ -339,10 +338,8 @@ function switchMode(mode) {
   now.querySelectorAll(':scope > div:not(.ranks-modes)').forEach((el, i) => el.animate([{opacity: 0, transform: 'translateY(6px)'}, {opacity: 1, transform: 'none'}], {duration: 260, delay: i * 40, easing: ease, fill: 'backwards'}));
 }
 const renderAct = anim => { $('#activity').innerHTML = activity(anim); };
-let endWanted = false;
-const toEnd = () => { endWanted = true; inks(); }; // the title map scrolls to its end in the same pass as the underlines
 // Map types start loading before the pane is drawn, so it opens on their progress, not on "could not be read".
-function renderStats(anim) { const el = $('#stats'); if (!el) return; if (S.stat === 'playstyle') loadStyles(); put(el, statistics(anim), anim); inks(el); toEnd(); }
+function renderStats(anim) { const el = $('#stats'); if (!el) return; if (S.stat === 'playstyle') loadStyles(); put(el, statistics(anim), anim); inks(el); }
 function renderScores(anim, keepFocus) {
   const el = $('#scores'); if (!el) return;
   if (keepFocus) { $('#score-body').innerHTML = scoreBody(false); return; }
@@ -350,8 +347,7 @@ function renderScores(anim, keepFocus) {
 }
 // After a filter or the order changes: the bar redrawn as it is, the rows coming in.
 function refilter() { renderScores(false); const b = $('#score-body'); if (b) b.innerHTML = scoreBody(true); }
-const settleTitle = () => R.querySelector('#tmap .tmap')?.classList.add('settled');
-function refreshIntro() { const el = $('#intro'); if (!el) return; el.classList.add('in'); morph.outer(el, intro()); settleTitle(); toEnd(); foldBio(); }
+function refreshIntro() { const el = $('#intro'); if (!el) return; el.classList.add('in'); morph.outer(el, intro()); c.title?.mount(); foldBio(); }
 // A bio taller than the fold shows Show more; pictures in it can change that once they load.
 function foldBio() {
   const w = $('.bio-wrap'); if (!w) return;
@@ -369,7 +365,7 @@ function renderBody() {
   put($('#body'), html + '<div style="height:96px"></div>', !soft);
   renderStats(); renderRp(); renderScores();
   if (tabs.has(S.section)) { inks(); tabs.open(S.section); }
-  watch($('#body')); toEnd(); foldBio();
+  watch($('#body')); c.title?.mount(); foldBio();
 }
 function renderRp() { const el = $('#rp'); if (el) put(el, rpChart()); const n = $('#near'); if (n) { const h = nearSection(); n.hidden = !h; put(n, h); } }
 // Profile and Scores are two addresses on Rhythia; the other tabs stay on the profile's.
@@ -529,17 +525,26 @@ async function saveProfile(btn) {
 // so the parts read those through getters and always see the current ones.
 // With This device (no online history) the places that need it offer it: a line and a button, which
 // the click handler below turns into the consent card's Turn on. S.offline is known after the first paint.
-const onlineOffer = text => `<div class="online-offer"><span>${text}</span><button class="btn" type="button" data-online data-tip="<b>Online history</b><small>Turns it on everywhere. Sends player and map IDs, Reimagined Search filters and an anonymous key for this installation to Shuriel’s service (rhythia.shuriel.com). More in the privacy policy.</small>">${ico('hist')}Turn on online history</button></div>`;
-RhythiaX.ExodusData.historyAllowed().then(ok => { if (!ok && !ac.signal.aborted) { S.offline = true; renderStats(); renderRp(); } }, () => {});
+const onlineOffer = text => `<div class="online-offer"><span>${text}</span><button class="btn" type="button" data-online data-tip="<b>Online history</b><small>Turns it on everywhere. Only public player and map IDs, Reimagined Search filters and a random number for this copy of Reimagined go to Reimagined’s history service. More in the privacy policy.</small>">${ico('hist')}Turn on online history</button></div>`;
+// S.basic: without online history, map types are worked out in this browser (the popup's Map types without online
+// history, shared/map-kinds-basic.js), so the map type parts show them as approximate instead of the offer.
+RhythiaX.ExodusData.historyAllowed().then(async ok => {
+  if (ok || ac.signal.aborted) return;
+  S.offline = true;
+  S.basic = (await RhythiaX.MapKindsBasic?.enabled?.()) === true;
+  if (!ac.signal.aborted) { renderStats(); renderRp(); }
+}, () => {});
 const c = {R, D, ctx, ac, U, ICONS, SITE, esc, fmt, REDUCED, TITLES, COUNTRY, $, cssUrl, sgn, tone, ico, ago, utc, dm, onlineOffer,
-  dayName, SPEED, GRADES, prepare, MODES, MPW, ON, S, OWN, WHOSE, whose, rangeDays, win, toast, counter, pinnedScores,
+  dayName, SPEED, GRADES, prepare, MODES, MPW, ACCOUNT, ON, S, OWN, WHOSE, whose, rangeDays, win, toast, counter, pinnedScores,
   md, bioText, socialLinks, kpi, addDays, mondayOf, nextMonth, prevMonth, isoWeek, monthName, agg, TREND, momentum,
   plural, playsIn, morph, SCORES_ALL, refreshIntro, redrawScores: () => renderScores(false), inks,
   get H() { return H; }, get DAYS() { return DAYS; }, get last7() { return last7; }, get FIRST() { return FIRST; },
   get LAST() { return LAST; }, get DAY() { return DAY; }, get BREAKS() { return BREAKS; },
   get MONTHS() { return MONTHS; }};
 const parts = RhythiaX.ExodusProfileParts;
-const {hero, intro, titleMap, refreshEdPins, SHOWCASE_MAX, saveShowcase, openFriends, picker, openPicker, runPicker} = parts.hero(c);
+// The Title panel first: the hero's intro draws it (pages/profile-title.js).
+c.title = parts.title(c);
+const {hero, intro, refreshEdPins, SHOWCASE_MAX, saveShowcase, openFriends, picker, openPicker, runPicker} = parts.hero(c);
 const {progress, rankings, activity, detail, period} = parts.stats(c);
 const {playstyle, loadStyles, review, faq, KIND, BAR_KINDS, monthsOf} = parts.playstyle(c);
 const {scores, scoreBody, rpChart, nearSection, suggest, pickSuggestion, sug, closeMenu, openMenu} = parts.scores(c);
@@ -569,7 +574,7 @@ R.addEventListener('click', e => {
   if (t.hasAttribute('data-copy-profile')) { closeMenu(); const url = `https://www.rhythia.com/player/${U.id}`; navigator.clipboard?.writeText(url).then(() => toast('Profile link copied.'), () => toast(url)); return; }
   // Online history from a page that needs it: the same choice as the card (shared/community-consent.js), and the
   // shell draws the profile again with it.
-  if ('online' in d) { t.disabled = true; RhythiaX.CommunityConsentNotice?.turnOn?.(e).then(ok => { if (!ok) { t.disabled = false; toast('Online history not turned on. Try again.'); } }); return; }
+  if ('online' in d) { RhythiaX.ExodusKit.turnOnline(t, e, toast, null, ac.signal); return; }
   if (d.section) { if (S.section === d.section) return; return setSection(d.section, true); }
   if (d.mode) { if (S.mode === d.mode) return; switchMode(d.mode); renderStats('pane'); renderRp(); return renderScores(true); }
   if (d.stat) { if (S.stat === d.stat) return; S.stat = d.stat; return renderStats('pane'); }
@@ -594,7 +599,7 @@ R.addEventListener('click', e => {
   }
   if (t.hasAttribute('data-all-scores')) { S.allScores = !S.allScores; $('#day').innerHTML = detail(); return; }
   if (d.suggest !== undefined) return pickSuggestion(d.suggest);
-  if (d.tier !== undefined) { const k = Number(d.tier); S.tier = S.tier === k ? null : k; hideTip(); const box = $('#tmap'); box.innerHTML = titleMap(); box.firstElementChild.classList.add('settled'); return; }
+  if (d.tier !== undefined) { hideTip(); c.title.select(Number(d.tier)); return; }
   if (t.hasAttribute('data-native')) return ctx.showNative();
   if (t.hasAttribute('data-friend')) return addFriend();
   if (t.hasAttribute('data-unfriend')) return removeFriend();
@@ -651,7 +656,7 @@ R.addEventListener('change', e => {
 document.addEventListener('keydown', e => {
   if (!host.isConnected) return;
   const tgt = e.composedPath()[0] || e.target;
-  if (tgt.closest?.('.tmap .node') && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); tgt.closest('.node').dispatchEvent(new MouseEvent('click', {bubbles: true})); return; }
+  if (tgt.closest?.('.tnode') && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); tgt.closest('.tnode').dispatchEvent(new MouseEvent('click', {bubbles: true})); return; }
   if (tgt.id === 'q' && !$('#suggest').hidden) {
     const btns = [...R.querySelectorAll('#suggest button')];
     if (e.key === 'ArrowDown' || e.key === 'ArrowUp') { e.preventDefault(); sug.i = (sug.i + (e.key === 'ArrowDown' ? 1 : -1) + btns.length) % btns.length; btns.forEach((b, i) => b.classList.toggle('on', i === sug.i)); return; }
@@ -694,7 +699,7 @@ wantMeta(S.mode);
 return {
   state: () => Object.fromEntries(VIEW_KEYS.map(k => [k, S[k]])),
   // Safe to swap in fresh data only while nothing is open or half-done.
-  idle: () => !S.editing && !S.busy && !R.querySelector('dialog[open], .menu, #faq') && !R.activeElement?.matches?.('input, textarea, select'),
+  idle: () => !S.editing && !S.busy && !c.title?.busy() && !R.querySelector('dialog[open], .menu, #faq') && !R.activeElement?.matches?.('input, textarea, select'),
   relayout: () => inks(),
   // The address moved between the profile and its scores page: switch in place, no reload.
   page(p) { const sec = p === 'scores' ? 'scores' : S.section === 'scores' ? 'profile' : S.section; if (sec !== S.section) setSection(sec, false); },
@@ -705,6 +710,8 @@ return {
     if (ac.signal.aborted || !Array.isArray(list) || !list.length) return;
     setHistory(list);
     renderHero();
+    // The Title panel's 30 days come from it too; a panel still moving picks it up when it stops.
+    if (!c.title?.busy()) refreshIntro();
     if (!R.querySelector('#stats .faq')) renderStats();
   },
   destroy() {

@@ -10,6 +10,8 @@ var RhythiaX = RhythiaX || {};
   // Rhythia's own score sections and sub-tabs (hub-native.js) and the hub's controls (hub-controls.js).
   const Native = RhythiaX.ScoreHubNative;
   const Controls = RhythiaX.ScoreHubControls;
+  // The order, the filters, map types and Nearby (hub-filters.js).
+  const Filters = RhythiaX.ScoreHubFilters;
 
   const DEFAULT_PAGE_SIZE = 10;
 
@@ -39,6 +41,10 @@ var RhythiaX = RhythiaX || {};
     pageSize: getSavedPageSize(),
     searchQuery: '',
     scoreSets: null,
+    sort: '',
+    dir: 1,
+    filters: {},
+    filtersOpen: false,
   };
 
   let lastRenderedTab = null;
@@ -51,6 +57,10 @@ var RhythiaX = RhythiaX || {};
     hubState.page = 1;
     hubState.searchQuery = '';
     hubState.scoreSets = null;
+    hubState.sort = '';
+    hubState.dir = 1;
+    hubState.filters = {};
+    hubState.filtersOpen = false;
     lastRenderedTab = null;
     lastRenderedPage = null;
     lastHubContainer = null;
@@ -63,6 +73,8 @@ var RhythiaX = RhythiaX || {};
   }
 
   function getActiveProfileMode() {
+    // A player's scores page has its own switch and no mode in the address.
+    if (RhythiaX.PageRouteContext?.type?.() === 'scores') return RhythiaX.ScoresPage?.pageMode?.() || 'normal';
     // The SPA can retain the previous mode button while replacing the profile.
     const urlMode = new URLSearchParams(window.location.search).get('mode');
     if (urlMode === 'spin' || urlMode === 'vr') return urlMode;
@@ -117,7 +129,9 @@ var RhythiaX = RhythiaX || {};
   // --------------------------------------------------------------------------
   // Mount Scores Hub
   // --------------------------------------------------------------------------
-  function mountScoresHub(scoreSets) {
+  // options.page 'scores': a player's scores page (pages/scores/composition.js), where the hub takes the place of
+  // Rhythia's Top Scores list and has no pinned section.
+  function mountScoresHub(scoreSets, options = {}) {
     if (!RhythiaX.isModuleEnabled || !RhythiaX.isModuleEnabled('scoreCards')) {
       document.querySelector('.rhythiax-scores-hub')?.remove();
       return null;
@@ -127,7 +141,23 @@ var RhythiaX = RhythiaX || {};
     if (!sets) return null;
     Native.installModeListener(hub => renderScoresHub(hub, hubState.scoreSets));
     Native.installSubTabListener();
+    const scoresPage = options.page === 'scores';
+    const topSec = scoresPage ? Native.findTopScoresSection() : null;
     Native.hideNativeScoreSections();
+    if (scoresPage) {
+      let hub = document.querySelector('.rhythiax-scores-hub');
+      if (!hub && !topSec?.parentElement) return null;
+      if (!hub) {
+        hub = document.createElement('div');
+        hub.className = 'rhythiax-scores-hub rhythiax-scores-hub-page rounded-xl border border-line bg-surface p-4 space-y-4';
+      }
+      hub.classList.add('rhythiax-scores-hub-page');
+      if (topSec?.parentElement && hub.nextElementSibling !== topSec) topSec.before(hub);
+      hub.style.setProperty('display', 'block', 'important');
+      renderScoresHub(hub, sets);
+      Native.hideNativeScoreSections();
+      return hub;
+    }
 
     const pinnedSec = Native.findPinnedScoresSection();
     const aboutMeSec = Native.findAboutMeSection();
@@ -142,6 +172,7 @@ var RhythiaX = RhythiaX || {};
       hub = document.createElement('div');
       hub.className = 'rhythiax-scores-hub rounded-xl border border-line bg-surface p-4 space-y-4';
     }
+    hub.classList.remove('rhythiax-scores-hub-page');
 
     hub.style.setProperty('order', '6', 'important');
     const isProfile = Native.isProfileTabActive();
@@ -190,7 +221,12 @@ var RhythiaX = RhythiaX || {};
     const allTabScores = getScoresForTab(state.activeTab, state.scoreSets);
     // Card positions belong to the full tab, before search and pagination.
     const scorePositions = new Map(allTabScores.map((score, index) => [score, index + 1]));
-    const filtered = filterScores(allTabScores, state.searchQuery, state.scoreSets);
+    const searched = filterScores(allTabScores, state.searchQuery, state.scoreSets);
+    // The order, the filters, map types and Nearby belong to the player's scores page; the profile keeps the
+    // plain list and links there through Score report.
+    const extras = Filters && container.classList.contains('rhythiax-scores-hub-page') ? Filters : null;
+    if (Filters && !extras) Filters.strip(container);
+    const filtered = extras ? extras.apply(searched, state) : searched;
 
     const totalCount = filtered.length;
     const effectivePageSize = state.pageSize === 'all' ? (totalCount || 1) : state.pageSize;
@@ -217,16 +253,24 @@ var RhythiaX = RhythiaX || {};
       || '';
 
     const scoreReportHref = playerId ? `/player/${playerId}/scores` : '#';
+    // Map types (for the plays on screen, or the whole list once a map type is chosen) and the players ranked near
+    // come from the history service; each answer draws the hub again. Leaving the page stops what is on its way.
+    const redraw = () => { if (container.isConnected && lastHubContainer === container) renderScoresHub(container, hubState.scoreSets); };
+    if (extras && !state.scoreSets?.isLoading) {
+      const signal = RhythiaX.beatmapPageSignal?.();
+      extras.loadKinds(state.scoreSets, state.filters?.kind ? searched : pageScores, redraw, signal);
+      extras.loadNear(playerId, mode, redraw, signal);
+    }
 
     RhythiaX.setMarkup(sectionHeader, `
       <h2 class="rhythiax-scores-section-title min-w-0 truncate text-base font-bold tracking-wide text-white flex items-center gap-2">
         <svg class="rhythiax-scores-section-icon" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 3 2.7 5.5 6.1.9-4.4 4.3 1 6.1-5.4-2.9-5.4 2.9 1-6.1-4.4-4.3 6.1-.9L12 3z"/></svg>
         <span>Scores</span>
       </h2>
-      <a class="rhythiax-score-report-btn inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-lg border font-semibold transition-colors border-line bg-control text-white hover:bg-control-hover h-9 px-3 text-[13px] ml-auto" href="${scoreReportHref}">
+      ${RhythiaX.PageRouteContext?.type?.() === 'scores' ? '' : `<a class="rhythiax-score-report-btn inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-lg border font-semibold transition-colors border-line bg-control text-white hover:bg-control-hover h-9 px-3 text-[13px] ml-auto" href="${scoreReportHref}">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m16 16 3-8 3 8c-.87.65-1.92 1-3 1s-2.13-.35-3-1Z"/><path d="m2 16 3-8 3 8c-.87.65-1.92 1-3 1s-2.13-.35-3-1Z"/><path d="M7 21h10"/><path d="M12 3v18"/><path d="M3 7h2c2 0 5-1 7-2 2 1 5 2 7 2h2"/></svg>
         <span>Score report</span>
-      </a>
+      </a>`}
     `);
 
     // 2. Hub Controls Header (hub-controls.js): tabs, page size, List/Grid, search and the top page bar.
@@ -265,6 +309,8 @@ var RhythiaX = RhythiaX || {};
       },
     });
     const currentViewMode = controls.currentViewMode;
+    const hubHeader = container.querySelector(':scope > .rhythiax-scores-hub-header');
+    if (extras && hubHeader) extras.render(hubHeader, state, { pool: searched, onChange: () => renderScoresHub(container, state.scoreSets) });
 
     // 3. Score List Container
     let listArea = container.querySelector(':scope > .rhythiax-scores-list');
@@ -294,7 +340,8 @@ var RhythiaX = RhythiaX || {};
         listArea.innerHTML = '';
         const emptyBox = document.createElement('div');
         emptyBox.className = 'py-12 text-center text-sm text-neutral-400';
-        emptyBox.textContent = state.searchQuery ? 'No scores match your search.' : 'No scores in this category.';
+        const filtering = extras?.activeCount(state) > 0;
+        emptyBox.textContent = extras?.kindsNote(state) || (state.searchQuery || filtering ? `No scores match your ${state.searchQuery && filtering ? 'search and filters' : filtering ? 'filters' : 'search'}.` : 'No scores in this category.');
         listArea.appendChild(emptyBox);
       }
     } else {
@@ -336,6 +383,7 @@ var RhythiaX = RhythiaX || {};
         });
         listArea.replaceChildren(...nextCards);
       }
+      if (extras) Array.from(listArea.children).forEach((card, i) => { if (pageScores[i]) extras.decorate(card, pageScores[i], state.activeTab); });
     }
 
     // 4. Pagination Footer (Bottom Spaced: info left, pagination right)
@@ -484,7 +532,6 @@ var RhythiaX = RhythiaX || {};
     getActiveProfileMode,
     getProfileColumn: Native.getProfileColumn,
     updateScoresHubVisibility: Native.updateScoresHubVisibility,
-    profileType: (card) => card?.getAttribute?.('data-rhythiax-score-type') || hubState.activeTab,
   };
 
   // What the profile page (pages/profile/composition.js) and the route observer call to build the hub.

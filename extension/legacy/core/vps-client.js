@@ -86,59 +86,146 @@ var RhythiaX = RhythiaX || {};
     }
   }
 
-  // How the given maps play, from the history service's map catalog (POST /api/maps/kinds, up to 100 maps a
-  // request, carried by the background with this installation's key). Online history only; maps the service has
-  // not read are left out, and nothing is downloaded here. Map key -> { kind, quantum }.
-  const KINDS_BODY = 15000;
+  // How the given maps play, from the history service's map catalog (shared/vps-client.js: POST /api/maps/kinds,
+  // up to 100 maps a request, carried by the background with this installation's key). Online history only; maps
+  // the service has not read are left out, and nothing is downloaded here. Map key -> { kind, quantum }.
+  const Vps = () => RhythiaX.VpsClient;
+  // Answers are kept for this page (a map the service has not read as null), so Playstyle and the Scores hub
+  // never ask for the same map twice; a change of the history choice drops them. They are also saved in the
+  // list of map types both looks keep in Rhythia's site storage, so neither asks again for a year.
+  const kindsMemo = new Map();
+  let kindsRevision = -1;
+  const savedKind = e => { const s = Vps().styleOf(e); return s && { kind: s.kind, quantum: s.quantum }; };
+  // Keys whose request is on its way: a second caller waits for it instead of asking again.
+  const kindsPending = new Map();
+  // Without online history: map types worked out in this browser, when the player turned them on in the popup
+  // (shared/map-kinds-basic.js; approximate, without Techs). A map's file address comes from its details
+  // (core/beatmap-meta.js keeps it) or from Rhythia's map page, by song id or by map number.
+  async function basicFileOf(key, signal) {
+    const meta = await Promise.resolve(RhythiaX.resolveBeatmapMeta?.(key, { signal })).catch(() => null);
+    if (meta?.file) return meta.file;
+    const byNumber = /^\d+$/.test(key);
+    const res = await (RhythiaX.Net?.fetch || fetch)(`https://production.rhythia.com/api/${byNumber ? 'getBeatmapPage' : 'getBeatmapPageById'}`, {
+      method: 'POST', headers: { 'Content-Type': 'text/plain;charset=UTF-8' }, signal,
+      body: JSON.stringify(byNumber ? { id: Number(key), session: '' } : { mapId: key, session: '' }),
+    });
+    if (!res.ok) throw Object.assign(new Error(`Rhythia: HTTP ${res.status}`), { status: res.status });
+    return (await res.json())?.beatmap?.beatmapFile || null;
+  }
+  const basicKinds = (keys, signal, fileOf = basicFileOf) => (RhythiaX.MapKindsBasic ? RhythiaX.MapKindsBasic.kinds(keys, { signal, fileOf }) : Promise.resolve(new Map()));
+  // True when map types come from this browser: This device and the setting on.
+  RhythiaX.basicMapKindsOn = async () => Boolean(RhythiaX.MapKindsBasic) && (await getSyncMode()) === 'local-only' && (await RhythiaX.MapKindsBasic.enabled());
+
   RhythiaX.fetchVpsMapKinds = async function (keys, signal) {
     const out = new Map();
-    const list = [...new Set(keys)].filter(key => typeof key === 'string' && key && key.length <= 512);
-    if (!list.length || (await getSyncMode()) === 'local-only' || !RhythiaX.Net?.fetch) return out;
-    for (let i = 0; i < list.length;) {
-      const chunk = [];
-      for (let size = 12; i < list.length && chunk.length < 100 && size + JSON.stringify(list[i]).length < KINDS_BODY; i++) {
-        size += JSON.stringify(list[i]).length + 1;
-        chunk.push(list[i]);
+    const all = [...new Set(keys)].filter(key => typeof key === 'string' && key && key.length <= 512);
+    if (!all.length) return out;
+    if ((await getSyncMode()) === 'local-only') return basicKinds(all, signal);
+    if (!RhythiaX.Net?.fetch || !Vps()) return out;
+    if (kindsRevision !== privacyRevision) { kindsMemo.clear(); kindsPending.clear(); kindsRevision = privacyRevision; }
+    const list = [], waits = [], saved = Vps().readSaved();
+    for (const key of all) {
+      if (kindsMemo.has(key)) { if (kindsMemo.get(key)) out.set(key, kindsMemo.get(key)); continue; }
+      if (Vps().fresh(saved[key])) {
+        const kind = savedKind(saved[key]);
+        kindsMemo.set(key, kind);
+        if (kind) out.set(key, kind);
+        continue;
       }
-      try {
-        const res = await RhythiaX.Net.fetch(`${VPS_BASE_URL}/api/maps/kinds`, {
-          method: 'POST', headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
-          body: JSON.stringify({ keys: chunk }), signal, maxWait: LATE_ANSWER_MS,
-        });
-        if (!res.ok) break;
-        const maps = (await res.json())?.maps || {};
-        for (const key of chunk) if (maps[key]?.kind) out.set(key, { kind: maps[key].kind, quantum: maps[key].quantum === true });
-      } catch (_) {
-        break;
-      }
+      if (kindsPending.has(key)) waits.push(key); else list.push(key);
     }
+    const waited = waits.map(key => kindsPending.get(key).then(() => { const kind = kindsMemo.get(key); if (kind) out.set(key, kind); }));
+    const own = askKinds(list, signal, out);
+    for (const key of list) kindsPending.set(key, own);
+    try { await own; } finally { for (const key of list) if (kindsPending.get(key) === own) kindsPending.delete(key); }
+    await Promise.all(waited);
     return out;
   };
+  // Each answer is shown and kept as it comes; what was answered before a failure or an abort is saved too.
+  async function askKinds(list, signal, out) {
+    const revision = privacyRevision, answered = new Map();
+    await Vps().kinds(RhythiaX.Net.fetch, list, signal, got => {
+      for (const [key, s] of got) {
+        const kind = s?.kind ? { kind: s.kind, quantum: s.quantum === true } : null;
+        if (kind) out.set(key, kind);
+        if (revision === privacyRevision) kindsMemo.set(key, kind);
+        answered.set(key, s);
+      }
+    }).catch(() => {});
+    Vps().save(answered);
+  }
 
-  // The map search by type on the history service (Ranked and Qualified maps only): what it filters by and the
-  // note shown above its results (GET /api/maps/types), and one page of results (POST /api/maps/search, with the
-  // key). Online history only: null without it. A refused or failed search throws with a sentence to show.
+  // How a player's current top compares with the players ranked near them (GET /api/player/:id/compare, mode
+  // lock, spin or vr), with online history only: the service's answer, kept for half an hour; { reason: 'off' }
+  // without online history, { reason: 'unknown' } for a player it has no top for, null when it could not be read.
+  // A request on its way is shared (Playstyle and the Scores page can ask for the same player at once).
+  const compareMemo = new Map();
+  const comparePending = new Map();
+  const COMPARE_FRESH_MS = 30 * 60 * 1000;
+  RhythiaX.fetchVpsCompare = async function (playerId, mode, signal) {
+    const id = parseInt(playerId, 10);
+    if (!(id > 0) || !['lock', 'spin', 'vr'].includes(mode)) return null;
+    if ((await getSyncMode()) === 'local-only' || !RhythiaX.Net?.fetch || !Vps()) return { available: false, reason: 'off' };
+    const key = `${id}:${mode}:${privacyRevision}`, hit = compareMemo.get(key);
+    if (hit && Date.now() - hit.at < COMPARE_FRESH_MS) return hit.body;
+    if (comparePending.has(key)) return comparePending.get(key);
+    const ask = askCompare(id, mode, key, signal);
+    comparePending.set(key, ask);
+    try { return await ask; } finally { comparePending.delete(key); }
+  };
+  function askCompare(id, mode, key, signal) {
+    const revision = privacyRevision;
+    return Vps().compare(RhythiaX.Net.fetch, id, mode, signal, body => { if (revision === privacyRevision) compareMemo.set(key, { at: Date.now(), body }); });
+  }
+
+  // How one map plays (POST /api/maps/plays with its hash and id, with the key), as Exodus' map page shows it:
+  // { state, kind, quantum, tags, stream, jump, tech, nps, peakNps, longestStreamMs, plays: { share, fastestStream,
+  // offGrid, ... } }. state 'done' once the service has read the map, else pending, queued, full, missing or unreadable.
+  // Online history only: { state: 'off' } without it; null when it could not be read. A read map is kept for
+  // this page.
+  const playsMemo = new Map();
+  RhythiaX.fetchVpsMapPlays = async function (key, id, signal) {
+    if (typeof key !== 'string' || !key || key.length > 512) return null;
+    if ((await getSyncMode()) === 'local-only') {
+      // { state: 'basic', kind, quantum } when this browser works map types out (the map page shows the chips only).
+      if (!(await RhythiaX.basicMapKindsOn())) return { state: 'off' };
+      const got = (await basicKinds([key], signal, (k, s) => basicFileOf(Number(id) > 0 ? String(Number(id)) : k, s))).get(key);
+      return got ? { state: 'basic', kind: got.kind, quantum: got.quantum } : { state: 'off' };
+    }
+    if (!RhythiaX.Net?.fetch || !Vps()) return { state: 'off' };
+    const num = Number(id), memo = `${key}|${num || ''}|${privacyRevision}`;
+    if (playsMemo.has(memo)) return playsMemo.get(memo);
+    try {
+      const res = await Vps().plays(RhythiaX.Net.fetch, key, id, signal);
+      if (!res.ok) return null;
+      const body = await res.json();
+      if (!body || typeof body.state !== 'string') return null;
+      if (body.state === 'done') {
+        playsMemo.set(memo, body);
+        if (playsMemo.size > 50) playsMemo.delete(playsMemo.keys().next().value);
+      }
+      return body;
+    } catch (_) {
+      return null;
+    }
+  };
+
+  // The map search by type on the history service (shared/vps-client.js; Ranked and Qualified maps only): what it
+  // filters by and the note shown above its results (GET /api/maps/types), and one page of results (POST
+  // /api/maps/search, with the key). Online history only: null without it. A refused or failed search throws with a
+  // sentence to show; the types are kept for this page.
+  const SEARCH_SAYS = { busy: 'Too many map searches for now. Try again a little later.',
+    key: 'This browser has no access key for the history service yet. Try again later.', unexpected: 'The history service sent an unexpected answer.' };
+  const searchError = err => (!err?.reason ? err : new Error(SEARCH_SAYS[err.reason] || `The history service did not answer (HTTP ${err.status}).`));
   let mapSearchTypes = null;
   RhythiaX.fetchVpsMapSearchTypes = async function (signal) {
-    if ((await getSyncMode()) === 'local-only' || !RhythiaX.Net?.fetch) return null;
-    if (mapSearchTypes) return mapSearchTypes;
-    const res = await RhythiaX.Net.fetch(`${VPS_BASE_URL}/api/maps/types`, { method: 'GET', headers: { Accept: 'application/json' }, signal, maxWait: LATE_ANSWER_MS });
-    if (!res.ok) throw new Error(`The history service did not answer (HTTP ${res.status}).`);
-    const body = await res.json();
-    if (!Array.isArray(body?.types) || !Array.isArray(body?.statuses)) throw new Error('The history service sent an unexpected answer.');
-    mapSearchTypes = body;
-    return body;
+    if ((await getSyncMode()) === 'local-only' || !RhythiaX.Net?.fetch || !Vps()) return null;
+    if (!mapSearchTypes) mapSearchTypes = await Vps().searchTypes(RhythiaX.Net.fetch, signal).catch(err => { throw searchError(err); });
+    return mapSearchTypes;
   };
   RhythiaX.fetchVpsMapSearch = async function (query, signal) {
-    if ((await getSyncMode()) === 'local-only' || !RhythiaX.Net?.fetch) return null;
-    const res = await RhythiaX.Net.fetch(`${VPS_BASE_URL}/api/maps/search`, {
-      method: 'POST', headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
-      body: JSON.stringify(query), signal, maxWait: LATE_ANSWER_MS,
-    });
-    if (res.status === 429) throw new Error('Too many map searches for now. Try again a little later.');
-    if (res.status === 403) throw new Error('This browser has no access key for the history service yet. Try again later.');
-    if (!res.ok) throw new Error(`The history service did not answer (HTTP ${res.status}).`);
-    return res.json();
+    if ((await getSyncMode()) === 'local-only' || !RhythiaX.Net?.fetch || !Vps()) return null;
+    return Vps().search(RhythiaX.Net.fetch, query, signal).catch(err => { throw searchError(err); });
   };
 
   /**

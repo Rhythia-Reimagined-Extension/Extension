@@ -33,7 +33,9 @@
   }
 
   // Both players' playback hooks keep changeSpeed as a memoised callback: (speed) => { …ref.current = speed, setSpeed(speed) … }.
-  const SPEED_SRC = /^\(?(\w+)\)?=>\{const \w+=\w+\.current\?\w+\(\):\w+\.current;\w+\.current=\1,\w+\(\1\)/;
+  // Minified names can hold $ (Rhythia's build of 4 November 2026 named the ref $e), so a name is [\w$]+.
+  const N = '[\\w$]+';
+  const SPEED_SRC = new RegExp(`^\\(?(${N})\\)?=>\\{const ${N}=${N}\\.current\\?${N}\\(\\):${N}\\.current;${N}\\.current=\\1,${N}\\(\\1\\)`);
   function changeSpeed(f) {
     for (let h = f.memoizedState; h; h = h.next) {
       const v = h.memoizedState;

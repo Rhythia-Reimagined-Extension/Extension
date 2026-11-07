@@ -15,6 +15,9 @@ var RhythiaX = RhythiaX || {};
     return Number.isFinite(value) ? value : null;
   }
 
+  // The map's star rating (core/beatmap-meta.js), not the score's difficulty step.
+  const stars = score => RhythiaX.mapStarRating?.(score) ?? null;
+
   function scoreMapKey(score) {
     return String(score?.songTitle || score?.title || '').normalize('NFKC').trim().replace(/\s+/g, ' ').toLocaleLowerCase();
   }
@@ -116,7 +119,7 @@ var RhythiaX = RhythiaX || {};
 
       clashes.push({
         title: score1.songTitle || score2.songTitle || 'Beatmap',
-        difficulty: scoreNumber(score1, 'beatmapDifficulty') || scoreNumber(score2, 'beatmapDifficulty'),
+        difficulty: stars(score1) || stars(score2),
         bpm: scoreNumber(score1, 'bpm') || scoreNumber(score2, 'bpm'),
         notes: scoreNumber(score1, 'beatmapNotes') || scoreNumber(score2, 'beatmapNotes'),
         p1: {
@@ -157,13 +160,15 @@ var RhythiaX = RhythiaX || {};
   function moreStats(scores) {
     const list = Array.isArray(scores) ? scores : [];
     const rps = list.map(s => scoreNumber(s, 'rpEarned')).filter(v => v != null && v > 0);
-    const stars = list.map(s => scoreNumber(s, 'beatmapDifficulty')).filter(v => v != null && v > 0);
+    // Shown once nearly every map's star rating is known (view.js asks for the missing ones).
+    const known = list.map(stars).filter(v => v != null && v > 0);
+    const starAvg = list.length && known.length >= list.length * 0.9 ? known : [];
     const avg = values => (values.length ? values.reduce((a, b) => a + b, 0) / values.length : null);
     return {
       avgRp: avg(rps),
       bestRp: rps.length ? Math.max(...rps) : null,
       fullCombos: list.length ? list.filter(s => scoreNumber(s, 'misses') === 0).length : null,
-      stars: avg(stars),
+      stars: avg(starAvg),
       fast: list.length ? list.filter(s => Math.abs((scoreNumber(s, 'speed') || 1) - 1.45) < 0.001).length / list.length : null,
     };
   }

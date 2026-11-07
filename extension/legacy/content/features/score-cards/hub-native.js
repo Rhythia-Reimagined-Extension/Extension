@@ -51,6 +51,13 @@ var RhythiaX = RhythiaX || {};
     return document.querySelector('#scores-container') || document.querySelector('#root') || document.body;
   }
 
+  // Rhythia's Top Scores list on a player's scores page, where the hub takes its place.
+  function findTopScoresSection() {
+    const h = [...document.querySelectorAll('h1, h2, h3, h4')].find(el => !el.closest('.rhythiax-scores-hub')
+      && /^top scores$/i.test(el.textContent.trim()));
+    return h ? getSectionCard(h) : null;
+  }
+
   function findPinnedScoresSection() {
     const headings = document.querySelectorAll('h1, h2, h3, h4');
     for (const h of headings) {
@@ -172,7 +179,8 @@ var RhythiaX = RhythiaX || {};
     if (modeListenerInstalled) return;
     modeListenerInstalled = true;
     document.addEventListener('click', (e) => {
-      const modeBtn = e.target.closest?.('[role="group"][aria-label="Profile score mode"] button');
+      // The profile's switch, or the one on a player's scores page (pages/scores/composition.js).
+      const modeBtn = e.target.closest?.('[role="group"][aria-label="Profile score mode"] button, [role="group"][aria-label="Score mode"] button');
       if (!modeBtn) return;
       RhythiaX.afterNativeChange(modeBtn.closest('[role="group"]'), () => {
         const hub = document.querySelector('.rhythiax-scores-hub');
@@ -199,6 +207,7 @@ var RhythiaX = RhythiaX || {};
   RhythiaX.ScoreHubNative = {
     getProfileColumn,
     findPinnedScoresSection,
+    findTopScoresSection,
     findAboutMeSection,
     isProfileTabActive,
     hideNativeScoreSections,

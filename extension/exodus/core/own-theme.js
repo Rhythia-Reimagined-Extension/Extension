@@ -19,14 +19,14 @@ RhythiaX.ExodusOwnTheme = (function () {
   // Chips that are only a light tint of their colour (.v-chip, .v-tag) are not in it: their text is on the picture.
   // FLOAT_BG have one only in Floating: Lines draws them as outlines, so their text lies on the picture too.
   const FLOAT_BG = ['.panel', '.strip', '.kpi', '.tile', '.faq-item', '.faq-btn', '.sig', '.social', '.pages button[aria-current="page"]', '.ed-pins li',
-    '.h-com', '.b-me', '.b-hl', '.v-card', '.v-facts > div', '.v-com', '.c-card', '.g-entry'];
-  const OWN_BG = ['.site', '.tip', '.toast', '.menu', 'dialog', '.btn', '.iconbtn', '.pills', '.tabs.seg', '.field', 'input', 'textarea', 'select',
-    '.ranks', '.rtag', '.showcase', '.plate', '.faq', '.bcard', '.suggest', '.mods', '.grade', '.ach', '.duelist', '.dpill', '.clash', '.spill',
-    '.item', '.online-offer', '.try-card', '.try-tag', '.k-card', '.b-cp-pop', '.v-chip.plain', '.v-mini', '.v-dock',
-    '.v-zr', '.v-trophy', '.v-mine', '.v-form', '.v-notice', '.v-owner', '.v-skin', '.v-skbig',
+    '.h-com', '.b-me', '.b-hl', '.v-card', '.v-facts > div', '.v-com', '.v-vote', '.c-card', '.g-entry'];
+  const OWN_BG = ['.site', '.tip', '.toast', '.menu', '.mn-pop', 'dialog', '.btn', '.iconbtn', '.pills', '.tabs.seg', '.field', 'input', 'textarea', 'select',
+    '.ranks', '.rtag', '.showcase', '.plate', '.faq', '.bcard', '.suggest', '.mods', '.grade', '.tile .art .pos', '.ach', '.duelist', '.dpill', '.clash', '.spill',
+    '.item', '.online-offer', '.acct-note', '.try-card', '.try-tag', '.k-card', '.b-cp-pop', '.v-chip.plain', '.v-mini', '.v-dock',
+    '.v-zr', '.v-trophy', '.v-mine', '.v-form', '.v-notice', '.v-tnote', '.v-owner', '.v-skin', '.v-skbig',
     '.c-chips span', '.c-warn', '.w-res', '.w-entry.on', '.g-stream', '.g-chip', '.g-card', '.g-tag', '.g-v.on', '.s-hero',
     '.s-quote', '.s-cta', '.s-status', '.s-band', '.s-card', '.md code', '.md pre', '.md-box', '.ac-sec', '.ct', '.find-res',
-    '.bio code', '.item-x', '.spdc', '.h-stage', '.h-me', '.h-who', '.h-lb-row.me', '.h-rel code', '.h-map', '.h-diff', '.h-star',
+    '.bio code', '.item-x', '.iv-item', '.iv-prev', '.spdc', '.h-stage', '.h-me', '.h-who', '.h-lb-row.me', '.h-rel code', '.h-map', '.h-diff', '.h-star',
     '.b-row.me', '.b-row.sup', '.b-cp-btn', '.b-fl.code', '.v-row.me', '.v-skmeta span', '.v-clrow.me', '.v-mrow2.me', '.v-clrel',
     '.v-clcty span', '.w-navd', '.s-tw', '.md th', '.ac-size', '.ac-plate', '.ac-pick', '.ac-confirm', '.ac-chip'];
 
@@ -40,7 +40,7 @@ RhythiaX.ExodusOwnTheme = (function () {
     // See-through panels let a little of the background through.
     const pa = 1 - v('panelClear') / 100, panel = pa < 1 ? `rgba(${rgbs(v('panel'))},${+pa.toFixed(2)})` : v('panel');
     t.push(`--page:${v('page')}`, `--page-rgb:${rgbs(v('page'))}`,
-      `--panel:${panel}`, `--panel-2:color-mix(in srgb,${panel},${v('text')} 4%)`, `--panel-3:color-mix(in srgb,${panel},${v('text')} 8%)`, `--ring-bg:${v('panel')}`,
+      `--panel:${panel}`, `--panel-2:color-mix(in srgb,${panel},${v('text')} 4%)`, `--panel-3:color-mix(in srgb,${panel},${v('text')} 8%)`,
       `--field:${v('field')}`, `--text:${v('text')}`, `--tip-text:${v('text')}`, `--text-2:${v('text2')}`, `--muted:${v('muted')}`,
       `--accent:${v('accent')}`, `--accent-2:color-mix(in srgb,${v('accent')},${D.base === 'white' ? '#000' : '#fff'} 28%)`,
       `--accent-soft:color-mix(in srgb,${v('accent')} 14%,transparent)`, `--on-accent:${onAccent()}`,

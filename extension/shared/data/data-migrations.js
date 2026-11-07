@@ -91,8 +91,9 @@ async function migrationRemoveLegacyBackupState(all) {
 // 1.2 only those switches have a control ("Rank and stat history" in the popup, which sets both), and the capture
 // follows them (legacy/core/data/data-history.js). A kind 1.1 did not collect turns its switch off, unless the
 // switch holds a choice of its own, and collect* go back to true. A stored scoreCards.customCards false has had no
-// control since 1.2: it kept Classic's score cards off while the popup showed them on. Returns the values to
-// write, or null when nothing is left to change, so a second run changes nothing.
+// control since 1.2: it kept Classic's score cards off while the popup showed them on, and since 1.5.0 Classic
+// no longer reads it, so it is only removed. Returns the values to write, or null when nothing is left to change,
+// so a second run changes nothing.
 function migrationPreferenceUpdates(stored) {
   const values = {};
   const settings = stored[RhythiaX.DATA_SETTINGS_KEY];

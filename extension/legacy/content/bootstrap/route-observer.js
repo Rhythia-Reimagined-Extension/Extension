@@ -15,7 +15,7 @@ RhythiaX.ContentBootstrap = (function () {
     '.score-card:not(.rhythiax-redesigned), ' +
     '[class*="rounded-lg"][class*="border"]:has(a[href*="/score/"]):not(.rhythiax-redesigned)';
   const OWN_CONTENT_SELECTOR = '.rhythiax-scores-hub, .rhythiax-pinned-scores-section, ' +
-    '[data-rhythiax-enhanced="true"]:not(.rhythiax-card-enhanced-host)';
+    '[data-rhythiax-enhanced="true"]';
 
   function clearMutationBatch() {
     if (mutationTimer) clearTimeout(mutationTimer);
@@ -152,13 +152,7 @@ RhythiaX.ContentBootstrap = (function () {
       document.querySelectorAll('.rhythiax-compare-tray, .rhythiax-compare-modal').forEach(el => el.remove());
     }
     if (RhythiaX.PageRouteContext.type() === 'scores') {
-      if (RhythiaX.isModuleEnabled?.('scoreCards') && RhythiaX.isModuleOptionEnabled?.('scoreCards', 'customCards')) {
-        if (needsScores) {
-          RhythiaX.enhanceScoreCards?.();
-        }
-      } else {
-        RhythiaX.ScoreCardView?.unenhance?.();
-      }
+      if (needsScores) RhythiaX.ScoresPage?.refresh?.();
     }
     if (!RhythiaX.injected) RhythiaX.ContentLifecycle.queueInject(100);
   }

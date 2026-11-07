@@ -133,13 +133,15 @@ RhythiaX.HistoryView = (function () {
     return weeks;
   }
 
-  // Months by the month a week ends in, newest first.
+  // Months by the month of a week's Thursday (as the tables, history-tables.js: a week that spans two months
+  // belongs to the one with most of its days), newest first.
   function toMonths(weeks) {
     const months = [];
     weeks.forEach(week => {
-      const k = week.end.d.getFullYear() * 12 + week.end.d.getMonth();
+      const thu = new Date(week.mon.getFullYear(), week.mon.getMonth(), week.mon.getDate() + 3);
+      const k = thu.getFullYear() * 12 + thu.getMonth();
       let month = months[months.length - 1];
-      if (!month || month.k !== k) months.push(month = { k, d: week.end.d, weeks: [] });
+      if (!month || month.k !== k) months.push(month = { k, d: thu, weeks: [] });
       month.weeks.push(week);
     });
     return months;

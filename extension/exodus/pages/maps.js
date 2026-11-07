@@ -15,18 +15,16 @@ const {SITE, Data, esc, REDUCED, shell, mapTile, pager: pageNumbers, morph} = Rh
 const BUCKETS = [['Any', 'All difficulties', 0, 20], ['Beginner', '★ 0–3', 0, 3], ['Intermediate', '★ 3–5', 3, 5], ['Hard', '★ 5–7', 5, 7], ['Expert', '★ 7–20', 7, 20]];
 // Rhythia's ranked status choice, with its own names (Qualified maps are waiting to be ranked).
 const STATUSES = [['RANKED', 'Ranked'], ['QUALIFIED', 'Qualified'], ['UNRANKED', 'Unranked'], ['LEGACY', 'Legacy']];
-const SORTS = [['newest', 'Newest'], ['playCount', 'Most played'], ['starRating', 'Difficulty'], ['length', 'Length']];
+const SORTS = [['newest', 'Newest'], ['playCount', 'Most played'], ['likeRatio', 'Most liked'], ['starRating', 'Difficulty'], ['length', 'Length']];
 // Reimagined Search: the history service's own order names, and length in seconds (0: no bound).
 const TYPE_SORTS = [['newest', 'Newest'], ['plays', 'Most played'], ['stars', 'Difficulty'], ['length', 'Length']];
 const LENGTHS = [['Any', 'Any length', 0, 0], ['Short', 'Under 1:30', 0, 90], ['Medium', '1:30–3:00', 90, 180], ['Long', '3:00–5:00', 180, 300], ['Marathon', 'Over 5:00', 300, 0]];
 const QUANTUM = [['any', 'Any'], ['without', 'No quantum'], ['only', 'Only quantum']];
-// Type names for a type the server's list (/api/maps/types) does not name.
-const TYPE_NAMES = {jump: 'Jumps', stream: 'Streams', tech: 'Techs', varied: 'Varied'};
 const NOTICE = 'rhythia_community_maps_notice_v1';
 // What Reimagined Search is, until the server's own words (/api/maps/types) are known, and without online history.
 const SEARCH_NOTE = {note: "Reimagined's own search, not Rhythia's.", points: [
   "Ranked and Qualified maps only. Every other map is in Rhythia's map list.",
-  "It searches Reimagined's copy of Rhythia's Ranked and Qualified lists, read once a day, so a map ranked or qualified since may be missing and results can differ from Rhythia.",
+  "It checks Rhythia's Ranked and Qualified lists every hour, so a map ranked or qualified in the last hour may be missing, and a new map's type can come up to a day later.",
   "Map types are worked out automatically from each map's file, so some may be wrong."]};
 
 function maps(host, ctx) {
@@ -35,7 +33,7 @@ function maps(host, ctx) {
   let explicit = false; try { explicit = localStorage.getItem('rhythiax_exodus_maps_explicit') === '1'; } catch (_) {}
   // types: the search's types, statuses and note (null without online history, undefined until known);
   // mine: the signed-in player's top 100 map ids (null when signed out); kinds: known types of All maps cards.
-  const S = {q: parse(), data: null, loading: false, seq: 0, enter: true, adv: false, ok: noticeOk(), types: undefined, mine: undefined, kinds: new Map()};
+  const S = {q: parse(), me: null, data: null, loading: false, seq: 0, enter: true, adv: false, ok: noticeOk(), types: undefined, mine: undefined, kinds: new Map()};
 
   // The same address as Rhythia's map list: filter, status, minStars, maxStars, author, tags, sort, sortDirection, page.
   // Reimagined Search adds view=type, types, quantum, minLength, maxLength and notTop.
@@ -81,14 +79,24 @@ function maps(host, ctx) {
   function noticeOk() {
     try { const v = JSON.parse(localStorage.getItem(NOTICE) || 'null'); return v?.version === 1 && v.expiresAt > Date.now(); } catch (_) { return false; }
   }
-  const typeName = id => S.types?.types?.find(t => t.id === id)?.label || TYPE_NAMES[id] || '';
+  // A type the server's list (/api/maps/types) does not name gets the name both looks use (shared/game-terms.js).
+  const typeName = id => S.types?.types?.find(t => t.id === id)?.label || RhythiaX.GameTerms.typeName(id);
 
   function head() {
     return `<section class="container b-head"><div class="b-title"><img src="${SITE}/maps.png" alt="" class="b-mascot"><div><span class="cap">Maps</span><h1>Browse and install community maps</h1><p>Discover, download, and install community maps.</p></div></div>
-      <aside class="v-maps-links"><button class="btn" type="button" data-native-click="Ranking Criteria">Ranking Criteria</button><button class="btn" type="button" data-native-click="Copyright">Copyright</button></aside></section>`;
+      <aside class="v-maps-links" id="v-mlinks">${links()}</aside></section>`;
   }
+  // Upload your map only when signed in, as on Rhythia's own page.
+  const links = () => `<button class="btn" type="button" data-native-click="Ranking Criteria">Ranking Criteria</button><button class="btn" type="button" data-native-click="Copyright">Copyright</button>${S.me ? '<a class="btn" href="/maps/upload">Upload your map</a>' : ''}`;
   const views = () => `<div class="pills v-mview" aria-label="Search">${[['all', 'All maps'], ['type', 'Reimagined Search']].map(([k, l]) => `<button type="button" aria-pressed="${S.q.view === k}" data-view="${k}">${l}</button>`).join('')}</div>`;
-  const dirButton = q => `<button class="btn v-dir" type="button" data-dir aria-label="${q.dir === 'desc' ? 'Descending' : 'Ascending'}" data-tip="<b>${q.dir === 'desc' ? 'Descending' : 'Ascending'}</b>"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="${q.dir === 'desc' ? 'M12 5v14M6 13l6 6 6-6' : 'M12 19V5M6 11l6-6 6 6'}"/></svg></button>`;
+  // The order: the chosen one carries the direction arrow, and choosing it again turns the direction round, so
+  // the arrow needs no button of its own on the row.
+  const ARROW = {desc: 'M12 5v14M6 13l6 6 6-6', asc: 'M12 19V5M6 11l6-6 6 6'};
+  const sortPills = (q, sorts) => `<div class="pills v-sort" aria-label="Sort">${sorts.map(([k, l]) => {
+    if (q.sort !== k) return `<button type="button" aria-pressed="false" data-sort="${k}">${l}</button>`;
+    const d = q.dir === 'desc' ? 'Descending' : 'Ascending';
+    return `<button type="button" aria-pressed="true" data-sort="${k}" aria-label="${l}, ${d.toLowerCase()}" data-tip="<b>${l} · ${d}</b><small>Click again to reverse.</small>">${l}<svg class="v-sarrow" viewBox="0 0 24 24" aria-hidden="true"><path d="${ARROW[q.dir]}"/></svg></button>`;
+  }).join('')}</div>`;
   const buckets = q => { const b = BUCKETS.findIndex(x => x[2] === q.minStars && x[3] === q.maxStars); return `<div class="pills v-buckets" aria-label="Difficulty">${BUCKETS.map(([l, s], i) => `<button type="button" aria-pressed="${b === i}" data-bucket="${i}"><b>${l}</b><small>${s}</small></button>`).join('')}</div>`; };
   function bar() {
     if (S.q.view === 'type') return typeBar();
@@ -102,8 +110,7 @@ function maps(host, ctx) {
       <div class="v-mrow v-mpills">
         <div class="pills" aria-label="Ranked status">${STATUSES.map(([k, l]) => `<button type="button" aria-pressed="${q.status === k}" data-status="${k}">${l}</button>`).join('')}</div>
         ${buckets(q)}
-        <div class="pills" aria-label="Sort">${SORTS.map(([k, l]) => `<button type="button" aria-pressed="${q.sort === k}" data-sort="${k}">${l}</button>`).join('')}</div>
-        ${dirButton(q)}
+        ${sortPills(q, SORTS)}
       </div></div>`;
   }
   // Reimagined Search: the title and mapper, the server's statuses and types, quantum, difficulty, length and order.
@@ -127,8 +134,7 @@ function maps(host, ctx) {
       <div class="v-mrow v-mpills">
         ${buckets(q)}
         <div class="pills v-buckets" aria-label="Length">${LENGTHS.map(([n, s], i) => `<button type="button" aria-pressed="${l === i}" data-length="${i}"><b>${n}</b><small>${s}</small></button>`).join('')}</div>
-        <div class="v-msort"><div class="pills" aria-label="Sort">${TYPE_SORTS.map(([k, n]) => `<button type="button" aria-pressed="${q.sort === k}" data-sort="${k}">${n}</button>`).join('')}</div>
-        ${dirButton(q)}</div>
+        ${sortPills(q, TYPE_SORTS)}
       </div></div>`;
   }
   // The maps shown: Reimagined Search leaves out the player's own top 100 when asked. All maps names the types the history
@@ -150,7 +156,7 @@ function maps(host, ctx) {
       <p>Rhythia.com is an independent community portal for Rhythia and Sound Space implementations.</p>
       <button class="btn primary" type="button" data-notice>I understand</button></div>`;
     if (S.q.view === 'type' && S.types === null) return `<div class="v-tneed"><b>Reimagined Search uses online history</b>
-      <p>It runs on Reimagined's history service. Turning it on switches on online history everywhere: the public IDs of the players and maps you view, these filters and an anonymous key go to rhythia.shuriel.com. All maps works without it.</p>
+      <p>It runs on Reimagined's history service. Turning it on uses online history everywhere; only these filters, the public IDs of the players and maps you open and a random number for this copy of Reimagined go to the service. All maps works without it.</p>
       <button class="btn" type="button" data-online>Turn on online history</button></div>`;
     const list = shown();
     if (!d) return `<div class="h-maps v-mgrid">${Array.from({length: 12}, () => '<div class="skeleton" style="aspect-ratio:4/3.2;border-radius:16px"></div>').join('')}</div>`;
@@ -201,9 +207,9 @@ function maps(host, ctx) {
       // Asked every time (it is kept after the first answer), so online history turned off since then shows the offer.
       let typesError = '';
       S.types = await Data().mapSearchTypes(ac.signal).catch(err => { typesError = err?.message || ''; return undefined; });
-      if (seq !== S.seq) return;
+      if (seq !== S.seq || ac.signal.aborted) return;
       if (S.types && S.mine === undefined) S.mine = await Data().myTopMaps(ac.signal).catch(() => null);
-      if (seq !== S.seq) return;
+      if (seq !== S.seq || ac.signal.aborted) return;
       if (S.types === null) { S.data = null; S.loading = false; refresh(); return; }
       if (S.types === undefined) { S.data = null; S.loading = false; refresh(); $('#v-mgrid').innerHTML = `<div class="empty" style="padding:72px 0"><b>The history service did not answer.</b>${esc(/^(Too many|This browser)/.test(typesError) ? typesError : 'Try again in a moment.')}</div>`; return; }
       S.data = null;
@@ -249,7 +255,7 @@ function maps(host, ctx) {
   }
 
   R.addEventListener('click', e => {
-    const t = e.target.closest('[data-view],[data-status],[data-bucket],[data-length],[data-type],[data-quantum],[data-sort],[data-dir],[data-page],[data-adv],[data-clear-adv],[data-notice],[data-online]');
+    const t = e.target.closest('[data-view],[data-status],[data-bucket],[data-length],[data-type],[data-quantum],[data-sort],[data-page],[data-adv],[data-clear-adv],[data-notice],[data-online]');
     if (!t || t.disabled) return;
     const d = t.dataset;
     if (d.view) { if (d.view !== S.q.view) switchTo(d.view); return; }
@@ -258,20 +264,13 @@ function maps(host, ctx) {
     if (d.length) { const [, , lo, hi] = LENGTHS[Number(d.length)]; go({minLength: lo, maxLength: hi, page: 1}); return; }
     if (d.type) { const on = S.q.types.includes(d.type); go({types: on ? S.q.types.filter(x => x !== d.type) : [...S.q.types, d.type], page: 1}); return; }
     if (d.quantum) { if (d.quantum !== S.q.quantum) go({quantum: d.quantum, page: 1}); return; }
-    if (d.sort) { if (d.sort !== S.q.sort) go({sort: d.sort, page: 1}); return; }
-    if ('dir' in d) { go({dir: S.q.dir === 'desc' ? 'asc' : 'desc', page: 1}); return; }
+    if (d.sort) { go(d.sort !== S.q.sort ? {sort: d.sort, page: 1} : {dir: S.q.dir === 'desc' ? 'asc' : 'desc', page: 1}); return; }
     if (d.page) { go({page: Number(d.page)}); const el = $('.v-mlist'); if (el && el.getBoundingClientRect().top < 0) scrollTo({top: el.getBoundingClientRect().top + scrollY - 120, behavior: REDUCED ? 'auto' : 'smooth'}); return; }
     if ('adv' in d) { S.adv = !S.adv; morph($('#v-mbar'), bar()); if (S.adv) $('#v-author')?.focus(); return; }
     if ('clearAdv' in d) { S.adv = false; go({author: '', tags: '', page: 1}); return; }
     // Same acknowledgement as Rhythia's own (one week), so either page counts.
     if ('notice' in d) { try { localStorage.setItem(NOTICE, JSON.stringify({version: 1, expiresAt: Date.now() + 7 * 864e5})); } catch (_) {} S.ok = true; refresh(); return; }
-    if ('online' in d) {
-      t.disabled = true;
-      Promise.resolve(RhythiaX.CommunityConsentNotice?.turnOn?.(e)).then(ok => {
-        if (!ok) { t.disabled = false; ui.toast('Online history not turned on. Try again.'); return; }
-        S.types = undefined; load();
-      });
-    }
+    if ('online' in d) RhythiaX.ExodusKit.turnOnline(t, e, ui.toast, () => { S.types = undefined; load(); }, ac.signal);
   }, sig);
   let typing = 0;
   R.addEventListener('input', e => {
@@ -300,6 +299,7 @@ function maps(host, ctx) {
   }, sig);
   render();
   load();
+  Data().signedIn().then(me => { if (ac.signal.aborted || !me) return; S.me = me; const l = $('#v-mlinks'); if (l) morph(l, links()); }).catch(() => {});
 
   return {
     state: () => ({}), idle: () => true, relayout() {},

@@ -124,6 +124,7 @@ RhythiaX.normalizeDataSettings = function (settings) {
     inlineRankingReference: RhythiaX.DATA_REFERENCE_MODES.includes(source.inlineRankingReference)
       ? source.inlineRankingReference
       : 'previousDayClose',
+    // A leftover too: since 1.5.0 Classic's history lists keep their own choice (statistics/history-tables.js).
     historyGrouping: ['daily', 'weekly', 'monthly'].includes(source.historyGrouping)
       ? source.historyGrouping
       : 'daily',

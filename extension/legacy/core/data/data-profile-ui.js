@@ -11,7 +11,7 @@ function invalidateVisibleHistory(playerId) {
   if (typeof document === 'undefined') return;
   const currentId = RhythiaX.PageRouteContext?.playerId?.() || window.location?.pathname?.match(/\/player\/([^/]+)/)?.[1];
   if (playerId && currentId && String(currentId) !== String(playerId)) return;
-  document.querySelectorAll('.rhythiax-history-row, .rhythiax-profile-history-delta, .rhythiax-rank-history-overlay').forEach(node => node.remove());
+  document.querySelectorAll('.rhythiax-history-row, .rhythiax-profile-history-delta').forEach(node => node.remove());
   document.querySelectorAll('[data-rhythiax-history-rendered]').forEach(node => node.replaceChildren());
   document.querySelectorAll('.rhythiax-stat-row-open, [data-history-key].active').forEach(node => {
     node.classList.remove('rhythiax-stat-row-open', 'active');

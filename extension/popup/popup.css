@@ -207,6 +207,10 @@ p.alert { background: color-mix(in srgb, var(--bad) 14%, transparent); box-shado
 .art-svg .cell { fill: currentColor; fill-opacity: .07; }
 .art-svg .hot { fill: var(--accent); fill-opacity: .45; }
 .art-svg .hot2 { fill: var(--accent); fill-opacity: .25; }
+.art-svg .tbed { fill: none; stroke: currentColor; stroke-opacity: .13; stroke-width: 3.2; }
+.art-svg .tbedr { fill: currentColor; fill-opacity: .13; }
+.art-svg .tstem { stroke: currentColor; stroke-opacity: .25; stroke-width: .4; }
+.art-svg .tnode { fill: currentColor; fill-opacity: .3; }
 .tile:not([aria-pressed="true"]) .art-svg { opacity: .8; }
 
 .note { margin: 8px 0 0; font-size: 12px; line-height: 1.45; color: var(--muted); }

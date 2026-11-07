@@ -1,6 +1,6 @@
 // =============================================
 // Reimagined for Rhythia — Title Progression View
-// SVG Canvas construction, bezier path rendering, waypoint nodes & UI assembly
+// Rhythia's title bar (Progress) and the History chart, and the card around them
 // =============================================
 
 var RhythiaX = RhythiaX || {};
@@ -10,182 +10,6 @@ RhythiaX.TitleProgression = RhythiaX.TitleProgression || {};
   'use strict';
 
   const Domain = RhythiaX.TitleProgression.Domain;
-  const Icons = RhythiaX.TitleProgression.Icons || {};
-
-  // 1. RENDER SVG ACTIVE TRACKS VIA DE CASTELJAU
-  function renderSvgPaths(rp, rank) {
-    const S = Domain.SEGMENTS;
-
-    // Solid tier track colors for each progressive tier segment
-    const SEGMENT_COLORS = [
-      '#7ED54F', // Novice -> Expert
-      '#04A0B6', // Expert -> Cand. Master
-      '#C26F38', // Cand. Master -> Master
-      '#B6463A', // Master -> Cand. GM
-      '#8A4FA0'  // Cand. GM -> GM
-    ];
-
-    // Unfilled background track (dashed line)
-    let baseTrack = '';
-    for (let i = 0; i < 5; i++) {
-      const p = Domain.pathFromCubic(S[i]);
-      baseTrack += `<path d="${p}" fill="none" stroke="var(--r-track-base, rgba(255, 255, 255, 0.12))" stroke-width="3.5" stroke-linecap="round" stroke-dasharray="6 6"/>\n`;
-    }
-
-    // Active track in clean, solid tier colors (no heavy radioactive glow filter)
-    let activeTrack = '';
-    for (let i = 0; i < 5; i++) {
-      const progress = Domain.getSegmentProgress(i, rp, rank);
-      if (progress <= 0) continue;
-
-      const strokeColor = (i === 4 && rank === 1) ? '#fbbf24' : SEGMENT_COLORS[i];
-
-      if (progress >= 0.999) {
-        // Complete segment
-        const d = Domain.pathFromCubic(S[i]);
-        activeTrack += `<path d="${d}" fill="none" stroke="${strokeColor}" stroke-width="3.5" stroke-linecap="round"/>\n`;
-      } else {
-        // In-progress segment split by de Casteljau
-        const split = Domain.deCasteljau(S[i].p0, S[i].p1, S[i].p2, S[i].p3, progress);
-        const d = Domain.pathFromCubic(split.subLeft);
-        activeTrack += `<path d="${d}" fill="none" stroke="${strokeColor}" stroke-width="3.5" stroke-linecap="round"/>\n`;
-      }
-    }
-
-    return baseTrack + activeTrack;
-  }
-
-  // 2. RENDER THE 6 WAYPOINT NODES
-  function renderWaypoints(rp, rank) {
-    let out = '';
-    const isGm = Domain.isGrandmaster(rank);
-    const gmCfg = isGm ? Domain.getPrestigeConfig(rank) : null;
-
-    Domain.WAYPOINTS.forEach((wp, index) => {
-      const isGrandmasterNode = index === 5;
-      const isUnlocked = Domain.isTierUnlocked ? Domain.isTierUnlocked(index, rp, rank) : true;
-      const iconData = Icons[wp.id] || `/titles/${wp.id}.png`;
-
-      let boxBorder = wp.color;
-      let extraDecorations = '';
-      let boxFilter = '';
-      let imgStyle = '';
-      let textColor = 'var(--rhythiax-text-strong, #f8fafc)';
-      let shortRpColor = 'var(--rhythiax-text-muted, #94a3b8)';
-
-      if (isGrandmasterNode) {
-        if (isGm && gmCfg) {
-          boxBorder = gmCfg.boxBorder;
-          extraDecorations = gmCfg.decorationsSvg;
-          boxFilter = 'drop-shadow(0 2px 8px rgba(0, 0, 0, 0.45));';
-          imgStyle = (rank === 1)
-            ? 'filter: brightness(0) invert(1);'
-            : (rank === 2)
-              ? 'filter: brightness(0) invert(0.95);'
-              : 'filter: brightness(0) invert(0.85);';
-        } else {
-          // Grandmaster LOCKED - Do not glow!
-          boxBorder = 'rgba(255, 255, 255, 0.16)';
-          extraDecorations = '';
-          boxFilter = 'none';
-          imgStyle = 'filter: brightness(0) invert(1); opacity: 0.35;';
-          textColor = 'rgba(255, 255, 255, 0.4)';
-          shortRpColor = 'rgba(255, 255, 255, 0.25)';
-        }
-      } else if (isUnlocked) {
-        boxBorder = wp.color;
-        // Subtle, elegant drop shadow without harsh neon glare
-        boxFilter = 'drop-shadow(0 2px 6px rgba(0, 0, 0, 0.38));';
-        imgStyle = 'opacity: 1;';
-      } else {
-        // Locked standard tier - Do not glow!
-        boxBorder = 'rgba(255, 255, 255, 0.16)';
-        boxFilter = 'none';
-        imgStyle = 'opacity: 0.32; filter: grayscale(1) brightness(0.7);';
-        textColor = 'rgba(255, 255, 255, 0.4)';
-        shortRpColor = 'rgba(255, 255, 255, 0.25)';
-      }
-
-      out += `
-        <g transform="translate(${wp.x}, ${wp.y})" class="rhythiax-map-node-group" data-tier="${wp.id}" data-unlocked="${isUnlocked}">
-          <!-- Decorations (Otoczki, aureole, korony) -->
-          ${extraDecorations}
-
-          <!-- Central Token Box -->
-          <rect x="-20" y="-20" width="40" height="40" rx="12" fill="var(--r-node-bg, #141124)" stroke="${boxBorder}" stroke-width="${isUnlocked ? 2 : 1.5}"
-                style="${boxFilter !== 'none' ? `filter: ${boxFilter};` : ''}"/>
-
-          <!-- Title Emblem (Instant base64 or site url) -->
-          <image href="${iconData}" xlink:href="${iconData}" x="-12" y="-12" width="24" height="24" style="${imgStyle}"/>
-
-          <!-- Waypoint Meta Text -->
-          <text x="0" y="32" class="rhythiax-waypoint-name" text-anchor="middle" font-size="10.5" font-weight="700" fill="${textColor}" style="pointer-events: none;">${wp.name}</text>
-          <text x="0" y="44" class="rhythiax-waypoint-rp" text-anchor="middle" font-size="9" font-family="'JetBrains Mono', monospace" font-weight="600" fill="${shortRpColor}" style="pointer-events: none;">${wp.shortRp}</text>
-        </g>
-      `;
-    });
-
-    return out;
-  }
-
-  // 3. RENDER CURRENT PLAYER'S NEEDLE PIN & PILL BADGE
-  function renderPlayerPin(rp, rank) {
-    const loc = Domain.getMarkerLocation(rp, rank);
-    const isGm = Domain.isGrandmaster(rank);
-    const formattedRp = (RhythiaX.formatNumber ? RhythiaX.formatNumber(Math.round(rp)) : Math.round(rp).toLocaleString('en-US')) + ' RP';
-
-    let badgeText = formattedRp;
-    let pillWidth = 56;
-    let borderColor = 'var(--rhythiax-accent, #a855f7)';
-    let textColor = 'var(--rhythiax-text-strong, #ffffff)';
-
-    let badgeY = loc.isAtNode ? (loc.y - 44) : (loc.y - 36);
-
-    if (isGm) {
-      const cfg = Domain.getPrestigeConfig(rank);
-      badgeText = cfg.badgeText;
-      pillWidth = cfg.pillWidth;
-      borderColor = cfg.boxBorder;
-      textColor = rank === 2 ? 'var(--silver-text, #f1f5f9)' : cfg.tierColor;
-      badgeY = loc.y + cfg.pinNeedleY.badgeY;
-    } else if (rp >= 10000 && rank > 0) {
-      badgeText = `#${rank}`;
-      pillWidth = 38;
-      borderColor = '#8A4FA0';
-      textColor = '#c084fc';
-    } else if (loc.isAtNode) {
-      if (loc.waypointIndex === 0) borderColor = '#7ED54F';
-      else if (loc.waypointIndex === 1) borderColor = '#04A0B6';
-      else if (loc.waypointIndex === 2) borderColor = '#C26F38';
-      else if (loc.waypointIndex === 3) borderColor = '#B6463A';
-      else if (loc.waypointIndex === 4) borderColor = '#8A4FA0';
-    } else {
-      pillWidth = Math.max(52, badgeText.length * 6.5 + 14);
-    }
-
-    // Direct continuous needle stem connecting the target dot directly to the badge pointer
-    const needleStartY = loc.isAtNode ? (loc.y - 21) : (loc.y - 3.2);
-    const needleEndY = badgeY + 13.5;
-
-    return `
-      <!-- Player Location Marker Pin -->
-      <g class="rhythiax-map-pin-group">
-        <!-- Target dot on the path (subtle shadow, not blinding glow) -->
-        <circle cx="${loc.x}" cy="${loc.y}" r="3.2" fill="${borderColor}" filter="drop-shadow(0 1px 3px rgba(0, 0, 0, 0.4))"/>
-
-        <!-- Continuous needle stem connecting target dot directly to badge pointer -->
-        <line x1="${loc.x}" y1="${needleStartY}" x2="${loc.x}" y2="${needleEndY}" stroke="${borderColor}" stroke-width="1.8" stroke-linecap="round" stroke-dasharray="2.5 2"/>
-
-        <!-- Badge capsule & Pointer triangle -->
-        <g transform="translate(${loc.x}, ${badgeY})">
-          <polygon points="-3.5, 10 0, 13.5 3.5, 10" fill="var(--r-pin-bg, #120f1c)" stroke="${borderColor}" stroke-width="1.1"/>
-          <rect x="-${pillWidth / 2}" y="-10" width="${pillWidth}" height="20" rx="5" fill="var(--r-pin-bg, #120f1c)" stroke="${borderColor}" stroke-width="1.2"
-                style="filter: drop-shadow(0 2px 8px rgba(0, 0, 0, 0.4));"/>
-          <text x="0" y="3.5" text-anchor="middle" fill="${textColor}" font-family="'JetBrains Mono', monospace" font-size="9.5" font-weight="800">${badgeText}</text>
-        </g>
-      </g>
-    `;
-  }
 
   // 4. RENDER REIMAGINED HISTORY VIEW
   function renderHistoryView(playerData) {
@@ -286,7 +110,158 @@ RhythiaX.TitleProgression = RhythiaX.TitleProgression || {};
     `;
   }
 
-  // 5. MAIN BUILDER: BUILDS THE COMPLETE HTML COMPONENT
+  // 5. THE TRACK: Exodus' Track look (pages/profile-title.js) in Rhythia's dress. A line with a part for each title
+  // by the RP it needs, Rhythia's own title art above it on stems, filling with colour as the player gets there,
+  // and a dot where the player is. Above: the title, the RP and the rank, and what the next title or Grandmaster
+  // needs. Below: one line in Rhythia's words, and past 10,000 RP the top 30 as 27 places and 3 crowns, lit from
+  // #30 up to the player's place once they are a Grandmaster. Titles follow Rhythia's rule: Master up to 10,000 RP,
+  // Candidate Grandmaster above it, Grandmaster for the top 30 above it.
+  // Rhythia's rule (domain.js, shared/game-terms.js): the titles, where each starts, the title for an RP and rank,
+  // and how far along the way to the next one a player is.
+  const { TITLES, NEXT, rpToGo } = Domain;
+  const { percent } = RhythiaX.GameTerms;
+  const NEED = ['0 RP', '1,500 RP', '2,500 RP', '5,000 RP', 'Above 10,000 RP', 'Top 30'];
+  const clamp = (v, a = 0, b = 1) => Math.min(b, Math.max(a, v));
+  const fmt = (n, d = 0) => Number(n || 0).toLocaleString('en-US', { minimumFractionDigits: d, maximumFractionDigits: d });
+  const fmtUp = n => fmt(Math.max(0, Math.ceil(n)));
+  const esc = s => (RhythiaX.escapeHtml ? RhythiaX.escapeHtml(String(s)) : String(s));
+  const ink = t => (t.id === 'grandmaster' ? 'var(--rhythiax-text-strong, #fff)' : t.c);
+  const art = id => `/titles/${id}.png`;
+  // The parts of the line, as in Exodus: the RP titles by what they need, then Grandmaster's part.
+  const LEGS = [15, 10, 25, 50].map(v => v * 0.78).concat([22]);
+  const AT = LEGS.reduce((a, v) => (a.push(a[a.length - 1] + v), a), [0]);
+  const TRACK = { Wd: 720, x0: 26, x1: 694, Y: 66, H: 8, GAP: 0.7 };
+  const tx = p => TRACK.x0 + (TRACK.x1 - TRACK.x0) * p / 100;
+  const nodeX = k => (k === 5 ? tx(100) - 6 : tx(AT[k]) + (k ? 0 : 8));
+
+  // Where the player stands: the title (0 to 5), how far to the next one (0 to 1) and the place on the line (0
+  // to 100). Between Candidate Grandmaster and the top 30 the way is the RP #30 has (p30) when it is known,
+  // otherwise the rank.
+  function standing(rp, rank, p30) {
+    const st = RhythiaX.GameTerms.standing(rp, rank, p30);
+    return { ...st, pos: st.i === 5 ? 100 : AT[st.i] + LEGS[st.i] * st.u };
+  }
+  // What the next title or Grandmaster needs, shown large at the right.
+  function goal(rp, rank, st, p30, inactive) {
+    if (st.i === 5) {
+      return { k: rank === 1 ? 'Number one' : rank <= 3 ? 'Podium finish' : 'Grandmaster', big: `#${rank}`, c: ink(TITLES[5]), sm: rank === 1 ? 'The one above the rest' : 'in the world' };
+    }
+    if (st.i === 4) {
+      if (!rank) return { k: 'To Grandmaster', big: 'Not ranked', c: 'var(--rhythiax-text-muted, #94a3b8)', sm: inactive ? 'The next score brings the rank back' : 'Grandmaster needs a rank' };
+      const n = rank - 30;
+      return { k: `${st.near ? 'Almost there · ' : ''}To Grandmaster`, big: `${fmt(n)} ${n === 1 ? 'place' : 'places'}`, c: TITLES[4].c, sm: p30 > 10000 ? `#30 has ${fmt(Math.round(p30))} RP` : 'to the top 30' };
+    }
+    const next = TITLES[st.i + 1];
+    return { k: `${st.near ? 'Almost there · ' : ''}To ${next.name}`, big: `${fmtUp(rpToGo(st.i, rp))} RP`, c: next.c, sm: `${percent(st.u)}% of the way` };
+  }
+  // The line under the track, in Rhythia's words where Rhythia has them.
+  function barLine(rp, rank, st, p30, inactive) {
+    const b = t => `<b class="rhythiax-tbar-em">${t}</b>`;
+    if (st.i === 5) {
+      if (rank === 1) return 'The one above the rest.';
+      return `${rank <= 3 ? 'Podium finish!' : 'Grandmaster,'} ${b(`#${rank}`)} in the world. ${Domain.getStatusSummary(rp, rank).goalText}.`;
+    }
+    if (st.i === 4) {
+      if (!rank) return `No rank while ${inactive ? 'inactive' : 'unranked'}, so Grandmaster waits.`;
+      const n = rank - 30;
+      return `${n <= 10 ? 'Almost there! ' : ''}${b(`${fmt(n)} ${n === 1 ? 'rank' : 'ranks'}`)} needed to unlock Grandmaster.${p30 > rp ? ` #30 has ${b(`${fmtUp(p30 - rp)} RP`)} more.` : ''}`;
+    }
+    const next = TITLES[st.i + 1];
+    return `${next.name} starts ${st.i === 3 ? 'above' : 'at'} ${fmt(NEXT[st.i])} RP.`;
+  }
+
+  function nodeHtml(k) {
+    const t = TITLES[k], x = nodeX(k), y = 27;
+    return `<g class="rhythiax-track-node" data-k="${k}"><title>${esc(t.name)} · ${NEED[k]}</title>
+      <image href="${art(t.id)}" x="${x - 15}" y="${y - 15}" width="30" height="30" class="off"/>
+      <clipPath id="rhythiax-tclip-${k}"><rect x="${x - 16}" y="${y + 16}" width="32" height="0"/></clipPath>
+      <image href="${art(t.id)}" x="${x - 15}" y="${y - 15}" width="30" height="30" clip-path="url(#rhythiax-tclip-${k})"/></g>`;
+  }
+  function trackSvg() {
+    const { Wd, Y, H, GAP } = TRACK;
+    const part = k => `x="${tx(AT[k]) + (k ? GAP * 2 : 0)}" y="${Y}" height="${H}" rx="4"`;
+    const beds = TITLES.slice(0, 5).map((t, k) => `<rect class="rhythiax-track-bed" ${part(k)} width="${tx(AT[k + 1]) - tx(AT[k]) - GAP * 4}"/>`).join('');
+    const legs = TITLES.slice(0, 5).map((t, k) => `<rect class="rhythiax-track-leg" data-k="${k}" ${part(k)} width="0" fill="${t.c}"/>`).join('');
+    const stems = TITLES.map((t, k) => `<line class="rhythiax-track-stem" x1="${nodeX(k)}" y1="48" x2="${nodeX(k)}" y2="${Y - 3}"/>`).join('');
+    return `<svg class="rhythiax-track-svg" viewBox="0 0 ${Wd} 104" role="img" aria-label="Titles on the way">${beds}${legs}${stems}`
+      + `<circle class="rhythiax-track-dot" cy="${Y + H / 2}" r="7" cx="${tx(0)}"/>${TITLES.map((t, k) => nodeHtml(k)).join('')}`
+      + `<text class="rhythiax-track-lab" y="${Y + 32}" text-anchor="middle"></text></svg>`;
+  }
+  // The top 30: 27 places from #30 to #4, then three crowns.
+  function top30(rank, st) {
+    if (st.i < 4) return '';
+    const gm = st.i === 5, sw = 16, gap = 3.2, x = r => (30 - r) * (sw + gap), total = x(1) + sw;
+    const crown = (r, on) => { const a = x(r); return `<path class="rhythiax-track-crown${on ? ` is-on p${r}` : ''}" d="M${a + 1},13 L${a + 2},4 L${a + 5.5},8.5 L${a + 8},2 L${a + 10.5},8.5 L${a + 14},4 L${a + 15},13 Z"/>`; };
+    let cells = '';
+    for (let r = 30; r >= 1; r--) {
+      cells += r <= 3 ? crown(r, gm && r >= rank)
+        : `<rect class="rhythiax-tbar-slot${gm && r >= rank ? ' is-on' : ''}${gm && r === rank ? ' is-me' : ''}" x="${x(r)}" y="3" width="${sw}" height="10" rx="3"/>`;
+    }
+    const me = gm ? `<text class="rhythiax-track-you" x="${x(rank) + sw / 2}" y="-6" text-anchor="middle">#${rank}</text>`
+      : `<text class="rhythiax-track-you is-out" x="-10" y="12" text-anchor="end">${rank ? `#${fmt(rank)}` : '—'}</text>`;
+    return `<div class="rhythiax-track-t30"><span class="rhythiax-track-k">Top 30</span><svg viewBox="${gm ? -20 : -56} -20 ${total + (gm ? 40 : 58)} 36" aria-label="${gm ? `#${rank} of the top 30` : 'Outside the top 30'}">${me}${cells}</svg></div>`;
+  }
+
+  // from: where the player stood at the last visit ({rp, rank}), null on a first look (the track fills from
+  // nothing). p30: the RP #30 has, when known. The track is drawn by paintTrack; TitleProgression.Service moves it
+  // from data-from-* to data-rp/data-rank once it is seen.
+  function renderBar(rp, rank, from, inactive, p30 = 0) {
+    const st = standing(rp, rank, p30), t = TITLES[st.i], g = goal(rp, rank, st, p30, inactive);
+    const start = from ? { rp: from.rp, rank: from.rank ?? rank } : { rp: 0, rank: st.i === 5 ? 31 : rank };
+    const slots = st.i === 5 ? Math.min(27, 31 - rank) : 0;
+    return `<div class="rhythiax-track rhythiax-tbar${!rank && st.i === 4 ? ' is-out' : ''}" data-rp="${rp}" data-rank="${rank || 0}" data-from-rp="${start.rp}" data-from-rank="${start.rank || 0}" data-p30="${p30 || ''}" data-inactive="${inactive ? 1 : 0}" data-slots="${slots}">
+        <div class="rhythiax-track-head">
+          <img class="rhythiax-track-icon" src="${art(t.id)}" alt="">
+          <div class="rhythiax-track-who"><b class="rhythiax-track-name" style="color:${ink(t)}">${esc(t.name)}</b>
+            <span class="rhythiax-track-sub"><span class="rhythiax-track-rp">${fmt(rp, 2)} RP</span><span class="rhythiax-track-gain"></span><span> · ${rank ? `#${fmt(rank)} global` : 'not ranked'}</span></span></div>
+          <div class="rhythiax-track-goal"><span class="rhythiax-track-k">${esc(g.k)}</span><b class="rhythiax-track-big" style="color:${g.c}">${esc(g.big)}</b><span class="rhythiax-track-sm">${esc(g.sm)}</span></div>
+        </div>
+        ${trackSvg()}
+        <p class="rhythiax-track-say rhythiax-tbar-line">${barLine(rp, rank, st, p30, inactive)}</p>
+        ${top30(rank, st)}
+      </div>`;
+  }
+
+  // Draws the track at a moment of the move: the coloured parts, the dot, the rank under it, the title art filling
+  // as the player gets close, and the RP counting.
+  function paintTrack(el, rp, rank) {
+    const p30 = Number(el.dataset.p30) || 0, st = standing(rp, rank, p30), { GAP } = TRACK;
+    el.querySelectorAll('.rhythiax-track-leg').forEach(r => {
+      const k = Number(r.dataset.k), end = AT[k + 1];
+      r.setAttribute('width', Math.max(0, tx(Math.min(end, st.pos)) - tx(AT[k]) - (k ? GAP * 2 : 0) - (st.pos >= end ? GAP * 2 : 0)));
+    });
+    const hx = tx(Math.min(st.pos, 100)), dot = el.querySelector('.rhythiax-track-dot'), lab = el.querySelector('.rhythiax-track-lab');
+    if (dot) {
+      dot.setAttribute('cx', hx);
+      dot.style.stroke = TITLES[st.i].c;
+      dot.classList.toggle('is-gone', st.i === 5);
+      dot.classList.toggle('is-hollow', !rank && st.i === 4);
+    }
+    if (lab) {
+      lab.setAttribute('x', clamp(hx, 50, TRACK.Wd - 50));
+      lab.textContent = st.i === 5 ? '' : rank ? `#${fmt(rank)}` : 'not ranked';
+      lab.style.fill = rank ? ink(TITLES[st.i]) : 'var(--rhythiax-text-muted, #94a3b8)';
+    }
+    el.querySelectorAll('.rhythiax-track-node').forEach(n => {
+      const k = Number(n.dataset.k), reached = k === 5 ? st.i === 5 : k <= st.i, next = k === st.i + 1 || (st.i === 4 && k === 5);
+      const f = reached ? 1 : next ? st.u : 0, r = n.querySelector('clipPath rect');
+      if (r) { r.setAttribute('height', 32 * f); r.setAttribute('y', 27 + 16 - 32 * f); }
+    });
+    const rpText = el.querySelector('.rhythiax-track-rp');
+    if (rpText) rpText.textContent = `${fmt(rp, 2)} RP`;
+    return st;
+  }
+  // The words, once the RP #30 has is known.
+  function words(el) {
+    const rp = Number(el.dataset.rp) || 0, rank = Number(el.dataset.rank) || 0, p30 = Number(el.dataset.p30) || 0, inactive = el.dataset.inactive === '1';
+    const st = standing(rp, rank, p30), g = goal(rp, rank, st, p30, inactive), q = s => el.querySelector(s);
+    if (q('.rhythiax-track-k')) q('.rhythiax-track-k').textContent = g.k;
+    if (q('.rhythiax-track-big')) { q('.rhythiax-track-big').textContent = g.big; q('.rhythiax-track-big').style.color = g.c; }
+    if (q('.rhythiax-track-sm')) q('.rhythiax-track-sm').textContent = g.sm;
+    if (q('.rhythiax-track-say')) RhythiaX.setMarkup ? RhythiaX.setMarkup(q('.rhythiax-track-say'), barLine(rp, rank, st, p30, inactive)) : (q('.rhythiax-track-say').innerHTML = barLine(rp, rank, st, p30, inactive));
+  }
+
+  // 6. MAIN BUILDER: BUILDS THE COMPLETE HTML COMPONENT
   function buildTitleProgressionCard(playerData, activeView = 'map') {
     const rp = Domain.parseRp(playerData?.rp);
     const rank = Domain.parseRank(playerData?.globalRank);
@@ -332,27 +307,10 @@ RhythiaX.TitleProgression = RhythiaX.TitleProgression || {};
           </div>
         </div>
 
-        <!-- Progression map -->
+        <!-- Progress: the title bar -->
         ${showProgression ? `
-        <div class="rhythiax-title-map-container" style="display: ${isMapActive ? 'block' : 'none'};">
-          <div class="rhythiax-title-map-arena">
-            <!-- Radial background grid dots -->
-            <div class="rhythiax-map-bg-grid"></div>
-
-            <!-- Vector Map SVG -->
-            <svg class="rhythiax-map-svg" viewBox="0 0 960 220" preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
-              ${renderSvgPaths(rp, rank)}
-              ${renderWaypoints(rp, rank)}
-              ${renderPlayerPin(rp, rank)}
-            </svg>
-          </div>
-
-          <!-- The next goal -->
-          <div class="rhythiax-title-progression-footer">
-            <div class="rhythiax-footer-goal-centered">
-              <span>${rank === 1 ? '<strong class="rhythiax-status-goal text-amber-400">Top Rhythia Player</strong>' : `Goal: <strong class="rhythiax-status-goal">${summary.goalText}</strong>`}</span>
-            </div>
-          </div>
+        <div class="rhythiax-title-map-container rhythiax-title-bar-container" style="display: ${isMapActive ? 'block' : 'none'};">
+          ${renderBar(rp, rank, playerData?.lastSeen || null, playerData?.inactive === true, Number(playerData?.p30) || 0)}
         </div>
         ` : ''}
 
@@ -368,10 +326,10 @@ RhythiaX.TitleProgression = RhythiaX.TitleProgression || {};
 
   // Export View
   RhythiaX.TitleProgression.View = {
-    renderSvgPaths,
-    renderWaypoints,
-    renderPlayerPin,
     renderHistoryView,
+    renderBar,
+    paintTrack,
+    words,
     buildTitleProgressionCard
   };
 

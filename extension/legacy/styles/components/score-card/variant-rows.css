@@ -152,10 +152,11 @@ html[data-rhythiax-own-theme] body[data-rhythiax-theme] .rhythiax-sc-row { --sc-
 
 .rhythiax-sc-row-d .rhythiax-sc-row-grade {
   flex: 0 0 106px;
-  align-self: center;
+  /* Rhythia's grade cell runs the row's full height, also when a card has a third line (Nearby on a scores page). */
+  align-self: stretch;
   display: flex;
   align-items: center;
-  height: 60px;
+  min-height: 60px;
   margin: -8px 0;
   padding-left: 10px;
   border-right: 1px solid var(--sc-border);

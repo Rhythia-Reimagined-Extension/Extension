@@ -26,8 +26,9 @@ RhythiaX.ContentLifecycle = (function () {
       if (pageType === 'score-replay') return RhythiaX.injectScoreReplay?.() || false;
       if (pageType === 'changelog') return RhythiaX.injectChangelog?.() || false;
       if (pageType === 'map-list') return RhythiaX.injectMapSearch?.() || false;
+      if (pageType === 'map') return RhythiaX.MapPage?.inject?.() || false;
       if (pageType === 'scores') {
-        const ready = RhythiaX.enhanceScoreCards?.() === true;
+        const ready = RhythiaX.ScoresPage?.inject?.() === true;
         RhythiaX.injected = ready;
         return ready;
       }
@@ -47,10 +48,10 @@ RhythiaX.ContentLifecycle = (function () {
     if (pageType === 'score-replay') return Boolean(document.querySelector('.rhythiax-score-replay-fullscreen-button'));
     if (pageType === 'changelog') return Boolean(document.querySelector('[data-rhythiax-changelog-tab]'));
     if (pageType === 'map-list') return Boolean(document.querySelector('.rhythiax-msearch'));
+    if (pageType === 'map') return RhythiaX.MapPage?.inPlace?.() !== false;
     if (pageType === 'scores') {
-      if (RhythiaX.isModuleEnabled?.('scoreCards') === false
-        || RhythiaX.isModuleOptionEnabled?.('scoreCards', 'customCards') === false) return true;
-      return Boolean(document.querySelector('.rhythiax-redesigned, .rhythiax-score-card, .rhythiax-scores-hub'));
+      if (RhythiaX.isModuleEnabled?.('scoreCards') === false) return true;
+      return Boolean(document.querySelector('.rhythiax-scores-hub'));
     }
     if (RhythiaX.isModuleEnabled?.('advancedStats') === false) return true;
     // A surviving Scores Hub or title card does not mean the native statistics
@@ -98,6 +99,7 @@ RhythiaX.ContentLifecycle = (function () {
     RhythiaX.cleanupScoreReplay?.();
     RhythiaX.cleanupChangelog?.();
     RhythiaX.cleanupMapSearch?.();
+    RhythiaX.MapPage?.cleanup?.();
     clearTimers();
     RhythiaX.injected = false;
     RhythiaX.cleanupStaleElements();

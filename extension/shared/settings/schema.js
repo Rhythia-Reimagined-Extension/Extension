@@ -76,6 +76,8 @@ RhythiaX.SettingsSchema = (function () {
       title: 'Pages Exodus takes over', desc: 'Off keeps Rhythia’s own version of that page.', options: PAGES },
     { key: 'exodus.search', tab: 'features', group: 'Pages', type: 'switch', looks: EXODUS, default: true,
       title: 'Search with Ctrl K', desc: 'Players, maps and clans from any page.' },
+    { key: 'exodus.events', tab: 'features', group: 'Pages', type: 'switch', looks: EXODUS, default: true,
+      title: 'Rhythia events on Home', desc: 'Events such as Community Votes, shown while they run.' },
     { key: 'modules.easterEggs', tab: 'features', group: 'Extras', type: 'switch', looks: BOTH, default: true,
       title: 'Easter eggs', desc: 'Small surprises here and there.',
       children: [

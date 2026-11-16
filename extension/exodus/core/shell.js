@@ -151,6 +151,7 @@ RhythiaX.Exodus = (function () {
   // "Show Rhythia's page", or the page going back to Rhythia. Other pages use Rhythia's player and
   // buttons, so they always keep Rhythia's page at the address.
   let nativeBehind = false;
+  const NAV_STAMP = 'data-rhythiax-exodus-nav';
   const push = href => {
     const idx = (history.state?.idx ?? 0) + 1;
     history.pushState({ usr: null, key: Math.random().toString(36).slice(2, 10), idx }, '', href);
@@ -169,6 +170,12 @@ RhythiaX.Exodus = (function () {
     const native = [...document.querySelectorAll('#root a[href]')].find(a => a.getAttribute('href') === href && !a.closest('[class*="rhythiax"]'));
     // Read before the address changes: the route listeners can show the next page during the push itself.
     const was = shownKey();
+    // The place on the page being left, for Back (Rhythia's own link may change the address a moment later).
+    // The entry is read again here: a browser without the Navigation API does not report Rhythia's own pushes.
+    entryKey = entryId(); keepPlace(); keptFor = entryKey;
+    // Rhythia's router scrolls after each of its navigations (back to a saved place, or to the top), a moment after
+    // Exodus has scrolled where its page wants. The stamp tells core/bridge.js to leave those calls out for a while.
+    html.setAttribute(NAV_STAMP, String(Date.now()));
     if (enabled && profileId(path) && allowed(routeKey(path)) && nativeFor !== path) { push(href); nativeBehind = true; }
     else if (native) { nativeBehind = false; native.click(); }
     else { nativeBehind = false; push(href); tellRhythia(); }
@@ -725,10 +732,52 @@ RhythiaX.Exodus = (function () {
 
   new MutationObserver(() => { onRoute(); if (active() && (!host || host.parentNode !== document.body)) queueSync(); })
     .observe(html, { childList: true, subtree: true });
+  // ─── Place on the page ──────────────────────
+  // Back and Forward return to where the page was scrolled. Every history entry has a key in its state (Rhythia's
+  // router and push() both write one): the place is kept under it when the entry is left, and scrolled to again
+  // once the page there is tall enough for it. Rhythia's own scrolling is held meanwhile (the stamp, as in
+  // navigate()), and anything the player does ends the wait. An entry with no place kept is left to Rhythia.
+  // The entry a tab was loaded at has no key yet, only its number.
+  const places = new Map();
+  const entryId = () => { const s = history.state; return s?.key || `i${s?.idx ?? 0}`; };
+  let entryKey = entryId(), keptFor = null, placing = null;
+  function keepPlace() {
+    if (!entryKey) return;
+    places.delete(entryKey); places.set(entryKey, scrollY);
+    if (places.size > 60) places.delete(places.keys().next().value);
+  }
+  function endPlacing() { placing?.abort(); placing = null; }
+  function goToPlace(y) {
+    endPlacing();
+    const ac = placing = new AbortController(), until = Date.now() + 4000;
+    for (const t of ['wheel', 'touchstart', 'keydown', 'pointerdown']) addEventListener(t, endPlacing, { capture: true, passive: true, signal: ac.signal });
+    const step = () => {
+      if (ac.signal.aborted) return;
+      if (!html.classList.contains(ON_CLASS)) { endPlacing(); return; }
+      const room = html.scrollHeight - innerHeight;
+      scrollTo(0, Math.max(0, Math.min(y, room)));
+      if (room >= y || Date.now() > until) endPlacing(); else setTimeout(step, 100);
+    };
+    setTimeout(step, 0);
+  }
+  // On every change of history entry; back: the player's own Back or Forward.
+  function onEntry(back) {
+    const key = entryId();
+    if (key === entryKey) return;
+    if (keptFor !== entryKey) keepPlace();
+    keptFor = null; entryKey = key;
+    endPlacing();
+    if (!back) return;
+    const y = places.get(key);
+    if (y == null) { html.removeAttribute(NAV_STAMP); return; }
+    html.setAttribute(NAV_STAMP, String(Date.now()));
+    goToPlace(y);
+  }
+
   // Back and Forward reach Rhythia's router as well, so its page is at the address again.
-  addEventListener('popstate', e => { if (e.isTrusted) nativeBehind = false; onRoute(); });
+  addEventListener('popstate', e => { if (e.isTrusted) nativeBehind = false; onEntry(e.isTrusted); onRoute(); });
   // Fires in the content-script world as soon as the URL changes, before React renders.
-  if (window.navigation?.addEventListener) window.navigation.addEventListener('currententrychange', onRoute);
+  if (window.navigation?.addEventListener) window.navigation.addEventListener('currententrychange', e => { onEntry(e.navigationType === 'traverse'); onRoute(); });
   sync();
 
   // ─── Settings ──────────────────────

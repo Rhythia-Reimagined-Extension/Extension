@@ -1,6 +1,6 @@
 # Privacy — Reimagined for Rhythia
 
-Updated November 7, 2026. This notice covers Reimagined for Rhythia 1.5.0 and both of its looks, Classic and Exodus. A store may still show an older copy while an update is under review.
+Updated November 16, 2026. This notice covers Reimagined for Rhythia 1.5.1 and both of its looks, Classic and Exodus. A store may still show an older copy while an update is under review.
 
 Maintainer: **Shuriel** · [contact@shuriel.com](mailto:contact@shuriel.com)
 
@@ -19,7 +19,7 @@ Reimagined for Rhythia is an independent fan extension; Rhythia does not make it
 | What | Why |
 | --- | --- |
 | Public game data you open: players (ID, name, avatar and the country on their game profile), scores, ranks, maps and artwork | To show score cards, progress, comparisons and playstyle. |
-| Your Rhythia sign-in | To load Rhythia's own features and do what you ask: pin scores and, in Exodus, edit your profile and settings, add and remove friends, set your showcase, wear items, use a Name Change, edit collections, invite to or leave a clan, read notifications, answer clan invites, report a player, post comments and replies, like or dislike a map, delete skins you shared and, for Team Ranked members, qualify or veto a map. These go to Rhythia as if you did them on rhythia.com. Reimagined does not copy your sign-in into its own storage. |
+| Your Rhythia sign-in | To load Rhythia's own features and do what you ask: pin scores and, in Exodus, edit your profile and settings, add and remove friends, set your showcase, wear items, use a Name Change, edit collections, invite to or leave a clan, read notifications, answer clan invites, report a player, post comments and replies, like or dislike a map, add and remove tags on your maps, delete skins you shared and, for Team Ranked members, qualify or veto a map. These go to Rhythia as if you did them on rhythia.com. Reimagined does not copy your sign-in into its own storage. |
 | Settings and your own themes | To remember your choices, including a picture or video you pick for a theme and your last 6 uploads. They stay until you delete them. |
 | Local history and saved pages | To show progress over time and open recent pages at once. Saved pages can include your own profile while you are signed in. |
 | Map types | With online history, the history service gives them. Without it, if you turn on Map types without online history (off by default), Reimagined works out an approximate type in your browser from the map files on Rhythia's servers; nothing goes to the history service. Exodus in 1.4.0 and earlier reads these files without that option: on map and score pages, and in Playstyle, Scores and Compare for every map the history service gives no type for. |

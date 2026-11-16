@@ -3,6 +3,32 @@
 All notable user-facing changes are documented in this file.
 
 ---
+version: 1.5.1
+date: 2026-11-16
+title: Community Votes
+listed: yes
+---
+
+## 1.5.1 - Community Votes - 2026-11-16
+
+# Exodus
+
+## Added
+
+- Community Votes: While Rhythia's voting is open, Home shows it with when it closes and a Vote button that opens Rhythia's voting. It can be hidden with its close button, and Rhythia events on Home in the popup turns events off.
+- Christmas Beatmap Banner: Home shows Rhythia's Christmas map event until 15 December, with a link to the maps tagged christmas.
+- Map tags: On your own map's page you can add and remove its tags, as on Rhythia.
+
+## Improved
+
+- Back and Forward: Going back to a page returns to where it was scrolled, also on the list pages after Next page.
+
+## Fixed
+
+- Next page: Going to another page of a list of maps, skins, clans, collections, players or scores shows the top of the list; since an update of Rhythia's site the view stayed at the bottom.
+- Map leaderboard: The list of countries opens above the comments; with few scores it was covered by them.
+
+---
 version: 1.5.0
 date: 2026-11-07
 title: Common Ground

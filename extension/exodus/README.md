@@ -88,6 +88,17 @@ in this order:
 Rhythia's map preview and score replay for the speed and seek controls: the map page's preview speeds
 (`PREVIEW_SPEEDS` in `core/kit.js`: 0.25×, 0.5× and the game's speed mods) and the score page's replay speeds
 (`REPLAY_SPEEDS`: 1×, 0.75×, 0.5× of the speed the play was set at).
+It also keeps the page where Exodus scrolled it: Rhythia's router scrolls after each of its navigations, so for a
+few seconds after an Exodus navigation (the `data-rhythiax-exodus-nav` stamp `core/shell.js` sets on `<html>`)
+Rhythia's `window.scrollTo` calls are left out. On Back and Forward `core/shell.js` returns to the place it kept
+for that history entry (`keepPlace`, `goToPlace`: it waits up to 4 s for the page to be tall enough, and anything
+the player does ends the wait) and stamps again; an entry with no place kept loses the stamp and is left to Rhythia.
+
+Rhythia's events on Home (`events()` in `pages/home.js`): Community Votes shows from Rhythia's own answer while
+its voting is open, and its button opens Rhythia's own dialog. An event Rhythia runs without a place on its site
+is one entry in `NOTED_EVENTS` with its last moment; delete the entry once that has passed. None shows when the
+popup's "Rhythia events on Home" (`exodus.events`) is off or the player hid that event
+(`rhythiax_exodus_events_hidden` in localStorage).
 
 ## Pages
 

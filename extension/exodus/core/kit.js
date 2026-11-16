@@ -705,7 +705,20 @@ dialog.cmp.cd-dlg{width:min(480px,calc(100vw - 32px))}
 .v-zr button:hover{opacity:1;outline:2px solid var(--text);outline-offset:-2px}
 .v-zt{display:flex;justify-content:space-between;margin-top:4px;font-size:11.5px;color:var(--muted)}
 .v-about p{margin:0;max-width:80ch;line-height:1.65;color:var(--text-2)}
-.v-tagrow{display:flex;flex-wrap:wrap;gap:6px;margin-top:12px}
+.v-tagrow{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin-top:12px}
+/* The owner's tag editor (pages/map.js) */
+.v-tagw{display:inline-flex;align-items:center;gap:2px}
+.v-tagw button{display:grid;place-items:center;width:22px;height:22px;padding:0;border:0;border-radius:6px;background:none;color:var(--muted);cursor:pointer}
+.v-tagw button:hover{background:rgba(var(--ink),.08);color:var(--text)}
+.v-tagw svg{width:12px;height:12px;fill:none;stroke:currentColor;stroke-width:2.4;stroke-linecap:round}
+.v-tagnew{border:0;font:inherit;cursor:pointer;color:var(--accent-2)}
+.v-tagadd{display:flex;flex-wrap:wrap;align-items:center;gap:6px}
+.v-tagadd input{width:170px;height:34px;padding:0 10px;border:0;border-radius:9px;background:var(--field);box-shadow:inset 0 0 0 1px var(--line-2);color:var(--text);font:inherit;outline:none}
+.v-tagadd input:focus{box-shadow:inset 0 0 0 1px var(--accent)}
+.v-tagadd input[aria-invalid="true"]{box-shadow:inset 0 0 0 1px var(--bad)}
+.v-tagadd .btn{height:34px;padding:0 12px}
+.v-about .v-tagerr{margin-top:8px;font-size:13px;color:var(--bad)}
+.v-tagrow button:disabled,.v-tagadd input:disabled{opacity:.55;cursor:default}
 /* Country picker (countryPicker) */
 .b-cp{position:relative}
 .b-cp-btn{display:flex;align-items:center;gap:10px;height:40px;min-width:220px;padding:0 12px;border:0;border-radius:10px;background:var(--field);box-shadow:inset 0 0 0 1px var(--line-2);color:var(--text);font:inherit;font-weight:600;text-align:left;cursor:pointer;transition:box-shadow .15s}
@@ -729,6 +742,8 @@ dialog.cmp.cd-dlg{width:min(480px,calc(100vw - 32px))}
 .b-cp-item[aria-selected="true"]{color:var(--text);font-weight:650}
 .b-cp-none{margin:14px 10px}
 .v-bctl{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+/* A section keeps its own layer after its entrance, so one with an open picker or menu goes above the sections after it. */
+.v-sec:has(.b-cp.open),.v-sec:has(.mn.open){position:relative;z-index:20}
 .mn{position:relative;flex:none}
 .mn-btn{width:100%;justify-content:space-between;gap:10px;border:0;color:var(--text);font:inherit;font-weight:550;text-align:left;cursor:pointer;white-space:nowrap}
 .mn-btn span{min-width:0;overflow:hidden;text-overflow:ellipsis}

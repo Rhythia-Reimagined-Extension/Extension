@@ -8,9 +8,27 @@
 // events with JSON text and gets the preview's state back the same way. When
 // Rhythia's code changes and a function cannot be found, it answers ok: false
 // and Exodus hides the controls.
+//
+// It also keeps Rhythia's router from scrolling the window right after Exodus changed the address:
+// the router restores a saved place or goes to the top once its own navigation ends, which would
+// undo the scroll of the Exodus page on screen (the next page of a list stayed at the bottom).
 
 (function () {
   'use strict';
+
+  // core/shell.js stamps <html> with the time of each Exodus navigation. For NAV_MS after it, while Exodus
+  // shows the page, window.scrollTo from the page's own world does nothing. Exodus scrolls from its own world,
+  // and on Back and Forward it returns to the place it kept and stamps again; where it kept none it takes
+  // the stamp off, so Rhythia restores the place there.
+  const NAV = 'data-rhythiax-exodus-nav', NAV_MS = 8000;
+  const scrollTo = window.scrollTo;
+  if (typeof scrollTo === 'function') {
+    window.scrollTo = function (...args) {
+      const h = document.documentElement, at = Number(h.getAttribute(NAV));
+      if (at && h.classList.contains('rhythiax-exodus') && Date.now() - at < NAV_MS) return undefined;
+      return scrollTo.apply(this, args);
+    };
+  }
 
   const ASK = 'rhythiax:exodus-player';
   const TELL = 'rhythiax:exodus-player-state';

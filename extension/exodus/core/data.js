@@ -733,7 +733,7 @@ RhythiaX.ExodusData = (function () {
     const data = await storedHome();
     if (!data) return null;
     const tag = viewerTag();
-    return data.meTag === tag ? data : { ...data, me: tag ? undefined : null, friends: [], meTag: tag };
+    return data.meTag === tag ? data : { ...data, me: tag ? undefined : null, friends: [], awards: data.awards ? { ...data.awards, voted: false } : null, meTag: tag };
   }
 
   // The first leaderboard page of one mode (50 players), shared by the home page's top ten, Compare's suggestions
@@ -765,7 +765,7 @@ RhythiaX.ExodusData = (function () {
   async function loadHome(signal) {
     const s = session(), tag = viewerTag();
     // Rhythia's public stats can take a long time to answer; the page does not wait for them.
-    const [stats, online, lock, maps, log, me, friends, prev] = await Promise.all([
+    const [stats, online, lock, maps, log, me, friends, prev, awards] = await Promise.all([
       timed(post('getPublicStats', {}, signal), 6000).catch(() => null),
       post('getOnlinePlayers', {}, signal).catch(() => null),
       leaderboard('normal', signal).catch(() => null),
@@ -774,6 +774,9 @@ RhythiaX.ExodusData = (function () {
       signedIn(signal),
       s ? post('getFriends', { session: s }, signal).catch(() => null) : { friends: [] },
       storedHome().catch(() => null),
+      // Rhythia's yearly Community Votes, as its own Home card asks: {event: {year, opensAt, closesAt, phase}, ballot}.
+      // A year without an event answers with event null or an error; Home then shows no event.
+      post('yearlyAwards', { action: 'get', year: new Date().getUTCFullYear(), session: s || '' }, signal).catch(() => null),
     ]);
     const mine = prev && tag && prev.meTag === tag ? prev : null;
     // As on Rhythia: default "user…" names are left out and the first 70 are listed.
@@ -795,6 +798,9 @@ RhythiaX.ExodusData = (function () {
       // undefined: signed in, but who could not be read.
       me: me ? slimPlayer({ ...me, rank_change: 0 }) : me === null ? null : mine?.me,
       friends: friends ? (friends.friends || []).map(f => ({ id: f.id, username: f.username, avatar: f.avatar_url })) : mine?.friends || [],
+      // The event on Home (pages/home.js shows it only while its voting is open); voted is the signed-in player's.
+      awards: awards ? (awards.event ? { year: awards.event.year, closesAt: awards.event.closesAt, phase: awards.event.phase, voted: Boolean(awards.ballot) } : null)
+        : prev?.awards ? { ...prev.awards, voted: Boolean(mine?.awards?.voted) } : null,
       meTag: tag,
     };
     if (me) Object.assign(data.me, { countryPosition: me.country_position, plays: me.play_count });
@@ -1013,6 +1019,13 @@ RhythiaX.ExodusData = (function () {
     const r = await post('setBeatmapVote', { session: needSession(), page: Number(mapId), vote: vote || null });
     if (!r.votes) throw new Error('Could not save your vote.');
     return slimVotes(r.votes);
+  }
+
+  // The owner adds or removes one tag of their map (action: 'add' or 'remove'); answers the map's new tags.
+  async function tagMap(mapId, action, tag) {
+    const r = await post('updateBeatmapTags', { session: needSession(), id: Number(mapId), action, tag });
+    if (typeof r.tags !== 'string') throw new Error('Could not save tags. Please try again.');
+    return { tags: r.tags };
   }
 
   // Team Ranked: qualify a map, or veto a qualified one with a reason (Rhythia checks the badge itself).
@@ -1288,5 +1301,5 @@ RhythiaX.ExodusData = (function () {
   const mapMetaFor = (ids, signal) => mapMetaAll([...new Set(ids)], signal);
   const onHistoryChange = fn => { historyListeners.push(fn); };
 
-  return { load, stale, mapMetaFor, mapStyles, basicKindsOn, mapPlays, knownStyles, mapSearchTypes, mapSearch, myTopMaps, storedStyles, snapshot, forget, post, session, composeAboutMe, actions, account, notes, cachedSelf, knownSelf, viewerTag, searchShowcase, loadHome, homeSnapshot, leaderboard, topPlaces, board, boardSnapshot, histories, historiesCached, historyAllowed, compare, onHistoryChange, signedIn, mapPage, qualifyMap, vetoMap, mapVotes, voteMap, scorePage, pageSnapshot, historyOf, maps, mapsSnapshot, comments, postComment, skins, skinsSnapshot, skinCounts, deleteSkin, clans, clansSnapshot, clanPage, clanSnapshot, clanScores, clanRanks, inviteToClan, leaveClan, collections, collectionsSnapshot, collection, collectionSnapshot, removeFromCollection, ownCollections, addToCollection, createCollection, editCollection, deleteCollection, changelog, playerMaps, playerMapsSnapshot, playerSkins, playerSkinsSnapshot, inventory, equip };
+  return { load, stale, mapMetaFor, mapStyles, basicKindsOn, mapPlays, knownStyles, mapSearchTypes, mapSearch, myTopMaps, storedStyles, snapshot, forget, post, session, composeAboutMe, actions, account, notes, cachedSelf, knownSelf, viewerTag, searchShowcase, loadHome, homeSnapshot, leaderboard, topPlaces, board, boardSnapshot, histories, historiesCached, historyAllowed, compare, onHistoryChange, signedIn, mapPage, qualifyMap, vetoMap, mapVotes, voteMap, tagMap, scorePage, pageSnapshot, historyOf, maps, mapsSnapshot, comments, postComment, skins, skinsSnapshot, skinCounts, deleteSkin, clans, clansSnapshot, clanPage, clanSnapshot, clanScores, clanRanks, inviteToClan, leaveClan, collections, collectionsSnapshot, collection, collectionSnapshot, removeFromCollection, ownCollections, addToCollection, createCollection, editCollection, deleteCollection, changelog, playerMaps, playerMapsSnapshot, playerSkins, playerSkinsSnapshot, inventory, equip };
 })();

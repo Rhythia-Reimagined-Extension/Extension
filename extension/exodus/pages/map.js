@@ -18,7 +18,7 @@ function map(host, ctx) {
   const id = ctx.id;
   // The country comes from the address as on Rhythia (/maps/1?country=PL); '' is Global.
   const askCountry = (new URLSearchParams(location.search).get('country') || '').toUpperCase();
-  const S = {d: null, mode: 'normal', country: /^[A-Z]{2}$/.test(askCountry) ? askCountry : '', me: null, more: false, plays: undefined, playsErr: '', friends: false, votes: undefined, voting: false, comments: null, replyTo: null, draft: {main: '', reply: ''}, enter: true, dock: null, busy: false, posting: '', speed: 0, live: false};
+  const S = {d: null, mode: 'normal', country: /^[A-Z]{2}$/.test(askCountry) ? askCountry : '', me: null, more: false, plays: undefined, playsErr: '', friends: false, votes: undefined, voting: false, comments: null, replyTo: null, draft: {main: '', reply: ''}, tag: {open: false, value: '', busy: false, err: ''}, enter: true, dock: null, busy: false, posting: '', speed: 0, live: false};
 
   const cp = countryPicker(R, {current: () => S.country, mine: () => S.me?.flag || '', pick: c => loadBoard(S.mode, c), redraw: () => redraw('#v-board-sec', boardSec()), signal: ac.signal});
 
@@ -86,9 +86,48 @@ function map(host, ctx) {
     const veto = vetos.length ? `<div class="panel v-vetos"><h3>Vetos</h3>${vetos.map(v => `<div class="v-veto"><p><b>Veto from ${v.userId != null ? `<a href="/player/${esc(v.userId)}">${esc(v.username || 'Team Ranked')}</a>` : esc(v.username || 'Team Ranked')}</b>${v.at ? ` <span class="cap" data-tip="<b>${esc(fullDate(v.at))}</b>">${esc(ago(v.at))}</span>` : ''}</p><p>${esc(v.reason || 'No reason provided.')}</p></div>`).join('')}</div>` : '';
     return `<section class="container v-sec v-ranksec" id="v-rank-sec">${at ? queue + tr : tr}${veto}</section>`;
   }
-  function about(m) {
-    const tags = String(m.tags || '').split(/[,\s]+/).filter(Boolean);
-    return `${rankSec(m)}<section class="container v-sec v-about"><p class="${m.description ? '' : 'cap'}">${m.description ? esc(m.description).replace(/\n/g, '<br>') : 'No map description.'}</p>${tags.length ? `<div class="v-tagrow">${tags.map(t => `<a class="tag" href="/maps?tags=${encodeURIComponent(t)}">${esc(t)}</a>`).join('')}</div>` : ''}</section>`;
+  // The map's tags. Its owner adds and removes them here, as on Rhythia's map page (the same rules and messages;
+  // Rhythia checks them again).
+  const TAG_MAX = 40, TAGS_MAX = 1000;
+  const tagsOf = m => { const seen = new Set(); return String(m.tags || '').split(/[\s,]+/u).filter(t => { const k = t.toLowerCase(); if (!k || seen.has(k)) return false; seen.add(k); return true; }); };
+  const canTag = m => Boolean(S.me && m.mapperId === S.me.id && !['silenced', 'restricted', 'excluded'].includes(S.me.ban || ''));
+  function tagError(text, tags) {
+    const t = text.trim();
+    if (!t) return 'Enter a tag.';
+    if (t.length > TAG_MAX) return `Tags can contain up to ${TAG_MAX} characters.`;
+    if (/[\s,\p{Cc}\p{Cf}]/u.test(t)) return 'Enter one keyword without spaces or commas.';
+    if (tags.some(x => x.toLowerCase() === t.toLowerCase())) return 'This tag is already added.';
+    if ([...tags, t].join(' ').length > TAGS_MAX) return 'These tags are full. Remove a tag before adding another.';
+    return '';
+  }
+  function aboutSec(m) {
+    const tags = tagsOf(m), own = canTag(m), T = S.tag, off = T.busy ? 'disabled' : '';
+    const chip = t => `<a class="tag" href="/maps?tags=${encodeURIComponent(t)}">${esc(t)}</a>`;
+    const add = !own ? '' : T.open
+      ? `<form class="v-tagadd" data-tag-form><input id="v-tag-in" type="text" value="${esc(T.value)}" maxlength="${TAG_MAX}" placeholder="Tag…" aria-label="New tag" aria-invalid="${Boolean(T.err)}" autocomplete="off" spellcheck="false" enterkeyhint="done" ${off}><button class="btn primary" type="submit" ${off}>Add</button><button class="btn" type="button" data-tag-cancel ${off}>Cancel</button></form>`
+      : `<button class="tag v-tagnew" type="button" data-tag-new ${off}>+ Add tag</button>`;
+    const row = tags.length || own ? `<div class="v-tagrow" role="group" aria-label="Beatmap tags" aria-busy="${T.busy}">${tags.map(t => own
+      ? `<span class="v-tagw">${chip(t)}<button type="button" data-tag-del="${esc(t)}" aria-label="Remove tag ${esc(t)}" data-tip="Remove tag" ${off}><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button></span>` : chip(t)).join('')}${add}</div>` : '';
+    return `<section class="container v-sec v-about" id="v-about-sec"><p class="${m.description ? '' : 'cap'}">${m.description ? esc(m.description).replace(/\n/g, '<br>') : 'No map description.'}</p>${row}${own && T.err ? `<p class="v-tagerr" role="alert">${esc(T.err)}</p>` : ''}</section>`;
+  }
+  const about = m => `${rankSec(m)}${aboutSec(m)}`;
+  const redrawAbout = () => { if (S.d) redraw('#v-about-sec', aboutSec(S.d.map)); };
+  async function tagSave(action, tag) {
+    const T = S.tag;
+    if (!S.d || T.busy) return;
+    if (action === 'add') { T.err = tagError(tag, tagsOf(S.d.map)); if (T.err) { redrawAbout(); return; } }
+    T.busy = true; T.err = ''; redrawAbout();
+    try {
+      const r = await Data().tagMap(id, action, tag.trim());
+      if (ac.signal.aborted) return;
+      S.d = {...S.d, map: {...S.d.map, tags: r.tags}};
+      if (action === 'add') { T.open = false; T.value = ''; }
+    } catch (err) {
+      if (ac.signal.aborted) return;
+      T.err = String(err.message || '').replace(/^updateBeatmapTags: /, '') || 'Could not save tags. Please try again.';
+    }
+    T.busy = false; redrawAbout();
+    (T.open ? $('#v-tag-in') : $('[data-tag-new]'))?.focus();
   }
   function playsSec() {
     // S.plays: undefined while asked, null without online history, else the history service's answer.
@@ -209,7 +248,7 @@ function map(host, ctx) {
       const was = S.d;
       S.d = d; S.busy = false;
       if (!was) render();
-      else { S.enter = false; morph($('#hero'), hero(d.map)); redraw('#v-rank-sec', rankSec(d.map)); redraw('#v-board-sec', boardSec()); }
+      else { S.enter = false; morph($('#hero'), hero(d.map)); redraw('#v-rank-sec', rankSec(d.map)); redrawAbout(); redraw('#v-board-sec', boardSec()); }
     }
     S.enter = false;
     loadVotes();
@@ -305,6 +344,10 @@ function map(host, ctx) {
     if (e.target.closest('[data-friends-only]')) { loadBoard(S.mode, S.country, !S.friends); return; }
     const vb = e.target.closest('[data-vote]');
     if (vb) { if (!vb.disabled) vote(vb.dataset.vote); return; }
+    if (e.target.closest('[data-tag-new]')) { S.tag.open = true; redrawAbout(); $('#v-tag-in')?.focus(); return; }
+    if (e.target.closest('[data-tag-cancel]')) { S.tag = {open: false, value: '', busy: false, err: ''}; redrawAbout(); $('[data-tag-new]')?.focus(); return; }
+    const td = e.target.closest('[data-tag-del]');
+    if (td) { ui.hide(); tagSave('remove', td.dataset.tagDel); return; }
     if (e.target.closest('[data-more]')) { S.more = !S.more; redraw('#v-board-sec', boardSec()); return; }
     const rp = e.target.closest('[data-reply]');
     if (rp) return openReply(rp.dataset.reply);
@@ -319,6 +362,7 @@ function map(host, ctx) {
   }, sig);
   // Typing keeps the draft (a redraw writes it back) and moves the counter without one.
   R.addEventListener('input', e => {
+    if (e.target.id === 'v-tag-in') { S.tag.value = e.target.value; if (S.tag.err) { S.tag.err = ''; redrawAbout(); } return; }
     const f = e.target.closest('form[data-form]');
     if (!f || e.target.tagName !== 'TEXTAREA') return;
     S.draft[f.dataset.form] = e.target.value;
@@ -326,6 +370,7 @@ function map(host, ctx) {
     if (el) { el.textContent = c.text; el.classList.toggle('over', c.over); }
   }, sig);
   R.addEventListener('submit', async e => {
+    if (e.target.closest('form[data-tag-form]')) { e.preventDefault(); tagSave('add', $('#v-tag-in')?.value ?? S.tag.value); return; }
     const f = e.target.closest('form[data-form]');
     if (!f) return;
     e.preventDefault();

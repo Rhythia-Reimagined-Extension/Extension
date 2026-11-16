@@ -100,6 +100,46 @@ function hero() {
   </div></div>` : '<div class="h-numbers-gap"></div>'}`;
 }
 
+/* ── Rhythia's events ── */
+// Community Votes shows from Rhythia's own answer (D.awards, core/data.js): only in the open phase and before it
+// closes; voting itself is Rhythia's dialog, opened by its own button. An event Rhythia runs without a place on its
+// site is written in NOTED_EVENTS with its last moment and goes by itself after it. None shows when the popup's
+// "Rhythia events on Home" is off or the player hid that one (kept in this browser).
+const EVENTS_HIDDEN = 'rhythiax_exodus_events_hidden';
+const hiddenEvents = () => { try { const v = JSON.parse(localStorage.getItem(EVENTS_HIDDEN) || '[]'); return Array.isArray(v) ? v.map(String) : []; } catch (_) { return []; } };
+// Announced on Rhythia's Discord (2026-11-15): a map with a Christmas theme, tagged christmas and ranked before
+// 15 December gives its mapper a profile banner.
+const NOTED_EVENTS = [
+  {id: 'christmas-maps-2026', ends: '2026-12-15T00:00:00Z', when: 'until 15 December', title: 'Christmas Beatmap Banner',
+    text: 'Get a map with a Christmas theme and the tag christmas ranked before 15 December for a special profile banner.', href: '/maps?tags=christmas', action: 'Maps tagged christmas'},
+];
+const eventHide = id => `<button class="iconbtn h-ev-x" type="button" data-event-hide="${esc(id)}" aria-label="Hide this event" data-tip="<b>Hide this event</b><small>All events: Rhythia events on Home, in the popup.</small>">${ico('x')}</button>`;
+function events() {
+  if (RhythiaX.ExodusPrefs?.exodus?.events === false) return '';
+  const hidden = hiddenEvents(), a = D.awards, cards = [];
+  if (a && a.phase === 'open' && Date.parse(a.closesAt) > Date.now() && !hidden.includes(`votes-${a.year}`)) {
+    const end = new Date(a.closesAt);
+    cards.push(`<div class="h-ev">
+      <img class="h-ev-art" src="${SITE}/community-votes-${esc(a.year)}.png" alt="" loading="lazy" decoding="async">
+      <div class="h-ev-in"><small>Rhythia event · voting closes ${esc(end.toLocaleDateString('en-GB', {day: 'numeric', month: 'long'}))}, ${clock(end)}</small><h2>Community Votes ${esc(a.year)}</h2>
+        <p>Vote for map of the year and player of the year.</p>
+        <button class="btn primary" type="button" data-event-vote>${a.voted ? 'Your votes' : 'Vote'}</button></div>
+      ${eventHide(`votes-${a.year}`)}</div>`);
+  }
+  for (const n of NOTED_EVENTS) {
+    if (!(Date.parse(n.ends) > Date.now()) || hidden.includes(n.id)) continue;
+    cards.push(`<div class="h-ev slim"><div class="h-ev-in"><small>Rhythia event · ${esc(n.when)}</small><h2>${esc(n.title)}</h2><p>${esc(n.text)}</p></div>
+      <a class="btn" href="${esc(n.href)}">${esc(n.action)}</a>${eventHide(n.id)}</div>`);
+  }
+  return cards.length ? `<section class="container section reveal h-sec h-event" aria-label="Rhythia events">${cards.join('')}</section>` : '';
+}
+// Rhythia's own Community Votes button, whatever its label says (it follows Rhythia's language and the player's votes).
+function openVotes() {
+  const btn = document.querySelector('#root img[src*="community-votes"]')?.closest('section')?.querySelector('button');
+  if (btn) { btn.click(); return true; }
+  return ['Vote', 'Your votes', 'View votes'].some(l => ctx.clickNative(l));
+}
+
 /* ── Latest ranked maps ── */
 function maps() {
   if (!D.maps.length) return '';
@@ -230,7 +270,7 @@ function footer() {
 /* ── Rendering ── */
 function render() {
   $('#hero').innerHTML = '';
-  $('#body').innerHTML = `<div class="h-page ${ctx.quiet ? 'quiet' : 'enter'}">${hero()}${maps()}
+  $('#body').innerHTML = `<div class="h-page ${ctx.quiet ? 'quiet' : 'enter'}">${hero()}${events()}${maps()}
     <section class="container section reveal h-sec h-board" aria-label="Rankings and news"><div class="h-cols">${leaderboard()}<div class="h-side-col">${clans()}${release()}</div></div></section>
     ${whoIsPlaying()}${community()}${footer()}</div>`;
   watch($('#body'));
@@ -267,8 +307,17 @@ function setMode(mode) {
 }
 
 R.addEventListener('click', e => {
-  const t = e.target.closest('[data-lb],[data-online-all],[data-native-click]');
+  const t = e.target.closest('[data-lb],[data-online-all],[data-native-click],[data-event-vote],[data-event-hide]');
   if (!t) return;
+  if (t.hasAttribute('data-event-vote')) { if (!openVotes()) toast('Rhythia is still loading. Try again in a moment.'); return; }
+  if (t.dataset.eventHide) {
+    try { localStorage.setItem(EVENTS_HIDDEN, JSON.stringify([...new Set([...hiddenEvents(), t.dataset.eventHide])])); } catch (_) {}
+    hideTip();
+    const sec = t.closest('.h-event'); t.closest('.h-ev')?.remove();
+    if (sec && !sec.querySelector('.h-ev')) sec.remove();
+    toast('Event hidden.');
+    return;
+  }
   if (t.dataset.lb) return setMode(t.dataset.lb);
   if (t.hasAttribute('data-online-all')) { S.allOnline = !S.allOnline; $('#h-whos').innerHTML = onlineWall(); return; }
   if (t.dataset.nativeClick && !ctx.clickNative(t.dataset.nativeClick)) toast('Rhythia is still loading. Try again in a moment.');
@@ -337,6 +386,29 @@ RhythiaX.ExodusHome.css = `
 .h-numbers .kpi{cursor:default}
 .h-numbers .kpi small{display:flex;align-items:center}
 .h-sec{margin-top:80px}
+.h-numbers + .h-event,.h-numbers-gap + .h-event{margin-top:48px}
+.h-ev{position:relative;display:flex;align-items:center;min-height:176px;border-radius:18px;overflow:hidden;isolation:isolate;background:#0b0d12;box-shadow:inset 0 0 0 1px var(--line);color:#f4f5f7}
+.h-ev-art{position:absolute;inset:0;z-index:-2;width:100%;height:100%;object-fit:cover;object-position:right center}
+.h-ev::before{content:"";position:absolute;inset:0;z-index:-1;background:linear-gradient(90deg,rgba(7,8,11,.9) 0%,rgba(7,8,11,.62) 42%,rgba(7,8,11,0) 82%)}
+.h-ev-in{display:flex;flex-direction:column;align-items:flex-start;gap:6px;max-width:min(560px,72%);padding:26px 32px}
+.h-ev-in small{font-size:12.5px;font-weight:650;color:#c9cfd8}
+.h-ev-in h2{margin:0;font-size:clamp(24px,3vw,34px);line-height:1.1;font-weight:800;letter-spacing:-.025em}
+.h-ev-in p{margin:0;font-size:15px;color:#c9cfd8}
+.h-ev-in .btn{margin-top:10px;height:42px;padding:0 22px}
+.h-ev-x{position:absolute;top:12px;right:12px;width:32px;height:32px;border-radius:10px;color:#e4e8ee;background:rgba(7,8,11,.55);box-shadow:inset 0 0 0 1px rgba(255,255,255,.16)}
+.h-ev-x:hover{background:rgba(7,8,11,.8);color:#fff}
+.h-ev + .h-ev{margin-top:12px}
+.h-ev.slim{min-height:0;gap:20px;padding-right:60px;background:var(--panel);color:var(--text)}
+.h-ev.slim::before{content:none}
+.h-ev.slim .h-ev-in{flex:1;max-width:none;padding:18px 24px;gap:3px}
+.h-ev.slim small,.h-ev.slim p{color:var(--text-2)}
+.h-ev.slim h2{font-size:19px;letter-spacing:-.01em}
+.h-ev.slim p{font-size:14px}
+.h-ev.slim .btn{flex:none}
+.h-ev.slim .h-ev-x{top:50%;transform:translateY(-50%);color:var(--text-2);background:none;box-shadow:inset 0 0 0 1px var(--line-2)}
+.h-ev.slim .h-ev-x:hover{color:var(--text);background:rgba(var(--ink),.06)}
+@media (max-width:700px){.h-ev.slim{flex-wrap:wrap;gap:0;padding:0 16px 16px 0}.h-ev.slim .btn{margin-left:24px}.h-ev.slim .h-ev-x{top:12px;transform:none}}
+@media (max-width:560px){.h-ev-in{max-width:100%;padding:22px 20px}.h-ev::before{background:rgba(7,8,11,.7)}}
 .h-numbers-gap{height:8px}
 .h-more{color:var(--accent-2);font-weight:600;white-space:nowrap;font-size:14px}
 .h-more:hover{text-decoration:underline;text-underline-offset:3px}

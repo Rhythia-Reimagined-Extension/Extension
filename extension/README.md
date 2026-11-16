@@ -102,7 +102,7 @@ removes what the look that wrote a copy would no longer keep or show, also while
   say `classic`; players see Classic. Neither means old or unused.
 - **bridge** names four kinds of file:
   - Scripts that run in the page's own world (`"world": "MAIN"`): `exodus/core/bridge.js` (Rhythia's map
-    preview) and `legacy/core/bridges/page-api-tap.js` (passes on two of Rhythia's own API answers).
+    preview, and Rhythia's scrolling after an Exodus navigation) and `legacy/core/bridges/page-api-tap.js` (passes on two of Rhythia's own API answers).
   - Thin facades over Classic's own functions: `legacy/core/bridges/rhythia-api-bridge.js`
     (`fetchPlayerScoreSets`, `fetchUserProfile`), `data-store-bridge.js` (`getRecord`) and `site-dom-bridge.js`
     (`query`, `queryAll`, `findOfficialStatsContainer`, `findHeaderRankArea`).

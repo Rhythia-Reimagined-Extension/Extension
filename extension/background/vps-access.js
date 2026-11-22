@@ -23,7 +23,7 @@ RhythiaX.VpsAccess = RhythiaX.VpsAccess || (function () {
   const HEADER = 'X-Reimagined-Key';
   // The only requests carried: one player's history or compare, a page of players, the types of up to 100 maps,
   // how one map plays (the map and score pages), or the map search (what it filters by, and one page of results).
-  const ROUTES = [/^https:\/\/rhythia\.shuriel\.com\/api\/player\/\d{1,7}\/history$/, /^https:\/\/rhythia\.shuriel\.com\/api\/player\/\d{1,7}\/compare\?mode=(lock|spin|vr)$/, /^https:\/\/rhythia\.shuriel\.com\/api\/players\/history$/, /^https:\/\/rhythia\.shuriel\.com\/api\/maps\/(kinds|types|search|plays)$/];
+  const ROUTES = [/^https:\/\/rhythia\.shuriel\.com\/api\/player\/\d{1,7}\/history$/, /^https:\/\/rhythia\.shuriel\.com\/api\/player\/\d{1,7}\/compare\?mode=(lock|spin|vr)$/, /^https:\/\/rhythia\.shuriel\.com\/api\/player\/\d{1,7}\/near-maps$/, /^https:\/\/rhythia\.shuriel\.com\/api\/players\/history$/, /^https:\/\/rhythia\.shuriel\.com\/api\/maps\/(kinds|types|search|plays)$/];
   // POST routes and the largest body each may carry (map keys are song names, up to ~150 characters).
   const POST_BODY = { '/api/players/history': 2048, '/api/maps/kinds': 16384, '/api/maps/search': 2048, '/api/maps/plays': 4096 };
   const KEY_PATTERN = /^rk1\.[A-Za-z0-9_-]{48}$/;

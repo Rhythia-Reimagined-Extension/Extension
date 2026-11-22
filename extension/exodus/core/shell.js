@@ -787,7 +787,9 @@ RhythiaX.Exodus = (function () {
     const theme = THEMES.includes(result.rhythiaxTheme) ? result.rhythiaxTheme : 'reimagined';
     look = { theme, style: result.rhythiaxExodusStyle === 'float' ? 'float' : 'lines' };
     const prefs = {
-      modules: Object.fromEntries(['playerCompare', 'statHistory', 'titleProgression', 'advancedStats', 'friendsList', 'easterEggs'].map(k => [k, X.read(result, `modules.${k}`) !== false])),
+      modules: Object.fromEntries(['playerCompare', 'statHistory', 'titleProgression', 'advancedStats', 'friendsList', 'easterEggs', 'atlasLinks', 'nearRank', 'mapSearch'].map(k => [k, X.read(result, `modules.${k}`) !== false])),
+      // Near your rank's values and bar on each play of the top (pages/profile-scores.js).
+      nearOnPlays: X.read(result, 'options.nearRank.onPlays') !== false,
       exodus: X.exodusOptions(result),
       // Map types without online history (shared/map-kinds-basic.js): its types show or go with the page drawn again.
       mapKindsOffline: X.read(result, 'mapKindsOffline') === true,

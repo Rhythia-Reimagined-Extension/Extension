@@ -74,18 +74,10 @@ body[data-rhythiax-theme] #root textarea::placeholder {
   color: var(--rhythiax-text-muted) !important;
   opacity: .72 !important;
 }
-body[data-rhythiax-theme] #root [class*="hover:bg-[#1d1e20]"]:hover,
-body[data-rhythiax-theme] #root [class*="hover:bg-[#17181A]"]:hover,
-body[data-rhythiax-theme] #root [class*="hover:bg-[#2D2F33]"]:hover {
-  background-color: var(--rhythiax-accent-soft) !important;
-}
 
 /* Text hierarchy for literal utility classes. Image tiles get their own
    exception below so their white overlay text remains readable in White. */
-body[data-rhythiax-theme] #root [class*="text-white/65"],
-body[data-rhythiax-theme] #root [class*="text-white/60"],
-body[data-rhythiax-theme] #root [class*="text-white/55"],
-body[data-rhythiax-theme] #root [class*="text-white/50"] {
+body[data-rhythiax-theme] #root [class*="text-white/60"] {
   color: var(--rhythiax-text-muted) !important;
 }
 body[data-rhythiax-theme="white"] #root [class*="text-white"],
@@ -103,9 +95,6 @@ body[data-rhythiax-theme="white"] #root [class*="text-neutral-500"] {
 body[data-rhythiax-theme] #root [class*="aspect-square"][class*="overflow-hidden"] {
   background-color: var(--rhythiax-surface) !important;
   border-color: color-mix(in srgb, var(--rhythiax-accent) 55%, var(--rhythiax-border)) !important;
-}
-body[data-rhythiax-theme] #root [class*="aspect-square"][class*="overflow-hidden"] [class*="from-[#111214]"] {
-  --tw-gradient-from: var(--rhythiax-image-overlay) !important;
 }
 body[data-rhythiax-theme] #root [class*="aspect-square"][class*="overflow-hidden"] [class*="bg-black/35"] {
   background-color: color-mix(in srgb, var(--rhythiax-page-bg) 45%, transparent) !important;
@@ -140,25 +129,20 @@ body[data-rhythiax-theme="white"] #root > div > div:last-child {
 }
 
 /* Preserve the intended visual identity of each preset. */
-body[data-rhythiax-theme="dark"] #root [class*="bg-blue-500/10"],
-body[data-rhythiax-theme="dark"] #root [class*="bg-blue-500/20"] {
+body[data-rhythiax-theme="dark"] #root [class*="bg-blue-500/10"] {
   background-color: var(--rhythiax-accent-soft) !important;
 }
-body[data-rhythiax-theme="rhythia-reimagined"] #root [class*="bg-blue-500/10"],
-body[data-rhythiax-theme="rhythia-reimagined"] #root [class*="bg-blue-500/20"] {
+body[data-rhythiax-theme="rhythia-reimagined"] #root [class*="bg-blue-500/10"] {
   background-color: var(--rhythiax-accent-soft) !important;
 }
-body[data-rhythiax-theme="white"] #root [class*="bg-blue-500/10"],
-body[data-rhythiax-theme="white"] #root [class*="bg-blue-500/20"] {
+body[data-rhythiax-theme="white"] #root [class*="bg-blue-500/10"] {
   background-color: var(--rhythiax-accent-soft) !important;
 }
 /* Text on that tint: White's deep violet, or an own theme's accent darkened towards its text. */
-:where(html:not([data-rhythiax-own-theme])) body[data-rhythiax-theme="white"] #root [class*="bg-blue-500/10"],
-:where(html:not([data-rhythiax-own-theme])) body[data-rhythiax-theme="white"] #root [class*="bg-blue-500/20"] {
+:where(html:not([data-rhythiax-own-theme])) body[data-rhythiax-theme="white"] #root [class*="bg-blue-500/10"] {
   color: #4c1d95 !important;
 }
-:where(html[data-rhythiax-own-theme]) body[data-rhythiax-theme="white"] #root [class*="bg-blue-500/10"],
-:where(html[data-rhythiax-own-theme]) body[data-rhythiax-theme="white"] #root [class*="bg-blue-500/20"] {
+:where(html[data-rhythiax-own-theme]) body[data-rhythiax-theme="white"] #root [class*="bg-blue-500/10"] {
   color: color-mix(in srgb, var(--rhythiax-accent) 65%, var(--rhythiax-text-strong)) !important;
 }
 

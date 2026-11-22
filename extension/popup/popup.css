@@ -105,6 +105,7 @@ p.alert { background: color-mix(in srgb, var(--bad) 14%, transparent); box-shado
 .opts { margin: 0 12px; padding: 2px 0 12px; border-top: 1px solid var(--line); }
 .opt { padding-top: 10px; }
 .opt-l { display: block; margin-bottom: 6px; font-size: 12px; font-weight: 600; color: var(--text-2); }
+.opt-l small { display: block; margin-top: 1px; font-weight: 400; color: var(--muted); line-height: 1.38; }
 .opt.inline { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
 .opt.inline .opt-l { margin: 0; }
 

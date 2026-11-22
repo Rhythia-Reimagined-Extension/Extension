@@ -22,6 +22,29 @@ function map(host, ctx) {
 
   const cp = countryPicker(R, {current: () => S.country, mine: () => S.me?.flag || '', pick: c => loadBoard(S.mode, c), redraw: () => redraw('#v-board-sec', boardSec()), signal: ac.signal});
 
+  // Install in Atlas (popup, off by default; shared/atlas-link.js): a plain atlas:// link, the browser asks first.
+  // Paired with Atlas (background/atlas-bridge.js, S.atlas from loadAtlas()), small Atlas buttons instead: In your
+  // game or Install, and Add to an Atlas collection while Atlas runs.
+  const {ATLAS_MARK} = RhythiaX.ExodusKit;
+  function atlasLink() {
+    const href = RhythiaX.ExodusPrefs?.modules?.atlasLinks === true && RhythiaX.AtlasLink?.href('map', id);
+    if (!href) return '';
+    const A = S.atlas;
+    if (!A?.paired) return `<a class="btn" href="${esc(href)}" data-tip="<b>${RhythiaX.AtlasLink.LABEL}</b><small>${RhythiaX.AtlasLink.TIP}</small>">${RhythiaX.AtlasLink.LABEL}</a>`;
+    const install = A.inGame
+      ? `<span class="btn v-atl in" data-tip="<b>In your game</b><small>Atlas found it in Rhythia on this computer.</small>">${ATLAS_MARK}In your game</span>`
+      : `<a class="btn v-atl" href="${esc(href)}" data-tip="<b>Install with Atlas</b><small>${A.connected ? 'Goes straight to the game.' : 'Opens Atlas. Your browser asks first.'}</small>">${ATLAS_MARK}Install</a>`;
+    const collect = A.connected ? `<button class="btn v-atl" type="button" data-atlas-collect data-tip="<b>Add to an Atlas collection</b>">${ATLAS_MARK}Atlas collection</button>` : '';
+    return install + collect;
+  }
+  // The player's best pass of this map in the game (Atlas), under the map's numbers.
+  function atlasBest() {
+    const b = S.atlas?.best;
+    if (!b) return '';
+    const tip = [b.miss != null ? `${fmt(b.miss)} ${b.miss === 1 ? 'miss' : 'misses'}` : '', `passed ${b.n === 1 ? 'once' : `${fmt(b.n)} times`}`,
+      b.speed && b.speed !== 1 ? `${fmt(b.speed, 2)}× speed` : '', b.at ? `on ${esc(String(b.at).slice(0, 10))}` : ''].filter(Boolean).join(', ');
+    return `<div data-tip="<b>Your best pass in the game</b><small>${tip}. From Atlas; failed tries don’t count.</small>"><small>Your best in game</small><b class="num">${b.acc != null ? fmt(b.acc, 2) + '%' : '—'}${b.rp ? ` · ${fmt(Math.round(b.rp))} RP` : ''}</b></div>`;
+  }
   function hero(m) {
     const [dl, dc] = diff(m.difficulty), [sl, sc] = status(m);
     return `<section class="v-hero map ${S.enter ? 'enter' : ''}"><div class="v-banner" style="background-image:${cssUrl(m.art)}"></div><div class="container v-hero-in">
@@ -31,13 +54,14 @@ function map(host, ctx) {
         <h1>${esc(m.title)}</h1>
         <p class="v-by"><span>Mapped by <a href="/player/${esc(m.mapperId)}">${esc(m.mapper)}</a></span>${m.qualifiedBy ? `<span>Qualified by <a href="/player/${esc(m.qualifiedById)}">${esc(m.qualifiedBy)}</a></span>` : ''}
           <span data-tip="<b>${esc(fullDate(m.created))}</b>">Posted ${esc(ago(m.created))}</span>${m.updated ? `<span data-tip="<b>${esc(fullDate(new Date(m.updated).toISOString()))}</b>">Updated ${esc(ago(new Date(m.updated).toISOString()))}</span>` : ''}</p>
-        <div class="v-act"><button class="btn primary" type="button" data-native-click="Download">Download</button>${S.me ? '<button class="btn" type="button" data-collect>Add to collection</button>' : ''}<button class="btn" type="button" data-native-click="Copyright Report">Copyright Report</button>${votesHtml()}</div>
+        <div class="v-act"><button class="btn primary" type="button" data-native-click="Download">Download</button>${atlasLink()}${S.me ? '<button class="btn" type="button" data-collect>Add to collection</button>' : ''}<button class="btn" type="button" data-native-click="Copyright Report">Copyright Report</button>${votesHtml()}</div>
       </div></div>
       <div class="container"><div class="v-kpis">
         <div><small>Length</small><b class="num">${mmss(m.length)}</b></div>
         <div><small>Star rating</small><b class="num">★ ${fmt(m.stars, 2)}</b></div>
         <div><small>Plays</small><b class="num">${fmt(m.plays)}</b></div>
         <div><small>Notes</small><b class="num">${fmt(m.notes)}</b></div>
+        ${atlasBest()}
       </div></div></section>`;
   }
   // Likes and dislikes, as on Rhythia's map page: a second click on your own vote takes it back, and signed out
@@ -50,6 +74,15 @@ function map(host, ctx) {
     return `<div class="v-vote" role="group" aria-label="Beatmap votes" aria-busy="${v === undefined || S.voting}">${btn('like')}${btn('dislike')}<i class="v-vbar" role="progressbar" aria-label="Percentage of likes" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${Math.round(pct)}" aria-valuetext="${text}"><i style="width:${pct.toFixed(1)}%"></i></i></div><span class="cap v-vpct">${text}</span>`;
   }
   const redrawHero = () => { if (S.d) morph($('#hero'), hero(S.d.map)); };
+  // With Install in Atlas on: whether Atlas is paired, the map is in the game and the player's best pass of it.
+  async function loadAtlas() {
+    if (RhythiaX.ExodusPrefs?.modules?.atlasLinks !== true) return;
+    let info = null;
+    try { info = await chrome.runtime.sendMessage({type: 'rhythiax-atlas-map', id, name: S.me?.username || ''}); } catch (_) {}
+    if (ac.signal.aborted || !info) return;
+    S.atlas = info;
+    redrawHero();
+  }
   async function loadVotes() {
     try { S.votes = await Data().mapVotes(id, ac.signal); } catch (err) { if (ac.signal.aborted) return; S.votes = null; }
     if (!ac.signal.aborted) redrawHero();
@@ -252,6 +285,7 @@ function map(host, ctx) {
     }
     S.enter = false;
     loadVotes();
+    loadAtlas();
     // S.comments: null while asked, false when they did not load.
     Data().comments(id, ac.signal).catch(() => false).then(c => { if (ac.signal.aborted) return; S.comments = c; redraw('#v-com-sec', commentsSec()); });
     await loadPlays();
@@ -263,37 +297,39 @@ function map(host, ctx) {
     redraw('#v-plays-sec', playsSec());
   }
 
-  // Add to collection: the signed-in player's collections in the shell's dialog, as Rhythia's own picker lists them.
+  // Add to collection (core/kit.js pickCollection) and Add to an Atlas collection share the shell's dialog.
   const dlg = R.getElementById('cmp');
   const closeBtn = '<button class="iconbtn" type="button" data-close aria-label="Close"><svg class="ico" aria-hidden="true"><use href="#i-x"/></svg></button>';
-  let picking = null;
-  function pickHtml() {
-    const p = picking, list = p.list;
-    const body = p.err ? `<p class="cap">${esc(p.err)}</p>` : !list ? '<div class="skeleton" style="height:120px;border-radius:12px"></div>'
-      : !list.length ? '<div class="empty"><b>You have no collections yet</b>Make one on your collections page, then add maps to it.</div>'
-      : `<div class="v-colls">${list.map(x => `<button type="button" class="v-coll" data-coll="${esc(x.id)}" ${p.busy ? 'disabled' : ''}><b>${esc(x.title)}</b><span class="cap num">${p.busy === String(x.id) ? 'Adding…' : `${fmt(x.maps)} ${x.maps === 1 ? 'map' : 'maps'}`}</span></button>`).join('')}</div>`;
-    return `<div class="cmp-head"><h2 id="cmp-title">Add to collection</h2>${closeBtn}</div><div class="cmp-body"><p class="cap v-collmap">${esc(S.d.map.title)}</p>${body}<p class="v-collnew"><a href="/collections/own" data-close>Your collections</a></p></div>`;
+  const openPick = () => K().pickCollection(R, sig, {maps: [{id, title: S.d.map.title}], say: ui.toast});
+  // Add to an Atlas collection (Atlas runs and is paired): its collections, or a new one by name.
+  let atlasPick = null;
+  function atlasPickHtml() {
+    const p = atlasPick, list = p.list;
+    const body = list === false ? '<p class="cap">Atlas did not answer. Is it still running?</p>' : !list ? '<div class="skeleton" style="height:120px;border-radius:12px"></div>'
+      : list.length ? `<div class="v-colls">${list.map(x => `<button type="button" class="v-coll" data-atlas-coll="${esc(x.id)}" ${p.busy ? 'disabled' : ''}><b>${esc(x.name)}</b><span class="cap num">${p.busy === String(x.id) ? 'Adding…' : `${fmt(x.maps)} ${x.maps === 1 ? 'map' : 'maps'}`}</span></button>`).join('')}</div>`
+      : '<p class="cap">No Atlas collections yet. Name your first one.</p>';
+    return `<div class="cmp-head"><h2 id="cmp-title">Add to an Atlas collection</h2>${closeBtn}</div><div class="cmp-body"><p class="cap v-collmap">${esc(S.d.map.title)}</p>${body}
+      <form class="v-atl-new" id="atl-new"><input id="atl-name" maxlength="80" placeholder="New collection" aria-label="New collection name" ${p.busy ? 'disabled' : ''}><button class="btn" type="submit" ${p.busy ? 'disabled' : ''}>${p.busy === 'new' ? 'Adding…' : 'Add'}</button></form></div>`;
   }
-  const redrawPick = () => { if (picking && dlg.open) morph(dlg, pickHtml()); };
-  function openPick() {
-    picking = {list: null, err: '', busy: ''};
+  const redrawAtlasPick = () => { if (atlasPick && dlg.open) morph(dlg, atlasPickHtml()); };
+  function openAtlasPick() {
+    atlasPick = {list: null, busy: ''};
     dlg.setAttribute('aria-labelledby', 'cmp-title'); dlg.classList.add('v-colldlg');
-    dlg.innerHTML = pickHtml(); dlg.showModal();
-    Data().ownCollections(ac.signal).then(list => { if (picking) { picking.list = list; redrawPick(); } }, err => { if (picking) { picking.err = `Your collections did not load (${err.message}).`; redrawPick(); } });
+    dlg.innerHTML = atlasPickHtml(); dlg.showModal();
+    chrome.runtime.sendMessage({type: 'rhythiax-atlas-collections'}).then(list => { if (atlasPick) { atlasPick.list = Array.isArray(list) ? list : false; redrawAtlasPick(); } }, () => { if (atlasPick) { atlasPick.list = false; redrawAtlasPick(); } });
   }
-  async function addTo(cid) {
-    const x = picking?.list?.find(c => String(c.id) === cid);
-    if (!x || picking.busy) return;
-    picking.busy = cid; redrawPick();
-    try {
-      await Data().addToCollection(cid, id);
-      dlg.close(); ui.toast(`Added to ${x.title}.`);
-    } catch (err) {
-      if (picking) { picking.busy = ''; redrawPick(); }
-      ui.toast(`Could not add it (${err.message.replace(/^addCollectionMap: /, '')}).`);
-    }
+  async function atlasAdd(by) {
+    if (!atlasPick || atlasPick.busy) return;
+    atlasPick.busy = by.collection ? String(by.collection) : 'new'; redrawAtlasPick();
+    const m = S.d.map;
+    let r = null;
+    try { r = await chrome.runtime.sendMessage({type: 'rhythiax-atlas-collect', id, title: m.title, mapper: m.mapper, ...by}); } catch (_) {}
+    if (!atlasPick) return;
+    if (!r?.ok) { atlasPick.busy = ''; redrawAtlasPick(); ui.toast('Atlas could not add it. Is it still running?'); return; }
+    dlg.close(); ui.toast(r.added ? `Added to ${r.name} in Atlas.` : `Already in ${r.name} in Atlas.`);
   }
-  dlg.addEventListener('close', () => { if (picking) { picking = null; dlg.classList.remove('v-colldlg'); } if (team) { team = null; dlg.classList.remove('cd-dlg'); } }, sig);
+  dlg.addEventListener('submit', e => { if (e.target.id === 'atl-new') { e.preventDefault(); const name = dlg.querySelector('#atl-name')?.value.trim(); if (name) atlasAdd({name}); } }, sig);
+  dlg.addEventListener('close', () => { if (atlasPick) { atlasPick = null; dlg.classList.remove('v-colldlg'); } if (team) { team = null; dlg.classList.remove('cd-dlg'); } }, sig);
   // Qualify (a confirm) and Veto (a reason) for Team Ranked.
   let team = null;
   function teamHtml() {
@@ -332,12 +368,13 @@ function map(host, ctx) {
   R.addEventListener('click', e => {
     if (e.target.closest('[data-native-x]')) return ctx.showNative();
     if (e.target.closest('[data-collect]')) return openPick();
+    if (e.target.closest('[data-atlas-collect]')) return openAtlasPick();
+    const ac2 = e.target.closest('[data-atlas-coll]');
+    if (ac2 && !ac2.disabled) return atlasAdd({collection: Number(ac2.dataset.atlasColl)});
     const on = e.target.closest('[data-online]');
     if (on) { RhythiaX.ExodusKit.turnOnline(on, e, ui.toast, () => { S.plays = undefined; redraw('#v-plays-sec', playsSec()); loadPlays(); }, ac.signal); return; }
     const trb = e.target.closest('[data-tr]');
     if (trb) return openTeam(trb.dataset.tr);
-    const co = e.target.closest('[data-coll]');
-    if (co && !co.disabled) return addTo(co.dataset.coll);
     if (e.target.closest('#cmp [data-close]')) { dlg.close(); return; }
     const m = e.target.closest('[data-mode]');
     if (m) { if (m.dataset.mode !== S.mode) loadBoard(m.dataset.mode); return; }
@@ -399,7 +436,7 @@ function map(host, ctx) {
   watchPreview();
 
   return {
-    state: () => ({}), idle: () => !S.posting && !picking && !team, relayout() {}, page() {},
+    state: () => ({}), idle: () => !S.posting && !dlg.open && !team, relayout() {}, page() {},
     destroy() { ac.abort(); clearTimeout(poll); clearInterval(tick); ui.hide(); S.dock?.release(); if (dlg.open) dlg.close(); dlg.classList.remove('v-colldlg'); },
   };
 }
@@ -422,14 +459,6 @@ const css = `
 .v-veto p{margin:0;line-height:1.55;color:var(--text-2);overflow-wrap:anywhere}
 .v-veto p + p{margin-top:4px}
 .v-veto a{color:var(--accent-2)}
-dialog.cmp.v-colldlg{width:min(480px,calc(100vw - 32px))}
-.v-collmap{margin:0 0 12px}
-.v-colls{display:flex;flex-direction:column;gap:6px;max-height:50vh;overflow:auto}
-.v-coll{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 14px;border:0;border-radius:10px;text-align:left;background:var(--panel-2);box-shadow:inset 0 0 0 1px var(--line)}
-.v-coll:hover:not(:disabled){box-shadow:inset 0 0 0 1px var(--accent)}
-.v-coll b{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:650}
-.v-collnew{margin:14px 0 0;font-size:13px}
-.v-collnew a{color:var(--accent-2)}
 @media (max-width:640px){.v-rank{flex-direction:column;align-items:flex-start}.v-rank-at{align-items:flex-start;padding:12px 0 0;border-left:0;border-top:1px solid var(--line);width:100%}}
 `;
 

@@ -34,7 +34,7 @@ const skeleton = (n, ratio) => Array.from({length: n}, () => `<div class="skelet
 const MAP_STATUS = [['', 'All maps'], ['RANKED', 'Ranked'], ['QUALIFIED', 'Qualified'], ['UNRANKED', 'Unranked']];
 function mapsBody() {
   const t = T.maps, d = t.data;
-  if (!d) return `<div class="h-maps v-mgrid">${skeleton(8, '4/3.2')}</div>`;
+  if (!d) return `<div class="h-maps v-mgrid">${skeleton(10, '4/3.2')}</div>`;
   if (!d.maps.length) {
     const what = t.status ? `${MAP_STATUS.find(x => x[0] === t.status)[1].toLowerCase()} maps` : 'maps';
     return `<div class="empty pt-empty"><b>No ${what} yet</b>${OWN ? (t.status ? 'None of your uploads has this status.' : 'Maps you upload to Rhythia show here.') : `${esc(U.username)} has not uploaded any ${what}.`}${OWN && !t.status ? '<div class="pt-emptyact"><a class="btn" href="/maps/upload">Upload a map</a></div>' : ''}</div>`;

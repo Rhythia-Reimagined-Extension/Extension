@@ -106,7 +106,7 @@ var RhythiaX = RhythiaX || {};
   function loadNear(playerId, mode, redraw, signal) {
     const key = `${playerId}:${mode}`;
     const retry = Data.nearState === 'failed' && Date.now() - Data.nearFailedAt > NEAR_RETRY_MS;
-    if (!playerId || !RhythiaX.fetchVpsCompare || signal?.aborted || (Data.nearKey === key && !retry)) return;
+    if (!playerId || !nearAllowed() || !RhythiaX.fetchVpsCompare || signal?.aborted || (Data.nearKey === key && !retry)) return;
     Data.nearKey = key; Data.near = null; Data.nearState = 'loading';
     const failed = () => { Data.nearState = 'failed'; Data.nearFailedAt = Date.now(); };
     RhythiaX.fetchVpsCompare(playerId, CMP_MODE[mode] || 'lock', signal).then(body => {
@@ -134,7 +134,10 @@ var RhythiaX = RhythiaX || {};
     kind: (s, v) => { const k = kindOf(s); return Boolean(k) && (v === 'quantum' ? k.quantum : k.kind === v); },
     near: (s, v) => (v === 'none' ? !nearOf(s)?.place : nearOf(s)?.level === v),
   };
-  const nearOn = st => st.activeTab === 'top' && Data.nearState === 'ready';
+  // The popup's Near your rank switch (modules.nearRank) and its On each play (options.nearRank.onPlays).
+  const nearAllowed = () => RhythiaX.isModuleEnabled?.('nearRank') !== false;
+  const nearPlays = () => nearAllowed() && RhythiaX.isModuleOptionEnabled?.('nearRank', 'onPlays') !== false;
+  const nearOn = st => nearAllowed() && st.activeTab === 'top' && Data.nearState === 'ready';
   const inUse = (st, k) => Boolean(st.filters?.[k]) && (k !== 'near' || nearOn(st)) && (k !== 'kind' || !Data.offline);
   function filter(list, st, skip) {
     for (const k of Object.keys(TESTS)) if (k !== skip && inUse(st, k)) list = list.filter(s => TESTS[k](s, st.filters[k]));
@@ -316,7 +319,7 @@ var RhythiaX = RhythiaX || {};
 
     const host = line.parentElement;
     let near = host.querySelector(':scope > .rhythiax-sc-near');
-    const x = tab === 'top' && Data.nearState === 'ready' ? nearOf(score) : null;
+    const x = tab === 'top' && Data.nearState === 'ready' && nearPlays() ? nearOf(score) : null;
     if (!x?.place) { near?.remove(); return; }
     const others = x.of - 1, beaten = x.of - x.place, a = x.above || {}, b = x.below || {};
     const acc = v => (v == null ? '—' : `${fmt(v, 2)}%`);

@@ -128,20 +128,12 @@ body[data-rhythiax-theme="white"] #root [class*="ring-white/"] {
   --tw-ring-color: rgba(15, 23, 42, 0.12) !important;
 }
 
-body[data-rhythiax-theme="white"] #root [class*="bg-neutral-950"],
 body[data-rhythiax-theme="white"] #root [class*="border-neutral-950"] {
   background-color: var(--rhythiax-page-bg, #e2e6ed) !important;
   border-color: var(--rhythiax-border, rgba(15, 23, 42, 0.12)) !important;
 }
 
-body[data-rhythiax-theme="white"] #root [class*="bg-[#242526]"],
-body[data-rhythiax-theme="white"] #root [class*="bg-[#1F2021]"] {
-  background-color: var(--rhythiax-inner-surface, #eaedf4) !important;
-  border-color: var(--rhythiax-border, rgba(15, 23, 42, 0.12)) !important;
-}
-
 /* White fade overlay above Show more button. Replace dark gradient with light surface. */
-body[data-rhythiax-theme="white"] #root [class*="bg-gradient-to-t"][class*="from-[#111214]"],
 body[data-rhythiax-theme="white"] #root .pointer-events-none[class*="bg-gradient-to-t"] {
   background-image: linear-gradient(to top, var(--rhythiax-surface, #ffffff) 15%, transparent 100%) !important;
 }
@@ -240,9 +232,7 @@ body[data-rhythiax-theme="white"] #root [class*="from-transparent"][class*="via-
   color: #0f172a !important;
 }
 
-:where(html:not([data-rhythiax-own-theme])) body[data-rhythiax-theme="white"] [role="dialog"][class*="bg-[#111214]"] [class*="bg-[#1a1b1c]"],
 :where(html:not([data-rhythiax-own-theme])) body[data-rhythiax-theme="white"] [role="dialog"][class*="bg-[#111214]"] [class*="bg-black/20"],
-:where(html:not([data-rhythiax-own-theme])) body[data-rhythiax-theme="white"] [role="dialog"] [class*="bg-[#1a1b1c]"],
 :where(html:not([data-rhythiax-own-theme])) body[data-rhythiax-theme="white"] [role="dialog"] [class*="bg-black/20"] {
   background: var(--rhythiax-inner-surface, #eaedf4) !important;
   border-color: rgba(15, 23, 42, 0.10) !important;
@@ -369,9 +359,10 @@ body[data-rhythiax-theme="white"] #root img[src*="beatmap-"] ~ div a:hover [clas
   color: var(--rhythiax-accent, #5b21b6) !important;
 }
 
-/* Beatmap floating pill badges (Ranked, difficulty, stats) - vibrant with crisp white icons and text */
-body[data-rhythiax-theme="white"] #root img[src*="beatmap-"] ~ div [class*="rounded-full"][class*="bg-blue-600"],
-body[data-rhythiax-theme="white"] #root img[src*="beatmap-"] ~ div [class*="rounded-full"][class*="bg-neutral-800"],
+/* Beatmap floating pill badges (status, difficulty, stats) - vibrant with crisp white icons and text.
+   Every status and difficulty badge of Rhythia is text-white on a /65 fill, which over the white fade
+   turned pale under the generic text-white rule; each gets a near-solid fill white text reads on. */
+body[data-rhythiax-theme="white"] #root img[src*="beatmap-"] ~ div [class*="rounded-full"][class*="text-white"]:not(button),
 body[data-rhythiax-theme="white"] #root img[src*="beatmap-"] ~ div [class*="rounded-full"][class*="bg-black/"] {
   color: #ffffff !important;
   backdrop-filter: blur(8px) !important;
@@ -386,6 +377,54 @@ body[data-rhythiax-theme="white"] #root img[src*="beatmap-"] ~ div [class*="roun
 body[data-rhythiax-theme="white"] #root img[src*="beatmap-"] ~ div [class*="rounded-full"][class*="bg-neutral-800"] {
   background-color: rgba(30, 41, 59, 0.88) !important;
   border-color: rgba(148, 163, 184, 0.45) !important;
+}
+
+/* Unranked */
+body[data-rhythiax-theme="white"] #root img[src*="beatmap-"] ~ div [class*="rounded-full"][class*="bg-neutral-700"] {
+  background-color: rgba(51, 65, 85, 0.9) !important;
+  border-color: rgba(148, 163, 184, 0.45) !important;
+}
+
+/* N/A difficulty */
+body[data-rhythiax-theme="white"] #root img[src*="beatmap-"] ~ div [class*="rounded-full"][class*="bg-neutral-600"] {
+  background-color: rgba(71, 85, 105, 0.9) !important;
+  border-color: rgba(148, 163, 184, 0.45) !important;
+}
+
+/* Legacy */
+body[data-rhythiax-theme="white"] #root img[src*="beatmap-"] ~ div [class*="rounded-full"][class*="bg-orange-600"] {
+  background-color: rgba(194, 65, 12, 0.9) !important;
+  border-color: rgba(251, 146, 60, 0.6) !important;
+}
+
+/* Qualified */
+body[data-rhythiax-theme="white"] #root img[src*="beatmap-"] ~ div [class*="rounded-full"][class*="bg-sky-600"] {
+  background-color: rgba(3, 105, 161, 0.9) !important;
+  border-color: rgba(56, 189, 248, 0.6) !important;
+}
+
+/* Easy */
+body[data-rhythiax-theme="white"] #root img[src*="beatmap-"] ~ div [class*="rounded-full"][class*="bg-green-600"] {
+  background-color: rgba(21, 128, 61, 0.9) !important;
+  border-color: rgba(74, 222, 128, 0.6) !important;
+}
+
+/* Medium */
+body[data-rhythiax-theme="white"] #root img[src*="beatmap-"] ~ div [class*="rounded-full"][class*="bg-yellow-500"] {
+  background-color: rgba(161, 98, 7, 0.9) !important;
+  border-color: rgba(250, 204, 21, 0.6) !important;
+}
+
+/* Hard */
+body[data-rhythiax-theme="white"] #root img[src*="beatmap-"] ~ div [class*="rounded-full"][class*="bg-red-600"] {
+  background-color: rgba(220, 38, 38, 0.9) !important;
+  border-color: rgba(248, 113, 113, 0.6) !important;
+}
+
+/* Logic */
+body[data-rhythiax-theme="white"] #root img[src*="beatmap-"] ~ div [class*="rounded-full"][class*="bg-purple-600"] {
+  background-color: rgba(147, 51, 234, 0.9) !important;
+  border-color: rgba(192, 132, 252, 0.6) !important;
 }
 
 body[data-rhythiax-theme="white"] #root img[src*="beatmap-"] ~ div [class*="rounded-full"][class*="bg-black/"] {
@@ -434,21 +473,6 @@ body[data-rhythiax-theme="white"] #root .group:has(img[src*="beatmap-"]) > div:l
 
 body[data-rhythiax-theme="white"] #root .group:has(img[src*="beatmap-"]) > div:last-child :is(button, a):hover svg {
   color: #020617 !important;
-}
-
-body[data-rhythiax-theme="white"] #root img[src*="beatmap-img-"]~div[class*="bottom-0"]>div[class*="bg-black/35"],
-body[data-rhythiax-theme="white"] #root img[src*="beatmap-previews"]~div[class*="bottom-0"]>div[class*="bg-black/35"] {
-  color: #0f172a !important;
-  background: rgba(255, 255, 255, 0.94) !important;
-  border-color: rgba(15, 23, 42, 0.14) !important;
-  backdrop-filter: blur(14px) saturate(115%) !important;
-}
-
-body[data-rhythiax-theme="white"] #root img[src*="beatmap-img-"]~button[class*="bg-[#111214]"],
-body[data-rhythiax-theme="white"] #root img[src*="beatmap-previews"]~button[class*="bg-[#111214]"] {
-  background: #f1f5f9 !important;
-  color: #020617 !important;
-  border-color: rgba(15, 23, 42, 0.16) !important;
 }
 
 body[data-rhythiax-theme="white"] #root div:has(> .pointer-events-none[class*="bg-black/70"]) {

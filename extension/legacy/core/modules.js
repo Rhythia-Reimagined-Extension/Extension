@@ -12,6 +12,11 @@ RhythiaX.MODULE_DEFAULTS = {
   rankingHistory: true,
   playerCompare: true,
   easterEggs: true,
+  // Install in Atlas (content/features/atlas-link/button.js), off until the player turns it on.
+  atlasLinks: false,
+  // The players ranked near (playstyle/view.js, score-cards/hub-filters.js) and Reimagined Search (map-search/view.js).
+  nearRank: true,
+  mapSearch: true,
 };
 
 RhythiaX.MODULE_SETTING_DEFAULTS = {
@@ -22,6 +27,7 @@ RhythiaX.MODULE_SETTING_DEFAULTS = {
   titleProgression: { showProgression: true, showHistory: true },
   playerCompare: {},
   easterEggs: { frequency: 'normal' },
+  nearRank: { onPlays: true },
 };
 
 RhythiaX.moduleSettings = { ...RhythiaX.MODULE_DEFAULTS };
@@ -172,6 +178,9 @@ RhythiaX.applyModuleSettings = function (settings) {
       RhythiaX.EasterEggs.stop?.();
     }
   }
+  RhythiaX.ClassicAtlasLink?.refresh?.();
+  // Reimagined Search on the map list comes and goes with its switch.
+  if (RhythiaX.PageRouteContext?.type() === 'map-list') RhythiaX.injectMapSearch?.();
 };
 
 RhythiaX.applyLiveUpdates = function () {

@@ -89,67 +89,6 @@ body[data-rhythiax-theme="rhythia-reimagined"] #root .bg-\[\#141516\]\/70 {
   opacity: 1 !important;
 }
 
-body[data-rhythiax-theme="rhythia-reimagined"] #root img[src*="beatmap-img-"]~.bg-gradient-to-t {
-  background-image: linear-gradient(to top, rgba(7, 9, 14, .92), rgba(7, 9, 14, .18) 58%, transparent) !important;
-  background-color: transparent !important;
-}
-
-body[data-rhythiax-theme="rhythia-reimagined"] #root img[src*="beatmap-img-"]~.bg-black\/35,
-body[data-rhythiax-theme="rhythia-reimagined"] #root img[src*="beatmap-img-"]~.group-hover\:bg-black\/35 {
-  background-color: rgba(7, 9, 14, .82) !important;
-}
-
-body[data-rhythiax-theme="rhythia-reimagined"] #root img[src*="beatmap-img-"]~.bg-black\/0 {
-  background-color: transparent !important;
-}
-
-body[data-rhythiax-theme="rhythia-reimagined"] #root img[src*="beatmap-img-"]~div[class*="bottom-0"]>div.bg-black\/35,
-body[data-rhythiax-theme="rhythia-reimagined"] #root img[src*="beatmap-img-"]~div[class*="bottom-0"]>div.group-hover\:bg-black\/35 {
-  color: #fff !important;
-  border-color: rgba(255, 255, 255, .18) !important;
-}
-
-body[data-rhythiax-theme="rhythia-reimagined"] #root img[src*="beatmap-img-"]~div[class*="bottom-0"]>div[class*="bg-black/35"] .\[\&_strong\]\:text-white,
-body[data-rhythiax-theme="rhythia-reimagined"] #root img[src*="beatmap-img-"]~div[class*="bottom-0"]>div[class*="bg-black/35"] .data-\[selected\=true\]\:text-white,
-body[data-rhythiax-theme="rhythia-reimagined"] #root img[src*="beatmap-img-"]~div[class*="bottom-0"]>div[class*="bg-black/35"] .data-\[state\=active\]\:text-white,
-body[data-rhythiax-theme="rhythia-reimagined"] #root img[src*="beatmap-img-"]~div[class*="bottom-0"]>div[class*="bg-black/35"] .data-\[state\=checked\]\:text-white,
-body[data-rhythiax-theme="rhythia-reimagined"] #root img[src*="beatmap-img-"]~div[class*="bottom-0"]>div[class*="bg-black/35"] .file\:text-white,
-body[data-rhythiax-theme="rhythia-reimagined"] #root img[src*="beatmap-img-"]~div[class*="bottom-0"]>div[class*="bg-black/35"] .focus\:text-white,
-body[data-rhythiax-theme="rhythia-reimagined"] #root img[src*="beatmap-img-"]~div[class*="bottom-0"]>div[class*="bg-black/35"] .hover\:text-white,
-body[data-rhythiax-theme="rhythia-reimagined"] #root img[src*="beatmap-img-"]~div[class*="bottom-0"]>div[class*="bg-black/35"] .prose-code\:text-white,
-body[data-rhythiax-theme="rhythia-reimagined"] #root img[src*="beatmap-img-"]~div[class*="bottom-0"]>div[class*="bg-black/35"] .prose-headings\:text-white,
-body[data-rhythiax-theme="rhythia-reimagined"] #root img[src*="beatmap-img-"]~div[class*="bottom-0"]>div[class*="bg-black/35"] .prose-strong\:text-white,
-body[data-rhythiax-theme="rhythia-reimagined"] #root img[src*="beatmap-img-"]~div[class*="bottom-0"]>div[class*="bg-black/35"] .text-white,
-body[data-rhythiax-theme="rhythia-reimagined"] #root img[src*="beatmap-img-"]~div[class*="bottom-0"]>div[class*="bg-black/35"] .text-white\/40,
-body[data-rhythiax-theme="rhythia-reimagined"] #root img[src*="beatmap-img-"]~div[class*="bottom-0"]>div[class*="bg-black/35"] .text-white\/60,
-body[data-rhythiax-theme="rhythia-reimagined"] #root img[src*="beatmap-img-"]~div[class*="bottom-0"]>div[class*="bg-black/35"] .text-white\/80,
-body[data-rhythiax-theme="rhythia-reimagined"] #root img[src*="beatmap-img-"]~div[class*="bottom-0"]>div[class*="bg-black/35"] .\[\&_\[cmdk-group-heading\]\]\:text-neutral-500,
-body[data-rhythiax-theme="rhythia-reimagined"] #root img[src*="beatmap-img-"]~div[class*="bottom-0"]>div[class*="bg-black/35"] .\[\&_em\]\:text-neutral-100,
-body[data-rhythiax-theme="rhythia-reimagined"] #root img[src*="beatmap-img-"]~div[class*="bottom-0"]>div[class*="bg-black/35"] .\[\&_li\]\:text-neutral-200,
-body[data-rhythiax-theme="rhythia-reimagined"] #root img[src*="beatmap-img-"]~div[class*="bottom-0"]>div[class*="bg-black/35"] .data-\[placeholder\]\:text-neutral-500,
-body[data-rhythiax-theme="rhythia-reimagined"] #root img[src*="beatmap-img-"]~div[class*="bottom-0"]>div[class*="bg-black/35"] .hover\:text-neutral-100,
-body[data-rhythiax-theme="rhythia-reimagined"] #root img[src*="beatmap-img-"]~div[class*="bottom-0"]>div[class*="bg-black/35"] .hover\:text-neutral-200,
-body[data-rhythiax-theme="rhythia-reimagined"] #root img[src*="beatmap-img-"]~div[class*="bottom-0"]>div[class*="bg-black/35"] .hover\:text-neutral-300,
-body[data-rhythiax-theme="rhythia-reimagined"] #root img[src*="beatmap-img-"]~div[class*="bottom-0"]>div[class*="bg-black/35"] .marker\:text-neutral-500,
-body[data-rhythiax-theme="rhythia-reimagined"] #root img[src*="beatmap-img-"]~div[class*="bottom-0"]>div[class*="bg-black/35"] .placeholder\:text-neutral-500,
-body[data-rhythiax-theme="rhythia-reimagined"] #root img[src*="beatmap-img-"]~div[class*="bottom-0"]>div[class*="bg-black/35"] .prose-li\:text-neutral-300,
-body[data-rhythiax-theme="rhythia-reimagined"] #root img[src*="beatmap-img-"]~div[class*="bottom-0"]>div[class*="bg-black/35"] .prose-p\:text-neutral-300,
-body[data-rhythiax-theme="rhythia-reimagined"] #root img[src*="beatmap-img-"]~div[class*="bottom-0"]>div[class*="bg-black/35"] .text-neutral-100,
-body[data-rhythiax-theme="rhythia-reimagined"] #root img[src*="beatmap-img-"]~div[class*="bottom-0"]>div[class*="bg-black/35"] .text-neutral-200,
-body[data-rhythiax-theme="rhythia-reimagined"] #root img[src*="beatmap-img-"]~div[class*="bottom-0"]>div[class*="bg-black/35"] .text-neutral-300,
-body[data-rhythiax-theme="rhythia-reimagined"] #root img[src*="beatmap-img-"]~div[class*="bottom-0"]>div[class*="bg-black/35"] .text-neutral-400,
-body[data-rhythiax-theme="rhythia-reimagined"] #root img[src*="beatmap-img-"]~div[class*="bottom-0"]>div[class*="bg-black/35"] .text-neutral-500,
-body[data-rhythiax-theme="rhythia-reimagined"] #root img[src*="beatmap-img-"]~div[class*="bottom-0"]>div[class*="bg-black/35"] .text-neutral-600,
-body[data-rhythiax-theme="rhythia-reimagined"] #root img[src*="beatmap-img-"]~div[class*="bottom-0"]>div[class*="bg-black/35"] .text-neutral-700 {
-  color: #fff !important;
-}
-
-body[data-rhythiax-theme="rhythia-reimagined"] #root img[src*="beatmap-img-"]~button.bg-\[\#111214\] {
-  background: linear-gradient(180deg, rgba(36, 39, 46, .96), rgba(10, 12, 16, .96)) !important;
-  color: #fff !important;
-  border-color: rgba(255, 255, 255, .24) !important;
-}
-
 body[data-rhythiax-theme="rhythia-reimagined"] #root div:has(> .pointer-events-none[class*="bg-black/70"]) {
   color: #fff !important;
 }

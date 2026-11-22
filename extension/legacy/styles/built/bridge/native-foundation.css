@@ -116,10 +116,6 @@ body[data-rhythiax-theme="white"] #root .bg-white\/15,
 body[data-rhythiax-theme="white"] #root .hover\:bg-white\/15 {
    background: rgba(30, 41, 59, .07) !important;
 }
-
-/* Text on that tint: White's deep violet, or an own theme's accent darkened towards its text. */
-
-
 body[data-rhythiax-theme="white"] #root .from-\[\#0a0a0a\] {
    --tw-gradient-from: #eef2f7 !important;
 }
@@ -142,7 +138,6 @@ body[data-rhythiax-theme="rhythia-reimagined"] #root .bg-gradient-to-br {
    --tw-gradient-from: color-mix(in srgb, var(--rhythiax-page-bg) 88%, transparent) !important;
    --tw-gradient-to: color-mix(in srgb, var(--rhythiax-page-bg) 8%, transparent) !important;
 }
-
 
 @media (max-width: 767px) {
    body[data-rhythiax-theme] #root > div > div.mx-auto {

@@ -7,19 +7,12 @@
 body[data-rhythiax-theme] #root [class*="rounded-xl"][class*="border-white/10"],
 body[data-rhythiax-theme] #root [class*="rounded-lg"][class*="border-white/10"] { border-color: var(--rhythiax-border) !important; }
 body[data-rhythiax-theme] #root [class*="rounded-xl"][class*="bg-[#111214]"],
-body[data-rhythiax-theme] #root [class*="rounded-lg"][class*="bg-[#111214]"],
-body[data-rhythiax-theme] #root [class*="bg-[#1a1b1c]"],
-body[data-rhythiax-theme] #root [class*="bg-[#1e1f21]"],
-body[data-rhythiax-theme] #root [class*="bg-[#242526]"],
-body[data-rhythiax-theme] #root [class*="bg-[#0e0e10]"] {
+body[data-rhythiax-theme] #root [class*="rounded-lg"][class*="bg-[#111214]"] {
   background-color: var(--rhythiax-surface) !important;
   color: var(--rhythiax-text) !important;
 }
 body[data-rhythiax-theme] #root [class*="bg-white/5"],
-body[data-rhythiax-theme] #root [class*="bg-white/[.05]"],
-body[data-rhythiax-theme] #root [class*="bg-white/[0.05]"],
-body[data-rhythiax-theme] #root [class*="bg-black/20"],
-body[data-rhythiax-theme] #root [class*="bg-black/15"] { background-color: var(--rhythiax-input-surface) !important; }
+body[data-rhythiax-theme] #root [class*="bg-black/20"] { background-color: var(--rhythiax-input-surface) !important; }
 body[data-rhythiax-theme] #root [role="tab"][data-state="active"] {
   color: var(--rhythiax-accent) !important;
   background-color: var(--rhythiax-accent-soft) !important;
@@ -111,8 +104,7 @@ body[data-rhythiax-theme] #root button:has(svg.lucide-user-round-minus) svg {
   color: currentColor !important;
 }
 body[data-rhythiax-theme] #root [class*="text-blue-300"],
-body[data-rhythiax-theme] #root [class*="text-blue-400"],
-body[data-rhythiax-theme] #root [class*="text-blue-500"] { color: var(--rhythiax-accent) !important; }
+body[data-rhythiax-theme] #root [class*="text-blue-400"] { color: var(--rhythiax-accent) !important; }
 
 /* An own theme's accent on the rest of Rhythia's blue, indigo and sky utilities: solid fills and the fills that
    are mostly accent (with the text colour that reads on the accent), tints, borders, rings, focus outlines,
@@ -240,8 +232,6 @@ body[data-rhythiax-theme] [role="dialog"] [class*="border-white/10"] {
   border-color: var(--rhythiax-border) !important;
 }
 body[data-rhythiax-theme] [role="dialog"] [class*="bg-[#111214]"],
-body[data-rhythiax-theme] [role="dialog"] [class*="bg-[#1a1b1c]"],
-body[data-rhythiax-theme] [role="dialog"] [class*="bg-[#1e1f21]"],
 body[data-rhythiax-theme] [role="dialog"] [class*="bg-black/20"],
 body[data-rhythiax-theme] [role="dialog"] [class*="bg-white/5"] {
   background-color: var(--rhythiax-inner-surface) !important;
@@ -259,8 +249,7 @@ body[data-rhythiax-theme] [role="dialog"] [cmdk-input-wrapper] {
   background-color: var(--rhythiax-input-surface) !important;
 }
 body[data-rhythiax-theme] [role="dialog"] [class*="text-blue-300"],
-body[data-rhythiax-theme] [role="dialog"] [class*="text-blue-400"],
-body[data-rhythiax-theme] [role="dialog"] [class*="text-blue-500"] {
+body[data-rhythiax-theme] [role="dialog"] [class*="text-blue-400"] {
   color: var(--rhythiax-accent) !important;
 }
 body[data-rhythiax-theme] [role="dialog"] input,
@@ -278,13 +267,9 @@ body[data-rhythiax-theme] [role="dialog"] input::placeholder,
 body[data-rhythiax-theme] [role="dialog"] textarea::placeholder {
   color: var(--rhythiax-text-muted) !important;
 }
-body[data-rhythiax-theme] [role="dialog"] button[class*="bg-[#1a1b1c]"],
 body[data-rhythiax-theme] [role="dialog"] button[class*="border-white/10"] {
   border-color: var(--rhythiax-border) !important;
   color: var(--rhythiax-text-strong) !important;
-}
-body[data-rhythiax-theme] [role="dialog"] button[class*="bg-[#1a1b1c]"]:hover {
-  background-color: var(--rhythiax-nav-hover) !important;
 }
 
 body[data-rhythiax-theme] #root input,
@@ -335,7 +320,10 @@ html body[data-rhythiax-theme] #root button:has(> img[src*="settingsicon"])::aft
 
 /* Map thumbnails must stay above the themed tile background. The site puts
    the image below two absolute overlays, so keep the image's own layer
-   explicit instead of letting the theme bridge affect its rendering. */
+   explicit instead of letting the theme bridge affect its rendering.
+   The overlays get no z-index of their own: the map title on a wide map card
+   (maps list view, collections, Latest ranked maps) sits in a later absolute
+   block without one, so an overlay lifted to z-index 1 covered the title. */
 body[data-rhythiax-theme] #root img[src*="beatmap-img-"],
 body[data-rhythiax-theme] #root img[src*="beatmap-previews"] {
   display: block !important;
@@ -350,9 +338,19 @@ body[data-rhythiax-theme] #root img[src*="beatmap-img-"] ~ [class*="bg-gradient-
 body[data-rhythiax-theme] #root img[src*="beatmap-previews"] ~ [class*="bg-gradient-to-t"],
 body[data-rhythiax-theme] #root img[src*="beatmap-img-"] ~ [class*="bg-black/"],
 body[data-rhythiax-theme] #root img[src*="beatmap-previews"] ~ [class*="bg-black/"] {
-  z-index: 1 !important;
   background-color: transparent !important;
   pointer-events: none;
+}
+/* The fade over a map's picture ends in the theme's panel colour, as Rhythia's
+   from-surface does in its own palette (#111214 whatever the theme), so the
+   card's title, in the theme's strong text colour, reads on it and the fade
+   runs into the card below. Built-in themes with their own fade (White) keep
+   it: this rule is kept weak with :where. Own themes always take it, also when
+   built on White, since their panel colour is their own. */
+body[data-rhythiax-theme] #root :where(img[src*="beatmap-"] ~ [class*="bg-gradient-to-t"][class*="from-surface"]),
+:where(html[data-rhythiax-own-theme]) body[data-rhythiax-theme] #root img[src*="beatmap-"] ~ [class*="bg-gradient-to-t"][class*="from-surface"] {
+  --rhythiax-map-fade: var(--rhythiax-surface-solid, var(--rhythiax-surface));
+  background-image: linear-gradient(to top, var(--rhythiax-map-fade), color-mix(in srgb, var(--rhythiax-map-fade) 40%, transparent), transparent) !important;
 }
 
 /* The native shell uses -z-10 on its root wrapper for the site's original
@@ -361,13 +359,6 @@ body[data-rhythiax-theme] #root img[src*="beatmap-previews"] ~ [class*="bg-black
 body[data-rhythiax-theme] #root > div:first-child {
   position: relative !important;
   z-index: 0 !important;
-}
-
-/* The first overlay is visual only. Do not let the generic bg-black/20 theme
-   rule turn it into a solid surface over the thumbnail. */
-body[data-rhythiax-theme] #root img[src*="beatmap-img-"] ~ [class*="bg-gradient-to-t"],
-body[data-rhythiax-theme] #root img[src*="beatmap-previews"] ~ [class*="bg-gradient-to-t"] {
-  background-color: transparent !important;
 }
 
 /* Disable hover effect on navbar logo */

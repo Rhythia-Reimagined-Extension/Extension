@@ -416,7 +416,7 @@ RhythiaX.ExodusData = (function () {
   const historyListeners = [];
   function dropHistory() {
     histGen++;
-    histMemo.clear(); cmpMemo.clear(); histLooked.clear(); histDirty.clear(); clearTimeout(histWrite);
+    histMemo.clear(); cmpMemo.clear(); nearMemo.clear(); histLooked.clear(); histDirty.clear(); clearTimeout(histWrite);
   }
   try {
     chrome.storage.onChanged.addListener((changes, area) => {
@@ -465,6 +465,27 @@ RhythiaX.ExodusData = (function () {
     if (hit && Date.now() - hit.at < CMP_FRESH) return hit.body;
     const gen = histGen;
     return Vps().compare(RhythiaX.Net.fetch, Number(id), mode, signal, body => { if (gen === histGen) remember(cmpMemo, key, { at: Date.now(), body }); });
+  }
+  // Near your rank on the map list: the maps the players ranked near the signed-in player have in their Lock top
+  // and that player has not, as the map list's cards with how many of them have each one. { reason: 'off' } without
+  // online history, { reason: 'signed_out' } signed out, the service's { available: false, reason } otherwise, null
+  // when it could not be read. Reused for half an hour, like the comparison.
+  const nearMemo = new Map();
+  async function nearMaps(signal) {
+    if (!(await historyAllowed())) return { available: false, reason: 'off' };
+    const me = await signedIn(signal).catch(() => null);
+    if (!me?.id) return { available: false, reason: 'signed_out' };
+    const id = Number(me.id), hit = nearMemo.get(id);
+    if (hit && Date.now() - hit.at < CMP_FRESH) return hit.body;
+    const gen = histGen;
+    const body = await Vps().nearMaps(RhythiaX.Net.fetch, id, signal, b => {
+      if (gen !== histGen || !b.available) return;
+      b.maps = (Array.isArray(b.maps) ? b.maps : []).filter(m => Number(m?.id) > 0).map(m => ({ id: m.id, title: m.title, mapper: m.mapper, stars: m.stars,
+        difficulty: m.difficulty, length: m.length, plays: m.plays, img: m.art || m.thumb, thumb: m.thumb || m.art, status: m.status || '',
+        explicit: m.explicit === true, hash: m.key, players: m.players, above: m.above, below: m.below, rp: m.rp, speed: m.speed }));
+    });
+    if (body && gen === histGen) remember(nearMemo, id, { at: Date.now(), body });
+    return body;
   }
   // A short answer fills in the days it covers; the older days stay as they were.
   const withRecent = (old, recent) => { const from = recent[0]?.date; return [...(old || []).filter(d => d?.date && (!from || d.date < from)), ...recent]; };
@@ -1087,7 +1108,7 @@ RhythiaX.ExodusData = (function () {
     }, signal);
     const data = {
       fetchedAt: new Date().toISOString(), total: r.total || 0, perPage: r.viewPerPage || 50,
-      maps: (r.beatmaps || []).map(b => ({ ...slimMap(b), status: b.status, qualified: Boolean(b.qualified), explicit: Boolean(b.explicit), tags: b.tags || '', hash: b.mapHash })),
+      maps: (r.beatmaps || []).map(b => ({ ...slimMap(b), status: b.status, qualified: Boolean(b.qualified), explicit: Boolean(b.explicit), tags: b.tags || '', hash: b.mapHash, file: b.beatmapFile || '' })),
     };
     return keepPage(mapsKey(q), data);
   }
@@ -1231,7 +1252,7 @@ RhythiaX.ExodusData = (function () {
     let short = false;
     const more = await Promise.all(Array.from({ length: Math.min(9, (r.totalPages || 1) - 1) }, (_, i) => ask(i + 2).then(x => x.collection?.beatmaps || [], () => { short = true; return []; })));
     const c = r.collection || {};
-    const maps = [...(c.beatmaps || []), ...more.flat()].map(b => ({ ...slimMap(b), status: b.status, img: b.previewImage?.medium || b.image }));
+    const maps = [...(c.beatmaps || []), ...more.flat()].map(b => ({ ...slimMap(b), status: b.status, img: b.previewImage?.medium || b.image, file: b.beatmapFile || '' }));
     const data = {
       fetchedAt: new Date().toISOString(), id: Number(id), title: c.title || '', description: c.description || '', isList: Boolean(c.isList),
       owner: { id: c.owner?.id, username: c.owner?.username, avatar: c.owner?.avatar_url }, count: c.beatmapCount ?? maps.length, maps,
@@ -1246,10 +1267,40 @@ RhythiaX.ExodusData = (function () {
     const r = await post('getCollections', { itemsPerPage: 100, page: 1, session: needSession(), owner: Number(me.id) }, signal);
     return (r.collections || []).map(c => ({ id: c.id, title: c.title || 'Untitled collection', maps: c.beatmapCount || 0 }));
   }
-  async function addToCollection(id, mapId) {
-    const r = await post('addCollectionMap', { session: needSession(), collection: Number(id), beatmapPage: Number(mapId) });
+  // Maps into one of the player's collections, one request each (Rhythia has none for several), in order:
+  // { added, already, failed: [{ id, reason }] }. Rhythia refuses a map that is in the collection already; that
+  // counts as already. onStep(done, total) after each map.
+  async function addMapsToCollection(id, mapIds, onStep) {
+    const out = { added: 0, already: 0, failed: [] }, ids = [...new Set(mapIds.map(Number).filter(n => n > 0))];
+    let done = 0;
+    try { needSession(); } catch (err) { return { ...out, failed: ids.map(m => ({ id: m, reason: err.message })) }; }
+    for (const mapId of ids) {
+      onStep?.(done + 1, ids.length);
+      try {
+        await post('addCollectionMap', { session: needSession(), collection: Number(id), beatmapPage: mapId });
+        out.added++;
+      } catch (err) {
+        const reason = String(err?.message || '').replace(/^addCollectionMap: /, '');
+        if (/already/i.test(reason)) out.already++; else out.failed.push({ id: mapId, reason: reason || 'Rhythia did not answer' });
+      }
+      done++;
+    }
     dropPages(k => k === `collection:${id}`);
-    return r;
+    return out;
+  }
+  // The file address of each map ({id, file}), from Rhythia's map page where a list did not give it (Reimagined
+  // Search, Near your rank), four at a time.
+  async function mapFiles(maps, signal) {
+    const out = maps.map(m => ({ ...m })), todo = out.filter(m => !m.file && Number(m.id) > 0);
+    let next = 0;
+    const worker = async () => {
+      while (next < todo.length) {
+        const m = todo[next++];
+        m.file = (await post('getBeatmapPage', { id: Number(m.id), session: '' }, signal).catch(err => { if (signal?.aborted) throw err; return null; }))?.beatmap?.beatmapFile || '';
+      }
+    };
+    await Promise.all(Array.from({ length: Math.min(4, todo.length) }, worker));
+    return out;
   }
   // Make, change and remove a collection with Rhythia's own requests. The saved list copies go with them.
   const dropCollections = id => dropPages(k => k.startsWith('collections:') || (id != null && k === `collection:${id}`));
@@ -1301,5 +1352,5 @@ RhythiaX.ExodusData = (function () {
   const mapMetaFor = (ids, signal) => mapMetaAll([...new Set(ids)], signal);
   const onHistoryChange = fn => { historyListeners.push(fn); };
 
-  return { load, stale, mapMetaFor, mapStyles, basicKindsOn, mapPlays, knownStyles, mapSearchTypes, mapSearch, myTopMaps, storedStyles, snapshot, forget, post, session, composeAboutMe, actions, account, notes, cachedSelf, knownSelf, viewerTag, searchShowcase, loadHome, homeSnapshot, leaderboard, topPlaces, board, boardSnapshot, histories, historiesCached, historyAllowed, compare, onHistoryChange, signedIn, mapPage, qualifyMap, vetoMap, mapVotes, voteMap, tagMap, scorePage, pageSnapshot, historyOf, maps, mapsSnapshot, comments, postComment, skins, skinsSnapshot, skinCounts, deleteSkin, clans, clansSnapshot, clanPage, clanSnapshot, clanScores, clanRanks, inviteToClan, leaveClan, collections, collectionsSnapshot, collection, collectionSnapshot, removeFromCollection, ownCollections, addToCollection, createCollection, editCollection, deleteCollection, changelog, playerMaps, playerMapsSnapshot, playerSkins, playerSkinsSnapshot, inventory, equip };
+  return { load, stale, mapMetaFor, mapStyles, basicKindsOn, mapPlays, knownStyles, mapSearchTypes, mapSearch, myTopMaps, storedStyles, snapshot, forget, post, session, composeAboutMe, actions, account, notes, cachedSelf, knownSelf, viewerTag, searchShowcase, loadHome, homeSnapshot, leaderboard, topPlaces, board, boardSnapshot, histories, historiesCached, historyAllowed, compare, nearMaps, onHistoryChange, signedIn, mapPage, qualifyMap, vetoMap, mapVotes, voteMap, tagMap, scorePage, pageSnapshot, historyOf, maps, mapsSnapshot, comments, postComment, skins, skinsSnapshot, skinCounts, deleteSkin, clans, clansSnapshot, clanPage, clanSnapshot, clanScores, clanRanks, inviteToClan, leaveClan, collections, collectionsSnapshot, collection, collectionSnapshot, removeFromCollection, ownCollections, addMapsToCollection, mapFiles, createCollection, editCollection, deleteCollection, changelog, playerMaps, playerMapsSnapshot, playerSkins, playerSkinsSnapshot, inventory, equip };
 })();

@@ -42,12 +42,14 @@ body[data-rhythiax-theme] #root a.focus\:bg-white\/5:hover,
 body[data-rhythiax-theme] #root a.hover\:bg-white\/5:hover { background-color: var(--rhythiax-accent-soft) !important; border-color: var(--rhythiax-border-strong) !important; }
 body[data-rhythiax-theme] #root .border-blue-400:not([class*="focus-visible:border-blue-400"]),
 body[data-rhythiax-theme] #root .border-blue-400\/20:not([class*="focus-visible:border-blue-400"]),
+body[data-rhythiax-theme] #root .border-blue-400\/25:not([class*="focus-visible:border-blue-400"]),
 body[data-rhythiax-theme] #root .border-blue-400\/30:not([class*="focus-visible:border-blue-400"]),
 body[data-rhythiax-theme] #root .border-blue-400\/40:not([class*="focus-visible:border-blue-400"]),
 body[data-rhythiax-theme] #root .border-blue-400\/50:not([class*="focus-visible:border-blue-400"]),
 body[data-rhythiax-theme] #root .border-blue-400\/55:not([class*="focus-visible:border-blue-400"]),
 body[data-rhythiax-theme] #root .border-blue-400\/60:not([class*="focus-visible:border-blue-400"]),
 body[data-rhythiax-theme] #root .focus-visible\:border-blue-400\/40:not([class*="focus-visible:border-blue-400"]),
+body[data-rhythiax-theme] #root .focus\:border-blue-400\/40:not([class*="focus-visible:border-blue-400"]),
 body[data-rhythiax-theme] #root .hover\:border-blue-400:not([class*="focus-visible:border-blue-400"]),
 body[data-rhythiax-theme] #root .hover\:border-blue-400\/60:not([class*="focus-visible:border-blue-400"]) { border-color: color-mix(in srgb, var(--rhythiax-accent) 34%, transparent) !important; }
 body[data-rhythiax-theme] #root .bg-blue-500\/10,
@@ -349,7 +351,6 @@ body[data-rhythiax-theme] [role="dialog"] button.border-white\/10 {
   color: var(--rhythiax-text-strong) !important;
 }
 
-
 body[data-rhythiax-theme] #root input,
 body[data-rhythiax-theme] #root textarea,
 body[data-rhythiax-theme] #root select,
@@ -378,6 +379,7 @@ body[data-rhythiax-theme="white"] #root div.border-\[\#4D65C0\] {
   color: var(--rhythiax-text) !important;
   background-color: var(--rhythiax-surface) !important;
 }
+body[data-rhythiax-theme] #root a.focus-visible\:underline,
 body[data-rhythiax-theme] #root a.hover\:underline,
 body[data-rhythiax-theme] #root a.underline,
 body[data-rhythiax-theme] #root a.underline-offset-2,
@@ -405,7 +407,10 @@ html body[data-rhythiax-theme] #root button:has(> img[src*="settingsicon"])::aft
 
 /* Map thumbnails must stay above the themed tile background. The site puts
    the image below two absolute overlays, so keep the image's own layer
-   explicit instead of letting the theme bridge affect its rendering. */
+   explicit instead of letting the theme bridge affect its rendering.
+   The overlays get no z-index of their own: the map title on a wide map card
+   (maps list view, collections, Latest ranked maps) sits in a later absolute
+   block without one, so an overlay lifted to z-index 1 covered the title. */
 body[data-rhythiax-theme] #root img[src*="beatmap-img-"],
 body[data-rhythiax-theme] #root img[src*="beatmap-previews"] {
   display: block !important;
@@ -454,9 +459,19 @@ body[data-rhythiax-theme] #root img[src*="beatmap-previews"] ~ .group-hover\:bg-
 body[data-rhythiax-theme] #root img[src*="beatmap-previews"] ~ .group-hover\:bg-black\/45,
 body[data-rhythiax-theme] #root img[src*="beatmap-previews"] ~ .hover\:bg-black\/45,
 body[data-rhythiax-theme] #root img[src*="beatmap-previews"] ~ .prose-pre\:bg-black\/30 {
-  z-index: 1 !important;
   background-color: transparent !important;
   pointer-events: none;
+}
+/* The fade over a map's picture ends in the theme's panel colour, as Rhythia's
+   from-surface does in its own palette (#111214 whatever the theme), so the
+   card's title, in the theme's strong text colour, reads on it and the fade
+   runs into the card below. Built-in themes with their own fade (White) keep
+   it: this rule is kept weak with :where. Own themes always take it, also when
+   built on White, since their panel colour is their own. */
+body[data-rhythiax-theme] #root :where(img[src*="beatmap-"] ~ [class*="bg-gradient-to-t"][class*="from-surface"]),
+:where(html[data-rhythiax-own-theme]) body[data-rhythiax-theme] #root img[src*="beatmap-"] ~ .bg-gradient-to-t[class*="from-surface"] {
+  --rhythiax-map-fade: var(--rhythiax-surface-solid, var(--rhythiax-surface));
+  background-image: linear-gradient(to top, var(--rhythiax-map-fade), color-mix(in srgb, var(--rhythiax-map-fade) 40%, transparent), transparent) !important;
 }
 
 /* The native shell uses -z-10 on its root wrapper for the site's original
@@ -465,13 +480,6 @@ body[data-rhythiax-theme] #root img[src*="beatmap-previews"] ~ .prose-pre\:bg-bl
 body[data-rhythiax-theme] #root > div:first-child {
   position: relative !important;
   z-index: 0 !important;
-}
-
-/* The first overlay is visual only. Do not let the generic bg-black/20 theme
-   rule turn it into a solid surface over the thumbnail. */
-body[data-rhythiax-theme] #root img[src*="beatmap-img-"] ~ .bg-gradient-to-t,
-body[data-rhythiax-theme] #root img[src*="beatmap-previews"] ~ .bg-gradient-to-t {
-  background-color: transparent !important;
 }
 
 /* Disable hover effect on navbar logo */

@@ -317,6 +317,10 @@ a.fr-row:hover{background:var(--panel-2)}
 .ns-sets .below b{color:var(--nb)}.ns-sets .above b{color:var(--na)}
 .ns-sets span{font-size:13px;color:var(--text-2)}
 .nt .ps-who.below{color:var(--nb)}.nt .ps-who.above{color:var(--na)}
+.nt-say{margin:0 0 12px;font-size:13.5px;line-height:1.5;color:var(--text-2)}.nt-say b{color:var(--text);font-weight:650}
+/* Most room to improve: the reasons under a play's map, quiet words in one line, more on hover. */
+.why{display:flex;flex-wrap:wrap;gap:2px 0;margin-top:4px;font-size:12px;color:var(--text-2)}
+.why span{cursor:help}.why span + span::before{content:"·";margin:0 8px;color:var(--muted)}
 .nx-pair{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin-top:12px}
 .nx-pair > .panel{margin-top:0!important}
 .nx-row{display:grid;grid-template-columns:minmax(0,1fr) 130px;align-items:center;gap:16px;padding:10px 0;border-top:1px solid var(--line)}

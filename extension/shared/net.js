@@ -43,7 +43,7 @@ RhythiaX.Net = RhythiaX.Net || (function () {
   // The budgets a refusal of the history service can name (budget: ...), and the record each pauses.
   const NAMED = { history: 'history', bulk: 'bulk', maps: 'maps', search: 'search' };
   const MAX_PAUSE = 6 * 3600 * 1000;
-  const HISTORY = /^https:\/\/rhythia\.shuriel\.com\/api\/(player\/\d{1,7}\/(history|compare\?mode=(lock|spin|vr))|players\/history|maps\/(kinds|types|search|plays))$/;
+  const HISTORY = /^https:\/\/rhythia\.shuriel\.com\/api\/(player\/\d{1,7}\/(history|near-maps|compare\?mode=(lock|spin|vr))|players\/history|maps\/(kinds|types|search|plays))$/;
   const KEY = 'rhythiax_net_';
   const mem = {};
   // History failures that mean the history server could not be reached (the background says so).

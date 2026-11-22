@@ -3,6 +3,67 @@
 All notable user-facing changes are documented in this file.
 
 ---
+version: 1.6.0
+date: 2026-11-22
+title: Atlas
+listed: yes
+---
+
+## 1.6.0 - Atlas - 2026-11-22
+
+## Featured
+
+- New Atlas app (alpha): Atlas for Rhythia is a new desktop app from the maker of Reimagined, for your Rhythia maps, scores and collections, and Reimagined works with it. Without Atlas, nothing changes.
+
+## Added
+
+- Works with Atlas: Connect Reimagined to Atlas once in the popup (Extras, Atlas); after that they reconnect by themselves whenever both are running. Map and collection pages can then install maps in Atlas, and the map list and collections show how many of their maps are already in your game, with Install missing for the rest. In Exodus, a map page can also add the map to one of your Atlas collections. Atlas can sign in to Rhythia through Reimagined, so you don't sign in twice, and with online history your own Scores give Atlas how your top compares with players ranked near you. All of it goes only to Atlas on your computer.
+- Scores from your game: With Atlas connected, your own Playstyle shows the map types of the maps you passed in the game, and map pages show your best pass. In the popup you choose With Rhythia, Game only or Off; these scores stay in this browser.
+
+## Changed
+
+- Icon: Reimagined has a new icon in the browser toolbar, the extensions list, the popup and the Creator of Reimagined badge.
+- Popup: Features has its own switches for Near your rank (with On each play) and Reimagined Search, and Scores layout moved to Appearance.
+- Download all: Reimagined saves a collection itself instead of Rhythia's own download. Each map keeps its own file type, so every map from the .zip can be dragged into Rhythia, and a big collection comes in .zip files of up to 1.5 GB instead of stopping at 50%. A collection of more than 150 maps asks first, with its rough size.
+
+# Exodus
+
+## Added
+
+- Near your rank in Maps: The map list has a third tab with the maps that players ranked near you have in their top 100 and you don't, and how many of them have each. With online history, signed in and in the top 5,000.
+- Select: The map list and collection pages have Select. Pick up to 100 maps, then add them to one of your collections or save them in one .zip; adding says how many went in, how many were already there and which could not be added.
+- Collection map types: A collection shows its map types under the difficulty spread, and each map card its type. With online history.
+- Most room to improve: In this order each play says in a few words why it has room, such as Close to full combo or Played slower.
+- Map types near your rank: Near your rank's map types say how often your top has each type against the players near you, for example Jumps 2.3×.
+
+## Changed
+
+- Rank moves: Activity, Progress, Month in review and Playstyle show a move in the ranking as ▲ 6 or ▼ 2, as the profile's header and the leaderboards do, instead of +6 or −2.
+
+## Improved
+
+- Download all: The button shows how far the download has got.
+- Collection maps: The first maps and Show more fill whole rows, so the last row is never cut short.
+- Map lists: On wide screens the map list, Reimagined Search and a player's maps show five maps a row, so each page fills whole rows.
+
+# Classic
+
+## Added
+
+- Near this rank: Playstyle also says how often this top has a map type against the players ranked near it, for example jumps 2.3×.
+
+## Improved
+
+- Download all: A card in the corner shows how far the download has got.
+
+## Fixed
+
+- Reimagined Search: The panel shows on the map list again, under Rhythia's filters; since an update of Rhythia's site it was gone.
+- Map cards: Map titles on the wide map cards (the map list's list view, collections, Latest ranked maps) are readable again in every theme, own themes too.
+- Map cards: In Dark and Reimagined every map card fades into the card the same way; maps with an older picture looked different.
+- Map cards: In White the status and difficulty badges (Unranked, Hard, Easy, Medium and the rest) have white text on a full colour and are easy to read.
+
+---
 version: 1.5.1
 date: 2026-11-16
 title: Community Votes

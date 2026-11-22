@@ -121,6 +121,7 @@ RhythiaX.ContentBootstrap = (function () {
   function processMutations(needsScores) {
     if (document.documentElement?.dataset.rhythiaxSettingsReady !== 'true') return;
     RhythiaX.ContentLifecycle.recover();
+    RhythiaX.ClassicAtlasLink?.refresh?.();
     if (RhythiaX.PageRouteContext.type() === 'maps') return;
     if (RhythiaX.PageRouteContext.type() === 'profile') {
       RhythiaX.injectProfileCreatorBadge?.();

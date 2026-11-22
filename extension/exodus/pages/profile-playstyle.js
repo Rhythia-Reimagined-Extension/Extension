@@ -12,7 +12,7 @@ RhythiaX.ExodusProfileParts.playstyle = function mountProfilePlaystyle(c) {
 'use strict';
 // What this part takes from pages/profile.js. The daily history can be replaced after mount (fresh data),
 // so it is read from c each time: c.H, c.DAYS, c.last7, c.FIRST, c.LAST, c.DAY, c.BREAKS and c.MONTHS.
-const {D, ac, esc, fmt, cssUrl, sgn, tone, ico, utc, dm, dayName, SPEED, GRADES, prepare, MODES, MPW, S, OWN, WHOSE,
+const {D, U, ac, esc, fmt, cssUrl, sgn, mv, tone, ico, utc, dm, dayName, SPEED, GRADES, prepare, MODES, MPW, S, OWN, WHOSE,
   whose, $, addDays, nextMonth, prevMonth, monthName, agg, TREND, momentum, plural, playsIn, morph} = c;
 
 // The status guide: what each momentum status means, with the player's own numbers (momentum() in pages/profile.js).
@@ -67,6 +67,7 @@ const STY = {map: RhythiaX.ExodusData.storedStyles(PLAYS.map(s => s.songId)), st
 const kindOf = s => STY.map.get(s.songId)?.kind;
 const isKind = (s, k) => { const st = STY.map.get(s.songId); return Boolean(st) && (k === 'quantum' ? st.quantum : st.kind === k); };
 function loadStyles() {
+  loadAtlas();
   if (STY.started || S.mode !== 'normal') return;
   STY.started = true;
   const ids = [...new Set(PLAYS.map(s => s.songId))];
@@ -75,7 +76,8 @@ function loadStyles() {
   // Map types also feed the notes of the last 14 days and of the month in review.
   const paint = () => {
     queued = false; if (ac.signal.aborted) return;
-    const el = $('#mtypes'); if (el) morph(el, mapTypes());
+    const el = $('#mtypes'); if (el) morph(el, typesSlot());
+    const ag = $('#atlasgame'); if (ag) morph(ag, atlasGame());
     const ps = $('#psnotes'), top = MODES[S.mode].top; if (ps && top.length) morph(ps, psNotes(momentum(), Math.min(...top.map(s => s.raw))));
     const mn = $('#mnotes'); if (mn) { const ym = S.rev, from = ym + '-01', to = nextMonth(ym) + '-01'; morph(mn, monthNotes(ym, agg(from, to), PLAYS.filter(s => dayOf(s) >= from && dayOf(s) < to)).map(n => `<li>${n}</li>`).join('')); }
   };
@@ -121,6 +123,79 @@ function mapTypes() {
     ${lines.length ? `<ul class="notes">${lines.map(l => `<li>${l}</li>`).join('')}</ul>` : ''}`;
 }
 
+/* ── In your game (Atlas) ── */
+// With Atlas paired and "Scores from your game" on (popup, exodus.atlasScores; background/atlas-bridge.js), the
+// player's own profile shows their best pass of every map in the game: each map once, so many tries on one kind of
+// map do not tip the split, and failed tries and practice from the middle are left out. "Game only" takes the place
+// of Map types in Month in review; "With Rhythia" sits under it and adds the top 100 maps not passed in the game.
+// The scores come from Atlas on this computer and stay in this browser.
+const ATL = {source: atlasSource(), state: 'idle', maps: null, why: ''};
+function atlasSource() {
+  const P = RhythiaX.ExodusPrefs;
+  if (!OWN || P?.modules?.atlasLinks !== true) return 'online';
+  const v = P?.exodus?.atlasScores;
+  return ['online', 'both', 'game'].includes(v) ? v : 'both';
+}
+function loadAtlas() {
+  if (ATL.source === 'online' || ATL.state !== 'idle' || S.mode !== 'normal') return;
+  ATL.state = 'loading';
+  const done = r => {
+    if (ac.signal.aborted) return;
+    ATL.state = r?.ok ? 'done' : 'failed'; ATL.maps = r?.ok ? r.maps : null; ATL.why = r?.why || '';
+    const el = $('#atlasgame'); if (el) morph(el, atlasGame());
+  };
+  try { chrome.runtime.sendMessage({type: 'rhythiax-atlas-scores', name: U.username}).then(done, () => done(null)); } catch (_) { done(null); }
+}
+function typesSlot() {
+  return ATL.source === 'game' ? '<h4>Map types</h4><p class="cap">From your game this time: see In your game below.</p>' : mapTypes();
+}
+// The maps counted: the game's passes, and with "With Rhythia" the top 100 maps the game has no pass of (or a
+// better online play of a map, which then counts instead). A top play is matched by its map's page number.
+function atlasMaps() {
+  const list = ATL.maps.map(a => ({id: a.id, acc: a.acc, rp: a.rp, stars: a.stars, kind: a.kind, quantum: a.quantum, from: 'game'}));
+  if (ATL.source !== 'both') return list;
+  const byId = new Map(list.map(x => [x.id, x]));
+  for (const t of MODES.normal.top) {
+    const pid = Number((D.meta || {})[t.songId]?.mapId);
+    if (!Number.isInteger(pid) || pid <= 0) continue;
+    const st = STY.map.get(t.songId), x = byId.get(pid);
+    if (!x) { const y = {id: pid, acc: t.acc, rp: t.raw, stars: t.stars || null, kind: st?.kind || null, quantum: st?.quantum === true, from: 'rhythia'}; list.push(y); byId.set(pid, y); }
+    else {
+      if (!x.kind && st?.kind) { x.kind = st.kind; x.quantum = st.quantum === true; }
+      if ((t.raw || 0) > (x.rp || 0)) { x.acc = t.acc; x.rp = t.raw; }
+    }
+  }
+  return list;
+}
+function atlasGame() {
+  const head = t => `<div class="panel-head"><h3>In your game <span>· ${t}</span></h3></div>`;
+  if (ATL.state !== 'done') {
+    const why = ATL.why === 'offline' ? 'Start Atlas to see your scores from the game.' : ATL.why === 'off' ? 'Scores from your game are off in the popup.' : 'Atlas could not read your scores this time.';
+    return head('from Atlas') + (ATL.state === 'failed' ? `<p class="cap">${why}</p>` : '<div class="skeleton" style="height:90px;border-radius:12px"></div>');
+  }
+  const list = atlasMaps();
+  if (!list.length) return head('from Atlas') + '<p class="cap">No passes in the game yet.</p>';
+  const keys = Object.keys(KIND), color = k => `var(--k-${k})`, label = k => KIND[k][0];
+  const known = list.filter(x => BAR_KINDS.includes(x.kind));
+  const rows = keys.map(k => [k, list.filter(x => (k === 'quantum' ? x.quantum : x.kind === k))]).filter(([, l]) => l.length);
+  const accOf = l => { const a = l.filter(x => x.acc != null); return a.length ? a.reduce((n, x) => n + x.acc, 0) / a.length : null; };
+  const fromRhythia = list.filter(x => x.from === 'rhythia').length;
+  const lines = [];
+  const lead = BAR_KINDS.map(k => [k, known.filter(x => x.kind === k).length]).sort((a, b) => b[1] - a[1])[0];
+  if (lead[1]) lines.push(`Most of ${OWN ? 'your' : 'the'} passed maps are <b>${label(lead[0]).toLowerCase()}</b> (${lead[1]} of ${known.length} with a type).`);
+  const accs = BAR_KINDS.map(k => [k, known.filter(x => x.kind === k)]).filter(([, l]) => l.length >= 5).map(([k, l]) => [k, accOf(l)]).filter(r => r[1] != null).sort((a, b) => b[1] - a[1]);
+  if (accs.length >= 2 && accs[0][1] - accs.at(-1)[1] >= .3) lines.push(`Accuracy is highest on <b>${label(accs[0][0]).toLowerCase()}</b> (${fmt(accs[0][1], 2)}%) and lowest on <b>${label(accs.at(-1)[0]).toLowerCase()}</b> (${fmt(accs.at(-1)[1], 2)}%).`);
+  const st = list.map(x => x.stars).filter(v => v != null);
+  if (st.length >= 3) lines.push(`Stars from <b>${fmt(Math.min(...st), 2)}</b> to <b>${fmt(Math.max(...st), 2)}</b>, ${fmt(st.reduce((a, b) => a + b, 0) / st.length, 2)} on average.`);
+  if (list.length > known.length) lines.push(`${plural(list.length - known.length, 'map')} without a type: Unranked, Approved, or not read yet.`);
+  return head(`${plural(list.length, 'map')} passed, each counted once${fromRhythia ? `, ${fromRhythia} of them only in your Rhythia top 100` : ''}`)
+    + (known.length ? mix(BAR_KINDS.map(k => [k, known.filter(x => x.kind === k).length]), color, label, `${known.length} with a type`, k => `<br>${KIND[k][1]}`) : '')
+    + `<div class="mt-rows"><span class="h">Type</span><span class="h">Maps</span><span class="h">Share</span><span class="h">Accuracy</span>
+      ${rows.map(([k, l]) => `<span class="k" style="--c:${color(k)}" data-tip="<b>${label(k)}</b><small>${KIND[k][1]}</small>">${label(k)}</span><em class="num">${l.length}</em><em class="num">${known.length && k !== 'quantum' ? Math.round(l.length / known.length * 100) + '%' : '—'}</em><em class="num" data-tip="<small>Average accuracy of the best pass of these maps</small>">${accOf(l) != null ? fmt(accOf(l), 2) + '%' : '—'}</em>`).join('')}</div>`
+    + (lines.length ? `<ul class="notes">${lines.map(l => `<li>${l}</li>`).join('')}</ul>` : '')
+    + '<p class="cap">From Atlas on this computer: your best pass of each map. Failed tries and practice don’t count.</p>';
+}
+
 // What changed in a period [from, to), from the plays Rhythia still lists: the top plays set in it, on new maps
 // or beating a listed play of the same map; the map types whose accuracy moved against the 30 days before; and
 // a change of main speed. At most three short lines; a line needs enough plays to say something.
@@ -164,7 +239,7 @@ function strip(ym) {
     const x = c.DAY.get(d);
     if (d > c.LAST) return `<span class="mcol future" style="grid-column:${i + 1}"></span>`;
     if (!x) return `<span class="mcol off" style="grid-column:${i + 1}" data-tip="<b>${dayName(d)}</b><small>Not tracked</small>"><i></i></span>`;
-    return `<span class="mcol ${x.plays ? '' : 'zero'}" style="grid-column:${i + 1};--h:${Math.round(x.plays / max * 100)}" data-tip="<b>${dayName(d)}</b><small>${x.plays ? `${plural(x.plays, 'play')} · ${sgn(x.rp, 1)} RP · rank ${sgn(x.rank)}` : 'No plays'}</small>"><i></i></span>`;
+    return `<span class="mcol ${x.plays ? '' : 'zero'}" style="grid-column:${i + 1};--h:${Math.round(x.plays / max * 100)}" data-tip="<b>${dayName(d)}</b><small>${x.plays ? `${plural(x.plays, 'play')} · ${sgn(x.rp, 1)} RP · rank ${mv(x.rank)}` : 'No plays'}</small>"><i></i></span>`;
   }).join('');
   const labels = days.map((d, i) => (i % 7 === 0 ? `<span class="mday num" style="grid-column:${i + 1}">${i + 1}</span>` : '')).join('');
   const breaks = c.BREAKS.filter(b => b.from < to && b.to >= from).map(b => {
@@ -213,10 +288,10 @@ function review() {
   return `<div class="panel wide mrev" id="mrev">
     <div class="panel-head"><h3>Month in review</h3>
       <div class="stepper"><button class="iconbtn" type="button" data-rev="-1" ${i > 0 ? '' : 'disabled'} aria-label="Earlier month">‹</button><strong>${monthName(ym)}</strong><button class="iconbtn" type="button" data-rev="1" ${i < c.MONTHS.length - 1 ? '' : 'disabled'} aria-label="Later month">›</button></div></div>
-    ${a ? `<div class="mfig">${fig('Plays', fmt(a.plays))}${fig('Active days', `${a.active} of ${a.days}`)}${fig('RP', sgn(a.rp, 1), tone(a.rp))}${fig('Global rank', sgn(a.rank), tone(a.rank))}${fig('Avg. accuracy', sgn(a.accD, 2, ' pp'), tone(a.accD))}</div>` : ''}
+    ${a ? `<div class="mfig">${fig('Plays', fmt(a.plays))}${fig('Active days', `${a.active} of ${a.days}`)}${fig('RP', sgn(a.rp, 1), tone(a.rp))}${fig('Global rank', mv(a.rank), tone(a.rank))}${fig('Avg. accuracy', sgn(a.accD, 2, ' pp'), tone(a.accD))}</div>` : ''}
     <div class="mbody">
       <div>${a ? strip(ym) : ''}<ul class="notes" id="mnotes">${monthNotes(ym, a, plays).map(n => `<li>${n}</li>`).join('')}</ul></div>
-      <div id="mtypes">${mapTypes()}</div>
+      <div id="mtypes">${typesSlot()}</div>
     </div>
   </div>`;
 }
@@ -246,7 +321,7 @@ function playstyle() {
       <div class="panel">
         <div class="mom ${mo.kind}"><span class="mom-ico">${mo.icon}</span>
           <div><small>Momentum · last ${mo.days} days</small><strong>${mo.label}${mo.flags.map(f => `<em>${f}</em>`).join('')}</strong>
-            <span class="num">#${fmt(last.globalRank)} now · ${mo.delta ? `${sgn(mo.delta)} places` : 'no change'}</span></div>
+            <span class="num">#${fmt(last.globalRank)} now · ${mo.delta ? `${mv(mo.delta)} places` : 'no change'}</span></div>
           ${mo.ref ? `<button class="faq-btn" type="button" data-faq aria-expanded="false" aria-controls="faq">${ico('info')}Status guide</button>` : ''}</div>
         <ul class="notes" id="psnotes">${psNotes(mo, floor)}</ul>
       </div>
@@ -260,7 +335,7 @@ function playstyle() {
           ${sig('Plays, 14 days', fmt(mo.plays || 0), `${fmt((mo.plays || 0) / Math.max(1, mo.days), 1)} a day`)}
         </div>
       </div>
-      ${S.mode === 'normal' ? review() : ''}
+      ${S.mode === 'normal' ? review() : ''}${S.mode === 'normal' && ATL.source !== 'online' ? `<div class="panel wide" id="atlasgame">${atlasGame()}</div>` : ''}
       <div class="panel"><div class="panel-head"><h3>Speed mix <span>· top ${top.length}</span></h3></div>${mix(speeds, k => SPEED[k], spd, of)}${legend(speeds, k => SPEED[k], spd)}</div>
       <div class="panel"><div class="panel-head"><h3>Grades <span>· top ${top.length}</span></h3></div>${mix(grades, k => `var(--g-${k})`, grd, of)}${legend(grades, k => `var(--g-${k})`, grd)}</div>
     </div>

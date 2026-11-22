@@ -3,12 +3,7 @@
 body[data-rhythiax-theme] #root .bg-surface,
 body[data-rhythiax-theme] #root [class*="bg-surface"],
 body[data-rhythiax-theme] #root [class*="bg-[#111214]"],
-body[data-rhythiax-theme] #root [class*="bg-[#1a1b1c]"],
-body[data-rhythiax-theme] #root [class*="bg-[#1e1f21]"],
-body[data-rhythiax-theme] #root [class*="bg-[#242526]"],
-body[data-rhythiax-theme] #root [class*="bg-[#1F2021]"],
-body[data-rhythiax-theme] #root [class*="bg-neutral-900"],
-body[data-rhythiax-theme] #root [class*="bg-neutral-950"] {
+body[data-rhythiax-theme] #root [class*="bg-neutral-900"] {
    background-color: var(--rhythiax-surface) !important;
    border-color: var(--rhythiax-border) !important;
    box-shadow: var(--rhythiax-shadow);
@@ -17,11 +12,8 @@ body[data-rhythiax-theme] #root .bg-raised,
 body[data-rhythiax-theme] #root [class*="bg-raised"],
 body[data-rhythiax-theme] #root [class*="bg-white/5"],
 body[data-rhythiax-theme] #root [class*="bg-white/10"],
-body[data-rhythiax-theme] #root [class*="bg-white/[0.02]"],
 body[data-rhythiax-theme] #root [class*="bg-white/[0.03]"],
-body[data-rhythiax-theme] #root [class*="bg-white/[0.035]"],
 body[data-rhythiax-theme] #root [class*="bg-white/[0.04]"],
-body[data-rhythiax-theme] #root [class*="bg-white/[0.055]"],
 body[data-rhythiax-theme] #root [class*="bg-white/[0.08]"] {
    background-color: var(--rhythiax-inner-surface) !important;
    border-color: var(--rhythiax-border) !important;
@@ -41,7 +33,6 @@ body[data-rhythiax-theme] #root .border-line-strong,
 body[data-rhythiax-theme] #root [class*="border-line-strong"] {
    border-color: var(--rhythiax-border-strong) !important;
 }
-body[data-rhythiax-theme] #root [class*="bg-gradient-to-t"][class*="from-[#111214]"],
 body[data-rhythiax-theme] #root .pointer-events-none[class*="bg-gradient-to-t"] {
    background-image: linear-gradient(to top, var(--rhythiax-surface), transparent) !important;
 }
@@ -77,7 +68,6 @@ body[data-rhythiax-theme] #root .fixed.top-0 a[aria-label="Changelog"] {
 }
 body[data-rhythiax-theme] #root button:has(img[src*="settingsicon"]),
 body[data-rhythiax-theme] #root [class*="bg-control"]:has(img[src*="settingsicon"]),
-body[data-rhythiax-theme] #root [class*="bg-[#1e1f21]"]:has(img[src*="settingsicon"]),
 body[data-rhythiax-theme] #root button[aria-label="Settings"],
 body[data-rhythiax-theme] #root .fixed.top-0 a[href="/changelog"],
 body[data-rhythiax-theme] #root .fixed.top-0 a[aria-label="Changelog"] {
@@ -134,11 +124,9 @@ body[data-rhythiax-theme] #root [class*="text-neutral-200"] { color: var(--rhyth
 body[data-rhythiax-theme] #root [class*="text-neutral-300"],
 body[data-rhythiax-theme] #root [class*="text-neutral-400"],
 body[data-rhythiax-theme] #root [class*="text-neutral-500"],
-body[data-rhythiax-theme] #root [class*="text-white/60"],
-body[data-rhythiax-theme] #root [class*="text-white/65"] { color: var(--rhythiax-text-muted) !important; }
+body[data-rhythiax-theme] #root [class*="text-white/60"] { color: var(--rhythiax-text-muted) !important; }
 body[data-rhythiax-theme] #root [class*="text-blue-300"],
-body[data-rhythiax-theme] #root [class*="text-blue-400"],
-body[data-rhythiax-theme] #root [class*="text-blue-500"] { color: var(--rhythiax-accent) !important; }
+body[data-rhythiax-theme] #root [class*="text-blue-400"] { color: var(--rhythiax-accent) !important; }
 body[data-rhythiax-theme] #root a:hover { color: var(--rhythiax-accent) !important; }
 
 body[data-rhythiax-theme] #root input,
@@ -177,7 +165,6 @@ html:not([data-rhythiax-own-theme]) body[data-rhythiax-theme="white"] {
    box-shadow: 0 8px 24px rgba(51,65,85,.12) !important;
 }
 :where(html:not([data-rhythiax-own-theme])) body[data-rhythiax-theme="white"] #root .fixed.top-0.left-0.w-full[class*="h-[60px]"] [class*="text-white"] { color: #ffffff !important; }
-body[data-rhythiax-theme="white"] #root [class*="bg-neutral-950"],
 body[data-rhythiax-theme="white"] #root [class*="bg-[#0a0a0a"] { background-color: var(--rhythiax-page-bg) !important; }
 body[data-rhythiax-theme="white"] #root [class*="bg-white/10"] { background-color: rgba(30,41,59,.07) !important; }
 :where(html:not([data-rhythiax-own-theme])) body[data-rhythiax-theme="white"] #root [class*="bg-blue-500/10"] { background-color: rgba(91,33,182,.10) !important; }

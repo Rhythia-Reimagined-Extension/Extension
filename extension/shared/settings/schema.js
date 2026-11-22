@@ -70,8 +70,16 @@ RhythiaX.SettingsSchema = (function () {
         { key: 'options.scoreCards.modDisplay', type: 'pills', looks: CLASSIC, default: 'icons', title: 'Mods as', options: [['icons', 'Icons'], ['labels', 'Labels']] },
         { key: 'options.scoreCards.cardBackgrounds', type: 'switch', looks: CLASSIC, default: true, title: 'Map art behind cards' },
       ] },
-    { key: 'exodus.scoresView', tab: 'features', group: 'Scores', type: 'tiles', looks: EXODUS, default: 'list',
-      title: 'Scores layout', desc: 'How a profile shows its scores first.', options: [['list', 'List', '', 'exoList'], ['grid', 'Grid', '', 'exoGrid']] },
+    // Read by Exodus (pages/profile-scores.js, pages/maps.js) and Classic (playstyle/view.js, score-cards/hub-filters.js).
+    // Off asks the history service nothing about the players ranked near.
+    { key: 'modules.nearRank', tab: 'features', group: 'Scores', type: 'switch', looks: BOTH, default: true,
+      title: 'Near your rank', desc: 'A player’s top against the players ranked just above and below. Online history, top 5,000.',
+      children: [
+        { key: 'options.nearRank.onPlays', type: 'switch', looks: BOTH, default: true, title: 'On each play' },
+      ] },
+    // Read by Exodus (pages/maps.js) and Classic (map-search/view.js).
+    { key: 'modules.mapSearch', tab: 'features', group: 'Maps', type: 'switch', looks: BOTH, default: true,
+      title: 'Reimagined Search', desc: 'Ranked and Qualified maps by type, length and difficulty. Online history.' },
     { key: 'exodus.pages', tab: 'features', group: 'Pages', type: 'checks', looks: EXODUS, default: PAGES.map(p => p[0]),
       title: 'Pages Exodus takes over', desc: 'Off keeps Rhythia’s own version of that page.', options: PAGES },
     { key: 'exodus.search', tab: 'features', group: 'Pages', type: 'switch', looks: EXODUS, default: true,
@@ -84,12 +92,26 @@ RhythiaX.SettingsSchema = (function () {
         { key: 'options.easterEggs.frequency', type: 'pills', looks: BOTH, default: 'normal', title: 'How often',
           options: [['frequent', 'Frequent'], ['normal', 'Normal'], ['rare', 'Rare']] },
       ] },
+    // The Atlas card, last in Extras: one card (popup atlasCard) with this switch, the link with the Atlas app
+    // (background/atlas-bridge.js) under it, and the settings marked inCard once Atlas is paired.
+    { key: 'atlasBridge', tab: 'features', group: 'Extras', type: 'atlas', looks: BOTH, title: 'Atlas' },
+    // Read by shared/atlas-link.js's callers in both looks (Exodus pages/map.js and pages/collections.js, Classic
+    // content/features/atlas-link/button.js). Its switch is the Atlas card's own.
+    { key: 'modules.atlasLinks', tab: 'features', group: 'Extras', type: 'switch', looks: BOTH, default: false, inCard: 'atlasBridge',
+      title: 'Install in Atlas', desc: 'For Atlas, the desktop app for your maps (alpha). Adds Install in Atlas to map and collection pages.' },
+    // Read by background/atlas-bridge.js and Exodus (pages/profile-playstyle.js, pages/map.js). Shown in the Atlas card
+    // only once Atlas is paired: players without Atlas never see it.
+    { key: 'exodus.atlasScores', tab: 'features', group: 'Extras', type: 'pills', looks: EXODUS, default: 'both', inCard: 'atlasBridge',
+      title: 'Scores from your game', desc: 'Your best pass of each map, from Atlas. Shown on your profile and map pages; it stays in this browser.',
+      options: [['online', 'Off'], ['both', 'With Rhythia'], ['game', 'Game only']] },
 
     // Appearance
     { key: 'theme', tab: 'look', group: 'Colours', type: 'themes', looks: BOTH, default: 'reimagined',
       title: 'Theme', options: [['reimagined', 'Reimagined'], ['dark', 'Dark'], ['white', 'White']] },
     { key: 'exodus.style', tab: 'look', group: 'Colours', type: 'tiles', looks: EXODUS, default: 'lines',
       title: 'Exodus style', options: [['lines', 'Lines', 'Flat, calm', 'lines'], ['float', 'Floating', 'Raised panels', 'float']] },
+    { key: 'exodus.scoresView', tab: 'look', group: 'Layout', type: 'tiles', looks: EXODUS, default: 'list',
+      title: 'Scores layout', desc: 'How a profile shows its scores first.', options: [['list', 'List', '', 'exoList'], ['grid', 'Grid', '', 'exoGrid']] },
     { key: 'exodus.homeVideo', tab: 'look', group: 'Motion', type: 'switch', looks: EXODUS, default: true,
       title: 'Moving background on Home', desc: 'Off saves battery and data.' },
     { key: 'options.appearance.dateFormat', tab: 'look', group: 'Formats', type: 'dates', looks: CLASSIC, default: 'yyyy-mm-dd',

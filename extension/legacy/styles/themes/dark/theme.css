@@ -32,35 +32,6 @@ body[data-rhythiax-theme="dark"] #root [class*="bg-[#141516]"] {
   opacity: 1 !important;
 }
 
-body[data-rhythiax-theme="dark"] #root img[src*="beatmap-img-"]~[class*="bg-gradient-to-t"] {
-  background-image: linear-gradient(to top, rgba(10, 10, 10, .92), rgba(10, 10, 10, .18) 58%, transparent) !important;
-  background-color: transparent !important;
-}
-
-body[data-rhythiax-theme="dark"] #root img[src*="beatmap-img-"]~[class*="bg-black/35"] {
-  background-color: rgba(10, 10, 10, .82) !important;
-}
-
-body[data-rhythiax-theme="dark"] #root img[src*="beatmap-img-"]~[class*="bg-black/0"] {
-  background-color: transparent !important;
-}
-
-body[data-rhythiax-theme="dark"] #root img[src*="beatmap-img-"]~div[class*="bottom-0"]>div[class*="bg-black/35"] {
-  color: #fff !important;
-  border-color: rgba(255, 255, 255, .18) !important;
-}
-
-body[data-rhythiax-theme="dark"] #root img[src*="beatmap-img-"]~div[class*="bottom-0"]>div[class*="bg-black/35"] [class*="text-white"],
-body[data-rhythiax-theme="dark"] #root img[src*="beatmap-img-"]~div[class*="bottom-0"]>div[class*="bg-black/35"] [class*="text-neutral-"] {
-  color: #fff !important;
-}
-
-body[data-rhythiax-theme="dark"] #root img[src*="beatmap-img-"]~button[class*="bg-[#111214]"] {
-  background: linear-gradient(180deg, rgba(38, 38, 38, .96), rgba(10, 10, 10, .96)) !important;
-  color: #fff !important;
-  border-color: rgba(255, 255, 255, .24) !important;
-}
-
 body[data-rhythiax-theme="dark"] #root div:has(> .pointer-events-none[class*="bg-black/70"]) {
   color: #fff !important;
 }
@@ -154,7 +125,6 @@ body[data-rhythiax-theme="dark"] [role="dialog"] {
   background: linear-gradient(180deg, var(--rhythiax-surface), var(--rhythiax-page-bg)) !important;
 }
 
-body[data-rhythiax-theme="dark"] [role="dialog"] [class*="bg-[#1a1b1c]"],
 body[data-rhythiax-theme="dark"] [role="dialog"] [class*="bg-black/20"] {
   background: var(--rhythiax-inner-surface) !important;
   border-color: var(--rhythiax-border) !important;

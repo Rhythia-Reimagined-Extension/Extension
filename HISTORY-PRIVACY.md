@@ -1,6 +1,6 @@
 # Privacy — independent player-history service
 
-Updated November 7, 2026. This notice explains what the player-history service behind Reimagined keeps about Rhythia players, why, for how long, and how to have it shown, corrected or removed. A few legal questions are still being worked on; they are listed at the end.
+Updated November 21, 2026. This notice explains what the player-history service behind Reimagined keeps about Rhythia players, why, for how long, and how to have it shown, corrected or removed. A few legal questions are still being worked on; they are listed at the end.
 
 Contact: **Shuriel**, a private operator based in Poland · [privacy@shuriel.com](mailto:privacy@shuriel.com) (the same inbox as contact@shuriel.com)
 
@@ -18,7 +18,7 @@ Contact: **Shuriel**, a private operator based in Poland · [privacy@shuriel.com
 | --- | --- |
 | A player's public ID, last known name, country and avatar | To identify profiles. Shown with the player's history. Older names, countries or avatars are not archived. |
 | Daily statistics and ranks: rhythm points, global and country rank, play count, squares hit, accuracy and score totals | Progress over time and comparisons. Anyone can see one player's history. |
-| Best-score lists and selected daily scores of ranked players, with basic map details and records of how the scores were picked | Progress and comparisons. Private: comparisons show only group figures (medians and shares) of at least five players ranked near someone, never another player's name, ID or list. |
+| Best-score lists, first-place (reign) lists and selected daily scores of ranked players, with basic map details and records of how the scores were picked | Progress and comparisons. Private: comparisons show only group figures (medians and shares) of at least five players ranked near someone, never another player's name, ID or list. |
 | Play time, account creation date, ranking positions and summaries of what ranked players play | Private community statistics, and choosing which profiles to read and how often. Not shown unless the operator publishes a summary. |
 | A daily copy of Rhythia's public leaderboard: the top 50,000 players in Standard and the top 200 in Spin and VR, with ID, position, rhythm points and country, but no names | Private counts and summaries, such as players new to the leaderboard or rank changes. Not shown by the service. |
 | An hourly check of the top 5,000 leaderboard (position, rhythm points and play count), a trial that ended on November 6, 2026 | Testing a lighter way to read profiles. Private, and deleted within 30 days of being read. |
@@ -58,7 +58,7 @@ Some providers can process data outside the European Economic Area. OVHcloud and
 | --- | --- |
 | Player history | While the service runs, reviewed at least once a year; removed when a removal request is granted. |
 | Selected daily scores and the scores behind community statistics | Six months. |
-| Best-score lists | While a score is on the list, then six months; monthly summaries 24 months. |
+| Best-score and first-place lists | While a score is on the list, then six months; monthly summaries 24 months. |
 | Daily leaderboard copies | 90 days; one copy a week for a year; the first of each month without a set end. |
 | Play time | 13 months. The account creation date and the last ban status stay as long as the player's record. |
 | Ranking positions | Until a year after the player was last in the top 5,000. |

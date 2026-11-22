@@ -73,12 +73,28 @@ function loadNear() {
     .then(d => { CMP.data = d?.available && d.band?.above && d.band?.below && d.summary ? d : null; CMP.reason = d?.reason || (d ? '' : 'unread'); }, () => { CMP.data = null; CMP.reason = 'unread'; })
     .finally(() => {
       CMP.key = key; CMP.busy = false; if (ac.signal.aborted) return;
+      nearToAtlas();
       const el = $('#near'); if (el) { el.innerHTML = nearSection(); el.hidden = !el.innerHTML; el.classList.add('in'); }
       c.redrawScores?.();
     });
 }
+// With Install in Atlas on and Atlas connected, the player's own Lock top as compared here goes to Atlas (by map
+// hash: place, how many, level, the middle player's RP and accuracy), shown in its map details while it runs.
+function nearToAtlas() {
+  if (!CMP.data || S.viewer !== 'owner' || S.mode !== 'normal' || RhythiaX.ExodusPrefs?.modules?.atlasLinks !== true) return;
+  const byId = new Map(MODES.normal.top.map(s => [String(s.id), s]));
+  const maps = (CMP.data.scores || []).map(x => {
+    const s = byId.get(String(x.scoreId));
+    return s?.beatmapHash && x.place ? {hash: s.beatmapHash, place: x.place, of: x.of, level: x.level, rpMid: x.all?.rpMedian, accMid: x.all?.accMedian} : null;
+  }).filter(Boolean);
+  if (maps.length) chrome.runtime.sendMessage({type: 'rhythiax-atlas-near', maps}).catch(() => {});
+}
+// The popup's Near your rank switch (modules.nearRank): off asks nothing and shows none of it. Its On each play
+// (options.nearRank.onPlays) is the nearby values and bar on each play; the order and filter stay without it.
+const nearOn = () => RhythiaX.ExodusPrefs?.modules?.nearRank !== false;
 // Only on the Scores page: the profile's own score list keeps its usual cards.
-const nearReady = () => S.section === 'scores' && Boolean(CMP.data) && CMP.key === cmpKey() && S.list === 'top';
+const nearReady = () => nearOn() && S.section === 'scores' && Boolean(CMP.data) && CMP.key === cmpKey() && S.list === 'top';
+const nearPlays = () => nearReady() && RhythiaX.ExodusPrefs?.nearOnPlays !== false;
 let nearById = {key: '', map: new Map()};
 const near = s => {
   if (!nearReady()) return undefined;
@@ -118,6 +134,36 @@ function nearLine(s) {
   return `<div class="nl" data-tip="${tip}"><span class="nl-bar"><i style="width:${(beaten / (others || 1) * 100).toFixed(1)}%"></i></span>
     <span class="nl-cap num">Better than <b>${fmt(beaten)}</b> of ${fmt(others)}</span></div>`;
 }
+// Most room to improve: up to two reasons under each play, from the play itself, the player's own top and the
+// players near the rank. Low RP: under 80% of the middle RP of the top's plays at the same half star (4 or more).
+const OLD_MS = 180 * 864e5;
+let rpLevels = {top: null, at: new Map()};
+function levelRp(s) {
+  const top = MODES[S.mode].top;
+  if (rpLevels.top !== top) {
+    const by = new Map();
+    for (const t of top) { if (!(t.stars > 0)) continue; const k = Math.round(t.stars * 2) / 2; if (!by.has(k)) by.set(k, []); by.get(k).push(t.raw); }
+    const mid = l => { const v = l.slice().sort((a, b) => a - b), h = v.length >> 1; return v.length % 2 ? v[h] : (v[h - 1] + v[h]) / 2; };
+    rpLevels = {top, at: new Map([...by].filter(([, l]) => l.length >= 4).map(([k, l]) => [k, mid(l)]))};
+  }
+  return s.stars > 0 ? rpLevels.at.get(Math.round(s.stars * 2) / 2) : undefined;
+}
+function reasons(s) {
+  const x = near(s), out = [], speed = Number(s.speedKey), common = Number(x?.speeds?.[0]?.speed);
+  if (common > speed + .001) out.push([S.viewer === 'owner' ? 'Most near you play it faster' : 'Most nearby play it faster', `<b>Most play it at ${esc(x.speeds[0].speed)}×</b><small>${fmt(x.speeds[0].above + x.speeds[0].below)} of the players nearby, against ${esc(s.speedKey)}× here</small>`]);
+  else if (speed < 1) out.push(['Played slower', `<b>Played at ${esc(s.speedKey)}×</b><small>The same map at 1× or faster gives more RP</small>`]);
+  if (!s.fc && s.misses >= 1 && s.misses <= 5) out.push(['Close to full combo', `<b>${fmt(s.misses)} ${s.misses === 1 ? 'miss' : 'misses'}</b><small>A full combo raises the RP of this map</small>`]);
+  const lv = levelRp(s);
+  if (lv && s.raw < lv * .8) out.push(['Low RP for its stars', `<b>${fmt(s.raw)} RP</b><small>The top's plays at ★ ${fmt(Math.round(s.stars * 2) / 2, 1)} give ${fmt(lv)} RP in the middle</small>`]);
+  const at = Date.parse(s.created_at);
+  if (at && Date.now() - at > OLD_MS) out.push(['Over 6 months old', `<b>Set ${esc(ago(s.created_at))}</b><small>Played better since, a new try may go higher</small>`]);
+  return out.slice(0, 2);
+}
+const whyLine = s => {
+  if (S.sort !== 'room' || !nearReady()) return '';
+  const w = reasons(s);
+  return w.length ? `<div class="why">${w.map(([l, tip]) => `<span data-tip="${tip}">${l}</span>`).join('')}</div>` : '';
+};
 const sug = {i: -1, items: []};
 const mark = (v, q) => { const i = v.toLowerCase().indexOf(q); return i < 0 ? esc(v) : esc(v.slice(0, i)) + '<mark>' + esc(v.slice(i, i + q.length)) + '</mark>' + esc(v.slice(i + q.length)); };
 function suggest(raw) {
@@ -140,30 +186,30 @@ function pickSuggestion(i) {
 }
 
 function row(s, kind, i) {
-  const top = kind === 'top', nx = top && nearReady() ? near(s) : null;
+  const top = kind === 'top', nx = top && nearPlays() ? near(s) : null;
   return `<div class="row" style="--img:${cssUrl(s.img || s.thumb)};--i:${i}">
     <span class="pos num">${top ? s.pos : ''}</span>
     <span class="thumb" style="background-image:${cssUrl(s.thumb)}"></span>
     <div class="map"><a href="/score/${encodeURIComponent(s.id)}" title="${esc(s.beatmapTitle)}">${esc(s.beatmapTitle)}</a>
-      <div class="meta-line">${modChips(s)}${s.mapper ? `<span>by <b>${esc(s.mapper)}</b></span>` : ''}${s.stars ? `<span class="num">★ ${fmt(s.stars, 2)}</span>` : ''}<span>${ago(s.created_at)}</span></div></div>
+      <div class="meta-line">${modChips(s)}${s.mapper ? `<span>by <b>${esc(s.mapper)}</b></span>` : ''}${s.stars ? `<span class="num">★ ${fmt(s.stars, 2)}</span>` : ''}<span>${ago(s.created_at)}</span></div>${top ? whyLine(s) : ''}</div>
     <div class="stats">
       <span class="grade ${s.grade === 'SS' ? 'ss' : ''}" style="--c:var(--g-${s.grade})">${s.grade}</span>
       <span class="v num">${fmt(s.acc, 2)}%${nx ? accDelta(s, nx) : ''}</span>
       ${s.fc ? `<span class="v fc">FC${nx ? missDelta(s, nx) : ''}</span>` : `<span class="v miss num">${fmt(s.misses)}${nx ? missDelta(s, nx) : ''}</span>`}
       <span class="v raw num">${fmt(s.raw)}${nx ? rpDelta(s, nx) : ''}</span>
       ${top ? `<span class="v w num">${fmt(s.weighted)}<small>${s.weight}%</small></span>` : `<span class="v none">—</span>`}
-      ${top && nearReady() ? nearLine(s) : ''}
+      ${top && nearPlays() ? nearLine(s) : ''}
     </div>
     <button class="iconbtn" type="button" aria-label="Score actions" aria-haspopup="menu" data-menu="${s.id}">${ico('more')}</button>
   </div>`;
 }
 function tile(s, kind, i) {
-  const nx = kind === 'top' && nearReady() ? near(s) : null;
+  const nx = kind === 'top' && nearPlays() ? near(s) : null;
   return `<article class="tile" style="--i:${i}"><div class="art" style="background-image:${cssUrl(s.img || s.thumb)}">${kind === 'top' ? `<span class="pos num">#${s.pos}</span>` : ''}<span class="grade" style="--c:var(--g-${s.grade})">${s.grade}</span><button class="iconbtn" type="button" aria-label="Score actions" aria-haspopup="menu" data-menu="${s.id}">${ico('more')}</button></div>
     <div class="body"><div class="map"><a href="/score/${encodeURIComponent(s.id)}" title="${esc(s.beatmapTitle)}">${esc(s.beatmapTitle)}</a>
-      <div class="meta-line">${modChips(s)}${s.mapper ? `<span>by ${esc(s.mapper)}</span>` : ''}<span>${ago(s.created_at)}</span></div></div>
+      <div class="meta-line">${modChips(s)}${s.mapper ? `<span>by ${esc(s.mapper)}</span>` : ''}<span>${ago(s.created_at)}</span></div>${kind === 'top' ? whyLine(s) : ''}</div>
     <dl><div><dt>Accuracy</dt><dd class="v num">${fmt(s.acc, 2)}%${nx ? accDelta(s, nx) : ''}</dd></div><div><dt>Misses</dt><dd class="v ${s.fc ? 'fc' : 'miss'} num">${s.fc ? 'FC' : fmt(s.misses)}${nx ? missDelta(s, nx) : ''}</dd></div>
-      <div><dt>${kind === 'top' && !nx ? 'Weighted' : 'RP'}</dt><dd class="v w num" ${nx ? `data-tip="<b>${fmt(s.weighted)} weighted</b><small>${s.weight}% of ${fmt(s.raw)} RP</small>"` : ''}>${fmt(kind === 'top' && !nx ? s.weighted : s.raw)}${nx ? rpDelta(s, nx) : ''}</dd></div></dl>${kind === 'top' && nearReady() ? `<div class="tile-near">${nearLine(s)}</div>` : ''}</div></article>`;
+      <div><dt>${kind === 'top' && !nx ? 'Weighted' : 'RP'}</dt><dd class="v w num" ${nx ? `data-tip="<b>${fmt(s.weighted)} weighted</b><small>${s.weight}% of ${fmt(s.raw)} RP</small>"` : ''}>${fmt(kind === 'top' && !nx ? s.weighted : s.raw)}${nx ? rpDelta(s, nx) : ''}</dd></div></dl>${kind === 'top' && nearPlays() ? `<div class="tile-near">${nearLine(s)}</div>` : ''}</div></article>`;
 }
 // Each filter as a test of one play, in the order they apply, so a menu can count what each of its choices
 // would leave with the other filters kept.
@@ -213,7 +259,7 @@ function scoreBody(anim) {
     : S.kind && S.basic ? `<p class="cap kinds-load" data-tip="<b>Approximate</b><small>${RhythiaX.ExodusKit.BASIC_TIP}</small>">Map types worked out in this browser: approximate, without Techs.</p>` : '';
   const body = !shown.length ? `${reading}<div class="panel empty"><b>${busy ? 'Reading map types…' : total ? 'No scores match' : `No ${S.list === 'reign' ? 'reigning' : S.list} scores in ${m.label}`}</b>${total && !busy ? 'Try clearing the search or filters.' : ''}</div>`
     : S.view === 'grid' ? `${reading}<div class="tiles ${anim ? 'anim' : ''}">${shown.map((s, i) => tile(s, S.list, i)).join('')}</div>`
-    : `${reading}<div class="list-panel panel ${nearReady() ? 'near' : ''}"><div class="cols" aria-hidden="true"><span>#</span><span></span><span>Map</span><span>Grade</span><span>Accuracy</span><span>Misses</span><span>RP</span><span>${S.list === 'top' ? 'Weighted' : ''}</span>${nearReady() ? `<span data-tip="<b>Nearby</b><small>The middle player of those ranked near ${S.viewer === 'owner' ? 'you' : 'this player'} who have the map in their top 100</small>">Nearby</span>` : ''}<span></span></div>
+    : `${reading}<div class="list-panel panel ${nearPlays() ? 'near' : ''}"><div class="cols" aria-hidden="true"><span>#</span><span></span><span>Map</span><span>Grade</span><span>Accuracy</span><span>Misses</span><span>RP</span><span>${S.list === 'top' ? 'Weighted' : ''}</span>${nearPlays() ? `<span data-tip="<b>Nearby</b><small>The middle player of those ranked near ${S.viewer === 'owner' ? 'you' : 'this player'} who have the map in their top 100</small>">Nearby</span>` : ''}<span></span></div>
        <div class="rows ${anim ? 'anim' : ''}">${shown.map((s, i) => row(s, S.list, i)).join('')}</div></div>`;
   return body + (list.length > per ? `<div class="pager"><span class="num">${fmt((S.page - 1) * per + 1)}–${fmt(Math.min(S.page * per, list.length))} of ${fmt(list.length)}</span><div class="pages">
       <button type="button" data-page="${S.page - 1}" ${S.page === 1 ? 'disabled' : ''} aria-label="Previous page">‹</button>
@@ -326,7 +372,21 @@ function metricBlock(m, who) {
     <div class="nm-main"><b class="num">${m.show(m.y)}</b><span class="nm-others"><span class="a">Above <b class="num">${m.show(m.a)}</b></span><span class="b">Below <b class="num">${m.show(m.b)}</b></span></span></div>
     <div class="nm-axis">${mark('a', 'Players above', m.a)}${mark('b', 'Players below', m.b)}${mark('y', who, m.y)}</div></div>`;
 }
+// Each type's share of this top against the players near the rank (both groups, each as many as it has players),
+// as how many times as often; one sentence with the biggest difference each way, at 1.3× or more.
+function typeRatios(t, kinds, b) {
+  const na = b.above.players || 0, nb = b.below.players || 0, n = na + nb;
+  if (!t.you || !n || !t.above || !t.below) return [];
+  return kinds.map(k => { const g = ((t.above[k] || 0) * na + (t.below[k] || 0) * nb) / n, y = t.you[k] || 0; return {k, y, g, r: g > 0 ? y / g : null}; }).filter(x => x.r != null);
+}
+function typeSay(t, kinds, b, own) {
+  const rs = typeRatios(t, kinds, b), more = rs.filter(x => x.r >= 1.3 && x.y >= .05).sort((x, y) => y.r - x.r)[0], less = rs.filter(x => x.r <= 1 / 1.3 && x.g >= .05).sort((x, y) => x.r - y.r)[0];
+  if (!more && !less) return `<p class="nt-say">${own ? 'Your' : 'This'} top has about the same types as the players near ${own ? 'your' : 'this'} rank.</p>`;
+  const part = x => `<b>${KIND_LABEL[x.k]} ${fmt(x.r, 1)}×</b>`;
+  return `<p class="nt-say">${own ? 'You play' : 'This top has'} ${[more, less].filter(Boolean).map((x, i) => (i ? part(x) : `${part(x)} as often as the players near ${own ? 'your' : 'this'} rank`)).join(', ')}.</p>`;
+}
 function nearSection() {
+  if (!nearOn()) return '';
   const own = S.viewer === 'owner', who = own ? 'You' : esc(U.username), whose = own ? 'your' : `${esc(U.username)}’s`;
   const head = `<div class="sec-head"><div><h2>Near ${whose} rank</h2><p class="lede">${who} against the players ranked just above and below, in ${MODES[S.mode].label}.</p></div></div>`;
   // No rank because Rhythia took it away (inactive or excluded): one line that says so, and nothing is asked.
@@ -366,7 +426,7 @@ function nearSection() {
   const typeRow = (w, l) => { const v = t[w] || {}, sum = kinds.reduce((x, k) => x + (v[k] || 0), 0) || 1, main = kinds.slice().sort((x, y) => (v[y] || 0) - (v[x] || 0))[0];
     return `<div class="ps-row"><span class="ps-who ${w}">${l}</span><div class="stack">${kinds.map(k => `<i style="flex-grow:${(v[k] || 0) / sum || .001};background:var(--k-${k})" data-tip="<b>${KIND_LABEL[k]}</b><small>${fmt((v[k] || 0) * 100, 0)}% of the top</small>"></i>`).join('')}</div><span class="ps-main">Mostly <b>${KIND_LABEL[main].toLowerCase()}</b> · ${fmt((v[main] || 0) * 100, 0)}%</span></div>`; };
   const types = kinds.length ? `<div class="panel nt"><div class="panel-head"><h3>Map types <span>· share of each top 100</span></h3><div class="nt-key">${kinds.map(k => `<span class="kind" style="--c:var(--k-${k})">${KIND_LABEL[k]}</span>`).join('')}</div></div>
-      <div class="ps-rows">${typeRow('above', 'Above')}${typeRow('you', who)}${typeRow('below', 'Below')}</div></div>` : '';
+      ${typeSay(t, kinds, b, own)}<div class="ps-rows">${typeRow('above', 'Above')}${typeRow('you', who)}${typeRow('below', 'Below')}</div></div>` : '';
   const band = b.above.players + b.below.players, short = x => esc(KIND_LABEL[x] || 'Map');
   const mapRow = (title, sub, n, tip) => `<div class="nx-row"><div class="nx-t"><b>${esc(title)}</b><small>${sub}</small></div>
       <div class="nx-n" ${tip ? `data-tip="${tip}"` : ''}><span class="nx-bar"><i style="width:${(n / (band || 1) * 100).toFixed(1)}%"></i></span><span class="num">${n >= 5 ? `<b>${fmt(n)}</b> of ${fmt(band)}` : 'fewer than 5'}</span></div></div>`;
@@ -376,7 +436,7 @@ function nearSection() {
     .sort((x, y) => x.n - y.n || x.s.pos - y.s.pos).slice(0, 6)
     .map(({c, s, n}) => mapRow(s.beatmapTitle, `#${s.pos} in ${whose} top · ${short(c.quantum ? 'quantum' : c.kind)}`, n)).join('');
   const lists = theirs || yours ? `<div class="nx-pair">
-      ${theirs ? `<div class="panel nx"><div class="panel-head"><h3>Their maps, missing from ${own ? 'yours' : whose + ' top'}</h3><span class="cap">have it in their top 100</span></div>${theirs}</div>` : ''}
+      ${theirs ? `<div class="panel nx"><div class="panel-head"><h3>Their maps, missing from ${own ? 'yours' : whose + ' top'}</h3><span class="cap">have it in their top 100${own && S.mode === 'normal' ? '<a class="lede-link" href="/maps?view=near">See all in Maps</a>' : ''}</span></div>${theirs}</div>` : ''}
       ${yours ? `<div class="panel nx"><div class="panel-head"><h3>${own ? 'Your' : whose} maps they rarely play</h3><span class="cap">have it in their top 100</span></div>${yours}</div>` : ''}</div>` : '';
   return head + kpis + stats + same + types + lists;
 }

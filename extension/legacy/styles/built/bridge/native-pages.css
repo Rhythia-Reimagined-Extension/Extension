@@ -77,7 +77,6 @@ body[data-rhythiax-theme] #root textarea::placeholder {
   opacity: .72 !important;
 }
 
-
 /* Text hierarchy for literal utility classes. Image tiles get their own
    exception below so their white overlay text remains readable in White. */
 body[data-rhythiax-theme] #root .text-white\/60 {
@@ -123,7 +122,6 @@ body[data-rhythiax-theme] #root .aspect-square[class*="overflow-hidden"] {
   background-color: var(--rhythiax-surface) !important;
   border-color: color-mix(in srgb, var(--rhythiax-accent) 55%, var(--rhythiax-border)) !important;
 }
-
 body[data-rhythiax-theme] #root [class*="aspect-square"][class*="overflow-hidden"] .bg-black\/35,
 body[data-rhythiax-theme] #root [class*="aspect-square"][class*="overflow-hidden"] .group-hover\:bg-black\/35 {
   background-color: color-mix(in srgb, var(--rhythiax-page-bg) 45%, transparent) !important;

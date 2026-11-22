@@ -21,6 +21,9 @@ const $ = s => R.querySelector(s);
 // A complete url("…") token, safe inside a style attribute (core/kit.js).
 const cssUrl = x => RhythiaX.ExodusKit.cssUrl(x);
 const sgn = (n, d = 0, u = '') => n > 0 ? `+${fmt(n, d)}${u}` : n < 0 ? `−${fmt(-n, d)}${u}` : '±0' + u;
+// A rank move in places, positive when the player climbed: ▲ up, ▼ down, as the hero and the leaderboards show it,
+// so a smaller rank number never reads as a minus.
+const mv = n => n > 0 ? `▲ ${fmt(n)}` : n < 0 ? `▼ ${fmt(-n)}` : '±0';
 const tone = n => n > 0 ? 'up' : n < 0 ? 'down' : 'flat';
 const ico = id => `<svg class="ico" aria-hidden="true"><use href="#i-${id}"/></svg>`;
 const NOW = new Date(D.fetchedAt).getTime();
@@ -534,7 +537,7 @@ RhythiaX.ExodusData.historyAllowed().then(async ok => {
   S.basic = (await RhythiaX.MapKindsBasic?.enabled?.()) === true;
   if (!ac.signal.aborted) { renderStats(); renderRp(); }
 }, () => {});
-const c = {R, D, ctx, ac, U, ICONS, SITE, esc, fmt, REDUCED, TITLES, COUNTRY, $, cssUrl, sgn, tone, ico, ago, utc, dm, onlineOffer,
+const c = {R, D, ctx, ac, U, ICONS, SITE, esc, fmt, REDUCED, TITLES, COUNTRY, $, cssUrl, sgn, mv, tone, ico, ago, utc, dm, onlineOffer,
   dayName, SPEED, GRADES, prepare, MODES, MPW, ACCOUNT, ON, S, OWN, WHOSE, whose, rangeDays, win, toast, counter, pinnedScores,
   md, bioText, socialLinks, kpi, addDays, mondayOf, nextMonth, prevMonth, isoWeek, monthName, agg, TREND, momentum,
   plural, playsIn, morph, SCORES_ALL, refreshIntro, redrawScores: () => renderScores(false), inks,

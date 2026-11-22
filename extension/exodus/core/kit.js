@@ -448,11 +448,13 @@ const plainText = t => String(t).replace(/!\[([^\]]*)\]\([^)]*\)/g, '$1').replac
 
 // One map in a grid of map tiles (the map list and a profile's Maps): art, difficulty and stars, the status
 // when it is not Ranked, and the title on its plate.
-const mapTile = (m, i) => { const [dl, dc] = diff(m.difficulty), [sl, sc] = status(m), flag = m.status !== 'RANKED' || m.qualified; return `<a class="h-map" href="/maps/${esc(m.id)}" style="--i:${Math.min(i, 24)}">
+// A map without a known difficulty or status (a Legacy map of Near your rank) shows neither; m.note, when there is
+// one, takes the place of the play count (with m.noteTip on hover).
+const mapTile = (m, i) => { const [dl, dc] = diff(m.difficulty), [sl, sc] = status(m), flag = (Boolean(m.status) && m.status !== 'RANKED') || m.qualified; return `<a class="h-map" href="/maps/${esc(m.id)}" style="--i:${Math.min(i, 24)}">
   <span class="art" style="background-image:${cssUrl(m.img)}"></span>
-  <span class="chips"><span class="h-diff" style="--c:${dc}">${dl}</span><span class="h-right"><span class="h-star num">★ ${fmt(m.stars, 2)}</span>${m.typeLabel ? `<span class="h-star" title="Map type, worked out by Reimagined">${esc(m.typeLabel)}${m.quantum ? ' · Quantum' : ''}</span>` : ''}</span></span>
+  <span class="chips">${m.difficulty == null ? '<span></span>' : `<span class="h-diff" style="--c:${dc}">${dl}</span>`}<span class="h-right"><span class="h-star num">★ ${fmt(m.stars, 2)}</span>${m.typeLabel ? `<span class="h-star" title="Map type, worked out by Reimagined">${esc(m.typeLabel)}${m.quantum ? ' · Quantum' : ''}</span>` : ''}</span></span>
   ${flag || m.explicit ? `<span class="v-mflags">${flag ? `<span class="h-diff" style="--c:${sc}">${sl}</span>` : ''}${m.explicit ? '<span class="h-diff" style="--c:var(--bad)">Explicit</span>' : ''}</span>` : ''}
-  <span class="plate"><b title="${esc(m.title)}">${esc(m.title)}</b><small><span>by ${esc(m.mapper || 'Unknown')}</span><span class="num">${mmss(m.length)}</span><span class="num">${fmt(m.plays)} plays</span></small></span></a>`; };
+  <span class="plate"><b title="${esc(m.title)}">${esc(m.title)}</b><small><span>by ${esc(m.mapper || 'Unknown')}</span><span class="num">${mmss(m.length)}</span>${m.note ? `<span class="num" data-tip="${m.noteTip || ''}">${esc(m.note)}</span>` : `<span class="num">${fmt(m.plays)} plays</span>`}</small></span></a>`; };
 
 // Page numbers under a list. range ({perPage, total, noun}) names the rows shown instead of the page, as the
 // leaderboard, maps, clans and skins do: "51–100 of 1,234 maps".
@@ -534,9 +536,146 @@ morph.outer = (el, html) => {
 };
 
 
+/* ── Add to collection, and several maps at once ── */
+// The signed-in player's collections in the shell's dialog, as Rhythia's own picker lists them; picking one adds
+// the maps to it one by one (Rhythia has no request for several), then says what happened: added, already in it
+// (Rhythia's own refusal) or not added and why. maps: [{id, title}]. Map pages give one map, Select up to SEL_MAX.
+function pickCollection(R, sig, {maps, say, done}) {
+  const dlg = R.getElementById('cmp'), ac = new AbortController(), on = {signal: ac.signal};
+  sig?.signal?.addEventListener('abort', () => ac.abort());
+  const P = {list: null, err: '', busy: '', step: ''};
+  const close = '<button class="iconbtn" type="button" data-close aria-label="Close"><svg class="ico" aria-hidden="true"><use href="#i-x"/></svg></button>';
+  const what = maps.length === 1 ? esc(maps[0].title) : `${fmt(maps.length)} maps`;
+  const html = () => {
+    const list = P.list;
+    const body = P.err ? `<p class="cap">${esc(P.err)}</p>` : !list ? '<div class="skeleton" style="height:120px;border-radius:12px"></div>'
+      : !list.length ? '<div class="empty"><b>You have no collections yet</b>Make one on your collections page, then add maps to it.</div>'
+      : `<div class="v-colls">${list.map(x => `<button type="button" class="v-coll" data-coll="${esc(x.id)}" ${P.busy ? 'disabled' : ''}><b>${esc(x.title)}</b><span class="cap num">${P.busy === String(x.id) ? esc(P.step || 'Adding…') : `${fmt(x.maps)} ${x.maps === 1 ? 'map' : 'maps'}`}</span></button>`).join('')}</div>`;
+    return `<div class="cmp-head"><h2 id="cmp-title">Add to collection</h2>${close}</div><div class="cmp-body"><p class="cap v-collmap">${what}</p>${body}<p class="v-collnew"><a href="/collections/own" data-close>Your collections</a></p></div>`;
+  };
+  const redraw = () => { if (dlg.open) morph(dlg, html()); };
+  async function add(cid) {
+    const x = P.list?.find(c => String(c.id) === cid);
+    if (!x || P.busy) return;
+    P.busy = cid; redraw();
+    const r = await Data().addMapsToCollection(cid, maps.map(m => m.id), (n, total) => { P.step = total > 1 ? `Adding ${fmt(n)} of ${fmt(total)}…` : 'Adding…'; redraw(); });
+    P.busy = ''; P.step = '';
+    if (dlg.open) dlg.close();
+    say(addedText(r, x.title, maps));
+    if (r.added) done?.(r);
+  }
+  dlg.addEventListener('click', e => {
+    const co = e.target.closest('[data-coll]');
+    if (co && !co.disabled) { add(co.dataset.coll); return; }
+    if (e.target.closest('[data-close]') && !P.busy) dlg.close();
+  }, on);
+  dlg.addEventListener('cancel', e => { if (P.busy) e.preventDefault(); }, on);
+  dlg.addEventListener('close', () => { ac.abort(); dlg.classList.remove('v-colldlg'); }, on);
+  dlg.setAttribute('aria-labelledby', 'cmp-title'); dlg.classList.add('v-colldlg');
+  dlg.innerHTML = html(); dlg.showModal();
+  Data().ownCollections(ac.signal).then(list => { P.list = list; redraw(); }, err => { P.err = `Your collections did not load (${err.message}).`; redraw(); });
+}
+// What adding did, in one line: "Added 5 to Streams · 2 already in it · 1 not added (reason)".
+function addedText(r, title, maps) {
+  const one = maps.length === 1, why = r.failed[0]?.reason;
+  if (one) return r.added ? `Added to ${title}.` : r.already ? `Already in ${title}.` : `Could not add it (${why || 'Rhythia did not answer'}).`;
+  const parts = [r.added ? `Added ${fmt(r.added)} to ${title}` : `Nothing new in ${title}`];
+  if (r.already) parts.push(`${fmt(r.already)} already in it`);
+  if (r.failed.length) parts.push(`${fmt(r.failed.length)} not added${why ? ` (${why})` : ''}`);
+  return parts.join(' · ') + '.';
+}
+
+// Several maps of a list (Maps, a collection) at once: Select turns it on, a click on a map card then picks it
+// instead of opening it, and a bar at the bottom adds the picked maps to a collection or saves them in one .zip.
+// The cards stay as the page draws them; the picked look is a class set after each draw. mapsOf() gives the
+// maps the page knows ({id, title, file}). At most SEL_MAX maps, so one choice never sends more requests.
+const SEL_MAX = 100;
+function selector(R, sig, {say, mapsOf, zipName = 'maps'}) {
+  const S = {on: false, picked: new Map(), saving: ''};
+  const root = () => R.querySelector('.exo') || R.firstElementChild;
+  const idOf = a => (/^\/maps\/(\d+)$/.exec(a.getAttribute('href') || '') || [])[1];
+  const button = () => `<button class="btn v-selb" type="button" data-sel-toggle aria-pressed="${S.on}" data-tip="<b>${S.on ? 'Done' : 'Select maps'}</b><small>${S.on ? 'Back to opening maps' : `Pick up to ${SEL_MAX} maps to add to a collection or save in one .zip`}</small>">${S.on ? 'Done' : 'Select'}</button>`;
+  const barHtml = () => `<span class="num"><b>${fmt(S.picked.size)}</b> ${S.picked.size === 1 ? 'map' : 'maps'} picked</span>
+    <button class="btn" type="button" data-sel-add ${S.picked.size && !S.saving ? '' : 'disabled'}>Add to collection</button>
+    <button class="btn" type="button" data-sel-zip ${S.picked.size && !S.saving ? '' : 'disabled'}>${S.saving ? esc(S.saving) : 'Download as ZIP'}</button>
+    <button class="btn" type="button" data-sel-clear ${S.picked.size && !S.saving ? '' : 'disabled'}>Clear</button>`;
+  function paint() {
+    const r = root(); if (!r) return;
+    r.classList.toggle('selecting', S.on);
+    for (const a of r.querySelectorAll('a.h-map')) {
+      const id = idOf(a);
+      a.classList.toggle('picked', S.on && Boolean(id) && S.picked.has(id));
+      if (S.on) a.setAttribute('aria-pressed', String(S.picked.has(id))); else a.removeAttribute('aria-pressed');
+    }
+    for (const b of R.querySelectorAll('[data-sel-toggle]')) if (b.getAttribute('aria-pressed') !== String(S.on)) morph.outer(b, button());
+    let bar = r.querySelector(':scope > .v-selbar');
+    if (!S.on) { bar?.remove(); return; }
+    if (!bar) { bar = document.createElement('div'); bar.className = 'v-selbar panel'; bar.setAttribute('role', 'toolbar'); bar.setAttribute('aria-label', 'Picked maps'); r.appendChild(bar); }
+    const h = barHtml(); if (bar._h !== h) { bar.innerHTML = h; bar._h = h; }
+  }
+  let frame = 0;
+  const later = () => { cancelAnimationFrame(frame); frame = requestAnimationFrame(paint); };
+  const watch = new MutationObserver(muts => { if (S.on && muts.some(m => !m.target.closest?.('.v-selbar'))) later(); });
+  // A page drawn again in place (morph) takes the picked classes off its cards, so class changes count too.
+  watch.observe(R, {childList: true, subtree: true, attributes: true, attributeFilter: ['class']});
+  sig?.signal?.addEventListener('abort', () => { watch.disconnect(); cancelAnimationFrame(frame); });
+  async function zip() {
+    const maps = [...S.picked.values()];
+    S.saving = 'Getting the files…'; paint();
+    try {
+      const withFiles = await Data().mapFiles(maps, sig?.signal);
+      const name = typeof zipName === 'function' ? zipName() : zipName;
+      const r = await RhythiaX.CollectionZip.download({maps: withFiles.map(m => ({title: m.title, file: m.file || ''})), title: name, name, signal: sig?.signal,
+        onStep: st => { if (st.phase === 'files') { S.saving = `Downloading ${fmt(st.done)} of ${fmt(st.total)}…`; paint(); } }});
+      const f = r.failed.length;
+      say(!r.saved ? 'No maps could be downloaded.' : `The .zip with ${fmt(r.saved)} ${r.saved === 1 ? 'map' : 'maps'} is in your downloads.${f ? ` ${fmt(f)} ${f === 1 ? 'map' : 'maps'} could not be downloaded.` : ''}`);
+    } catch (err) {
+      if (err?.name !== 'AbortError') say(`The download stopped: ${String(err?.message || err).replace(/^\w+: /, '')}`);
+    }
+    S.saving = ''; paint();
+  }
+  R.addEventListener('click', e => {
+    if (e.target.closest('[data-sel-toggle]')) { S.on = !S.on; if (!S.on) S.picked.clear(); paint(); return; }
+    if (e.target.closest('[data-sel-clear]')) { S.picked.clear(); paint(); return; }
+    if (e.target.closest('[data-sel-add]')) { if (S.picked.size) pickCollection(R, sig, {maps: [...S.picked.values()], say}); return; }
+    if (e.target.closest('[data-sel-zip]')) { if (S.picked.size && !S.saving) zip(); return; }
+    const a = S.on && e.target.closest('a.h-map');
+    if (!a) return;
+    const id = idOf(a);
+    if (!id) return;
+    e.preventDefault(); e.stopPropagation();
+    if (S.picked.has(id)) S.picked.delete(id);
+    else if (S.picked.size >= SEL_MAX) { say(`Up to ${SEL_MAX} maps at once.`); return; }
+    else { const m = mapsOf().find(x => String(x.id) === id); S.picked.set(id, {id, title: m?.title || a.querySelector('.plate b')?.textContent || 'Untitled map', file: m?.file || ''}); }
+    paint();
+  }, {capture: true, ...sig});
+  return {button, paint, active: () => S.on};
+}
+
 const pages = RhythiaX.ExodusPages = RhythiaX.ExodusPages || {};
 const styles = [];
 const page = (name, view, css) => { pages[name] = view; if (css) styles.push(css); };
+
+const selectCss = `
+/* Add to collection's dialog (map page, Select) and Select's picked cards and bar. */
+dialog.cmp.v-colldlg{width:min(480px,calc(100vw - 32px))}
+.v-collmap{margin:0 0 12px}
+.v-colls{display:flex;flex-direction:column;gap:6px;max-height:50vh;overflow:auto}
+.v-coll{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 14px;border:0;border-radius:10px;text-align:left;background:var(--panel-2);box-shadow:inset 0 0 0 1px var(--line)}
+.v-coll:hover:not(:disabled){box-shadow:inset 0 0 0 1px var(--accent)}
+.v-coll b{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:650}
+.v-collnew{margin:14px 0 0;font-size:13px}
+.v-collnew a{color:var(--accent-2)}
+.v-selb{margin-left:auto}
+.v-selb[aria-pressed="true"]{box-shadow:inset 0 0 0 1px var(--accent)}
+.selecting a.h-map::after{content:"";position:absolute;top:10px;left:10px;z-index:2;width:20px;height:20px;border-radius:6px;background:rgba(10,11,14,.6);box-shadow:inset 0 0 0 2px rgba(244,245,247,.85)}
+.selecting a.h-map.picked{box-shadow:0 0 0 2px var(--accent)}
+.selecting a.h-map.picked::after{background:var(--accent) center/14px no-repeat url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23fff' stroke-width='3.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M5 12.5l4.5 4.5L19 7.5'/%3E%3C/svg%3E");box-shadow:none}
+.selecting a.h-map .chips{padding-left:30px}
+.v-selbar{position:fixed;left:50%;bottom:20px;z-index:40;display:flex;align-items:center;gap:10px;padding:10px 12px 10px 18px;transform:translateX(-50%);border-radius:14px;background:rgba(var(--glass),.92);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);box-shadow:inset 0 0 0 1px var(--line-2),0 16px 40px rgba(0,0,0,calc(.3 * var(--sh)));font-size:13.5px;white-space:nowrap}
+.v-selbar > span{margin-right:6px;color:var(--text-2)}.v-selbar b{color:var(--text)}
+@media (max-width:640px){.v-selbar{left:12px;right:12px;bottom:12px;transform:none;flex-wrap:wrap;white-space:normal}}
+`;
 
 const css = `
 /* Shared by the list pages: the map tiles (home, maps, collections), the page head and switch (leaderboard,
@@ -621,6 +760,13 @@ dialog.cmp.cd-dlg{width:min(480px,calc(100vw - 32px))}
 [data-theme="white"] .v-chip img{filter:invert(1)}
 .v-cover{width:150px;height:150px;flex:none;border-radius:22px;background:var(--panel-3) center/cover;box-shadow:0 0 0 1px var(--line-2),0 20px 50px rgba(0,0,0,calc(.35 * var(--sh)))}
 .v-act{display:flex;flex-wrap:wrap;gap:8px;margin-top:18px}
+.v-atl{gap:7px}
+.v-atl-mark{width:9px;height:9px;flex:none;fill:currentColor;color:var(--accent)}
+.v-atl.in{cursor:default;color:var(--good)}
+.v-atl.in .v-atl-mark{color:var(--good)}
+.v-atl-new{display:flex;gap:8px;margin-top:14px}
+.v-atl-new input{flex:1;min-width:0;height:38px;padding:0 12px;border:0;border-radius:10px;background:var(--field);box-shadow:inset 0 0 0 1px var(--line-2);color:var(--text);font:inherit;outline:none}
+.v-atl-new input:focus{box-shadow:inset 0 0 0 1px var(--accent)}
 .v-vote{position:relative;display:inline-flex;align-items:stretch;height:38px;border-radius:11px;overflow:hidden;background:var(--panel-2)}
 [data-variant="lines"] .v-vote{background:none;box-shadow:inset 0 0 0 1px var(--rule-2);border-radius:8px}
 .v-vb{display:inline-flex;align-items:center;gap:7px;padding:0 13px 2px;border:0;background:none;color:var(--text-2);font:inherit;font-weight:600;cursor:pointer;transition:background-color .15s,color .15s}
@@ -857,10 +1003,16 @@ dialog.cmp.cd-dlg{width:min(480px,calc(100vw - 32px))}
 .v-advb[aria-expanded="true"]{box-shadow:inset 0 0 0 1px var(--accent)}
 .v-mlist{margin-top:28px}
 .v-mgrid{transition:opacity .2s}
+/* Paged map lists (Rhythia: 50 a page, Reimagined Search: 30) fill whole rows in 5, 2 or 1 columns. */
+.h-maps.v-mgrid{grid-template-columns:repeat(5,minmax(0,1fr))}
+@media (max-width:1100px){.h-maps.v-mgrid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media (max-width:560px){.h-maps.v-mgrid{grid-template-columns:1fr}}
 .v-mgrid.busy{opacity:.6;transition:opacity .2s .35s}
 .v-mgrid.anim .h-map{animation:hRise .5s var(--ease) both;animation-delay:calc(var(--i) * 25ms)}
 .v-mflags{position:absolute;top:40px;left:10px;display:flex;gap:6px}
 .v-mview{align-self:flex-start}
+/* Three tabs on a phone: they share the width, so a tab that wraps fills its row instead of sitting alone. */
+@media (max-width:640px){.v-mview{align-self:stretch;flex:1 1 100%}.v-mview button{flex:1 1 auto;justify-content:center}}
 .v-sort button[aria-pressed="true"]{gap:5px;padding-right:9px}
 .v-sarrow{width:14px;height:14px;flex:none;fill:none;stroke:currentColor;stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round;opacity:.85}
 .v-tmapper{flex:0 1 220px;height:42px}
@@ -871,6 +1023,9 @@ dialog.cmp.cd-dlg{width:min(480px,calc(100vw - 32px))}
 .v-tnote ul{margin:0;padding-left:18px}
 .v-tnote li::marker{color:var(--muted)}
 .v-thidden{margin:0 0 14px;color:var(--muted);font-size:13px}
+.v-matl{display:flex;flex-wrap:wrap;align-items:center;gap:10px 16px;margin:0 0 14px;color:var(--muted);font-size:13px}
+.v-matl>span{display:inline-flex;align-items:center;gap:7px}
+.v-matl b{color:var(--text)}
 .v-tneed{max-width:560px;margin:40px auto;display:flex;flex-direction:column;align-items:center;gap:10px;text-align:center}
 .v-tneed b{font-size:17px}
 .v-tneed p{margin:0 0 6px;color:var(--muted);font-size:13.5px;line-height:1.55;text-wrap:balance}
@@ -890,5 +1045,8 @@ dialog.cmp.cd-dlg{width:min(480px,calc(100vw - 32px))}
 @media (prefers-reduced-motion:reduce){.v-hero.enter *,.v-page.enter *,.v-mgrid.anim .h-map{animation:none!important}}
 `;
 
-return {SITE, Data, esc, cssUrl, fillTip, fmt, pct, REDUCED, when, ago, fullDate, mmss, diff, status, grade, GRADE_C, TITLES, titleIndex, titleOf, SOCIAL_HOSTS, socialLink, MODES, mods, flag, countryName, countryPicker, menuSelect, av, accTxt, tips, toast, shell, watchDialog, slot, playsHtml, playsNote, playsMissing, turnOnline, BASIC_TIP, PREVIEW_SPEEDS, REPLAY_SPEEDS, speedLabel, ask, accountState, COMMENT_MAX, COMMENT_LINES, cleanComment, commentLines, commentThread, row, slugify, plainText, mapTile, pager, spreadHtml, hoursMin, dropBroken, avgStars, morph, page, get css() { return css + styles.join(''); }};
+// The small Atlas mark on buttons that talk to the Atlas app (map and collection pages).
+const ATLAS_MARK = '<svg class="v-atl-mark" viewBox="0 0 10 10" aria-hidden="true"><path d="M5 .8 9.2 5 5 9.2.8 5z"/></svg>';
+
+return {SITE, Data, ATLAS_MARK, esc, cssUrl, fillTip, fmt, pct, REDUCED, when, ago, fullDate, mmss, diff, status, grade, GRADE_C, TITLES, titleIndex, titleOf, SOCIAL_HOSTS, socialLink, MODES, mods, flag, countryName, countryPicker, menuSelect, av, accTxt, tips, toast, shell, watchDialog, slot, playsHtml, playsNote, playsMissing, turnOnline, BASIC_TIP, PREVIEW_SPEEDS, REPLAY_SPEEDS, speedLabel, ask, accountState, COMMENT_MAX, COMMENT_LINES, cleanComment, commentLines, commentThread, row, slugify, plainText, mapTile, pager, spreadHtml, hoursMin, dropBroken, avgStars, morph, page, pickCollection, selector, get css() { return css + selectCss + styles.join(''); }};
 })();

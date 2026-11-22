@@ -424,7 +424,59 @@
       <button class="btn mini danger" type="button" data-act="reset"${dataLock ? LOCKED : ''}>Reset</button></div></div>`;
   }
 
+  // The Atlas card: the Install in Atlas switch, and under it, while that is on, the link with Atlas
+  // (background/atlas-bridge.js: its state and one button) and the settings that need it, filled by loadAtlas().
+  function atlasCard(i) {
+    const sw = X.find('modules.atlasLinks'), on = V['modules.atlasLinks'] === true;
+    return `<div class="item ${on ? '' : 'off'}" style="--i:${i}" data-key="atlasBridge">
+      <div class="mod"><span class="tx"><b>Atlas</b><small>${esc(sw.desc)}</small></span>${control(sw)}</div>
+      <div class="subs ${on ? 'open' : ''}"><div><div class="opts">
+        <div class="opt inline"><span class="opt-l">Connection<small id="atlasNote">…</small></span><span id="atlasAct"></span></div>
+        <div id="atlasOpts"></div>
+      </div></div></div></div>`;
+  }
+
+  let atlasPoll = null;
+  let atlasCatchUp = 0;
+  async function loadAtlas(act) {
+    const note = document.getElementById('atlasNote'), slot = document.getElementById('atlasAct');
+    if (!note) { clearTimeout(atlasPoll); return; }
+    let st = { state: 'off' };
+    // Off, nothing is asked: the background has nothing to say then.
+    if (V['modules.atlasLinks'] === true) {
+      try { st = await chrome.runtime.sendMessage({ type: act || 'rhythiax-atlas-status' }); } catch (_) { st = null; }
+    }
+    if (!document.getElementById('atlasNote')) return;
+    const btn = (a, label) => `<button class="btn mini" type="button" data-act="${a}">${label}</button>`;
+    // Off, the card's switch hides all of this (atlasCard).
+    const say = {
+      off: ['', ''],
+      unpaired: [st?.note ? esc(st.note) : 'Not connected. With Atlas open, connect once; then installs go straight to it.', btn('atlas-pair', 'Connect')],
+      pairing: [`Say yes in Atlas. It shows the code ${esc(st?.code || '')}.`, btn('atlas-forget', 'Cancel')],
+      waiting: [st?.note ? esc(st.note) : 'Paired. Connects by itself when Atlas is open.', btn('atlas-retry', 'Try now') + btn('atlas-forget', 'Disconnect')],
+      connected: [`Connected${st?.atlas ? ` to Atlas ${esc(st.atlas)}` : ''}.`, btn('atlas-forget', 'Disconnect')],
+      denied: [esc(st?.note || 'Atlas did not allow it.'), btn('atlas-pair', 'Try again')],
+    }[st?.state] || ['Could not reach the background. Reopen the popup.', ''];
+    // Written only when it changed: the card is asked again every 1.5 s while waiting, and rewriting it
+    // each time made it blink and dropped the hover on its buttons.
+    if (note.innerHTML !== say[0]) note.innerHTML = say[0];
+    if (slot.innerHTML !== say[1]) slot.innerHTML = say[1];
+    // Settings that only make sense with Atlas (inCard in shared/settings/schema.js) show once it is paired.
+    const opts = document.getElementById('atlasOpts');
+    const kids = X.SETTINGS.filter(s => s.inCard === 'atlasBridge' && s.key !== 'modules.atlasLinks' && fits(s));
+    const show = Boolean(st?.paired) && ['connected', 'waiting'].includes(st?.state);
+    const optsHtml = show ? kids.map(k => `<div class="opt" data-key="${k.key}"><span class="opt-l">${esc(k.title)}<small>${esc(k.desc || '')}</small></span>${control(k)}</div>`).join('') : '';
+    if (opts && opts.innerHTML !== optsHtml) opts.innerHTML = optsHtml;
+    clearTimeout(atlasPoll);
+    if (['pairing', 'waiting'].includes(st?.state)) atlasPoll = setTimeout(() => loadAtlas(), 1500);
+    // Just switched on: the background may still be catching up (it hears the change itself); ask again shortly.
+    else if (st?.state === 'off' && V['modules.atlasLinks'] === true && atlasCatchUp++ < 10) atlasPoll = setTimeout(() => loadAtlas(), 400);
+    if (st?.state !== 'off') atlasCatchUp = 0;
+  }
+
+
   function item(s, i) {
+    if (s.type === 'atlas') return atlasCard(i);
     if (s.type === 'storage') return storageCard(i);
     if (s.type === 'backup') return backupCard(i);
     if (s.type === 'reset') return resetCard(i);
@@ -443,13 +495,14 @@
   }
 
   function render(animate = true) {
-    const items = X.SETTINGS.filter(s => s.tab === tab && fits(s));
+    const items = X.SETTINGS.filter(s => s.tab === tab && fits(s) && !s.inCard);
     const groups = [...new Set(items.map(s => s.group))];
     let i = 0;
     const scroll = body.scrollTop;
     body.innerHTML = groups.map(g => `<section class="group"><h3>${esc(g)}</h3><div class="items">${items.filter(s => s.group === g).map(s => item(s, animate ? i++ : 0)).join('')}</div></section>`).join('');
     if (!animate) { body.querySelectorAll('.item').forEach(r => { r.style.animation = 'none'; }); body.scrollTop = scroll; }
     if (tab === 'data') loadStorageStats();
+    if (tab === 'features') loadAtlas();
     paintChrome();
   }
 
@@ -525,6 +578,8 @@
       const card = t.closest('.item');
       if (card && !t.closest('.opts')) { card.querySelector(':scope > .subs')?.classList.toggle('open', next); card.classList.toggle('off', !next); }
       if (!await set(key, next)) return;
+      // The Atlas card's link with Atlas depends on this switch: drawn again at once, not on the next render.
+      if (key === 'modules.atlasLinks') loadAtlas();
     } else if (['pills', 'tiles', 'themes', 'dates', 'source'].includes(s.type)) {
       const group = t.parentElement.querySelectorAll('button');
       group.forEach(b => b.setAttribute('aria-pressed', String(b === t)));
@@ -560,6 +615,9 @@
     if (t.dataset.act === 'clear-pages') return clearPages();
     if (t.dataset.act === 'clear-visits') return clearVisits();
     if (t.dataset.act === 'reset') return resetDefaults();
+    if (t.dataset.act === 'atlas-pair') return loadAtlas('rhythiax-atlas-pair');
+    if (t.dataset.act === 'atlas-forget') return loadAtlas('rhythiax-atlas-forget');
+    if (t.dataset.act === 'atlas-retry') return loadAtlas();
     if (t.dataset.act === 'export') return exportBackup();
     if (t.dataset.act === 'import') return pickFile();
     if (e.target.closest('[data-own-edit]')) return openThemeEditor(e.target.closest('[data-own-edit]').dataset.ownEdit);

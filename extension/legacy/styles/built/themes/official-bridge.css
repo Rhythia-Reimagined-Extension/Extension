@@ -72,7 +72,3 @@ body[data-rhythiax-theme] [role="dialog"][class*="inset-y-0"][class*="right-0"] 
 body[data-rhythiax-theme] [role="dialog"][class*="inset-y-0"][class*="right-0"] button {
   border-color: var(--rhythiax-border) !important;
 }
-
-
-
-

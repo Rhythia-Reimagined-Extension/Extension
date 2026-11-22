@@ -6,6 +6,7 @@ if (typeof importScripts === 'function') importScripts(
   'background/storage-mutation-authority.js',
   'engines.js',
   'background/vps-access.js',
+  'background/atlas-bridge.js',
 );
 
 const RHYTHIAX_COMPARE_SESSION_KEY = 'rhythiaxComparePlayersSession';
@@ -130,6 +131,40 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     if (!isRhythiaContentScript(sender)) return false;
     RhythiaX.VpsAccess.historyFetch(message)
       .then(sendResponse, error => sendResponse({ error: String(error?.message || error) }));
+    return true;
+  }
+  // The link with the Atlas app (background/atlas-bridge.js): its state for the popup and Rhythia tabs (asking
+  // also reconnects), pairing and unpairing from the popup only, and "Install in Atlas" clicks from a Rhythia tab.
+  if (message?.type === 'rhythiax-atlas-status') {
+    if (!isInternalPage(sender, 'popup/popup.html') && !isRhythiaContentScript(sender)) return false;
+    RhythiaX.AtlasBridge.wake().then(sendResponse, () => sendResponse(RhythiaX.AtlasBridge.status()));
+    return true;
+  }
+  if (message?.type === 'rhythiax-atlas-pair' || message?.type === 'rhythiax-atlas-forget') {
+    if (!isInternalPage(sender, 'popup/popup.html')) return false;
+    const act = message.type === 'rhythiax-atlas-pair' ? RhythiaX.AtlasBridge.pair() : RhythiaX.AtlasBridge.forget();
+    act.then(sendResponse, () => sendResponse(RhythiaX.AtlasBridge.status()));
+    return true;
+  }
+  if (message?.type === 'rhythiax-atlas-install') {
+    if (!isRhythiaContentScript(sender)) return false;
+    RhythiaX.AtlasBridge.install(message.kind, message.id).then(sendResponse, () => sendResponse({ ok: false }));
+    return true;
+  }
+  // Exodus with Atlas paired: the player's scores from the game (their own profile), a map page's game state, the
+  // Atlas collections and adding a map to one. Rhythia tabs only; the scores stay in this browser.
+  const atlasAsk = {
+    'rhythiax-atlas-scores': m => RhythiaX.AtlasBridge.scores(m.name),
+    'rhythiax-atlas-map': m => RhythiaX.AtlasBridge.mapInfo(m.id, m.name),
+    'rhythiax-atlas-have': m => RhythiaX.AtlasBridge.inGame(m.ids),
+    'rhythiax-atlas-install-list': m => RhythiaX.AtlasBridge.installList(m.ids),
+    'rhythiax-atlas-near': m => RhythiaX.AtlasBridge.near(m.maps),
+    'rhythiax-atlas-collections': () => RhythiaX.AtlasBridge.collections(),
+    'rhythiax-atlas-collect': m => RhythiaX.AtlasBridge.collect(m),
+  }[message?.type];
+  if (atlasAsk) {
+    if (!isRhythiaContentScript(sender)) return false;
+    atlasAsk(message).then(sendResponse, () => sendResponse(null));
     return true;
   }
   // Exodus does not take this page: Legacy runs in the tab instead (engines.js).

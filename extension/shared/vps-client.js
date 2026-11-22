@@ -93,6 +93,22 @@ RhythiaX.VpsClient = RhythiaX.VpsClient || (function () {
     }
   }
 
+  // The maps the players ranked near a player have in their Lock top and that player has not (GET
+  // /api/player/:id/near-maps): the same kinds of answer as compare().
+  async function nearMaps(request, id, signal, keep) {
+    try {
+      const res = await request(`${API}player/${id}/near-maps`, { headers: { Accept: 'application/json' }, signal, maxWait: WAIT });
+      if (res.status === 404) return { available: false, reason: 'unknown' };
+      if (!res.ok) return null;
+      const body = await res.json();
+      if (!body || typeof body !== 'object') return null;
+      keep?.(body);
+      return body;
+    } catch (_) {
+      return null;
+    }
+  }
+
   // How one map plays (POST /api/maps/plays with its key, and its number when there is one). Gives back the
   // response: each look reads its status in its own way.
   function plays(request, key, id, signal) {
@@ -125,5 +141,5 @@ RhythiaX.VpsClient = RhythiaX.VpsClient || (function () {
     return answer(await request(API + 'maps/search', { method: 'POST', headers: SEND_JSON, body: JSON.stringify(query), signal, maxWait: WAIT }));
   }
 
-  return { API, WAIT, KINDS, kinds, readSaved, fresh, styleOf, save, compare, plays, answer, searchTypes, search };
+  return { API, WAIT, KINDS, kinds, readSaved, fresh, styleOf, save, compare, nearMaps, plays, answer, searchTypes, search };
 })();

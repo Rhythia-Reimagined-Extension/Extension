@@ -32,7 +32,6 @@ body[data-rhythiax-theme] [role="dialog"][class*="inset-y-0"][class*="right-0"] 
   border-color: var(--rhythiax-border) !important;
 }
 
-body[data-rhythiax-theme] [role="dialog"][class*="inset-y-0"][class*="right-0"] [class*="bg-[#1a1b1c]"],
 body[data-rhythiax-theme] [role="dialog"][class*="inset-y-0"][class*="right-0"] [class*="bg-black/20"] {
   background: var(--rhythiax-inner-surface) !important;
 }
@@ -50,15 +49,4 @@ body[data-rhythiax-theme] [role="dialog"][class*="inset-y-0"][class*="right-0"] 
 body[data-rhythiax-theme] [role="dialog"][class*="inset-y-0"][class*="right-0"] a,
 body[data-rhythiax-theme] [role="dialog"][class*="inset-y-0"][class*="right-0"] button {
   border-color: var(--rhythiax-border) !important;
-}
-
-body[data-rhythiax-theme] [role="dialog"][class*="inset-y-0"][class*="right-0"] a[class*="bg-[#1a1b1c]"],
-body[data-rhythiax-theme] [role="dialog"][class*="inset-y-0"][class*="right-0"] button[class*="bg-[#1a1b1c]"] {
-  background: var(--rhythiax-inner-surface) !important;
-  color: var(--rhythiax-text-strong) !important;
-}
-
-body[data-rhythiax-theme] [role="dialog"][class*="inset-y-0"][class*="right-0"] a[class*="bg-[#1a1b1c]"]:hover,
-body[data-rhythiax-theme] [role="dialog"][class*="inset-y-0"][class*="right-0"] button[class*="bg-[#1a1b1c]"]:hover {
-  background: var(--rhythiax-nav-hover) !important;
 }

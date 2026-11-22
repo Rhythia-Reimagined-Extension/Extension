@@ -8,7 +8,7 @@ var RhythiaX = RhythiaX || {};
 (function () {
 'use strict';
 const K = () => RhythiaX.ExodusKit;
-const {SITE, Data, esc, cssUrl, fmt, REDUCED, pager, spreadHtml, hoursMin, avgStars, morph} = RhythiaX.ExodusKit;
+const {SITE, Data, ATLAS_MARK, esc, cssUrl, fmt, REDUCED, pager, spreadHtml, hoursMin, avgStars, morph} = RhythiaX.ExodusKit;
 
 /* ════════════════════ Collections ════════════════════ */
 // Make, change or remove a collection in the shell's dialog, with Rhythia's own fields: a name for a new one;
@@ -156,14 +156,60 @@ function collections(host, ctx) {
   };
 }
 
+/* ════════════════════ Download all ════════════════════ */
+// Exodus saves the collection itself (shared/collection-zip.js): each map with its own extension, so every file can
+// be dragged into Rhythia, in .zip parts of at most 1.5 GB, so a big collection does not stop half way as Rhythia's
+// own Download all does. A download goes on when the page is left; coming back to the collection shows it again.
+// A collection of more than BIG_COLLECTION maps asks first: map files are about 5 MB each (measured on two
+// collections, 2026-11-21).
+const BIG_COLLECTION = 150, MB_PER_MAP = 5.5, PART_MB = 1500;
+const sizeOf = maps => { const mb = maps * MB_PER_MAP; return mb < 1000 ? `${Math.max(10, Math.round(mb / 10) * 10)} MB` : `${(mb / 1000).toFixed(1)} GB`; };
+// Downloads running in this tab, by collection id: {label, watchers}.
+const downloads = new Map();
+function startDownload(id) {
+  if (downloads.has(id)) return;
+  const run = {label: 'Reading the collection…', watchers: new Set()};
+  const tell = (label, message) => { run.label = label; run.watchers.forEach(fn => fn(label, message)); };
+  downloads.set(id, run);
+  RhythiaX.CollectionZip.download({id, onStep: st => {
+    if (st.phase === 'files') tell(`Downloading ${RhythiaX.ExodusKit.fmt(st.done)} of ${RhythiaX.ExodusKit.fmt(st.total)}…`);
+    else if (st.phase === 'save') tell(st.done < st.total || st.part > 1 ? `Saving part ${st.part}…` : 'Saving the .zip…');
+  }}).then(r => {
+    const fmt = RhythiaX.ExodusKit.fmt, f = r.failed.length;
+    const what = !r.saved ? 'No maps could be downloaded.'
+      : r.parts > 1 ? `${fmt(r.saved)} maps are in your downloads, in ${r.parts} .zip files.`
+      : `The .zip with ${fmt(r.saved)} ${r.saved === 1 ? 'map' : 'maps'} is in your downloads.`;
+    return r.saved || f ? `${what}${r.saved && f ? ` ${fmt(f)} ${f === 1 ? 'map' : 'maps'} could not be downloaded.` : ''}` : 'This collection has no maps to download.';
+  }, err => `Download all stopped: ${String(err?.message || err).replace(/^\w+: /, '')}`)
+    .then(message => { downloads.delete(id); tell('', message); });
+}
+// Before a big collection: Cancel, or ok() to download anyway.
+function downloadDialog(R, sig, {count, ok}) {
+  const dlg = R.getElementById('cmp'), {fmt} = RhythiaX.ExodusKit;
+  const ac = new AbortController(), on = {signal: ac.signal};
+  sig?.signal?.addEventListener('abort', () => ac.abort());
+  dlg.innerHTML = `<div class="cmp-head"><h2 id="cmp-title">Download ${fmt(count)} maps?</h2><button class="iconbtn" type="button" data-cd-close aria-label="Close"><svg class="ico" aria-hidden="true"><use href="#i-x"/></svg></button></div>
+    <div class="cmp-body cd-body"><p>That is about ${sizeOf(count)}${count * MB_PER_MAP > PART_MB ? `, saved in about ${Math.ceil(count * MB_PER_MAP / PART_MB)} .zip files of up to 1.5 GB` : ''}. It takes a while${count * MB_PER_MAP > PART_MB ? ', and your browser may ask whether this site may download several files' : ''}.</p>
+    <div class="cd-acts"><button class="btn" type="button" data-cd-close>Cancel</button><button class="btn primary" type="button" data-cd-ok>Download anyway</button></div></div>`;
+  dlg.addEventListener('click', e => { if (e.target.closest('[data-cd-close]')) dlg.close(); else if (e.target.closest('[data-cd-ok]')) { dlg.close(); ok(); } }, on);
+  dlg.addEventListener('close', () => { ac.abort(); dlg.classList.remove('cd-dlg'); }, on);
+  dlg.setAttribute('aria-labelledby', 'cmp-title'); dlg.classList.add('cd-dlg');
+  dlg.showModal();
+}
+
 /* ════════════════════ Collection ════════════════════ */
 const STATUS_F = [['ALL', 'All maps'], ['RANKED', 'Ranked'], ['UNRANKED', 'Unranked'], ['QUALIFIED', 'Qualified']];
 const C_SORTS = [['order', 'Collection order'], ['stars', 'Star rating'], ['length', 'Length'], ['plays', 'Most played']];
+// Maps shown at first and added by Show more, rounded up to whole rows of the grid.
+const PAGE_MAPS = 30;
 function collection(host, ctx) {
   const R = host.shadowRoot, ac = new AbortController(), sig = {signal: ac.signal}, $ = s => R.querySelector(s);
   const ui = K().shell(R, sig);
   const id = Number(ctx.id);
-  const S = {d: null, me: undefined, status: 'ALL', sort: 'order', dir: 'desc', shown: 30, enter: true, seq: 0, removing: 0};
+  // Select: several maps of the collection at once (core/kit.js selector), for example into one of your own.
+  const sel = K().selector(R, sig, {say: ui.toast, mapsOf: () => S.d?.maps || [], zipName: () => `${S.d?.title || 'collection'} picked`});
+  // kinds: map hash -> its type, the ones the history service or this browser already know (null until asked).
+  const S = {d: null, me: undefined, status: 'ALL', sort: 'order', dir: 'desc', shown: PAGE_MAPS, enter: true, seq: 0, removing: 0, dl: '', atlas: null, kinds: null};
 
   const isOwner = () => Boolean(S.me && S.d && S.me.id === S.d.owner.id);
   const statusOf = m => { const s = String(m.status || '').toUpperCase(); return s === 'APPROVED' ? 'RANKED' : ['RANKED', 'QUALIFIED'].includes(s) ? s : 'UNRANKED'; };
@@ -178,7 +224,17 @@ function collection(host, ctx) {
     for (const m of maps) counts[Math.min(17, Math.max(0, Math.floor(m.stars || 0) - 1))]++;
     const ranked = maps.filter(m => statusOf(m) === 'RANKED').length, total = maps.reduce((s, m) => s + (m.length || 0), 0);
     const art = maps.slice(0, 4).map(m => `<i style="background-image:${cssUrl(m.img || '')}"></i>`).join('');
-    const acts = [`<button class="btn primary" type="button" data-native-click="Download all" data-tip="<b>Download all</b><small>One .zip with every map</small>"><svg class="ico" aria-hidden="true"><use href="#i-dl"/></svg>Download all</button>`];
+    const acts = [dlButton()];
+    // Install in Atlas (popup, off by default; shared/atlas-link.js): a plain atlas:// link, the browser asks first.
+    // Paired and running, Atlas says how many of the maps are in the game, and the link opens the collection there
+    // to install the missing ones.
+    const atlas = RhythiaX.ExodusPrefs?.modules?.atlasLinks === true && RhythiaX.AtlasLink?.href('collection', id);
+    const A = S.atlas, have = A?.ids ? maps.filter(m => A.ids.has(m.id)).length : null;
+    if (atlas && have != null) {
+      acts.push(have < maps.length
+        ? `<a class="btn v-atl" href="${esc(atlas)}" data-tip="<b>Install missing with Atlas</b><small>Opens the collection in Atlas: ${fmt(maps.length - have)} ${maps.length - have === 1 ? 'map is' : 'maps are'} not in your game.</small>">${ATLAS_MARK}Install missing</a>`
+        : `<span class="btn v-atl in" data-tip="<b>All in your game</b><small>Atlas found every map in Rhythia on this computer.</small>">${ATLAS_MARK}All in your game</span>`);
+    } else if (atlas) acts.push(`<a class="btn" href="${esc(atlas)}" data-tip="<b>${RhythiaX.AtlasLink.LABEL}</b><small>${RhythiaX.AtlasLink.TIP}</small>">${RhythiaX.AtlasLink.LABEL}</a>`);
     if (isOwner()) acts.push('<button class="btn" type="button" data-cd-edit>Edit collection</button>', '<button class="btn danger" type="button" data-cd-remove>Remove collection</button>');
     return `<div class="container c-hero">
         <div class="c-art n${Math.min(4, maps.length)}">${art}</div>
@@ -188,46 +244,108 @@ function collection(host, ctx) {
           <p class="c-hdesc">${d.description ? esc(d.description) : '<i>No description provided.</i>'}</p>
           <div class="v-chips"><span class="v-chip plain">${d.isList ? 'List layout' : 'Grid layout'}</span><span class="v-chip plain num">${fmt(d.count)} ${d.count === 1 ? 'map' : 'maps'}</span></div>
           <div class="v-act">${acts.join('')}</div></div>
-        ${maps.length ? `<div class="c-hspread"><small>Difficulty spread</small>${spreadHtml(counts.slice(0, 14).map((c, i) => c + (i === 13 ? counts.slice(14).reduce((s, x) => s + x, 0) : 0)), true)}</div>` : ''}
+        ${maps.length ? `<div class="c-hspread"><small>Difficulty spread</small>${spreadHtml(counts.slice(0, 14).map((c, i) => c + (i === 13 ? counts.slice(14).reduce((s, x) => s + x, 0) : 0)), true)}${typesHtml(maps)}</div>` : ''}
       </div>
       ${isOwner() && d.count < 3 ? '<div class="container"><div class="c-warn"><b>Collection visibility warning</b><span>Your collection needs at least <b>3 maps</b> to be publicly visible.</span></div></div>' : ''}
       <div class="container"><div class="v-kpis">
         <div><small>Maps</small><b class="num">${fmt(d.count)}</b></div>
         <div><small>Average stars</small><b class="num">${maps.length ? `★ ${fmt(maps.reduce((s, m) => s + (m.stars || 0), 0) / maps.length, 2)}` : '—'}</b></div>
         <div><small>Ranked</small><b class="num">${fmt(ranked)}<span> of ${fmt(maps.length)}</span></b></div>
+        ${have != null ? `<div data-tip="<b>In your game</b><small>From Atlas, on this computer</small>"><small>In your game</small><b class="num">${fmt(have)}<span> of ${fmt(maps.length)}</span></b></div>` : ''}
         <div data-tip="<b>Playing time</b><small>Every map played once at 1×</small>"><small>Playing time</small><b class="num">${hoursMin(total)}</b></div>
       </div></div>`;
+  }
+  // The collection's map types in one bar, from the maps whose type is known (Ranked and Qualified maps the history
+  // service has read; no map file is read for it), with the biggest shares and quantum named under it.
+  const KIND_CLASS = {jump: 'k-jump', stream: 'k-stream', tech: 'k-tech', varied: 'k-other'};
+  // Rhythia's collections give a map's number, not its hash: the history service takes '#<number>' for it.
+  const keyOf = m => m.hash || (Number(m.id) > 0 ? `#${m.id}` : '');
+  const kindOf = m => (keyOf(m) && S.kinds?.get(keyOf(m))) || null;
+  function typesHtml(maps) {
+    const known = maps.filter(kindOf);
+    if (!known.length) return '';
+    const name = k => RhythiaX.GameTerms.typeName(k), pct = n => `${fmt(n / known.length * 100, 0)}%`;
+    const parts = Object.keys(KIND_CLASS).map(k => [k, known.filter(m => kindOf(m).kind === k).length]).filter(([, n]) => n).sort((a, b) => b[1] - a[1]);
+    const quantum = known.filter(m => kindOf(m).quantum).length;
+    const words = [...parts.slice(0, 3).map(([k, n]) => `${name(k)} ${pct(n)}`), ...(quantum ? [`Quantum ${pct(quantum)}`] : [])];
+    const of = known.length < maps.length ? ` · ${fmt(known.length)} of ${fmt(maps.length)} maps` : '';
+    const tip = known.length < maps.length ? ` data-tip="<b>Map types</b><small>Known for Ranked and Qualified maps that Reimagined has read</small>"` : '';
+    return `<small class="c-tlabel"${tip}>Map types${of}</small><span class="c-types" aria-label="Map types: ${esc(words.join(', '))}">${parts.map(([k, n]) => `<i class="${KIND_CLASS[k]}" style="flex-grow:${n}" data-tip="<b>${name(k)}</b><small>${fmt(n)} ${n === 1 ? 'map' : 'maps'} · ${pct(n)}</small>"></i>`).join('')}</span>
+      <span class="c-twords">${words.map(w => `<span>${esc(w)}</span>`).join('')}</span>`;
+  }
+  // Map types the history service or this browser already know (online history; nothing is read from map files).
+  async function loadKinds() {
+    const hashes = [...new Set((S.d?.maps || []).map(keyOf).filter(Boolean))];
+    if (!hashes.length) return;
+    const known = await Data().knownStyles(hashes, ac.signal).catch(() => null);
+    if (ac.signal.aborted || !known?.size) return;
+    S.kinds = known;
+    render();
+  }
+  const typeChip = m => { const k = kindOf(m); return k ? `<span class="h-star" title="Map type, worked out by Reimagined">${esc(RhythiaX.GameTerms.typeName(k.kind))}${k.quantum ? ' · Quantum' : ''}</span>` : ''; };
+  function dlButton() {
+    return S.dl
+      ? `<button class="btn primary" type="button" data-dl-all disabled aria-live="polite" data-tip="<b>Downloading</b><small>Each .zip is saved as soon as it is full</small>"><svg class="ico" aria-hidden="true"><use href="#i-dl"/></svg>${esc(S.dl)}</button>`
+      : `<button class="btn primary" type="button" data-dl-all data-tip="<b>Download all</b><small>Every map in .zip files, ready to drag into Rhythia</small>"><svg class="ico" aria-hidden="true"><use href="#i-dl"/></svg>Download all</button>`;
+  }
+  const redrawDl = () => { const b = $('[data-dl-all]'); if (b) morph.outer(b, dlButton()); };
+  // Show a download of this collection, started now or before the page was opened again.
+  const onDownload = (label, message) => { if (ac.signal.aborted) return; S.dl = label; redrawDl(); if (message) ui.toast(message); };
+  function watchDownload() {
+    const run = downloads.get(id);
+    if (!run) return;
+    run.watchers.add(onDownload);
+    ac.signal.addEventListener('abort', () => run.watchers.delete(onDownload));
+    S.dl = run.label;
+  }
+  function download() {
+    if (downloads.has(id)) return;
+    startDownload(id);
+    watchDownload(); redrawDl();
   }
   function card(m, i) {
     const [dl, dc] = K().diff(m.difficulty), [sl, sc] = K().status(m), st = statusOf(m);
     const remove = isOwner() ? `<button class="iconbtn c-rm" type="button" data-remove="${esc(m.id)}" aria-label="Remove ${esc(m.title)} from the collection" data-tip="<b>Remove from collection</b>" ${S.removing === m.id ? 'disabled' : ''}><svg class="ico" aria-hidden="true"><use href="#i-x"/></svg></button>` : '';
     if (S.d.isList) return `<div class="c-lrow"><span class="pos num">${fmt(m.order + 1)}</span><a class="h-map" href="/maps/${esc(m.id)}" style="--i:${Math.min(i, 24)}">
       <span class="art" style="background-image:${cssUrl(m.img)}"></span>
-      <span class="chips"><span class="h-diff" style="--c:${dc}">${dl}</span><span class="h-star num">★ ${K().fmt(m.stars, 2)}</span></span>
+      <span class="chips"><span class="h-diff" style="--c:${dc}">${dl}</span><span class="h-right"><span class="h-star num">★ ${K().fmt(m.stars, 2)}</span>${typeChip(m)}</span></span>
       ${st !== 'RANKED' ? `<span class="v-mflags"><span class="h-diff" style="--c:${sc}">${sl}</span></span>` : ''}
       <span class="plate"><b title="${esc(m.title)}">${esc(m.title)}</b><small><span>by ${esc(m.mapper || 'Unknown')}</span><span class="num">${K().mmss(m.length)}</span><span class="num">${fmt(m.plays)} plays</span></small></span></a>${remove}</div>`;
     return `<div class="c-cell"><a class="h-map" href="/maps/${esc(m.id)}" style="--i:${Math.min(i, 24)}">
       <span class="art" style="background-image:${cssUrl(m.img)}"></span>
-      <span class="chips"><span class="h-diff" style="--c:${dc}">${dl}</span><span class="h-star num">★ ${K().fmt(m.stars, 2)}</span></span>
+      <span class="chips"><span class="h-diff" style="--c:${dc}">${dl}</span><span class="h-right"><span class="h-star num">★ ${K().fmt(m.stars, 2)}</span>${typeChip(m)}</span></span>
       ${st !== 'RANKED' ? `<span class="v-mflags"><span class="h-diff" style="--c:${sc}">${sl}</span></span>` : ''}
       <span class="plate"><b title="${esc(m.title)}">${esc(m.title)}</b><small><span>by ${esc(m.mapper || 'Unknown')}</span><span class="num">${K().mmss(m.length)}</span><span class="num">${fmt(m.plays)} plays</span></small></span></a>${remove}</div>`;
   }
   function mapsSec() {
     const list = shownMaps(), part = list.slice(0, S.shown);
     return `<section class="container v-sec" id="c-maps"><div class="sec-head"><div><h2>Collection maps</h2><p class="lede">${fmt(list.length)} ${list.length === 1 ? 'item' : 'items'}${S.d.maps.length < S.d.count ? ` · the first ${fmt(S.d.maps.length)} are shown` : ''}</p></div>
-        <div class="right"><div class="pills" aria-label="Filter collection maps by status">${STATUS_F.map(([k, l]) => `<button type="button" aria-pressed="${S.status === k}" data-status="${k}">${l}</button>`).join('')}</div>
+        <div class="right">${S.d.maps.length ? sel.button() : ''}<div class="pills" aria-label="Filter collection maps by status">${STATUS_F.map(([k, l]) => `<button type="button" aria-pressed="${S.status === k}" data-status="${k}">${l}</button>`).join('')}</div>
           <div class="pills" aria-label="Sort">${C_SORTS.map(([k, l]) => `<button type="button" aria-pressed="${S.sort === k}" data-sort="${k}">${l}</button>`).join('')}</div>
           <button class="btn v-dir" type="button" data-dir aria-label="${S.dir === 'desc' ? 'Descending' : 'Ascending'}" data-tip="<b>${S.sort === 'order' ? (S.dir === 'desc' ? 'Collection order' : 'Reversed order') : S.dir === 'desc' ? 'Descending' : 'Ascending'}</b>"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="${S.dir === 'desc' ? 'M12 5v14M6 13l6 6 6-6' : 'M12 19V5M6 11l6-6 6 6'}"/></svg></button></div></div>
       ${part.length ? `<div class="${S.d.isList ? 'c-list' : 'h-maps c-mgrid'}">${part.map(card).join('')}</div>` : '<div class="empty" style="padding:56px 0"><b>No maps here.</b>Try another filter.</div>'}
-      ${list.length > S.shown ? `<div class="v-moreb"><button class="btn" type="button" data-more>Show ${fmt(Math.min(30, list.length - S.shown))} more</button></div>` : ''}</section>`;
+      ${list.length > S.shown ? `<div class="v-moreb"><button class="btn" type="button" data-more>Show ${fmt(Math.min(step(), list.length - S.shown))} more</button></div>` : ''}</section>`;
   }
   function render() {
     if (ac.signal.aborted) return;
     morph($('#hero'), `<section class="v-hero c-h ${S.enter ? 'enter' : ''}"><div class="v-banner" style="background-image:${cssUrl(S.d.maps[0]?.img || '')}"></div>${hero()}</section>`);
     morph($('#body'), `<div class="v-page ${S.enter ? 'enter' : ''}">${mapsSec()}<div style="height:96px"></div></div>`);
     document.title = `${S.d.title} | Rhythia`;
+    fitRows();
   }
-  const redrawMaps = () => morph.outer($('#c-maps'), mapsSec());
+  const redrawMaps = () => { morph.outer($('#c-maps'), mapsSec()); fitRows(); };
+  // The grid shows whole rows: as many maps as fill its rows, about 30 at a time (32 with four columns).
+  const columns = () => { const g = $('#c-maps .c-mgrid'); return g ? Math.max(1, getComputedStyle(g).gridTemplateColumns.split(' ').filter(Boolean).length) : 1; };
+  const step = () => { const c = columns(); return c * Math.ceil(PAGE_MAPS / c); };
+  function fitRows() {
+    if (!S.d || S.d.isList) return;
+    const c = columns(), total = shownMaps().length, want = S.shown < total ? Math.min(total, Math.ceil(S.shown / c) * c) : S.shown;
+    // Redrawn when a row is not full, or when Show more would now add a different number.
+    const more = $('#c-maps [data-more]'), label = more && `Show ${fmt(Math.min(step(), total - want))} more`;
+    if (want !== S.shown || (more && more.textContent.trim() !== label)) { S.shown = want; morph.outer($('#c-maps'), mapsSec()); }
+  }
+  let resizing = 0;
+  addEventListener('resize', () => { cancelAnimationFrame(resizing); resizing = requestAnimationFrame(fitRows); }, sig);
   async function load() {
     const seq = ++S.seq;
     const snap = await Data().collectionSnapshot(id).catch(() => null);
@@ -244,6 +362,17 @@ function collection(host, ctx) {
     }
     render();
     S.enter = false;
+    loadAtlas();
+    loadKinds();
+  }
+  // With Install in Atlas on and Atlas paired: which of the shown maps are in the game.
+  async function loadAtlas() {
+    if (RhythiaX.ExodusPrefs?.modules?.atlasLinks !== true || !S.d?.maps.length) return;
+    let info = null;
+    try { info = await chrome.runtime.sendMessage({type: 'rhythiax-atlas-have', ids: S.d.maps.map(m => m.id)}); } catch (_) {}
+    if (ac.signal.aborted || !Array.isArray(info?.ids)) return;
+    S.atlas = {ids: new Set(info.ids)};
+    render();
   }
   async function remove(mapId) {
     const m = S.d.maps.find(x => x.id === mapId); if (!m || S.removing) return;
@@ -258,19 +387,24 @@ function collection(host, ctx) {
   }
   R.addEventListener('click', e => {
     if (e.target.closest('[data-native-x]')) { ctx.showNative(); return; }
+    if (e.target.closest('[data-dl-all]')) {
+      if (S.d && S.d.count > BIG_COLLECTION) downloadDialog(R, sig, {count: S.d.count, ok: download}); else download();
+      return;
+    }
     const own = {id, title: S.d?.title, description: S.d?.description, isList: S.d?.isList};
     if (e.target.closest('[data-cd-edit]')) { collectionDialog(R, sig, {kind: 'edit', d: own, toast: ui.toast, done: () => { ui.toast('Collection saved.'); load(); }}); return; }
     if (e.target.closest('[data-cd-remove]')) { collectionDialog(R, sig, {kind: 'remove', d: own, toast: ui.toast, done: () => { ui.toast(`${own.title} was removed.`); ctx.go('/collections/own'); }}); return; }
     const t = e.target.closest('[data-status],[data-sort],[data-dir],[data-more],[data-remove]');
     if (!t || t.disabled) return;
     const d = t.dataset;
-    if (d.status) { S.status = d.status; S.shown = 30; redrawMaps(); return; }
-    if (d.sort) { if (d.sort !== S.sort) { S.sort = d.sort; S.dir = 'desc'; S.shown = 30; redrawMaps(); } return; }
+    if (d.status) { S.status = d.status; S.shown = PAGE_MAPS; redrawMaps(); return; }
+    if (d.sort) { if (d.sort !== S.sort) { S.sort = d.sort; S.dir = 'desc'; S.shown = PAGE_MAPS; redrawMaps(); } return; }
     if ('dir' in d) { S.dir = S.dir === 'desc' ? 'asc' : 'desc'; redrawMaps(); return; }
-    if ('more' in d) { S.shown += 30; redrawMaps(); return; }
+    if ('more' in d) { S.shown += step(); redrawMaps(); return; }
     if (d.remove) { e.preventDefault(); remove(Number(d.remove)); }
   }, sig);
 
+  watchDownload();
   load();
   Data().signedIn().then(me => { if (ac.signal.aborted) return; S.me = me || null; if (S.d && isOwner()) render(); }).catch(() => { S.me = null; });
 
@@ -311,6 +445,11 @@ const css = `
 .c-hdesc{margin:10px 0 0;color:var(--text-2);max-width:70ch;overflow-wrap:anywhere}
 .c-hspread{display:flex;flex-direction:column;gap:8px}
 .c-hspread small{font-size:12.5px;font-weight:600;color:var(--muted)}
+.c-hspread .c-tlabel{margin-top:6px}
+.c-types{display:flex;gap:2px;height:8px;border-radius:999px;overflow:hidden;background:var(--panel-3)}
+.c-types i{display:block;min-width:3px;background:var(--c)}
+.c-twords{display:flex;flex-wrap:wrap;gap:2px 0;font-size:12.5px;color:var(--text-2)}
+.c-twords span + span::before{content:"·";margin:0 7px;color:var(--muted)}
 .c-warn{display:flex;flex-direction:column;gap:2px;margin-top:20px;padding:12px 16px;border-radius:12px;background:var(--panel);box-shadow:inset 0 0 0 1px rgba(250,204,21,.3);font-size:13.5px;color:var(--text-2)}
 .c-warn > b{color:var(--text)}
 .c-mgrid{grid-template-columns:repeat(auto-fill,minmax(240px,1fr))}

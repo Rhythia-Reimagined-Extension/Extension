@@ -197,6 +197,14 @@ var RhythiaX = RhythiaX || {};
     if (mine && theirs) {
       out.push(`This top is mostly ${KIND_WORD[mine[0]]} (${mine[1]}%)${theirs[0] === mine[0] ? ', like the players above' : `; the players above lean to ${KIND_WORD[theirs[0]]} (${theirs[1]}%)`}.`);
     }
+    // Each type's share of this top against both groups (each as many as it has players), when one differs by 1.3× or more.
+    const t = d.mapTypes || {}, na = b.above.players || 0, nb = b.below.players || 0;
+    if (t.you && t.above && t.below && na + nb) {
+      const rs = Object.keys(KIND_WORD).map(k => { const g = ((t.above[k] || 0) * na + (t.below[k] || 0) * nb) / (na + nb), y = t.you[k] || 0; return { k, y, g, r: g > 0 ? y / g : null }; }).filter(x => x.r != null);
+      const more = rs.filter(x => x.r >= 1.3 && x.y >= 0.05).sort((x, y) => y.r - x.r)[0], less = rs.filter(x => x.r <= 1 / 1.3 && x.g >= 0.05).sort((x, y) => x.r - y.r)[0];
+      const part = x => `${KIND_WORD[x.k]} <strong>${x.r.toFixed(1)}×</strong>`;
+      if (more || less) out.push(`Against them: ${[more, less].filter(Boolean).map(part).join(', ')} as often.`);
+    }
     const missing = (d.players?.missing || []).slice(0, 2).map(x => `<strong>${esc(x.title)}</strong>`);
     if (missing.length) out.push(`In their tops but not in this one: ${missing.join(' and ')}.`);
     return out.join(' ');
@@ -364,7 +372,8 @@ var RhythiaX = RhythiaX || {};
       nearRow.className = 'rhythiax-near-row';
       nearRow.hidden = true;
       summaryCard.appendChild(nearRow);
-      if (playerId && typeof RhythiaX.fetchVpsCompare === 'function') {
+      // The popup's Near your rank switch (modules.nearRank): off asks the history service nothing.
+      if (playerId && RhythiaX.isModuleEnabled?.('nearRank') !== false && typeof RhythiaX.fetchVpsCompare === 'function') {
         RhythiaX.fetchVpsCompare(playerId, 'lock', null).then(answer => {
           const words = nearWords(answer);
           if (!words || !nearRow.isConnected) return;

@@ -12,7 +12,7 @@ RhythiaX.ExodusProfileParts.stats = function mountProfileStats(c) {
 'use strict';
 // What this part takes from pages/profile.js. The daily history can be replaced after mount (fresh data),
 // so it is read from c each time: c.FIRST and c.LAST.
-const {U, esc, fmt, onlineOffer, COUNTRY, cssUrl, sgn, tone, ago, utc, dm, dayName, MODES, S, rangeDays, win, kpi, addDays,
+const {U, esc, fmt, onlineOffer, COUNTRY, cssUrl, sgn, mv, tone, ago, utc, dm, dayName, MODES, S, rangeDays, win, kpi, addDays,
   mondayOf, nextMonth, prevMonth, isoWeek, monthName, agg} = c;
 
 /* ── Chart (labels in HTML so they never stretch) ── */
@@ -71,7 +71,7 @@ const ACT = {
   plays: {label: 'Plays', v: a => a.plays, f: v => v ? `${fmt(v)}<span class="u"> play${v === 1 ? '' : 's'}</span>` : '—', tint: 'var(--accent)'},
   rp: {label: 'RP', v: a => a.rp, f: v => v ? `${sgn(v, 1)}<span class="u"> RP</span>` : '—', tint: 'var(--accent)'},
   // Rank shows the global place at the period's last record, with how far it moved under it.
-  rank: {label: 'Rank', v: a => a.rank, f: v => v ? `${sgn(v)} place${Math.abs(v) === 1 ? '' : 's'}` : 'No change', tint: 'var(--good)',
+  rank: {label: 'Rank', v: a => a.rank, f: v => v ? `${mv(v)} place${Math.abs(v) === 1 ? '' : 's'}` : 'No change', tint: 'var(--good)',
     big: a => a.end?.globalRank ? `#${fmt(a.end.globalRank)}` : '—'},
 };
 function tiles() {
@@ -95,7 +95,7 @@ function tiles() {
     const v = m.v(x.a), lv = v ? Math.min(4, Math.ceil(Math.abs(v) / max * 4)) : 0;
     const tint = S.act === 'rank' && v < 0 ? 'var(--bad)' : m.tint;
     const value = m.big ? `<b class="num">${m.big(x.a)}</b><small class="num mv ${tone(v)}">${m.f(v)}</small>` : `<b class="num ${S.act !== 'plays' ? tone(v) : ''}">${m.f(v, true)}</b>`;
-    return `<button type="button" class="ct" style="--lv:${lv};--tint:${tint}" data-sel="${x.key}" aria-pressed="${sel === x.key}" data-tip="<b>${esc(period(S.gran, x.key).title)}</b><small>${fmt(x.a.plays)} plays · ${sgn(x.a.rp, 1)} RP · ${x.a.end?.globalRank ? `#${fmt(x.a.end.globalRank)} global, ` : ''}${sgn(x.a.rank)} rank</small>">
+    return `<button type="button" class="ct" style="--lv:${lv};--tint:${tint}" data-sel="${x.key}" aria-pressed="${sel === x.key}" data-tip="<b>${esc(period(S.gran, x.key).title)}</b><small>${fmt(x.a.plays)} plays · ${sgn(x.a.rp, 1)} RP · ${x.a.end?.globalRank ? `#${fmt(x.a.end.globalRank)} global, ` : ''}${x.a.rank ? `${mv(x.a.rank)} place${Math.abs(x.a.rank) === 1 ? '' : 's'}` : 'no change'}</small>">
       <span class="n">${x.n}</span>${x.s ? `<small>${x.s}</small>` : ''}${value}${long ? `<small>${x.a.active} of ${x.a.days} day${x.a.days === 1 ? '' : 's'} active</small>` : ''}</button>`;
   }).join('');
 }
@@ -126,8 +126,8 @@ function detail() {
     <dl>
       ${cell('Plays', fmt(a.plays), S.gran === 'day' ? (a.plays ? 'that day' : 'no plays') : `${fmt(a.sq)} squares hit`, 'flat')}
       ${cell('Rhythm points', fmt(t.skillPoints, 2), sgn(a.rp, 1), tone(a.rp))}
-      ${cell('Global rank', '#' + fmt(t.globalRank), sgn(a.rank), tone(a.rank))}
-      ${cell(COUNTRY, '#' + fmt(t.countryRank), sgn(a.country), tone(a.country))}
+      ${cell('Global rank', '#' + fmt(t.globalRank), mv(a.rank), tone(a.rank))}
+      ${cell(COUNTRY, '#' + fmt(t.countryRank), mv(a.country), tone(a.country))}
       ${cell('Avg. accuracy', fmt(t.avgAccuracy, 2) + '%', sgn(a.accD, 2, ' pp'), tone(a.accD))}
       ${S.gran === 'day' ? cell('Squares hit', fmt(a.sq), a.plays ? 'that day' : 'no plays', 'flat') : cell('Active days', `${a.active} of ${a.days}`, 'days with a play', 'flat')}
     </dl>
@@ -148,8 +148,8 @@ function rankings(anim) {
   const best = Math.min(...w.map(d => d.globalRank)), worst = Math.max(...w.map(d => d.globalRank));
   const opt = {sel: S.rankMetric, attr: 'data-rank-metric'};
   return `<div class="kpis" role="group" aria-label="Choose a ranking to chart">
-      ${kpi('globalRank', 'Global rank', '#' + fmt(last.globalRank), `<span class="${tone(first.globalRank - last.globalRank)}">${sgn(first.globalRank - last.globalRank)}</span> in ${days} days`, opt)}
-      ${kpi('countryRank', COUNTRY, '#' + fmt(last.countryRank), `<span class="${tone(first.countryRank - last.countryRank)}">${sgn(first.countryRank - last.countryRank)}</span> in ${days} days`, opt)}
+      ${kpi('globalRank', 'Global rank', '#' + fmt(last.globalRank), `<span class="${tone(first.globalRank - last.globalRank)}">${mv(first.globalRank - last.globalRank)}</span> in ${days} days`, opt)}
+      ${kpi('countryRank', COUNTRY, '#' + fmt(last.countryRank), `<span class="${tone(first.countryRank - last.countryRank)}">${mv(first.countryRank - last.countryRank)}</span> in ${days} days`, opt)}
       ${kpi('b', 'Best in period', '#' + fmt(best), `lowest #${fmt(worst)}`, {selectable: false})}
       ${kpi('s', 'Spin global', MODES.spin.rank ? '#' + fmt(MODES.spin.rank) : '—', `${fmt(MODES.spin.rp, 1)} RP`, {selectable: false})}
     </div>

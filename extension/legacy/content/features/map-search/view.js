@@ -1,7 +1,7 @@
 // =============================================
 // Reimagined for Rhythia — Classic Reimagined Search
 // =============================================
-// On Rhythia's own map list (/maps), a panel under "Explore maps": Reimagined's own search of Ranked and Qualified
+// On Rhythia's own map list (/maps), a panel under Rhythia's filters: Reimagined's own search of Ranked and Qualified
 // maps on the history service (core/vps-client.js): types, quantum, difficulty, length, title, mapper and
 // order, 30 maps a page. Rhythia's own search and list stay as they are. Online history only.
 
@@ -26,10 +26,11 @@ var RhythiaX = RhythiaX || {};
   const S = { open: false, types: undefined, data: null, error: '', busy: false,
     q: { status: 'RANKED', types: [], quantum: 'any', bucket: 0, length: 0, title: '', mapper: '', order: 'newest', reverse: false, page: 1 } };
 
-  // Rhythia's "Explore maps" panel, the one the search sits under.
+  // Rhythia's filter panel, the one the search sits under: titled "Explore maps" until a site update in November
+  // 2026, now found by its "Gives RP" switch.
   function anchor() {
     const heading = [...document.querySelectorAll('#root h1, #root h2, #root h3, #root div, #root span')]
-      .find(e => e.childElementCount === 0 && e.textContent.trim() === 'Explore maps');
+      .find(e => e.childElementCount === 0 && ['Explore maps', 'Gives RP'].includes(e.textContent.trim()));
     let box = heading;
     while (box && box.parentElement && !/rounded/.test(String(box.className))) box = box.parentElement;
     return box && box !== document.body ? box : null;
@@ -168,6 +169,8 @@ var RhythiaX = RhythiaX || {};
 
   RhythiaX.injectMapSearch = function () {
     if (RhythiaX.exodusShowing?.()) return false;
+    // The popup's Reimagined Search switch (modules.mapSearch): off leaves Rhythia's map list as it is.
+    if (RhythiaX.isModuleEnabled?.('mapSearch') === false) { RhythiaX.cleanupMapSearch(); return true; }
     if (panel?.isConnected) return true;
     const after = anchor();
     if (!after) return false;

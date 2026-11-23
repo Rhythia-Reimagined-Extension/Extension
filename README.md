@@ -1,4 +1,4 @@
-# Reimagined for Rhythia 1.5.0
+# Reimagined for Rhythia 1.6.0
 
 A fresh look and more useful player profiles for [Rhythia](https://rhythia.com), made by Shuriel.
 
@@ -7,12 +7,13 @@ A fresh look and more useful player profiles for [Rhythia](https://rhythia.com),
 - Compare players and customize score cards.
 - Turn individual features on or off in the extension popup.
 - Choose Classic, which adds to Rhythia's own pages, or the experimental Exodus look with its own pages.
+- Connect to Atlas for Rhythia, a desktop app (alpha) for your maps, to install maps from Rhythia's pages.
 
 ## Get started
 
 Install from the [Chrome Web Store](https://chromewebstore.google.com/detail/rhythia-reimagined/ekjfnmfocjohkiieakohbnagjcdbfolb), then open Rhythia. Chrome 116+ and compatible Chromium browsers are supported. For Firefox desktop 140+, install from [Firefox Add-ons](https://addons.mozilla.org/firefox/addon/rhythia-reimagined/).
 
-This repository contains **1.5.0**. Check the store listings for the version currently available there. See [Installation](INSTALLATION.md) for manual installation and Firefox instructions, or the [changelog](changelog.md) for what's new.
+This repository contains **1.6.0**. Check the store listings for the version currently available there. See [Installation](INSTALLATION.md) for manual installation and Firefox instructions, or the [changelog](changelog.md) for what's new.
 
 ## Your history, your choice
 
@@ -24,7 +25,7 @@ The extension does not upload scores, friends, settings or local history. An ind
 
 Rhythia manages its original accounts; Shuriel handles the independent history copy. Public availability does not make data automatically anonymous. You can contact us about that copy without requesting game-account deletion first; see [requests](HISTORY-PRIVACY.md#requests-and-contact).
 
-This branch prepares the 1.5.0 extension release; it does not mean either store has published the update. Operator identification and legal/provider assessments for independently collected history remain open.
+This branch prepares the 1.6.0 extension release; it does not mean either store has published the update. Operator identification and legal/provider assessments for independently collected history remain open.
 
 ## Help and project information
 
